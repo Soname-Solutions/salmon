@@ -1,42 +1,51 @@
 from aws_cdk import (
-    # Duration,
     Stack,
     aws_s3 as s3,
     aws_events as events,
-    Tags
+    Tags,
+    aws_lambda as lambda_,
+    aws_events_targets as targets,
+    Duration,
 )
 from constructs import Construct
+import os
 
 class InfraToolingStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
-        stage_name = kwargs.pop("stage_name", None)
+        stage = kwargs.pop("stage", None)
+        project_name = kwargs.pop("project_name", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
-        test_bucket = s3.Bucket(
+        settings_bucket = s3.Bucket(
             self, 
-            "testBucketVd", 
-            bucket_name=f"s3-{stage_name}-test",
+            "salmonSettingsBucket", 
+            bucket_name=f"s3-{project_name}-settings-{stage}",
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL
             )
 
-        events.EventBus(
+        notification_bus = events.EventBus(
             self, 
-            "testEventBusVd", \
-            event_bus_name=f"bus-{stage_name}-test"
+            "salmonNotificationsBus", \
+            event_bus_name=f"bus-{project_name}-notification-{stage}"
             )
         
+        
+        project_root_path =  os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        notification_lambda_path = os.path.join(project_root_path, 'src\main\lambda\\notification-lambda')
+        notification_lambda = lambda_.Function(
+            self,
+            "salmonNotificationLambda",
+            function_name=f"lambda-{project_name}-notification-{stage}",
+            code=lambda_.Code.from_asset(notification_lambda_path),
+            handler="index.lambda_handler",
+            timeout=Duration.seconds(900),
+            runtime=lambda_.Runtime.PYTHON_3_11,
+        )
 
 
-        Tags.of(self).add("stage", stage_name)
+        Tags.of(self).add("stage", stage)
+        Tags.of(self).add("project_name", project_name)
 
-
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "InfraToolingQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )

@@ -5,10 +5,11 @@ import aws_cdk as cdk
 
 from infra_tooling.infra_tooling_stack import InfraToolingStack
 
-stage_name="devvd"
+stage = os.environ.get("STAGE")
+project_name = "salmon"
 
 app = cdk.App()
-InfraToolingStack(app, f"{stage_name}-InfraToolingStack", stage_name=stage_name
+InfraToolingStack(app, f"cf-{project_name}-InfraToolingStack-{stage}", stage=stage, project_name=project_name
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
