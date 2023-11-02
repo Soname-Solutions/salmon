@@ -10,6 +10,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
+
 class InfraToolingStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -28,13 +29,12 @@ class InfraToolingStack(Stack):
 
         notification_bus = events.EventBus(
             self, 
-            "salmonNotificationsBus", \
+            "salmonNotificationsBus",
             event_bus_name=f"bus-{project_name}-notification-{stage}"
             )
-        
-        
+
         project_root_path =  os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        notification_lambda_path = os.path.join(project_root_path, 'src\main\lambda\\notification-lambda')
+        notification_lambda_path = os.path.join(project_root_path, 'src\\main\\lambda\\notification-lambda')
         notification_lambda = lambda_.Function(
             self,
             "salmonNotificationLambda",
@@ -44,7 +44,6 @@ class InfraToolingStack(Stack):
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
         )
-
 
         Tags.of(self).add("stage", stage)
         Tags.of(self).add("project_name", project_name)
