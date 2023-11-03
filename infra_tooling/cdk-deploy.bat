@@ -2,7 +2,7 @@
 @exit /B %ERRORLEVEL%
 if ($args.length -ge 2) {
     $env:AWS_PROFILE, $args = $args
-    $env:STAGE,  $args = $args
+    $env:STAGE_NAME,  $args = $args
     npx cdk deploy --profile $env:AWS_PROFILE $args
     exit $lastExitCode
 } else {

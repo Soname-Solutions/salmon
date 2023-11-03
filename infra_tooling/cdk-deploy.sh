@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 if [[ $# -ge 2 ]]; then
     export AWS_PROFILE=$1
-    export STAGE=$2
+    export STAGE_NAME=$2
     shift; shift
     npx cdk deploy --profile $AWS_PROFILE "$@"
     exit $?
