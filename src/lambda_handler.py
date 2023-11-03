@@ -1,3 +1,5 @@
+import os
+
 from constants import AWSResources, SettingFileNames
 
 from s3_manager import S3Manager
@@ -8,14 +10,18 @@ from settings_component.settings_reader import (
 
 
 def lambda_handler(event, context):
+    # Get environment variables
+    project_name = os.environ.get("project_name")
+    stage_name = os.environ.get("stage_name")
+
     s3 = S3Manager()
 
     # Load setting files
     monitoring_group_settings = s3.download_settings_file(
-        AWSResources.S3_BUCKET_NAME, SettingFileNames.MONITORING_GROUPS_FILE_NAME
+        f"s3-{project_name}-settings-{stage_name}", SettingFileNames.MONITORING_GROUPS_FILE_NAME
     )
     recipient_settings = s3.download_settings_file(
-        AWSResources.S3_BUCKET_NAME, SettingFileNames.RECIPIENTS_FILE_NAME
+        f"s3-{project_name}-settings-{stage_name}", SettingFileNames.RECIPIENTS_FILE_NAME
     )
 
     if not monitoring_group_settings:
