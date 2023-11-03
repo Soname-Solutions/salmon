@@ -144,37 +144,39 @@ class MonitoringSettingsReader(SettingsReader):
         """
         return self.monitoring_groups
 
-    def get_monitoring_groups_by_resource_name(self, name: str) -> list[str]:
-        """Retrieves monitoring groups based on resource name.
+    def get_monitoring_groups_by_resource_names(self, resources: str) -> list[str]:
+        """Retrieves monitoring groups based on resource names.
 
         Args:
-            name (str): The resource name to match against monitoring groups.
+            resources (list[str]): The resource names to match against monitoring groups.
 
         Returns:
             list[str] : List of matched monitoring group names.
         """
-        matched_groups = []
+        matched_groups = set() # Prevent duplicates
+
         for group in self.monitoring_groups:
             glue_jobs = group.get("glue_jobs", [])
             lambda_functions = group.get("lambda_functions", [])
 
-            for job in glue_jobs:
-                job_name = job.get("name")
-                if job_name and (job_name == name or "*" in job_name):
-                    if fnmatch.fnmatch(
-                        name, job_name
-                    ):  # Checks that name matches the wildcard pattern
-                        matched_groups.append(group.get("group_name"))
+            for resource in resources:
+                for job in glue_jobs:
+                    job_name = job.get("name")
+                    if job_name and (job_name == resource or "*" in job_name):
+                        if fnmatch.fnmatch(
+                            resource, job_name
+                        ):  # Checks that name matches the wildcard pattern
+                            matched_groups.add(group.get("group_name"))
 
-            for function in lambda_functions:
-                function_name = function.get("name")
-                if function_name and (function_name == name or "*" in function_name):
-                    if fnmatch.fnmatch(
-                        name, function_name
-                    ):  # Checks that name matches the wildcard pattern
-                        matched_groups.append(group.get("group_name"))
-
-        return matched_groups
+                for function in lambda_functions:
+                    function_name = function.get("name")
+                    if function_name and (function_name == resource or "*" in function_name):
+                        if fnmatch.fnmatch(
+                            resource, function_name
+                        ):  # Checks that name matches the wildcard pattern
+                            matched_groups.add(group.get("group_name"))
+        
+        return list(matched_groups) 
 
 
 class RecipientsSettingsReader(SettingsReader):
@@ -207,30 +209,30 @@ class RecipientsSettingsReader(SettingsReader):
         """
         return self.recipients
 
-    def get_recipients_by_monitoring_group_and_type(
-        self, monitoring_group: str, notification_type: str
+    def get_recipients_by_monitoring_groups_and_type(
+        self, monitoring_groups: list[str], notification_type: str
     ) -> list[dict]:
-        """Retrieves recipients for a specific monitoring group and notification type.
+        """Retrieves recipients for the list of monitoring groups and notification type.
 
         Args:
-            monitoring_group (str): The name of the monitoring group.
+            monitoring_groups (list[str]): Names of monitoring groups.
             notification_type (str): The type of notification ('alert' or 'digest').
 
         Returns:
             list[dict] : List of recipient details for the specified monitoring group and notification type.
         """
-        recipients_list = []
+        matched_recipients = set() # Prevent duplicated recipients
+
         for recipient in self.recipients:
             subscriptions = recipient.get("subscriptions", [])
             for subscription in subscriptions:
-                if subscription.get("monitoring_group") == monitoring_group:
-                    if (
-                        notification_type == "alert" and subscription.get("alerts")
-                    ) or (notification_type == "digest" and subscription.get("digest")):
-                        recipient_info = {
-                            "recipient": recipient.get("recipient"),
-                            "delivery_method": recipient.get("delivery_method"),
-                        }
-                        recipients_list.append(recipient_info)
+                for monitoring_group in monitoring_groups:
+                    if subscription.get("monitoring_group") == monitoring_group:
+                        if (
+                            notification_type == "alert" and subscription.get("alerts")
+                        ) or (notification_type == "digest" and subscription.get("digest")):
+                            recipient_info = (recipient.get("recipient"),recipient.get("delivery_method"))
+                            matched_recipients.add(recipient_info)
 
-        return recipients_list
+
+        return [{"recipient": recipient, "delivery_method": delivery_method} for recipient, delivery_method in matched_recipients]
