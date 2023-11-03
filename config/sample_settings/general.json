@@ -1,0 +1,30 @@
+{
+    "monitored_accounts": [
+        {
+            "Name": "Dept1 Account",
+            "AccountId": "123456789",
+            "MetricsExtractorRoleArn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
+        },
+        {
+            "Name": "Data Lake Account",
+            "AccountId": "987654321",
+            "MetricsExtractorRoleArn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
+        }
+    ],
+    "delivery_methods": [
+        {
+            "name": "aws_ses",
+            "delivery_method_type": "AWS_SES"
+        },
+        {
+            "name": "local_smtp",
+            "delivery_method_type": "SMTP",
+            "credentials_secret_name": "sm-my-smtp-server-creds"
+        },
+        {
+            "name": "soname_slack",
+            "delivery_method_type": "SLACK",
+            "credentials_secret_name": "sm-soname-slack-creds"
+        }
+    ]
+}

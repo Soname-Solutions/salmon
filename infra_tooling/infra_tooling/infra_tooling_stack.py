@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_events_targets as targets,
     aws_iam as iam,
+    aws_s3_deployment as s3deploy,
     Duration
 )
 from constructs import Construct
@@ -31,6 +32,13 @@ class InfraToolingStack(Stack):
             bucket_name=settings_bucket_name,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL
             )
+        
+        # S3 settings files deployment
+        s3deploy.BucketDeployment(
+            self, "salmonSettingsDeployment",
+            sources=[s3deploy.Source.asset('../config/settings')],
+            destination_bucket=settings_bucket,
+        )
 
 
         # EventBridge Bus
@@ -38,7 +46,7 @@ class InfraToolingStack(Stack):
             self, 
             "salmonNotificationsBus",
             event_bus_name=f"eventbus-{project_name}-notification-{stage_name}"
-            )
+        )
 
 
         # Notification Lambda Role
