@@ -37,7 +37,7 @@ class InfraToolingStack(Stack):
         notification_bus = events.EventBus(
             self, 
             "salmonNotificationsBus",
-            event_bus_name=f"bus-{project_name}-notification-{stage_name}"
+            event_bus_name=f"eventbus-{project_name}-notification-{stage_name}"
             )
 
 
