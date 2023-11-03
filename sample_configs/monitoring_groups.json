@@ -1,0 +1,50 @@
+{
+    "monitoring_groups": [
+        {
+            "group_name": "pipeline_source1",
+            "glue_jobs": [
+                {
+                    "name": "ds-source1-historical-data-load",
+                    "sla_seconds": 1200,
+                    "minimum_number_of_runs": 0
+                },
+                {
+                    "name": "ds-source1-source-to-raw-full-load",
+                    "sla_seconds": 1300,
+                    "minimum_number_of_runs": 2
+                },
+                {
+                    "name": "ds-source1-clean-to-ontology-full-load",
+                    "sla_seconds": 1200,
+                    "minimum_number_of_runs": 2
+                }
+            ]
+        },
+        {
+            "group_name": "pipeline_source1_all",
+            "glue_jobs": [
+                {
+                    "name": "ds-source1-*",
+                    "sla_seconds": 2400,
+                    "minimum_number_of_runs": 2
+                }
+            ]
+        },
+        {
+            "group_name": "pipeline_sourceABC",
+            "glue_jobs": [
+                {
+                    "name": "ds-sourceABC-*",
+                    "sla_seconds": 2400,
+                    "minimum_number_of_runs": 2
+                }
+            ],
+            "lambda_functions": [
+                {
+                    "name": "validate_transfer_s3object_DEV",
+                    "minimum_number_of_runs": 40
+                }
+            ]
+        }
+    ]
+}
