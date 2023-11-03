@@ -42,7 +42,7 @@ class InfraToolingStack(Stack):
             function_name=f"lambda-{project_name}-notification-{stage}",
             code=lambda_.Code.from_asset(notification_lambda_path),
             handler="index.lambda_handler",
-            timeout=Duration.seconds(900),
+            timeout=Duration.seconds(30),
             runtime=lambda_.Runtime.PYTHON_3_11,
         )
 
