@@ -18,6 +18,8 @@ class InfraToolingStack(Stack):
         stage = kwargs.pop("stage", None)
         project_name = kwargs.pop("project_name", None)
 
+        project_root_path =  os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
         super().__init__(scope, construct_id, **kwargs)
 
         settings_bucket = s3.Bucket(
@@ -33,8 +35,7 @@ class InfraToolingStack(Stack):
             event_bus_name=f"bus-{project_name}-notification-{stage}"
             )
 
-        project_root_path =  os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        notification_lambda_path = os.path.join(project_root_path, 'src\\main\\lambda\\notification-lambda')
+        notification_lambda_path = os.path.join('../src/', 'lambda/notification-lambda')
         notification_lambda = lambda_.Function(
             self,
             "salmonNotificationLambda",
