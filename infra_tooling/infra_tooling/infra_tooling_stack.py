@@ -4,7 +4,6 @@ from aws_cdk import (
     aws_events as events,
     Tags,
     aws_lambda as lambda_,
-    aws_events_targets as targets,
     aws_iam as iam,
     aws_s3_deployment as s3deploy,
     Duration
@@ -20,19 +19,20 @@ class InfraToolingStack(Stack):
         stage_name = kwargs.pop("stage_name", None)
         project_name = kwargs.pop("project_name", None)
 
-        project_root_path =  os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        project_root_path = os.path.dirname(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))))
 
         super().__init__(scope, construct_id, **kwargs)
 
         # Settings S3 bucket
         settings_bucket_name = f"s3-{project_name}-settings-{stage_name}"
         settings_bucket = s3.Bucket(
-            self, 
-            "salmonSettingsBucket", 
+            self,
+            "salmonSettingsBucket",
             bucket_name=settings_bucket_name,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL
-            )
-        
+        )
+
         # S3 settings files deployment
         s3deploy.BucketDeployment(
             self, "salmonSettingsDeployment",
@@ -41,14 +41,12 @@ class InfraToolingStack(Stack):
             destination_key_prefix='settings'
         )
 
-
         # EventBridge Bus
         notification_bus = events.EventBus(
-            self, 
+            self,
             "salmonNotificationsBus",
             event_bus_name=f"eventbus-{project_name}-notification-{stage_name}"
         )
-
 
         # Notification Lambda Role
         notification_lambda_role = iam.Role(
@@ -70,9 +68,9 @@ class InfraToolingStack(Stack):
             resources=["*"]
         ))
 
-
         # Notification Lambda
-        notification_lambda_path = os.path.join('../src/', 'lambda/notification-lambda')
+        notification_lambda_path = os.path.join(
+            '../src/', 'lambda/notification-lambda')
         notification_lambda = lambda_.Function(
             self,
             "salmonNotificationLambda",
@@ -87,4 +85,3 @@ class InfraToolingStack(Stack):
 
         Tags.of(self).add("stage_name", stage_name)
         Tags.of(self).add("project_name", project_name)
-
