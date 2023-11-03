@@ -19,9 +19,6 @@ class InfraToolingStack(Stack):
         stage_name = kwargs.pop("stage_name", None)
         project_name = kwargs.pop("project_name", None)
 
-        project_root_path = os.path.dirname(os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__))))
-
         super().__init__(scope, construct_id, **kwargs)
 
         # Settings S3 bucket
