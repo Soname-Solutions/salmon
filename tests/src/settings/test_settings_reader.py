@@ -48,14 +48,8 @@ class TestGeneralSettingsReader:
     def general_settings_data(self):
         return """
         {
-            "monitored_accounts": {
-                "account1": "Details for account 1",
-                "account2": "Details for account 2"
-            },
-            "delivery_methods": {
-                "method1": "Details for method 1",
-                "method2": "Details for method 2"
-            }
+            "monitored_accounts": [{"name": "account1"}, {"name": "account2"}],
+            "delivery_methods": [{"name": "method1"}, {"name": "method2"}]
         }
         """
 
@@ -65,17 +59,11 @@ class TestGeneralSettingsReader:
 
     def test_get_monitored_accounts(self, general_settings_reader):
         monitored_accounts = general_settings_reader.get_monitored_accounts()
-        assert monitored_accounts == {
-            "account1": "Details for account 1",
-            "account2": "Details for account 2",
-        }
+        assert monitored_accounts == [{"name": "account1"}, {"name": "account2"}]
 
     def test_get_delivery_methods(self, general_settings_reader):
         delivery_methods = general_settings_reader.get_delivery_methods()
-        assert delivery_methods == {
-            "method1": "Details for method 1",
-            "method2": "Details for method 2",
-        }
+        assert delivery_methods == [{"name": "method1"}, {"name": "method2"}]
 
 
 class TestMonitoringSettingsReader:
