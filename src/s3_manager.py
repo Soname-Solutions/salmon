@@ -20,15 +20,15 @@ class S3Manager:
     def __init__(self):
         self.s3_client = boto3.client("s3")
 
-    def download_settings_file(self, bucket_name: str, file_name: str) -> str:
-        """Downloads a file from the specified S3 bucket.
+    def read_settings_file(self, bucket_name: str, file_name: str) -> str:
+        """Read a file from the specified S3 bucket.
 
         Args:
             bucket_name (str): The name of the S3 bucket.
-            file_name (str): The name of the file to download.
+            file_name (str): The name of the file to read.
 
         Returns:
-            str: The content of the downloaded file as a string or None if an error occurs.
+            str: The content of the file as a string or None if an error occurs.
 
         """
         try:
@@ -36,4 +36,4 @@ class S3Manager:
             settings_data = response["Body"].read().decode("utf-8")
             return settings_data
         except Exception as e:
-            raise Exception(f"Error downloading settings file {file_name} : {e}")
+            raise Exception(f"Error reading settings file {file_name} : {e}")

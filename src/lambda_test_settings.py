@@ -1,4 +1,5 @@
 import os
+import json
 
 from constants import SettingFileNames
 
@@ -16,10 +17,10 @@ def lambda_handler(event, context):
     s3 = S3Manager()
 
     # Load setting files
-    monitoring_group_settings = s3.download_settings_file(
+    monitoring_group_settings = s3.read_settings_file(
         settings_s3_bucket_name, SettingFileNames.MONITORING_GROUPS_FILE_NAME
     )
-    recipient_settings = s3.download_settings_file(
+    recipient_settings = s3.read_settings_file(
         settings_s3_bucket_name, SettingFileNames.RECIPIENTS_FILE_NAME
     )
 
@@ -40,13 +41,15 @@ def lambda_handler(event, context):
     )
 
     # Get monitoring groups for a specific glue job/lambda function
-    glue_job_name = "ds-source1-historical-data-load"  # For testing -> in future retrieved from event input param
+    event_data = json.loads(event)  # For testing, in future replaced with EventHandler
     monitoring_groups = (
         monitoring_settings_reader.get_monitoring_groups_by_resource_names(
-            [glue_job_name]
+            [event_data["detail"]["jobName"]]
         )
     )
-    print(f"Monitoring groups for '{glue_job_name}': {monitoring_groups}")
+    print(
+        f"Monitoring groups for '{event_data['detail']['jobName']}': {monitoring_groups}"
+    )
 
     # Get recipients list for a list of monitoring groups (with the specified notification type)
     notification_type = (
@@ -61,6 +64,24 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    event = "{}"
+    test_event = """
+        {
+            "version": "0",
+            "id": "abcdef00-1234-5678-9abc-def012345678",
+            "detail-type": "Glue Job State Change",
+            "source": "aws.glue",
+            "account": "123456789012",
+            "time": "2017-09-07T18:57:21Z",
+            "region": "us-east-1",
+            "resources": [],
+            "detail": {
+                "jobName": "ds-source1-historical-data-load",
+                "severity": "INFO",
+                "state": "SUCCEEDED",
+                "jobRunId": "jr_abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+                "message": "Job run succeeded"
+            }
+        }
+        """
     context = ""
-    lambda_handler(event, context)
+    lambda_handler(test_event, context)

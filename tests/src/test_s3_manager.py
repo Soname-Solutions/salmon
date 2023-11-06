@@ -9,7 +9,7 @@ class TestS3Manager:
     def s3_manager(self):
         return S3Manager()
 
-    def test_download_settings_file_successful(self, s3_manager):
+    def test_read_settings_file_successful(self, s3_manager):
         bucket_name = "test_bucket"
         file_name = "test_file"
         content = "Sample content for the file"
@@ -20,10 +20,10 @@ class TestS3Manager:
         }
         s3_manager.s3_client.get_object = MagicMock(return_value=expected_response)
 
-        downloaded_content = s3_manager.download_settings_file(bucket_name, file_name)
+        downloaded_content = s3_manager.read_settings_file(bucket_name, file_name)
         assert downloaded_content == content
 
-    def test_download_settings_file_failure(self, s3_manager):
+    def test_read_settings_file_failure(self, s3_manager):
         bucket_name = "test_bucket"
         file_name = "non_existent_file"
 
@@ -33,6 +33,6 @@ class TestS3Manager:
         )
 
         with pytest.raises(Exception) as exc_info:
-            s3_manager.download_settings_file(bucket_name, file_name)
+            s3_manager.read_settings_file(bucket_name, file_name)
 
-        assert "Error downloading settings file" in str(exc_info.value)
+        assert "Error reading settings file" in str(exc_info.value)
