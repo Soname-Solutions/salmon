@@ -41,8 +41,10 @@ def lambda_handler(event, context):
 
     # Get monitoring groups for a specific glue job/lambda function
     glue_job_name = "ds-source1-historical-data-load"  # For testing -> in future retrieved from event input param
-    monitoring_groups = monitoring_settings_reader.get_monitoring_groups_by_resource_names(
-        [glue_job_name]
+    monitoring_groups = (
+        monitoring_settings_reader.get_monitoring_groups_by_resource_names(
+            [glue_job_name]
+        )
     )
     print(f"Monitoring groups for '{glue_job_name}': {monitoring_groups}")
 
@@ -50,7 +52,15 @@ def lambda_handler(event, context):
     notification_type = (
         "alert"  # For testing -> in future separate lambda functions for alert/digest?
     )
-    recipients_list = recipients_settings_reader.get_recipients_by_monitoring_groups_and_type(
-        monitoring_groups, notification_type
+    recipients_list = (
+        recipients_settings_reader.get_recipients_by_monitoring_groups_and_type(
+            monitoring_groups, notification_type
+        )
     )
     print(f"Recipients list for '{notification_type}': {recipients_list}")
+
+
+if __name__ == "__main__":
+    event = "{}"
+    context = ""
+    lambda_handler(event, context)

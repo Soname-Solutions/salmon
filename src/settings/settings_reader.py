@@ -1,4 +1,4 @@
-import fnmatch
+from fnmatch import fnmatch
 import json
 
 
@@ -21,7 +21,7 @@ class SettingsReader:
         get_setting: Retrieves a specific setting by its name.
 
     Raises:
-        json.JSONDecodeError: If there's an error parsing the JSON data.
+        JSONDecodeError: If there's an error parsing the JSON data.
 
     """
 
@@ -46,9 +46,9 @@ class SettingsReader:
         try:
             parsed_data = json.loads(settings_data)
             return parsed_data
-        except json.JSONDecodeError as e:
-            raise json.JSONDecodeError(
-                f"Error parsing JSON file {settings_file_name} : {e}"
+        except json.decoder.JSONDecodeError as e:
+            raise json.decoder.JSONDecodeError(
+                f"Error parsing JSON file {settings_file_name}", e.doc, e.pos
             )
 
     def get_settings_file_name(self) -> str:
@@ -153,7 +153,7 @@ class MonitoringSettingsReader(SettingsReader):
         Returns:
             list[str] : List of matched monitoring group names.
         """
-        matched_groups = set() # Prevent duplicates
+        matched_groups = set()  # Prevent duplicates
 
         for group in self.monitoring_groups:
             glue_jobs = group.get("glue_jobs", [])
@@ -163,20 +163,22 @@ class MonitoringSettingsReader(SettingsReader):
                 for job in glue_jobs:
                     job_name = job.get("name")
                     if job_name and (job_name == resource or "*" in job_name):
-                        if fnmatch.fnmatch(
+                        if fnmatch(
                             resource, job_name
                         ):  # Checks that name matches the wildcard pattern
                             matched_groups.add(group.get("group_name"))
 
                 for function in lambda_functions:
                     function_name = function.get("name")
-                    if function_name and (function_name == resource or "*" in function_name):
-                        if fnmatch.fnmatch(
+                    if function_name and (
+                        function_name == resource or "*" in function_name
+                    ):
+                        if fnmatch(
                             resource, function_name
                         ):  # Checks that name matches the wildcard pattern
                             matched_groups.add(group.get("group_name"))
-        
-        return list(matched_groups) 
+
+        return list(matched_groups)
 
 
 class RecipientsSettingsReader(SettingsReader):
@@ -221,7 +223,7 @@ class RecipientsSettingsReader(SettingsReader):
         Returns:
             list[dict] : List of recipient details for the specified monitoring group and notification type.
         """
-        matched_recipients = set() # Prevent duplicated recipients
+        matched_recipients = []
 
         for recipient in self.recipients:
             subscriptions = recipient.get("subscriptions", [])
@@ -230,9 +232,14 @@ class RecipientsSettingsReader(SettingsReader):
                     if subscription.get("monitoring_group") == monitoring_group:
                         if (
                             notification_type == "alert" and subscription.get("alerts")
-                        ) or (notification_type == "digest" and subscription.get("digest")):
-                            recipient_info = (recipient.get("recipient"),recipient.get("delivery_method"))
-                            matched_recipients.add(recipient_info)
+                        ) or (
+                            notification_type == "digest" and subscription.get("digest")
+                        ):
+                            recipient_info = {
+                                "recipient": recipient.get("recipient"),
+                                "delivery_method": recipient.get("delivery_method"),
+                            }
+                            if recipient_info not in matched_recipients:
+                                matched_recipients.append(recipient_info)
 
-
-        return [{"recipient": recipient, "delivery_method": delivery_method} for recipient, delivery_method in matched_recipients]
+        return matched_recipients

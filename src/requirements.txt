@@ -1,1 +1,1 @@
-boto3~=1.18.65  # AWS SDK for Python
+boto3  # AWS SDK for Python
