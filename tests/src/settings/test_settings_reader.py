@@ -91,6 +91,11 @@ class TestMonitoringSettingsReader:
                     "group_name": "Group2_intersected",
                     "glue_jobs": [{"name": "job6"}, {"name": "job7"}],
                     "lambda_functions": [{"name": "function3"}]
+                },
+                {
+                    "group_name": "Group1_wildcard",
+                    "glue_jobs": [{"name": "job*"}],
+                    "lambda_functions": [{"name": "function3"}]
                 }
             ]
         }
@@ -119,6 +124,11 @@ class TestMonitoringSettingsReader:
                 "glue_jobs": [{"name": "job6"}, {"name": "job7"}],
                 "lambda_functions": [{"name": "function3"}],
             },
+            {
+                "group_name": "Group1_wildcard",
+                "glue_jobs": [{"name": "job*"}],
+                "lambda_functions": [{"name": "function3"}],
+            },
         ]
 
     @pytest.fixture(scope="class")
@@ -140,7 +150,12 @@ class TestMonitoringSettingsReader:
                 resources
             )
         )
-        assert sorted(matched_groups) == ["Group1", "Group1_intersected", "Group2"]
+        assert sorted(matched_groups) == [
+            "Group1",
+            "Group1_intersected",
+            "Group1_wildcard",
+            "Group2",
+        ]
 
 
 class TestRecipientsSettingsReader:
