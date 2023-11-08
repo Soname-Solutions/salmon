@@ -1,5 +1,6 @@
 from aws_cdk import (
     Stack,
+    Fn,
     aws_s3 as s3,
     aws_events as events,
     aws_events_targets as targets,
@@ -8,15 +9,13 @@ from aws_cdk import (
     aws_iam as iam,
     aws_s3_deployment as s3deploy,
     aws_sqs as sqs,
-    aws_kms as kms,
-    aws_timestream as timestream,
     Duration
 )
 from constructs import Construct
 import os
 
 
-class InfraToolingStack(Stack):
+class InfraToolingAlertingStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
@@ -24,6 +23,9 @@ class InfraToolingStack(Stack):
         project_name = kwargs.pop("project_name", None)
 
         super().__init__(scope, construct_id, **kwargs)
+        
+        input_timestream_database_arn = Fn.import_value(f"output-{project_name}-metrics-events-storage-arn-{stage_name}")
+
 
         # Settings S3 bucket
         settings_bucket_name = f"s3-{project_name}-settings-{stage_name}"
@@ -40,20 +42,6 @@ class InfraToolingStack(Stack):
             sources=[s3deploy.Source.asset('../config/settings')],
             destination_bucket=settings_bucket,
             destination_key_prefix='settings'
-        )
-        
-        #AWS Timestream DB
-        timestream_kms_key = kms.Key(
-            self,
-            "salmonTimestreamKMSKey",
-            alias="salmon/timestream",
-            description="Key that protects Timestream data"
-        )
-        timestream_storage = timestream.CfnDatabase(
-            self,
-            "salmonTimestreamDB",
-            database_name=f"timestream-{project_name}-metrics-events-storage-{stage_name}",
-            kms_key_id=timestream_kms_key.key_id
         )
 
         # EventBridge Bus
@@ -95,7 +83,7 @@ class InfraToolingStack(Stack):
         notification_lambda_role.add_to_policy(iam.PolicyStatement(
             actions=["timestream:*"],
             effect=iam.Effect.ALLOW,
-            resources=[timestream_storage.attr_arn]
+            resources=[input_timestream_database_arn]
         ))
 
         # Notification Lambda

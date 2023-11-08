@@ -3,7 +3,7 @@
 if ($args.length -ge 2) {
     $env:AWS_PROFILE, $args = $args
     $env:STAGE_NAME,  $args = $args
-    npx cdk deploy --profile $env:AWS_PROFILE $args
+    npx cdk deploy --all --profile $env:AWS_PROFILE $args
     exit $lastExitCode
 } else {
     [console]::error.writeline("Provide aws profile and stage as first two args.")
