@@ -8,6 +8,8 @@ from aws_cdk import (
     aws_iam as iam,
     aws_s3_deployment as s3deploy,
     aws_sqs as sqs,
+    aws_kms as kms,
+    aws_timestream as timestream,
     Duration
 )
 from constructs import Construct
@@ -38,6 +40,20 @@ class InfraToolingStack(Stack):
             sources=[s3deploy.Source.asset('../config/settings')],
             destination_bucket=settings_bucket,
             destination_key_prefix='settings'
+        )
+        
+        #AWS Timestream DB
+        timestream_kms_key = kms.Key(
+            self,
+            "salmonTimestreamKMSKey",
+            alias="salmon/timestream",
+            description="Key that protects Timestream data"
+        )
+        timestream_storage = timestream.CfnDatabase(
+            self,
+            "salmonTimestreamDB",
+            database_name=f"timestream-{project_name}-metrics-events-storage-{stage_name}",
+            kms_key_id=timestream_kms_key.key_id
         )
 
         # EventBridge Bus
@@ -74,6 +90,12 @@ class InfraToolingStack(Stack):
             actions=["ses:SendEmail", "ses:SendRawEmail"],
             effect=iam.Effect.ALLOW,
             resources=["*"]
+        ))
+        
+        notification_lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=["timestream:*"],
+            effect=iam.Effect.ALLOW,
+            resources=[timestream_storage.attr_arn]
         ))
 
         # Notification Lambda
