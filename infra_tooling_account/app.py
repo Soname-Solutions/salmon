@@ -3,8 +3,8 @@ import os
 
 import aws_cdk as cdk
 
-from infra_tooling.infra_tooling_common_stack import InfraToolingCommonStack
-from infra_tooling.infra_tooling_alerting_stack import InfraToolingAlertingStack
+from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
+from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlertingStack
 
 if "STAGE_NAME" in os.environ:
     pass

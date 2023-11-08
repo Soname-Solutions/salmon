@@ -3,7 +3,7 @@ import os
 
 import aws_cdk as cdk
 
-from infra_monitoring.infra_monitoring_stack import InfraMonitoringStack
+from infra_monitoring_account.infra_monitoring_stack import InfraMonitoringStack
 
 
 app = cdk.App()

@@ -1,7 +1,7 @@
 import aws_cdk as core
 import aws_cdk.assertions as assertions
 
-from infra_monitoring.infra_monitoring_stack import InfraMonitoringStack
+from infra_monitoring_account.infra_monitoring_stack import InfraMonitoringStack
 
 # example tests. To run these tests, uncomment this file along with the example
 # resource in infra_monitoring/infra_monitoring_stack.py
