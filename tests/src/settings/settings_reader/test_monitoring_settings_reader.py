@@ -32,6 +32,11 @@ class TestMonitoringSettingsReader:
                     "group_name": "Group1_wildcard",
                     "glue_jobs": [{"name": "job*"}],
                     "lambda_functions": [{"name": "function3"}]
+                },
+                {
+                    "group_name": "Group2_wildcard",
+                    "glue_jobs": [{"name": "*"}],
+                    "lambda_functions": [{"name": "function3"}]
                 }
             ]
         }
@@ -65,6 +70,11 @@ class TestMonitoringSettingsReader:
                 "glue_jobs": [{"name": "job*"}],
                 "lambda_functions": [{"name": "function3"}],
             },
+            {
+                "group_name": "Group2_wildcard",
+                "glue_jobs": [{"name": "*"}],
+                "lambda_functions": [{"name": "function3"}],
+            },
         ]
 
     @pytest.fixture(scope="class")
@@ -91,4 +101,5 @@ class TestMonitoringSettingsReader:
             "Group1_intersected",
             "Group1_wildcard",
             "Group2",
+            "Group2_wildcard",
         ]
