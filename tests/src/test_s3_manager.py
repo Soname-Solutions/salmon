@@ -1,7 +1,7 @@
 import pytest
 from botocore.exceptions import ClientError
 from unittest.mock import MagicMock
-from src.s3_manager import S3Manager
+from src.s3_manager import S3Manager, S3ManagerReadException
 
 
 class TestS3Manager:
@@ -20,8 +20,8 @@ class TestS3Manager:
         }
         s3_manager.s3_client.get_object = MagicMock(return_value=expected_response)
 
-        downloaded_content = s3_manager.read_settings_file(bucket_name, file_name)
-        assert downloaded_content == content
+        read_content = s3_manager.read_settings_file(bucket_name, file_name)
+        assert read_content == content
 
     def test_read_settings_file_failure(self, s3_manager):
         bucket_name = "test_bucket"
@@ -32,7 +32,7 @@ class TestS3Manager:
             side_effect=ClientError({"Error": {}}, "operation_name")
         )
 
-        with pytest.raises(Exception) as exc_info:
+        with pytest.raises(S3ManagerReadException) as exc_info:
             s3_manager.read_settings_file(bucket_name, file_name)
 
         assert "Error reading settings file" in str(exc_info.value)

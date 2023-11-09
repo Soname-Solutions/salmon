@@ -29,10 +29,6 @@ class TestSettingsReader:
 
         assert "Error parsing JSON file" in str(exc_info.value)
 
-    def test_get_settings_file_name(self, settings_reader):
-        # Test getting settings file name
-        assert settings_reader.get_settings_file_name() == "test.json"
-
     def test_get_setting(self, settings_reader):
         # Test getting a specific setting by name
         assert settings_reader.get_setting("key1") == "value1"

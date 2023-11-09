@@ -25,8 +25,13 @@ class SettingsReader:
     """
 
     def __init__(self, settings_file_name: str, settings_data: str):
-        self.settings_file_name = settings_file_name
+        self._settings_file_name = settings_file_name
         self.settings = self.parse_json(settings_data, settings_file_name)
+
+    @property
+    def settings_file_name(self) -> str:
+        """Property to get the name of the settings file."""
+        return self._settings_file_name
 
     def parse_json(self, settings_data: str, settings_file_name: str) -> dict:
         """Parses the input JSON data into a Python dictionary.
@@ -49,15 +54,6 @@ class SettingsReader:
             raise json.decoder.JSONDecodeError(
                 f"Error parsing JSON file {settings_file_name}", e.doc, e.pos
             )
-
-    def get_settings_file_name(self) -> str:
-        """Retrieves the name of the settings file.
-
-        Returns:
-            str: Name of the settings file.
-
-        """
-        return self.settings_file_name
 
     def get_setting(self, setting_name: str):
         """Retrieves a specific setting by its name.

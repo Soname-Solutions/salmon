@@ -49,22 +49,15 @@ class MonitoringSettingsReader(SettingsReader):
             lambda_functions = group.get("lambda_functions", [])
 
             for resource in resources:
-                for job in glue_jobs:
-                    job_name = job.get("name")
-                    if job_name and (job_name == resource or "*" in job_name):
-                        if fnmatch(
-                            resource, job_name
-                        ):  # Checks that name matches the wildcard pattern
-                            matched_groups.add(group.get("group_name"))
-
-                for function in lambda_functions:
-                    function_name = function.get("name")
-                    if function_name and (
-                        function_name == resource or "*" in function_name
-                    ):
-                        if fnmatch(
-                            resource, function_name
-                        ):  # Checks that name matches the wildcard pattern
-                            matched_groups.add(group.get("group_name"))
+                matched_groups.update(
+                    group.get("group_name")
+                    for job in glue_jobs
+                    if job.get("name") and fnmatch(resource, job.get("name"))
+                )
+                matched_groups.update(
+                    group.get("group_name")
+                    for function in lambda_functions
+                    if function.get("name") and fnmatch(resource, function.get("name"))
+                )
 
         return list(matched_groups)

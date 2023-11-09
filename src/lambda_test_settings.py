@@ -8,6 +8,24 @@ from settings.settings_reader import MonitoringSettingsReader, RecipientsSetting
 
 
 def lambda_handler(event, context):
+    """
+    Lambda function to process event data, retrieve settings from an S3 bucket, and identify recipients based on monitoring groups.
+
+    Args:
+        event (object): Event data containing details about the AWS resource state change.
+        context: (object): AWS Lambda context (not utilized in this function).
+
+    Raises:
+        S3ManagerReadException: If there is an error reading settings file from S3 bucket.
+        ValueError: If the monitoring group settings or recipient settings are empty.
+
+    Notes:
+        - This function requires environment variable SETTINGS_S3_BUCKET_NAME to access S3 settings bucket.
+        - It reads monitoring group and recipient settings files from S3.
+        - Uses the provided event data to fetch monitoring groups and recipient details based on the AWS resource state change information.
+        - Prints monitoring groups and recipient lists for testing purposes.
+
+    """
     # Get environment variables
     settings_s3_bucket_name = os.environ.get("settings_s3_bucket_name")
 
