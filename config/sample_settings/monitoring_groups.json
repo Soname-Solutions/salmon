@@ -1,5 +1,5 @@
 {
-    "Monitoring_Groups": [
+    "monitoring_groups": [
         {
             "group_name": "pipeline_source1",
             "glue_jobs": [
@@ -16,6 +16,16 @@
                 {
                     "name": "ds-source1-clean-to-ontology-full-load",
                     "sla_seconds": 1200,
+                    "minimum_number_of_runs": 2
+                }
+            ]
+        },
+        {
+            "group_name": "pipeline_source1_all",
+            "glue_jobs": [
+                {
+                    "name": "ds-source1-*",
+                    "sla_seconds": 2400,
                     "minimum_number_of_runs": 2
                 }
             ]
