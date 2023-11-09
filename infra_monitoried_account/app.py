@@ -3,11 +3,11 @@ import os
 
 import aws_cdk as cdk
 
-from infra_monitoring_account.infra_monitoring_stack import InfraMonitoringStack
+from infra_monitored_account.infra_monitored_stack import InfraMonitoredStack
 
 
 app = cdk.App()
-InfraMonitoringStack(app, "InfraMonitoringStack",
+InfraMonitoredStack(app, "InfraMonitoringStack",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.
