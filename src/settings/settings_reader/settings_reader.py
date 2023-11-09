@@ -6,10 +6,6 @@ class SettingsReader:
 
     This class provides functionality to read and access settings from a JSON file.
 
-    Args:
-        settings_file_name (str): The name of the settings file.
-        settings_data (str): The content of the settings file in JSON format.
-
     Attributes:
         settings_file_name (str): Name of the settings file.
         settings (dict): Parsed settings data as a dictionary.
@@ -25,6 +21,12 @@ class SettingsReader:
     """
 
     def __init__(self, settings_file_name: str, settings_data: str):
+        """SettingsReader class constructor.
+
+        Args:
+            settings_file_name (str): The name of the settings file.
+            settings_data (str): The content of the settings file in JSON format.
+        """
         self._settings_file_name = settings_file_name
         self.settings = self.parse_json(settings_data, settings_file_name)
 

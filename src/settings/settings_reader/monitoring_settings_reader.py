@@ -8,10 +8,6 @@ class MonitoringSettingsReader(SettingsReader):
 
     This class extends the SettingsReader to provide access to Monitoring settings from a JSON file.
 
-    Args:
-        settings_file_name (str): The name of the Monitoring settings file.
-        settings_data (str): The content of the Monitoring settings file in JSON format.
-
     Attributes:
         monitoring_groups (dict): Dictionary of monitoring groups.
 
@@ -22,6 +18,12 @@ class MonitoringSettingsReader(SettingsReader):
     """
 
     def __init__(self, settings_file_name: str, settings_data: str):
+        """MonitoringSettingsReader class constructor.
+
+        Args:
+            settings_file_name (str): The name of the Monitoring settings file.
+            settings_data (str): The content of the Monitoring settings file in JSON format.
+        """
         super().__init__(settings_file_name, settings_data)
         self.monitoring_groups = self.get_setting("monitoring_groups")
 

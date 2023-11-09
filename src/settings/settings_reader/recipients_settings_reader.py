@@ -6,10 +6,6 @@ class RecipientsSettingsReader(SettingsReader):
 
     This class extends the SettingsReader to provide access to Recipients settings from a JSON file.
 
-    Args:
-        settings_file_name (str): The name of the Recipients settings file.
-        settings_data (str): The content of the Recipients settings file in JSON format.
-
     Attributes:
         recipients (dict): Dictionary of recipient details.
 
@@ -20,6 +16,12 @@ class RecipientsSettingsReader(SettingsReader):
     """
 
     def __init__(self, settings_file_name: str, settings_data: str):
+        """RecipientsSettingsReader class constructor.
+
+        Args:
+            settings_file_name (str): The name of the Recipients settings file.
+            settings_data (str): The content of the Recipients settings file in JSON format.
+        """
         super().__init__(settings_file_name, settings_data)
         self.recipients = self.get_setting("recipients")
 

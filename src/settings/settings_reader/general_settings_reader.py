@@ -6,10 +6,6 @@ class GeneralSettingsReader(SettingsReader):
 
     This class extends the SettingsReader to provide access to General settings from a JSON file.
 
-    Args:
-        settings_file_name (str): The name of the General settings file.
-        settings_data (str): The content of the General settings file in JSON format.
-
     Attributes:
         monitored_accounts (dict): Dictionary of monitored accounts.
         delivery_methods (dict): Dictionary of delivery methods.
@@ -21,6 +17,12 @@ class GeneralSettingsReader(SettingsReader):
     """
 
     def __init__(self, settings_file_name: str, settings_data: str):
+        """GeneralSettingsReader class constructor.
+
+        Args:
+            settings_file_name (str): The name of the General settings file.
+            settings_data (str): The content of the General settings file in JSON format.
+        """
         super().__init__(settings_file_name, settings_data)
         self.monitored_accounts = self.get_setting("monitored_accounts")
         self.delivery_methods = self.get_setting("delivery_methods")
