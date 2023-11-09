@@ -13,6 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
+import json
 
 
 class InfraToolingAlertingStack(Stack):
@@ -50,6 +51,27 @@ class InfraToolingAlertingStack(Stack):
             "salmonNotificationsBus",
             event_bus_name=f"eventbus-{project_name}-notification-{stage_name}"
         )
+        
+        #EventBridge bus resource policy
+        general_settings_file_path = "../config/settings/general.json"
+        with open(general_settings_file_path) as f:
+            try:
+                general_config = json.load(f)
+            except json.decoder.JSONDecodeError as e:
+                raise json.decoder.JSONDecodeError(
+                f"Error parsing JSON file {general_settings_file_path}", e.doc, e.pos
+            )
+        
+        monitored_account_ids = [account["AccountId"] for account in general_config["monitored_accounts"]]
+        monitored_principals = [iam.AccountPrincipal(account_id) for account_id in monitored_account_ids]
+            
+        notification_bus.add_to_resource_policy(iam.PolicyStatement(
+            sid="AllowMonitoredAccountsPutEvents",
+            actions=["events:PutEvents"],
+            effect=iam.Effect.ALLOW,
+            resources=[notification_bus.event_bus_arn],
+            principals=monitored_principals
+        ))
 
         # Notification Lambda Eventbridge rule
         notification_lambda_event_rule = events.Rule(
