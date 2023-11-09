@@ -3,18 +3,11 @@ import os
 
 import aws_cdk as cdk
 
-from infra_tooling.infra_tooling_stack import InfraToolingStack
+from infra_monitored_account.infra_monitored_stack import InfraMonitoredStack
 
-if "STAGE_NAME" in os.environ:
-    pass
-else:
-    exec('raise ValueError("Environment variable STAGE_NAME is undefined")')
-stage_name = os.environ["STAGE_NAME"]
-
-project_name = "salmon"
 
 app = cdk.App()
-InfraToolingStack(app, f"cf-{project_name}-InfraToolingStack-{stage_name}", stage_name=stage_name, project_name=project_name
+InfraMonitoredStack(app, "InfraMonitoringStack",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.

@@ -1,18 +1,21 @@
 from aws_cdk import (
     Stack,
+    Fn,
     aws_s3 as s3,
     aws_events as events,
+    aws_events_targets as targets,
     Tags,
     aws_lambda as lambda_,
     aws_iam as iam,
     aws_s3_deployment as s3deploy,
+    aws_sqs as sqs,
     Duration
 )
 from constructs import Construct
 import os
 
 
-class InfraToolingStack(Stack):
+class InfraToolingAlertingStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
 
@@ -20,6 +23,9 @@ class InfraToolingStack(Stack):
         project_name = kwargs.pop("project_name", None)
 
         super().__init__(scope, construct_id, **kwargs)
+        
+        input_timestream_database_arn = Fn.import_value(f"output-{project_name}-metrics-events-storage-arn-{stage_name}")
+
 
         # Settings S3 bucket
         settings_bucket_name = f"s3-{project_name}-settings-{stage_name}"
@@ -45,6 +51,16 @@ class InfraToolingStack(Stack):
             event_bus_name=f"eventbus-{project_name}-notification-{stage_name}"
         )
 
+        # Notification Lambda Eventbridge rule
+        notification_lambda_event_rule = events.Rule(
+            self,
+            "salmonNotificationLambdaEventRule",
+            rule_name=f"eventbusrule-{
+                project_name}-notification-lambda-{stage_name}",
+            event_bus=notification_bus,
+            event_pattern=events.EventPattern(source=events.Match.prefix("aws"))
+        )
+
         # Notification Lambda Role
         notification_lambda_role = iam.Role(
             self, "notificationLambdaRole",
@@ -52,17 +68,22 @@ class InfraToolingStack(Stack):
             role_name=f"role-{project_name}-notification-lambda-{stage_name}"
         )
 
-        settings_bucket_arn = f'arn:aws:s3:::{settings_bucket_name}/*'
         notification_lambda_role.add_to_policy(iam.PolicyStatement(
             actions=["s3:GetObject"],
             effect=iam.Effect.ALLOW,
-            resources=[settings_bucket_arn],
+            resources=[settings_bucket.bucket_arn],
         ))
 
         notification_lambda_role.add_to_policy(iam.PolicyStatement(
             actions=["ses:SendEmail", "ses:SendRawEmail"],
             effect=iam.Effect.ALLOW,
             resources=["*"]
+        ))
+        
+        notification_lambda_role.add_to_policy(iam.PolicyStatement(
+            actions=["timestream:*"],
+            effect=iam.Effect.ALLOW,
+            resources=[input_timestream_database_arn]
         ))
 
         # Notification Lambda
@@ -78,6 +99,21 @@ class InfraToolingStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={'SETTINGS_S3_BUCKET_NAME': settings_bucket_name},
             role=notification_lambda_role
+        )
+
+        # Notification Lambda EventBridge Rule Target
+        notification_event_dlq = sqs.Queue(
+            self,
+            "notificationEventDlq",
+            queue_name=f"queue-{project_name}-notification-dlq-{stage_name}"
+        )
+
+        notification_lambda_event_rule.add_target(
+            targets.LambdaFunction(
+                notification_lambda,
+                dead_letter_queue=notification_event_dlq,
+                retry_attempts=3
+            )
         )
 
         Tags.of(self).add("stage_name", stage_name)
