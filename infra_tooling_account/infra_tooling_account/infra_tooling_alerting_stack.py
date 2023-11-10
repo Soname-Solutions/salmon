@@ -53,6 +53,7 @@ class InfraToolingAlertingStack(Stack):
         )
 
         # EventBridge bus resource policy
+        # TODO: file validation
         general_settings_file_path = "../config/settings/general.json"
         with open(general_settings_file_path) as f:
             try:
@@ -65,7 +66,7 @@ class InfraToolingAlertingStack(Stack):
                 )
 
         monitored_account_ids = [
-            account["AccountId"] for account in general_config["monitored_accounts"]
+            account["AccountId"] for account in general_config["monitored_environments"]
         ]
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids

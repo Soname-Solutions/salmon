@@ -17,6 +17,7 @@ class InfraMonitoredStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # General settings config
+        # TODO: file validation
         general_settings_file_path = "../config/settings/general.json"
         with open(general_settings_file_path) as f:
             try:
@@ -37,8 +38,8 @@ class InfraMonitoredStack(Stack):
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
 
-        tooling_account_id = general_config["tooling_account"]["AccountId"]
-        tooling_account_region = general_config["tooling_account"]["Region"]
+        tooling_account_id = general_config["tooling_environment"]["AccountId"]
+        tooling_account_region = general_config["tooling_environment"]["Region"]
         cross_account_event_bus_name = (
             f"eventbus-{project_name}-notification-{stage_name}"
         )
