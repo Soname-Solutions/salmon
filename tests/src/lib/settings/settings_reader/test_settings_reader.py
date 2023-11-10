@@ -1,6 +1,6 @@
 import pytest
 import json
-from src.settings.settings_reader import SettingsReader
+from src.lib.settings.settings_reader import SettingsReader
 from json.decoder import JSONDecodeError
 
 

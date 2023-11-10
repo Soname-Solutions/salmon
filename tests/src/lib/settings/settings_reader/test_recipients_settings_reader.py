@@ -1,5 +1,5 @@
 import pytest
-from src.settings.settings_reader import RecipientsSettingsReader
+from src.lib.settings.settings_reader import RecipientsSettingsReader
 
 
 class TestRecipientsSettingsReader:
