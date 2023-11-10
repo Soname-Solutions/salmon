@@ -63,14 +63,23 @@ class InfraMonitoredStack(Stack):
             event_pattern=events.EventPattern(source=["aws.glue"]),
         )
 
-        glue_alerting_event_rule.add_target(
-            target=targets.EventBus(
-                event_bus=events.EventBus.from_event_bus_arn(
-                    self, "CrossAccountEventBus", cross_account_event_bus_arn
-                ),
-                role=cross_account_bus_role,
-            )
+        # EventBridge Step Functions rule
+        step_functions_alerting_event_rule = events.Rule(
+            self,
+            "salmonStepFunctionsAlertingEventRule",
+            rule_name=f"eventbusrule-{project_name}-step-functions-{stage_name}",
+            event_pattern=events.EventPattern(source=["aws.states"]),
         )
+
+        rule_target = targets.EventBus(
+            event_bus=events.EventBus.from_event_bus_arn(
+                self, "CrossAccountEventBus", cross_account_event_bus_arn
+            ),
+            role=cross_account_bus_role,
+        )
+
+        glue_alerting_event_rule.add_target(rule_target)
+        step_functions_alerting_event_rule.add_target(rule_target)
 
         Tags.of(self).add("stage_name", stage_name)
         Tags.of(self).add("project_name", project_name)
