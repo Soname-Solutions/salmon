@@ -1,7 +1,7 @@
 import pytest
 from botocore.exceptions import ClientError
 from unittest.mock import MagicMock
-from src.s3_manager import S3Manager, S3ManagerReadException
+from src.lib.s3_manager import S3Manager, S3ManagerReadException
 
 
 class TestS3Manager:
