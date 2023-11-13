@@ -46,10 +46,10 @@ class InfraToolingAlertingStack(Stack):
         )
 
         # EventBridge Bus
-        notification_bus = events.EventBus(
+        alerting_bus = events.EventBus(
             self,
-            "salmonNotificationsBus",
-            event_bus_name=f"eventbus-{project_name}-notification-{stage_name}",
+            "salmonAlertingBus",
+            event_bus_name=f"eventbus-{project_name}-alerting-{stage_name}",
         )
 
         # EventBridge bus resource policy
@@ -75,34 +75,34 @@ class InfraToolingAlertingStack(Stack):
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
 
-        notification_bus.add_to_resource_policy(
+        alerting_bus.add_to_resource_policy(
             iam.PolicyStatement(
                 sid="AllowMonitoredAccountsPutEvents",
                 actions=["events:PutEvents"],
                 effect=iam.Effect.ALLOW,
-                resources=[notification_bus.event_bus_arn],
+                resources=[alerting_bus.event_bus_arn],
                 principals=monitored_principals,
             )
         )
 
-        # Notification Lambda Eventbridge rule
-        notification_lambda_event_rule = events.Rule(
+        # Alerting Lambda Eventbridge rule
+        alerting_lambda_event_rule = events.Rule(
             self,
-            "salmonNotificationLambdaEventRule",
-            rule_name=f"eventbusrule-{project_name}-notification-lambda-{stage_name}",
-            event_bus=notification_bus,
+            "salmonAlertingLambdaEventRule",
+            rule_name=f"eventbusrule-{project_name}-alerting-lambda-{stage_name}",
+            event_bus=alerting_bus,
             event_pattern=events.EventPattern(source=events.Match.prefix("aws")),
         )
 
-        # Notification Lambda Role
-        notification_lambda_role = iam.Role(
+        # Alerting Lambda Role
+        alerting_lambda_role = iam.Role(
             self,
-            "notificationLambdaRole",
+            "alertingLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=f"role-{project_name}-notification-lambda-{stage_name}",
+            role_name=f"role-{project_name}-alerting-lambda-{stage_name}",
         )
 
-        notification_lambda_role.add_to_policy(
+        alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
@@ -110,7 +110,7 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        notification_lambda_role.add_to_policy(
+        alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["ses:SendEmail", "ses:SendRawEmail"],
                 effect=iam.Effect.ALLOW,
@@ -118,7 +118,7 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        notification_lambda_role.add_to_policy(
+        alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["timestream:*"],
                 effect=iam.Effect.ALLOW,
@@ -126,31 +126,31 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        # Notification Lambda
-        notification_lambda_path = os.path.join("../src/", "lambda/notification-lambda")
-        notification_lambda = lambda_.Function(
+        # Alerting Lambda
+        alerting_lambda_path = os.path.join("../src/", "lambda/alerting-lambda")
+        alerting_lambda = lambda_.Function(
             self,
-            "salmonNotificationLambda",
-            function_name=f"lambda-{project_name}-notification-{stage_name}",
-            code=lambda_.Code.from_asset(notification_lambda_path),
+            "salmonAlertingLambda",
+            function_name=f"lambda-{project_name}-alerting-{stage_name}",
+            code=lambda_.Code.from_asset(alerting_lambda_path),
             handler="index.lambda_handler",
             timeout=Duration.seconds(30),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket_name},
-            role=notification_lambda_role,
+            role=alerting_lambda_role,
         )
 
-        # Notification Lambda EventBridge Rule Target
-        notification_event_dlq = sqs.Queue(
+        # Alerting Lambda EventBridge Rule Target
+        alerting_event_dlq = sqs.Queue(
             self,
-            "notificationEventDlq",
-            queue_name=f"queue-{project_name}-notification-dlq-{stage_name}",
+            "alertingEventDlq",
+            queue_name=f"queue-{project_name}-alerting-dlq-{stage_name}",
         )
 
-        notification_lambda_event_rule.add_target(
+        alerting_lambda_event_rule.add_target(
             targets.LambdaFunction(
-                notification_lambda,
-                dead_letter_queue=notification_event_dlq,
+                alerting_lambda,
+                dead_letter_queue=alerting_event_dlq,
                 retry_attempts=3,
             )
         )
