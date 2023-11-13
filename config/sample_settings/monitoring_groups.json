@@ -5,16 +5,19 @@
             "glue_jobs": [
                 {
                     "name": "ds-source1-historical-data-load",
+                    "monitored_environment_name": "Dept1 Account Dev",
                     "sla_seconds": 1200,
                     "minimum_number_of_runs": 0
                 },
                 {
                     "name": "ds-source1-source-to-raw-full-load",
+                    "monitored_environment_name": "Data Lake Account Dev",
                     "sla_seconds": 1300,
                     "minimum_number_of_runs": 2
                 },
                 {
                     "name": "ds-source1-clean-to-ontology-full-load",
+                    "monitored_environment_name": "Dept1 Account Dev",
                     "sla_seconds": 1200,
                     "minimum_number_of_runs": 2
                 }
@@ -25,6 +28,7 @@
             "glue_jobs": [
                 {
                     "name": "ds-source1-*",
+                    "monitored_environment_name": "Dept1 Account Dev",
                     "sla_seconds": 2400,
                     "minimum_number_of_runs": 2
                 }
@@ -35,6 +39,7 @@
             "glue_jobs": [
                 {
                     "name": "ds-sourceABC-*",
+                    "monitored_environment_name": "Data Lake Account Dev",
                     "sla_seconds": 2400,
                     "minimum_number_of_runs": 2
                 }
@@ -42,6 +47,7 @@
             "lambda_functions": [
                 {
                     "name": "validate_transfer_s3object_DEV",
+                    "monitored_environment_name": "Dept1 Account Dev",
                     "minimum_number_of_runs": 40
                 }
             ]
