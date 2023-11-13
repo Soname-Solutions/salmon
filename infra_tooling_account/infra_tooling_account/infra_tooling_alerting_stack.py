@@ -45,6 +45,7 @@ class InfraToolingAlertingStack(Stack):
             sources=[s3deploy.Source.asset("../config/settings")],
             destination_bucket=settings_bucket,
             destination_key_prefix="settings",
+            exclude=[".gitignore"],
         )
 
         # EventBridge Bus
