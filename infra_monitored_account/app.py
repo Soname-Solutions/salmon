@@ -9,11 +9,16 @@ if "STAGE_NAME" in os.environ:
     pass
 else:
     exec('raise ValueError("Environment variable STAGE_NAME is undefined")')
-stage_name = os.environ["STAGE_NAME"]
+STAGE_NAME = os.environ["STAGE_NAME"]
 
-project_name = "salmon"
+PROJECT_NAME = "salmon"
 
 app = cdk.App()
-InfraMonitoredStack(app, f"cf-{project_name}-InfraMonitoredStack-{stage_name}", project_name=project_name, stage_name=stage_name)
+InfraMonitoredStack(
+    app,
+    f"cf-{PROJECT_NAME}-InfraMonitoredStack-{STAGE_NAME}",
+    project_name=PROJECT_NAME,
+    stage_name=STAGE_NAME,
+)
 
 app.synth()
