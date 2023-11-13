@@ -10,6 +10,7 @@ from aws_cdk import (
     aws_s3_deployment as s3deploy,
     aws_sqs as sqs,
     Duration,
+    RemovalPolicy,
 )
 from constructs import Construct
 import os
@@ -34,6 +35,7 @@ class InfraToolingAlertingStack(Stack):
             "salmonSettingsBucket",
             bucket_name=settings_bucket_name,
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
         # S3 settings files deployment
