@@ -45,6 +45,7 @@ class InfraToolingAlertingStack(Stack):
             sources=[s3deploy.Source.asset("../config/settings")],
             destination_bucket=settings_bucket,
             destination_key_prefix="settings",
+            exclude=[".gitignore"],
         )
 
         # EventBridge Bus
@@ -79,7 +80,7 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_bus.add_to_resource_policy(
             iam.PolicyStatement(
-                sid="AllowMonitoredAccountsPutEvents",
+                sid=f"policy-{project_name}-AllowMonitoredAccountsPutEvents-{stage_name}",
                 actions=["events:PutEvents"],
                 effect=iam.Effect.ALLOW,
                 resources=[alerting_bus.event_bus_arn],
