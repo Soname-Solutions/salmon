@@ -53,7 +53,7 @@ class InfraToolingAlertingStack(Stack):
         )
 
         # EventBridge bus resource policy
-        # TODO: file validation
+        # TODO: reuse existing settings reader
         general_settings_file_path = "../config/settings/general.json"
         with open(general_settings_file_path) as f:
             try:
