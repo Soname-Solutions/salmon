@@ -1,18 +1,18 @@
 {
     "tooling_environment": {
-        "Name": "Tooling Account",
+        "Name": "Tooling Account Dev",
         "AccountId": "323432554",
         "Region": "eu-central-1"
     },
     "monitored_environments": [
         {
-            "Name": "Dept1 Account",
+            "Name": "Dept1 Account Dev",
             "AccountId": "123456789",
             "Region": "eu-central-1",
             "MetricsExtractorRoleArn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
         },
         {
-            "Name": "Data Lake Account",
+            "Name": "Data Lake Account Dev",
             "AccountId": "987654321",
             "Region": "eu-central-1",
             "MetricsExtractorRoleArn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
