@@ -65,9 +65,12 @@ class InfraToolingAlertingStack(Stack):
                     e.pos,
                 )
 
-        monitored_account_ids = [
-            account["AccountId"] for account in general_config["monitored_environments"]
-        ]
+        monitored_account_ids = set(
+            [
+                account["AccountId"]
+                for account in general_config["monitored_environments"]
+            ]
+        )
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
