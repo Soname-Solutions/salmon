@@ -1,5 +1,5 @@
 import pytest
-from src.lib.settings.settings_reader import MonitoringSettingsReader
+from lib.settings_reader import MonitoringSettingsReader
 
 
 class TestMonitoringSettingsReader:

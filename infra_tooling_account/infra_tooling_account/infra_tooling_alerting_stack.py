@@ -129,6 +129,32 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
+        # Lib Lambda Layer
+        # lib_layer_bucket_name = f"s3-{project_name}-lib-layer-{stage_name}"
+        # lib_layer_bucket = s3.Bucket(
+        #     self,
+        #     "salmonLibLayerBucket",
+        #     bucket_name=lib_layer_bucket_name,
+        #     block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+        #     removal_policy=RemovalPolicy.DESTROY,
+        # )
+
+        lib_settings_reader_layer = lambda_.LayerVersion(
+            self,
+            "salmonLibSettingsReaderLambdaLayer",
+            layer_version_name=f"layer-{project_name}-lib-settings-reader-{stage_name}",
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
+            code=lambda_.Code.from_asset("../lib/settings_reader"),
+        )
+
+        lib_layer = lambda_.LayerVersion(
+            self,
+            "salmonLibLambdaLayer",
+            layer_version_name=f"layer-{project_name}-lib-{stage_name}",
+            compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
+            code=lambda_.Code.from_asset("../src/lib"),
+        )
+
         # Alerting Lambda
         alerting_lambda_path = os.path.join("../src/", "lambda/alerting-lambda")
         alerting_lambda = lambda_.Function(
@@ -137,6 +163,7 @@ class InfraToolingAlertingStack(Stack):
             function_name=f"lambda-{project_name}-alerting-{stage_name}",
             code=lambda_.Code.from_asset(alerting_lambda_path),
             handler="index.lambda_handler",
+            layers=[lib_layer, lib_settings_reader_layer],
             timeout=Duration.seconds(30),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket_name},

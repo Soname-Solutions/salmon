@@ -1,5 +1,5 @@
 import pytest
-from src.lib.settings.settings_reader import GeneralSettingsReader
+from lib.settings_reader import GeneralSettingsReader
 
 
 class TestGeneralSettingsReader:
