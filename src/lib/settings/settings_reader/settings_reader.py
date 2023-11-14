@@ -28,12 +28,17 @@ class SettingsReader:
             settings_data (str): The content of the settings file in JSON format.
         """
         self._settings_file_name = settings_file_name
-        self.settings = self.parse_json(settings_data, settings_file_name)
+        self._settings = self.parse_json(settings_data, settings_file_name)
 
     @property
     def settings_file_name(self) -> str:
         """Property to get the name of the settings file."""
         return self._settings_file_name
+
+    @property
+    def settings(self) -> str:
+        """Property to get the name of the settings file."""
+        return self._settings
 
     def parse_json(self, settings_data: str, settings_file_name: str) -> dict:
         """Parses the input JSON data into a Python dictionary.
@@ -67,4 +72,4 @@ class SettingsReader:
             Any: The value of the specified setting.
 
         """
-        return self.settings.get(setting_name)
+        return self._settings.get(setting_name)

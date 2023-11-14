@@ -1,10 +1,13 @@
 import os
 import json
 
-from constants import SettingFileNames
+from lib.core.constants import SettingFileNames
 
-from s3_manager import S3Manager
-from settings.settings_reader import MonitoringSettingsReader, RecipientsSettingsReader
+from lib.aws import S3Manager
+from lib.settings.settings_reader import (
+    MonitoringSettingsReader,
+    RecipientsSettingsReader,
+)
 
 
 def lambda_handler(event, context):
