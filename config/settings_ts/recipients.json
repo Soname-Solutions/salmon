@@ -1,0 +1,20 @@
+{
+    "recipients": [
+        {
+            "recipient": "nastassia.paskrobka@soname.de",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "custom_group_1",
+                    "alerts": true,
+                    "digest": true
+                },
+                {
+                    "monitoring_group": "salmonts_lambdas",
+                    "alerts": false,
+                    "digest": true
+                }
+            ]
+        }
+    ]
+}
