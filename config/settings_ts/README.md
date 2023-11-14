@@ -1,1 +1,0 @@
-Sample settings for Testing Stand.
