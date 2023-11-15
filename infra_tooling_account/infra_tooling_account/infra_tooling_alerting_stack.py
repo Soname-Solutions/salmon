@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Fn,
+    CfnOutput,
     aws_s3 as s3,
     aws_events as events,
     aws_events_targets as targets,
@@ -68,6 +69,14 @@ class InfraToolingAlertingStack(Stack):
             internal_error_topic=internal_error_topic,
             timestream_database_arn=input_timestream_database_arn,
             alerting_lambda_event_rule=alerting_lambda_event_rule,
+        )
+
+        output_internal_error_topic_arn = CfnOutput(
+            self,
+            "salmonInternalErrorTopicArn",
+            value=internal_error_topic.topic_arn,
+            description="The ARN of the Internal Error Topic",
+            export_name=f"output-{self.project_name}-internal-error-topic-arn-{self.stage_name}",
         )
 
         Tags.of(self).add("stage_name", self.stage_name)
