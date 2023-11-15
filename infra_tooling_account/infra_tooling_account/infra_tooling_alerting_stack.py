@@ -91,7 +91,7 @@ class InfraToolingAlertingStack(Stack):
 
         monitored_account_ids = set(
             [
-                account["AccountId"]
+                account["account_id"]
                 for account in general_config["monitored_environments"]
             ]
         )

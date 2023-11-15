@@ -37,8 +37,8 @@ class InfraMonitoredStack(Stack):
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
 
-        tooling_account_id = general_config["tooling_environment"]["AccountId"]
-        tooling_account_region = general_config["tooling_environment"]["Region"]
+        tooling_account_id = general_config["tooling_environment"]["account_id"]
+        tooling_account_region = general_config["tooling_environment"]["region"]
         cross_account_event_bus_name = f"eventbus-{project_name}-alerting-{stage_name}"
         cross_account_event_bus_arn = f"arn:aws:events:{tooling_account_region}:{tooling_account_id}:event-bus/{cross_account_event_bus_name}"
         cross_account_bus_role.add_to_policy(
