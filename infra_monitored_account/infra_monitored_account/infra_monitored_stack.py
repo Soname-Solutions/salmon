@@ -1,6 +1,5 @@
 from aws_cdk import (
     Stack,
-    Tags,
     aws_iam as iam,
     aws_events as events,
     aws_events_targets as targets,
@@ -78,6 +77,3 @@ class InfraMonitoredStack(Stack):
 
         glue_alerting_event_rule.add_target(rule_target)
         step_functions_alerting_event_rule.add_target(rule_target)
-
-        Tags.of(self).add("stage_name", stage_name)
-        Tags.of(self).add("project_name", project_name)

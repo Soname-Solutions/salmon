@@ -18,12 +18,14 @@ app = cdk.App()
 InfraToolingCommonStack(
     app,
     f"cf-{PROJECT_NAME}-InfraToolingCommonStack-{STAGE_NAME}",
+    tags={"project_name": PROJECT_NAME, "stage_name": STAGE_NAME},
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
 )
 InfraToolingAlertingStack(
     app,
     f"cf-{PROJECT_NAME}-InfraToolingAlertingStack-{STAGE_NAME}",
+    tags={"project_name": PROJECT_NAME, "stage_name": STAGE_NAME},
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
 )
