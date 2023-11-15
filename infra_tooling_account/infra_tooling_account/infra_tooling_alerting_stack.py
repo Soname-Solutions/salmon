@@ -7,11 +7,9 @@ from aws_cdk import (
     Tags,
     aws_lambda as lambda_,
     aws_iam as iam,
-    aws_s3_deployment as s3deploy,
     aws_sns as sns,
     aws_sqs as sqs,
     Duration,
-    RemovalPolicy,
 )
 from constructs import Construct
 import os
@@ -25,6 +23,10 @@ class InfraToolingAlertingStack(Stack):
 
         super().__init__(scope, construct_id, **kwargs)
 
+        input_settings_bucket_arn = Fn.import_value(
+            f"output-{project_name}-settings-bucket-arn-{stage_name}"
+        )
+
         input_timestream_database_arn = Fn.import_value(
             f"output-{project_name}-metrics-events-storage-arn-{stage_name}"
         )
@@ -37,38 +39,25 @@ class InfraToolingAlertingStack(Stack):
             f"output-{project_name}-internal-error-topic-arn-{stage_name}"
         )
 
-        # Notification Queue
+        # Settings S3 Bucket Import
+        settings_bucket = s3.Bucket.from_bucket_arn(
+            self,
+            "salmonSettingsBucket",
+            bucket_arn=input_settings_bucket_arn,
+        )
+
+        # Notification Queue Import
         notification_queue = sqs.Queue.from_queue_arn(
             self,
             "salmonNotificationQueue",
             queue_arn=input_notification_queue_arn,
         )
 
-        # Internal Error Topic
+        # Internal Error Topic Import
         internal_error_topic = sns.Topic.from_topic_arn(
             self,
             "salmonInternalErrorTopic",
             topic_arn=input_internal_error_topic_arn,
-        )
-
-        # Settings S3 bucket
-        settings_bucket_name = f"s3-{project_name}-settings-{stage_name}"
-        settings_bucket = s3.Bucket(
-            self,
-            "salmonSettingsBucket",
-            bucket_name=settings_bucket_name,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-            removal_policy=RemovalPolicy.DESTROY,
-        )
-
-        # S3 settings files deployment
-        s3deploy.BucketDeployment(
-            self,
-            "salmonSettingsDeployment",
-            sources=[s3deploy.Source.asset("../config/settings")],
-            destination_bucket=settings_bucket,
-            destination_key_prefix="settings",
-            exclude=[".gitignore"],
         )
 
         # EventBridge Bus
@@ -171,7 +160,7 @@ class InfraToolingAlertingStack(Stack):
             timeout=Duration.seconds(30),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket_name,
+                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
                 "NOTIFICATION_QUEUE_NAME": notification_queue.queue_name,
             },
             role=alerting_lambda_role,

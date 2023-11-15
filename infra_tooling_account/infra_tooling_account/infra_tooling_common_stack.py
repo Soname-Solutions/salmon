@@ -3,6 +3,9 @@ from aws_cdk import (
     CfnOutput,
     Duration,
     Tags,
+    aws_s3 as s3,
+    aws_s3_deployment as s3deploy,
+    RemovalPolicy,
     aws_kms as kms,
     aws_iam as iam,
     aws_timestream as timestream,
@@ -21,6 +24,25 @@ class InfraToolingCommonStack(Stack):
         project_name = kwargs.pop("project_name", None)
 
         super().__init__(scope, construct_id, **kwargs)
+
+        # Settings S3 bucket
+        settings_bucket = s3.Bucket(
+            self,
+            "salmonSettingsBucket",
+            bucket_name=f"s3-{project_name}-settings-{stage_name}",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
+        # S3 settings files deployment
+        s3deploy.BucketDeployment(
+            self,
+            "salmonSettingsDeployment",
+            sources=[s3deploy.Source.asset("../config/settings")],
+            destination_bucket=settings_bucket,
+            destination_key_prefix="settings",
+            exclude=[".gitignore"],
+        )
 
         # AWS Timestream DB
         timestream_kms_key = kms.Key(
@@ -110,6 +132,14 @@ class InfraToolingCommonStack(Stack):
         )
 
         # Output Timestream DB Arn
+        output_settings_bucket_arn = CfnOutput(
+            self,
+            "salmonSettingsBucketArn",
+            value=settings_bucket.bucket_arn,
+            description="The ARN of the Settings S3 Bucket",
+            export_name=f"output-{project_name}-settings-bucket-arn-{stage_name}",
+        )
+
         output_timestream_database_arn = CfnOutput(
             self,
             "salmonTimestreamDBArn",
