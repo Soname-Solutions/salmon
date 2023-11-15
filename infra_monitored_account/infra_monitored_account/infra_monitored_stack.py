@@ -10,11 +10,21 @@ import json
 
 class InfraMonitoredStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
-        stage_name = kwargs.pop("stage_name", None)
-        project_name = kwargs.pop("project_name", None)
+        self.stage_name = kwargs.pop("stage_name", None)
+        self.project_name = kwargs.pop("project_name", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
+        (
+            cross_account_bus_role,
+            cross_account_event_bus_arn,
+        ) = self.create_cross_account_event_bus_role()
+
+        event_rules = self.create_event_rules(
+            cross_account_bus_role, cross_account_event_bus_arn
+        )
+
+    def create_cross_account_event_bus_role(self):
         # General settings config
         # TODO: reuse existing settings reader
         general_settings_file_path = "../config/settings/general.json"
@@ -28,18 +38,19 @@ class InfraMonitoredStack(Stack):
                     e.pos,
                 )
 
-        # IAM role and policies for sending events
         cross_account_bus_role = iam.Role(
             self,
             "salmonCrossAccountPutEventsRole",
-            role_name=f"role-{project_name}-cross-account-put-events-{stage_name}",
+            role_name=f"role-{self.project_name}-cross-account-put-events-{self.stage_name}",
             description="Role assumed by EventBridge to put events to the centralized bus",
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
 
         tooling_account_id = general_config["tooling_environment"]["account_id"]
         tooling_account_region = general_config["tooling_environment"]["region"]
-        cross_account_event_bus_name = f"eventbus-{project_name}-alerting-{stage_name}"
+        cross_account_event_bus_name = (
+            f"eventbus-{self.project_name}-alerting-{self.stage_name}"
+        )
         cross_account_event_bus_arn = f"arn:aws:events:{tooling_account_region}:{tooling_account_id}:event-bus/{cross_account_event_bus_name}"
         cross_account_bus_role.add_to_policy(
             iam.PolicyStatement(
@@ -52,11 +63,14 @@ class InfraMonitoredStack(Stack):
             iam.AccountPrincipal(tooling_account_id)
         )
 
+        return cross_account_bus_role, cross_account_event_bus_arn
+
+    def create_event_rules(self, cross_account_bus_role, cross_account_event_bus_arn):
         # EventBridge Glue rule
         glue_alerting_event_rule = events.Rule(
             self,
             "salmonGlueAlertingEventRule",
-            rule_name=f"eventbusrule-{project_name}-glue-{stage_name}",
+            rule_name=f"eventbusrule-{self.project_name}-glue-{self.stage_name}",
             event_pattern=events.EventPattern(source=["aws.glue"]),
         )
 
@@ -64,7 +78,7 @@ class InfraMonitoredStack(Stack):
         step_functions_alerting_event_rule = events.Rule(
             self,
             "salmonStepFunctionsAlertingEventRule",
-            rule_name=f"eventbusrule-{project_name}-step-functions-{stage_name}",
+            rule_name=f"eventbusrule-{self.project_name}-step-functions-{self.stage_name}",
             event_pattern=events.EventPattern(source=["aws.states"]),
         )
 
@@ -77,3 +91,5 @@ class InfraMonitoredStack(Stack):
 
         glue_alerting_event_rule.add_target(rule_target)
         step_functions_alerting_event_rule.add_target(rule_target)
+
+        return [glue_alerting_event_rule, step_functions_alerting_event_rule]
