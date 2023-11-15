@@ -8,6 +8,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_iam as iam,
     aws_s3_deployment as s3deploy,
+    aws_sns as sns,
     aws_sqs as sqs,
     Duration,
     RemovalPolicy,
@@ -26,6 +27,28 @@ class InfraToolingAlertingStack(Stack):
 
         input_timestream_database_arn = Fn.import_value(
             f"output-{project_name}-metrics-events-storage-arn-{stage_name}"
+        )
+
+        input_notification_queue_arn = Fn.import_value(
+            f"output-{project_name}-notification-queue-arn-{stage_name}"
+        )
+
+        input_internal_error_topic_arn = Fn.import_value(
+            f"output-{project_name}-internal-error-topic-arn-{stage_name}"
+        )
+
+        # Notification Queue
+        notification_queue = sqs.Queue.from_queue_arn(
+            self,
+            "salmonNotificationQueue",
+            queue_arn=input_notification_queue_arn,
+        )
+
+        # Internal Error Topic
+        internal_error_topic = sns.Topic.from_topic_arn(
+            self,
+            "salmonInternalErrorTopic",
+            topic_arn=input_internal_error_topic_arn,
         )
 
         # Settings S3 bucket
@@ -115,9 +138,17 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                actions=["queue:SendMessage"],
                 effect=iam.Effect.ALLOW,
-                resources=["*"],
+                resources=[notification_queue.queue_arn],
+            )
+        )
+
+        alerting_lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["sns:Publish"],
+                effect=iam.Effect.ALLOW,
+                resources=[internal_error_topic.topic_arn],
             )
         )
 
@@ -139,24 +170,17 @@ class InfraToolingAlertingStack(Stack):
             handler="index.lambda_handler",
             timeout=Duration.seconds(30),
             runtime=lambda_.Runtime.PYTHON_3_11,
-            environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket_name},
+            environment={
+                "SETTINGS_S3_BUCKET_NAME": settings_bucket_name,
+                "NOTIFICATION_QUEUE_NAME": notification_queue.queue_name,
+            },
             role=alerting_lambda_role,
+            retry_attempts=2,
+            dead_letter_topic=internal_error_topic,
         )
 
         # Alerting Lambda EventBridge Rule Target
-        alerting_event_dlq = sqs.Queue(
-            self,
-            "alertingEventDlq",
-            queue_name=f"queue-{project_name}-alerting-dlq-{stage_name}",
-        )
-
-        alerting_lambda_event_rule.add_target(
-            targets.LambdaFunction(
-                alerting_lambda,
-                dead_letter_queue=alerting_event_dlq,
-                retry_attempts=3,
-            )
-        )
+        alerting_lambda_event_rule.add_target(targets.LambdaFunction(alerting_lambda))
 
         Tags.of(self).add("stage_name", stage_name)
         Tags.of(self).add("project_name", project_name)
