@@ -14,20 +14,24 @@ STAGE_NAME = os.environ["STAGE_NAME"]
 
 PROJECT_NAME = "salmon"
 
+TAGS = {"project_name": PROJECT_NAME, "stage_name": STAGE_NAME}
+
 app = cdk.App()
-InfraToolingCommonStack(
+common_stack = InfraToolingCommonStack(
     app,
     f"cf-{PROJECT_NAME}-InfraToolingCommonStack-{STAGE_NAME}",
-    tags={"project_name": PROJECT_NAME, "stage_name": STAGE_NAME},
+    tags=TAGS,
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
 )
-InfraToolingAlertingStack(
+alerting_stack = InfraToolingAlertingStack(
     app,
     f"cf-{PROJECT_NAME}-InfraToolingAlertingStack-{STAGE_NAME}",
-    tags={"project_name": PROJECT_NAME, "stage_name": STAGE_NAME},
+    tags=TAGS,
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
 )
+
+alerting_stack.add_dependency(common_stack)
 
 app.synth()
