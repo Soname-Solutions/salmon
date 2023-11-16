@@ -17,6 +17,7 @@ app = cdk.App()
 InfraMonitoredStack(
     app,
     f"cf-{PROJECT_NAME}-InfraMonitoredStack-{STAGE_NAME}",
+    tags={"project_name": PROJECT_NAME, "stage_name": STAGE_NAME},
     project_name=PROJECT_NAME,
     stage_name=STAGE_NAME,
 )
