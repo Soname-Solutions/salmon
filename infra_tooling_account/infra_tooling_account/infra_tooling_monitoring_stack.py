@@ -144,6 +144,12 @@ class InfraToolingMonitoringStack(Stack):
             role_name=f"role-{self.project_name}-extract-metrics-lambda-{self.stage_name}",
         )
 
+        extract_metrics_lambda_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "service-role/AWSLambdaBasicExecutionRole"
+            )
+        )
+
         extract_metrics_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
