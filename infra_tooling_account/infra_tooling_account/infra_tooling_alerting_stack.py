@@ -1,11 +1,9 @@
 from aws_cdk import (
     Stack,
     Fn,
-    CfnOutput,
     aws_s3 as s3,
     aws_events as events,
     aws_events_targets as targets,
-    Tags,
     aws_lambda as lambda_,
     aws_iam as iam,
     aws_sns as sns,
@@ -71,17 +69,6 @@ class InfraToolingAlertingStack(Stack):
             alerting_lambda_event_rule=alerting_lambda_event_rule,
         )
 
-        output_internal_error_topic_arn = CfnOutput(
-            self,
-            "salmonInternalErrorTopicArn",
-            value=internal_error_topic.topic_arn,
-            description="The ARN of the Internal Error Topic",
-            export_name=f"output-{self.project_name}-internal-error-topic-arn-{self.stage_name}",
-        )
-
-        Tags.of(self).add("stage_name", self.stage_name)
-        Tags.of(self).add("project_name", self.project_name)
-
     def create_event_bus(self):
         alerting_bus = events.EventBus(
             self,
@@ -104,7 +91,7 @@ class InfraToolingAlertingStack(Stack):
 
         monitored_account_ids = set(
             [
-                account["AccountId"]
+                account["account_id"]
                 for account in general_config["monitored_environments"]
             ]
         )

@@ -2,8 +2,7 @@
     "tooling_environment": {
         "name": "Tooling Account [dev]",
         "account_id": "323432554",
-        "region": "eu-central-1",
-        "environment_admin_email": "admindatalake@company.com"
+        "region": "eu-central-1"
     },
     "monitored_environments": [
         {
