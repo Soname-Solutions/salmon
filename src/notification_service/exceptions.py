@@ -11,3 +11,8 @@ class AwsSesSenderException(SenderException):
 class AwsSesUserNotVerifiedException(Exception):
     """AWS SES user is not verified."""
     pass
+
+
+class AwsSesNoRelevantRecipientsException(Exception):
+    """No relevant recipients to send a message to in AWS SES."""
+    pass

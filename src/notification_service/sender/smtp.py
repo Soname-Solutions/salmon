@@ -1,7 +1,8 @@
-from typing import List
-
-from .message import Message
+from typing import List, TYPE_CHECKING
 from .base import Sender
+
+if TYPE_CHECKING:
+    from ..messages.message import Message
 
 
 class SmtpSender(Sender):

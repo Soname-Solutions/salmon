@@ -22,12 +22,13 @@ class File:
 
 class Message:
 
-    def __init__(self, body: str, header: str, file: File = None):
+    def __init__(self, body: str, header: str = None, file: File = None):
         """Ititiate message class.
 
         Args
             body (str): Message body to send.
             header (str): Message header.
+            file (File): File to attach.
         """
         self.body = body
         self.header = header

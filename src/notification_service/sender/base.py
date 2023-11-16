@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
-from .message import Message
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..messages import Message
 
 
 class Sender(ABC):
@@ -11,6 +14,10 @@ class Sender(ABC):
             message (Message): Message to send.
         """
         self._message = message
+
+    def pre_process(self) -> None:
+        pass
+
 
     @abstractmethod
     def send(self) -> None:

@@ -5,3 +5,4 @@ class SettingFileNames:
 
 class NotificationServiceConfig:
    SES_SENDER = "natallia.alkhimovich@soname.de"
+   ALERT_HEADER = "SDM [DEV] SAP Lean Glue Failure"
