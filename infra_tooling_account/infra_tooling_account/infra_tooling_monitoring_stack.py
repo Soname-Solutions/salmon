@@ -52,7 +52,10 @@ class InfraToolingMonitoringStack(Stack):
             settings_bucket=settings_bucket,            
             internal_error_topic=internal_error_topic,
             timestream_database_arn=input_timestream_database_arn
-        )        
+        )    
+
+        metrics_collection_interval_min= self.get_metrics_collection_interval_min()
+        print(metrics_collection_interval_min)
 
     #     extract-metrics_bus, extract-metrics_lambda_event_rule = self.create_event_bus()
 
@@ -114,6 +117,19 @@ class InfraToolingMonitoringStack(Stack):
 
     #     return extract-metrics_bus, extract-metrics_lambda_event_rule
 
+    def get_metrics_collection_interval_min(self):
+        # TODO: reuse existing settings reader
+        general_settings_file_path = "../config/settings/general.json"
+        with open(general_settings_file_path) as f:
+            general_config = json.load(f)
+            tooling_section = general_config["tooling_environment"]
+            key = "metrics_collection_interval_min"
+            if key in tooling_section:
+                return tooling_section[key]
+            else:
+                raise Exception("metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)")
+
+            
     def create_extract_metrics_lambdas(
         self,
         settings_bucket,

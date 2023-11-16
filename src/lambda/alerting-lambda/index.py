@@ -1,6 +1,6 @@
 import os
 import json
-
+import lib.settings.settings_reader
 
 def generate_hello_world():
     return "Hello World!"

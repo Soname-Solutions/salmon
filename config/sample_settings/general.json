@@ -2,7 +2,8 @@
     "tooling_environment": {
         "name": "Tooling Account [dev]",
         "account_id": "323432554",
-        "region": "eu-central-1"
+        "region": "eu-central-1",
+        "metrics_collection_interval_min" : 5
     },
     "monitored_environments": [
         {
