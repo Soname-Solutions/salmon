@@ -16,12 +16,61 @@ import json
 
 
 class InfraToolingMonitoringStack(Stack):
+    """
+    This class represents a stack for infrastructure tooling and monitoring in AWS CloudFormation.
+
+    Attributes:
+        stage_name (str): The stage name of the deployment, used for naming resources.
+        project_name (str): The name of the project, used for naming resources.
+
+    Methods:
+        get_common_stack_references(): Retrieves references to artifacts created in common stack (like S3 bucket, SNS topic, ...)
+        get_metrics_collection_interval_min(): Fetches the interval for metrics collection from general.json.
+        create_extract_metrics_lambdas(settings_bucket, internal_error_topic, timestream_database_arn):
+            Creates Lambda functions for extracting metrics.
+    """
+
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
+        (
+            settings_bucket,
+            internal_error_topic,
+            input_timestream_database_arn,
+        ) = self.get_common_stack_references()
+
+        (
+            extract_metrics_orch_lambda,
+            extract_metrics_lambda,
+        ) = self.create_extract_metrics_lambdas(
+            settings_bucket=settings_bucket,
+            internal_error_topic=internal_error_topic,
+            timestream_database_arn=input_timestream_database_arn,
+        )
+
+        metrics_collection_interval_min = self.get_metrics_collection_interval_min()
+
+        rule = events.Rule(
+            self,
+            "MetricsExtractionScheduleRule",
+            schedule=events.Schedule.rate(
+                Duration.minutes(metrics_collection_interval_min)
+            ),
+            rule_name=f"rule-{self.project_name}-metrics-extract-cron-{self.stage_name}",
+        )
+        rule.add_target(targets.LambdaFunction(extract_metrics_orch_lambda))
+
+    def get_common_stack_references(self):
+        """
+        Retrieves common stack references required for the stack's operations. These include the S3 bucket for settings,
+        the ARN of the internal error SNS topic, and the Timestream database ARN.
+
+        Returns:
+            tuple: A tuple containing references to the settings S3 bucket, internal error topic, and Timestream database ARN.
+        """
         input_settings_bucket_arn = Fn.import_value(
             f"output-{self.project_name}-settings-bucket-arn-{self.stage_name}"
         )
@@ -48,76 +97,18 @@ class InfraToolingMonitoringStack(Stack):
             topic_arn=input_internal_error_topic_arn,
         )
 
-        extract_metrics_orch_lambda, extract_metrics_lambda = self.create_extract_metrics_lambdas(
-            settings_bucket=settings_bucket,            
-            internal_error_topic=internal_error_topic,
-            timestream_database_arn=input_timestream_database_arn
-        )    
-
-        metrics_collection_interval_min= self.get_metrics_collection_interval_min()
-        print(metrics_collection_interval_min)
-
-    #     extract-metrics_bus, extract-metrics_lambda_event_rule = self.create_event_bus()
-
-    #     extract-metrics_lambda = self.create_extract-metrics_lambda(
-    #         settings_bucket=settings_bucket,
-    #         notification_queue=notification_queue,
-    #         internal_error_topic=internal_error_topic,
-    #         timestream_database_arn=input_timestream_database_arn,
-    #         extract-metrics_lambda_event_rule=extract-metrics_lambda_event_rule,
-    #     )
-
-    # def create_event_bus(self):
-    #     extract-metrics_bus = events.EventBus(
-    #         self,
-    #         "salmonMonitoringBus",
-    #         event_bus_name=f"eventbus-{self.project_name}-extract-metrics-{self.stage_name}",
-    #     )
-
-    #     # EventBridge bus resource policy
-    #     # TODO: reuse existing settings reader
-    #     general_settings_file_path = "../config/settings/general.json"
-    #     with open(general_settings_file_path) as f:
-    #         try:
-    #             general_config = json.load(f)
-    #         except json.decoder.JSONDecodeError as e:
-    #             raise json.decoder.JSONDecodeError(
-    #                 f"Error parsing JSON file {general_settings_file_path}",
-    #                 e.doc,
-    #                 e.pos,
-    #             )
-
-    #     monitored_account_ids = set(
-    #         [
-    #             account["account_id"]
-    #             for account in general_config["monitored_environments"]
-    #         ]
-    #     )
-    #     monitored_principals = [
-    #         iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
-    #     ]
-
-    #     extract-metrics_bus.add_to_resource_policy(
-    #         iam.PolicyStatement(
-    #             sid=f"policy-{self.project_name}-AllowMonitoredAccountsPutEvents-{self.stage_name}",
-    #             actions=["events:PutEvents"],
-    #             effect=iam.Effect.ALLOW,
-    #             resources=[extract-metrics_bus.event_bus_arn],
-    #             principals=monitored_principals,
-    #         )
-    #     )
-
-    #     extract-metrics_lambda_event_rule = events.Rule(
-    #         self,
-    #         "salmonMonitoringLambdaEventRule",
-    #         rule_name=f"eventbusrule-{self.project_name}-extract-metrics-lambda-{self.stage_name}",
-    #         event_bus=extract-metrics_bus,
-    #         event_pattern=events.EventPattern(source=events.Match.prefix("aws")),
-    #     )
-
-    #     return extract-metrics_bus, extract-metrics_lambda_event_rule
+        return settings_bucket, internal_error_topic, input_timestream_database_arn
 
     def get_metrics_collection_interval_min(self):
+        """
+        Reads the metrics collection interval from a configuration file. The interval is defined in minutes.
+
+        Returns:
+            int: The interval in minutes for collecting metrics.
+
+        Raises:
+            Exception: If the 'metrics_collection_interval_min' key is not found in the configuration file.
+        """
         # TODO: reuse existing settings reader
         general_settings_file_path = "../config/settings/general.json"
         with open(general_settings_file_path) as f:
@@ -127,15 +118,25 @@ class InfraToolingMonitoringStack(Stack):
             if key in tooling_section:
                 return tooling_section[key]
             else:
-                raise Exception("metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)")
+                raise Exception(
+                    "metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)"
+                )
 
-            
     def create_extract_metrics_lambdas(
-        self,
-        settings_bucket,
-        internal_error_topic,
-        timestream_database_arn
+        self, settings_bucket, internal_error_topic, timestream_database_arn
     ):
+        """
+        Creates two AWS Lambda functions for extracting metrics. One function orchestrates the process,
+        while the other performs the actual extraction of metrics.
+
+        Parameters:
+            settings_bucket (s3.Bucket): The S3 bucket containing settings.
+            internal_error_topic (sns.Topic): The SNS topic for internal error notifications.
+            timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
+
+        Returns:
+            tuple: A tuple containing references to the orchestrator and extractor Lambda functions.
+        """
         extract_metrics_lambda_role = iam.Role(
             self,
             "extract-metricsLambdaRole",
@@ -167,7 +168,9 @@ class InfraToolingMonitoringStack(Stack):
             )
         )
 
-        extract_metrics_lambda_path = os.path.join("../src/", "lambda/extract-metrics-lambda")
+        extract_metrics_lambda_path = os.path.join(
+            "../src/", "lambda/extract-metrics-lambda"
+        )
         extract_metrics_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsLambda",
@@ -176,15 +179,15 @@ class InfraToolingMonitoringStack(Stack):
             handler="index.lambda_handler",
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
-            environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name
-            },
+            environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name},
             role=extract_metrics_lambda_role,
             retry_attempts=2,
             dead_letter_topic=internal_error_topic,
         )
 
-        extract_metrics_orch_lambda_path = os.path.join("../src/", "lambda/extract-metrics-orch-lambda")
+        extract_metrics_orch_lambda_path = os.path.join(
+            "../src/", "lambda/extract-metrics-orch-lambda"
+        )
         extract_metrics_orch_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsOrchLambda",
@@ -193,12 +196,10 @@ class InfraToolingMonitoringStack(Stack):
             handler="index.lambda_handler",
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
-            environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name
-            },
+            environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name},
             role=extract_metrics_lambda_role,
             retry_attempts=2,
             dead_letter_topic=internal_error_topic,
-        )        
+        )
 
         return extract_metrics_orch_lambda, extract_metrics_lambda
