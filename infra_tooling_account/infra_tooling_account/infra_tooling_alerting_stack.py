@@ -1,7 +1,9 @@
 from aws_cdk import (
     Stack,
     Fn,
+    RemovalPolicy,
     aws_s3 as s3,
+    aws_s3_deployment as s3deploy,
     aws_events as events,
     aws_events_targets as targets,
     aws_lambda as lambda_,
@@ -13,6 +15,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 import json
+import zipfile
 
 
 class InfraToolingAlertingStack(Stack):
@@ -166,31 +169,69 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        # Lib Lambda Layer
-        # lib_layer_bucket_name = f"s3-{project_name}-lib-layer-{stage_name}"
-        # lib_layer_bucket = s3.Bucket(
+        # lib_settings_reader_layer = lambda_python_alpha.PythonLayerVersion(
         #     self,
-        #     "salmonLibLayerBucket",
-        #     bucket_name=lib_layer_bucket_name,
-        #     block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
-        #     removal_policy=RemovalPolicy.DESTROY,
+        #     "salmonLibSettingsReaderLayerVersion",
+        #     layer_version_name=f"layer-{self.project_name}-lib-settings-reader-{self.stage_name}",
+        #     entry="../lib",
+        #     compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+        #     bundling=lambda_python_alpha.BundlingOptions(
+        #         asset_excludes=[".venv", "_pycache_"],
+        #     )
         # )
 
-        lib_settings_reader_layer = lambda_.LayerVersion(
+        # lib_layer = lambda_python_alpha.PythonLayerVersion(
+        #     self,
+        #     "salmonLibLayerVersion",
+        #     layer_version_name=f"layer-{self.project_name}-lib-{self.stage_name}",
+        #     entry="../src/lib",
+        #     compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+        #     bundling=lambda_python_alpha.BundlingOptions(
+        #         asset_excludes=[".venv", "_pycache_"],
+        #     )
+        # )
+
+        layer_bucket = s3.Bucket(
             self,
-            "salmonLibSettingsReaderLambdaLayer",
-            layer_version_name=f"layer-{self.project_name}-lib-settings-reader-{self.stage_name}",
-            compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
-            code=lambda_.Code.from_asset("../lib/settings_reader"),
+            "salmonLayerBucket",
+            bucket_name=f"s3-{self.project_name}-lambda-layers-{self.stage_name}",
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            removal_policy=RemovalPolicy.DESTROY,
         )
 
-        lib_layer = lambda_.LayerVersion(
-            self,
-            "salmonLibLambdaLayer",
-            layer_version_name=f"layer-{self.project_name}-lib-{self.stage_name}",
-            compatible_runtimes=[lambda_.Runtime.PYTHON_3_11],
-            code=lambda_.Code.from_asset("../src/lib"),
+        lib_settings_reader_layer_name = (
+            f"layer-{self.project_name}-lib-settings-reader-{self.stage_name}"
         )
+        lib_settings_reader_zipfile_name = f"{lib_settings_reader_layer_name}.zip"
+        lib_settings_reader_zipfile_path = f"cdk.out/{lib_settings_reader_zipfile_name}"
+
+        lib_settings_reader_zipfile = zipfile.ZipFile(
+            lib_settings_reader_zipfile_path, "w"
+        )
+        for dirname, subdirs, files in os.walk("../lib"):
+            if ".venv" in subdirs:
+                subdirs.remove(".venv")
+            if "__pycache__" in subdirs:
+                subdirs.remove("__pycache__")
+            lib_settings_reader_zipfile.write(dirname)
+            for filename in files:
+                lib_settings_reader_zipfile.write(os.path.join(dirname, filename))
+        lib_settings_reader_zipfile.close()
+
+        s3deploy.BucketDeployment(
+            self,
+            "salmonLibSettingsReaderLayerDeployment",
+            destination_bucket=layer_bucket,
+            sources=[s3deploy.Source.asset(lib_settings_reader_zipfile_path)],
+        )
+
+        # lib_settings_reader_layer = lambda_.LayerVersion(
+        #     self,
+        #     "salmonLibSettingsReaderLayerVersion",
+        #     layer_version_name=f"layer-{self.project_name}-lib-settings-reader-{self.stage_name}",
+        #     compatible_runtimes=[lambda_.Runtime.PYTHON_3_12],
+        #     code=lambda_.Code.from_bucket(layer_bucket, lib_settings_reader_zipfile_name)
+        # )
 
         alerting_lambda_path = os.path.join("../src/", "lambda/alerting-lambda")
         alerting_lambda = lambda_.Function(
@@ -199,9 +240,9 @@ class InfraToolingAlertingStack(Stack):
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(alerting_lambda_path),
             handler="index.lambda_handler",
-            layers=[lib_layer, lib_settings_reader_layer],
+            layers=[lib_settings_reader_layer],
             timeout=Duration.seconds(30),
-            runtime=lambda_.Runtime.PYTHON_3_11,
+            runtime=lambda_.Runtime.PYTHON_3_12,
             environment={
                 "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
                 "NOTIFICATION_QUEUE_NAME": notification_queue.queue_name,

@@ -1,8 +1,7 @@
 import os
 import json
 
-from lib.settings_reader.general_settings_reader import GeneralSettingsReader
-from lib.constants import SettingFileNames
+from ...lib import SettingFileNames
 
 
 def generate_hello_world():
@@ -12,3 +11,9 @@ def generate_hello_world():
 def lambda_handler(event, context):
     helloworld = generate_hello_world()
     return {"message": SettingFileNames.GENERAL_FILE_NAME}
+
+
+if __name__ == "__main__":
+    event = {}
+    context = {}
+    lambda_handler(event=event, context=context)
