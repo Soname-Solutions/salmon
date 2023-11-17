@@ -16,3 +16,8 @@ class AwsSesUserNotVerifiedException(Exception):
 class AwsSesNoRelevantRecipientsException(Exception):
     """No relevant recipients to send a message to in AWS SES."""
     pass
+
+
+class SmtpSenderException(SenderException):
+    """Error while sending a message via SMTP."""
+    pass

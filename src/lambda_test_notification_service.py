@@ -9,9 +9,10 @@ from notification_service.messages import Message
 
 sender_config = {
     "ses_sender": NotificationServiceConfig.SES_SENDER,
-    "smtp_sender": "",
-    "smtp_server": "",
-    "smtp_login": "",
+    "smtp_sender": NotificationServiceConfig.SMTP_SENDER,
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 465,
+    "smtp_login": NotificationServiceConfig.SMTP_SENDER,
     "smtp_password": "",
 }
 
@@ -25,7 +26,9 @@ def lambda_handler(event, context):
     
     message = Message(delivery_info.get("message"), NotificationServiceConfig.ALERT_HEADER)
     #todo: recipients should be got from settings
-    recipients = ["natallia.alkhimovich@soname.de", "vasilii_pupkin@salmon.com"]
+    recipients = ["natallia.alkhimovich@soname.de"
+                  #, "vasilii_pupkin@salmon.com"
+                  ]
 
     sender = senders.get(delivery_method, message=message, recipients=recipients, **sender_config)
 
@@ -40,7 +43,7 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     test_event = """
         {
-            "delivery_method": "AWS_SES",
+            "delivery_method": "SMTP",
             "message": "<html><head><style>table, th, td { border: 1px solid black; margin: 2px; }</style></head><body><h1>Hi</h1><table><tr><td>Glue Job 1 failed!</td></tr></table></body></html>"
         }
         """

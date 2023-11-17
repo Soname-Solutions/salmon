@@ -1,4 +1,4 @@
-from .sender import create_aws_ses_sender
+from .sender import create_aws_ses_sender, create_smtp_sender
 
 
 class SenderProvider:
@@ -19,3 +19,4 @@ class SenderProvider:
 
 senders = SenderProvider()
 senders.register_sender("AWS_SES", create_aws_ses_sender)
+senders.register_sender("SMTP", create_smtp_sender)

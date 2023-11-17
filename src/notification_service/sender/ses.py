@@ -4,13 +4,11 @@ from email.message import Message as BaseEmailMessage
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import List, TYPE_CHECKING
+from typing import List
 
 from .base import Sender
 from ..exceptions import AwsSesSenderException, AwsSesUserNotVerifiedException, AwsSesNoRelevantRecipientsException
-
-if TYPE_CHECKING:
-    from ..messages import Message, File
+from ..messages import Message, File
 
 
 class AwsSesSender(Sender):
