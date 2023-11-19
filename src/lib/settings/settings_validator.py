@@ -1,48 +1,224 @@
-import jsonschema
+from lib.settings.settings_reader import (
+    GeneralSettingsReader,
+    MonitoringSettingsReader,
+    RecipientsSettingsReader,
+)
 
-from lib.settings.settings_reader.settings_reader import SettingsReader
+
+class SettingsValidatorException(Exception):
+    """Exception raised for errors during settings validation."""
+
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
 
 
-class SettingsValidator:
-    """Base class for settings validation.
+# Main validation function
+def validate(
+    general_settings: GeneralSettingsReader,
+    monitoring_group_settings: MonitoringSettingsReader,
+    recipient_settings: RecipientsSettingsReader,
+):
+    """Validates settings for consistency.
 
-    This class provides a common interface and shared business logic for validating setting files.
+    This function performs multiple validation checks on the provided settings.
 
-    Methods:
-        validate_json_schema: Validates a JSON settings file against the schema.
-        validate_business_logic: Performs custom business logic validation on the settings content.
+    Args:
+        general (GeneralSettingsReader): The General settings reader.
+        monitoring_groups (MonitoringSettingsReader): The Monitoring Groups settings reader.
+        recipients (RecipientsSettingsReader): The Recipients settings reader.
+
+    Raises:
+        SettingsValidatorException: If any validation checks fail.
 
     """
+    VALIDATION_RULES = [
+        validate_unique_monitored_environment_names,
+        validate_unique_monitoring_group_names,
+        validate_monitored_environment_name_for_monitoring_groups,
+        validate_monitoring_group_name_for_recipients,
+        validate_delivery_method_for_recipients,
+    ]
+    errors = []
 
-    def __init__(self):
-        """SettingsValidator class constructor."""
-
-    def validate_json_schema(self, settings_reader: SettingsReader, json_schema: dict):
-        """Validates a JSON file against the schema.
-
-        Args:
-            settings_reader (dict): SettingsReader object containing the name and content of the setting file.
-            json_schema (dict): The JSON schema to be used for validation.
-
-        Raises:
-            jsonschema.exceptions.ValidationError: If the JSON file does not match the schema.
-        """
-        try:
-            jsonschema.validate(settings_reader.settings, json_schema)
-        except jsonschema.exceptions.ValidationError as e:
-            raise jsonschema.exceptions.ValidationError(
-                f"JSON schema validation failed for '{settings_reader.settings_file_name}': {e}"
+    for rule in VALIDATION_RULES:
+        errors.append(
+            rule(
+                general_settings=general_settings,
+                monitoring_group_settings=monitoring_group_settings,
+                recipient_settings=recipient_settings,
             )
+        )
 
-    def validate_business_logic(self, json_data: str, other_config_data: str):
-        """Performs custom business logic validation on the settings content.
+    error_messages = [msg for msg, result in errors if not result]
 
-        Args:
-            json_data (str): The content of the JSON file in string format.
-            other_config_data (dict): Other configuration data used for business logic validation.
+    if error_messages:
+        raise SettingsValidatorException("\n".join(error_messages))
 
-        Raises:
-            ValueError: If custom business logic validation fails.
-        """
-        # Common business logic across setting files
-        pass
+
+def validate_unique_names(func: object, error_message: str) -> tuple:
+    """Validates that names are unique.
+
+    This function checks if the names obtained from the specified function within the
+    given settings are unique.
+
+    Args:
+        func (object): The function to retrieve names from the settings.
+        error_message (str): Custom error message for the validation.
+
+    Returns:
+        tuple: Error message and boolean result. Empty message if validation passes.
+
+    """
+    names = func()
+    seen_names = set()
+    duplicate_names = set()
+
+    for name in names:
+        if name in seen_names:
+            duplicate_names.add(name)
+        else:
+            seen_names.add(name)
+
+    return (
+        (f"Error: {error_message} Non-unique names :{duplicate_names}", False)
+        if duplicate_names
+        else ("", True)
+    )
+
+
+# Rules
+def validate_unique_monitored_environment_names(**kwargs) -> tuple:
+    """Validates unique monitored environment names.
+
+    This function checks if the monitored environment names in the General settings are unique.
+
+    Args:
+        **kwargs: SettingReader objects.
+
+    Returns:
+        tuple: Error message and boolean result. Empty message if validation passes.
+
+    """
+    return validate_unique_names(
+        kwargs.get("general_settings").get_monitored_environment_names,
+        "Monitored environment names are not unique in General config.",
+    )
+
+
+def validate_unique_monitoring_group_names(**kwargs) -> tuple:
+    """Validates unique monitoring group names.
+
+    This function checks if the monitoring group names in the Monitoring Groups settings are unique.
+
+    Args:
+        **kwargs: SettingReader objects.
+
+    Returns:
+        tuple: Error message and boolean result. Empty message if validation passes.
+
+    """
+    return validate_unique_names(
+        kwargs.get("monitoring_group_settings").get_monitoring_group_names,
+        "Monitoring group names are not unique in Monitoring Groups config.",
+    )
+
+
+def validate_monitored_environment_name_for_monitoring_groups(**kwargs) -> tuple:
+    """Validates monitored environment names for monitoring groups.
+
+    This function checks if the monitored environment names in the Monitoring Groups settings
+    match the ones in the General settings.
+
+    Args:
+        **kwargs: SettingReader objects.
+
+    Returns:
+        tuple: Error message and boolean result. Empty message if validation passes.
+
+    """
+    not_existing_names = set()
+    monitored_environment_names = kwargs.get(
+        "monitoring_group_settings"
+    ).get_monitored_environment_names()
+
+    for m_env_name in monitored_environment_names:
+        if (
+            m_env_name
+            not in kwargs.get("general_settings").get_monitored_environment_names()
+        ):
+            not_existing_names.add(m_env_name)
+
+    return (
+        (
+            f"Error: monitored_environment_name in Monitoring Groups config do not match General config. Not existing names :{not_existing_names}",
+            False,
+        )
+        if not_existing_names
+        else ("", True)
+    )
+
+
+def validate_monitoring_group_name_for_recipients(**kwargs) -> tuple:
+    """Validates monitoring group names for recipients.
+
+    This function checks if the monitoring group names in the Recipients settings
+    match the ones in the Monitoring Groups settings.
+
+    Args:
+        **kwargs: SettingReader objects.
+
+    Returns:
+        tuple: Error message and boolean result. Empty message if validation passes.
+
+    """
+    not_existing_names = set()
+    monitoring_group_names = kwargs.get(
+        "recipient_settings"
+    ).get_monitoring_group_names()
+
+    for m_grp_name in monitoring_group_names:
+        if (
+            m_grp_name
+            not in kwargs.get("monitoring_group_settings").get_monitoring_group_names()
+        ):
+            not_existing_names.add(m_grp_name)
+
+    return (
+        (
+            f"Error: monitoring_group names in Recipients do not match Monitoring Groups config. Not existing names :{not_existing_names}",
+            False,
+        )
+        if not_existing_names
+        else ("", True)
+    )
+
+
+def validate_delivery_method_for_recipients(**kwargs) -> tuple:
+    """Validates delivery methods for recipients.
+
+    This function checks if the delivery methods in the Recipients settings
+    match the ones in the General settings.
+
+    Args:
+        **kwargs: SettingReader objects.
+
+    Returns:
+        tuple: Error message and boolean result. Empty message if validation passes.
+
+    """
+    not_existing_methods = set()
+    delivery_method_names = kwargs.get("recipient_settings").get_delivery_method_names()
+
+    for dlvry_mthd in delivery_method_names:
+        if dlvry_mthd not in kwargs.get("general_settings").get_delivery_method_names():
+            not_existing_methods.add(dlvry_mthd)
+
+    return (
+        (
+            f"Error: Delivery methods in Recipients do not match General config. Not existing methods :{not_existing_methods}",
+            False,
+        )
+        if not_existing_methods
+        else ("", True)
+    )

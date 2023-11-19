@@ -1,0 +1,100 @@
+{
+    "type": "object",
+    "properties": {
+      "monitoring_groups": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "group_name": {
+              "type": "string"
+            },
+            "glue_jobs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "monitored_environment_name": {
+                    "type": "string"
+                  },
+                  "sla_seconds": {
+                    "type": "integer"
+                  },
+                  "minimum_number_of_runs": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["name", "monitored_environment_name"]
+              }
+            },
+            "glue_workflows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "monitored_environment_name": {
+                    "type": "string"
+                  },
+                  "sla_seconds": {
+                    "type": "integer"
+                  },
+                  "minimum_number_of_runs": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["name", "monitored_environment_name"]
+              }
+            },
+            "lambda_functions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "monitored_environment_name": {
+                    "type": "string"
+                  },
+                  "minimum_number_of_runs": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["name", "monitored_environment_name"]
+              }
+            },
+            "step_functions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "monitored_environment_name": {
+                    "type": "string"
+                  },
+                  "sla_seconds": {
+                    "type": "integer"
+                  },
+                  "minimum_number_of_runs": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["name", "monitored_environment_name"]
+              }
+            }
+          },
+          "required": ["group_name"]
+        }
+      }
+    },
+    "required": ["monitoring_groups"]
+}
+  

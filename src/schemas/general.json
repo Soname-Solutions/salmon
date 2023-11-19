@@ -1,0 +1,39 @@
+{
+    "type": "object",
+    "properties": {
+      "tooling_environment": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "account_id": {"type": "string"},
+          "region": {"type": "string"}
+        },
+        "required": ["name", "account_id", "region"]
+      },
+      "monitored_environments": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "account_id": {"type": "string"},
+            "region": {"type": "string"}
+          },
+          "required": ["name", "account_id", "region"]
+        }
+      },
+      "delivery_methods": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "delivery_method_type": {"type": "string"},
+            "credentials_secret_name": {"type": "string"}
+          },
+          "required": ["name", "delivery_method_type"]
+        }
+      }
+    },
+    "required": ["tooling_environment", "monitored_environments", "delivery_methods"]
+}

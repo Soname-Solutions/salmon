@@ -1,13 +1,70 @@
 import os
+import sys
+
+sys.path.append(os.getcwd())
+
 import json
 
+from lib.core import file_manager as fm
+from lib.core import json_utils as ju
 from lib.core.constants import SettingFileNames
 
 from lib.aws import S3Manager
 from lib.settings.settings_reader import (
+    GeneralSettingsReader,
     MonitoringSettingsReader,
     RecipientsSettingsReader,
 )
+from lib.settings.settings_validator import validate
+
+
+def test_settings_validation():
+    """Test settings validation.
+
+    This function performs both schema and business validation on the test settings.
+    It reads the settings and schemas from specified paths, validates the JSON schemas,
+    and then performs business validation using the validate function.
+
+    Raises:
+        jsonschema.exceptions.ValidationErro: If any schema validation checks fail.
+        SettingsValidatorException: If any business validation checks fail.
+
+    """
+    schema_base_path = "schemas/"
+    config_base_path = "../config/test_settings/"
+
+    general = GeneralSettingsReader(
+        SettingFileNames.GENERAL_FILE_NAME,
+        fm.read_file(config_base_path + "general.json"),
+    )
+    monitoring_groups = MonitoringSettingsReader(
+        SettingFileNames.MONITORING_GROUPS_FILE_NAME,
+        fm.read_file(config_base_path + "monitoring_groups.json"),
+    )
+    recipients = RecipientsSettingsReader(
+        SettingFileNames.RECIPIENTS_FILE_NAME,
+        fm.read_file(config_base_path + "recipients.json"),
+    )
+
+    general_schema = ju.parse_json(fm.read_file(schema_base_path + "general.json"))
+    monitoring_groups_schema = ju.parse_json(
+        fm.read_file(schema_base_path + "monitoring_groups.json")
+    )
+    recipients_schema = ju.parse_json(
+        fm.read_file(schema_base_path + "recipients.json")
+    )
+
+    # Schema validation
+    print("Start General schema validation")
+    ju.validate_json_schema(general.settings, general_schema)
+    print("Start Monitoring Groups schema validation")
+    ju.validate_json_schema(monitoring_groups.settings, monitoring_groups_schema)
+    print("Start Recipients schema validation")
+    ju.validate_json_schema(recipients.settings, recipients_schema)
+
+    # Business validation
+    print("Start business validation")
+    validate(general, monitoring_groups, recipients)
 
 
 def lambda_handler(event, context):
@@ -102,4 +159,5 @@ if __name__ == "__main__":
         }
         """
     context = ""
-    lambda_handler(test_event, context)
+    # lambda_handler(test_event, context)
+    test_settings_validation()

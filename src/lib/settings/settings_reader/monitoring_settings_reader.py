@@ -1,6 +1,7 @@
 from fnmatch import fnmatch
 
 from .settings_reader import SettingsReader
+from lib.core.constants import Settings
 
 
 class MonitoringSettingsReader(SettingsReader):
@@ -25,41 +26,55 @@ class MonitoringSettingsReader(SettingsReader):
             settings_data (str): The content of the Monitoring settings file in JSON format.
         """
         super().__init__(settings_file_name, settings_data)
-        self.monitoring_groups = self.get_setting("monitoring_groups")
+        self._monitoring_groups = self.get_setting("monitoring_groups")
 
-    def get_monitoring_groups(self) -> dict:
-        """Retrieves the monitoring groups from the Monitoring settings.
+    @property
+    def monitoring_groups(self) -> dict:
+        """Property to get the monitoring groups."""
+        return self._monitoring_groups
+
+    def get_monitoring_group_names(self) -> list[str]:
+        """Retrieves the Monitoring Group names from the Monitoring settings.
 
         Returns:
-            dict: Dictionary of monitoring groups.
+            list: List of Monitoring Group names.
         """
-        return self.monitoring_groups
+        return [m_grp.get("group_name") for m_grp in self._monitoring_groups]
+
+    def get_monitored_environment_names(self) -> list[str]:
+        """Retrieves the monitored_environment_names from the Monitoring settings.
+
+        Returns:
+            list: List of monitored_environment_names.
+        """
+        resource_groups = []
+        for group in self._monitoring_groups:
+            for monitored_resource in Settings.MONITORED_RESOURCES:
+                resource_groups += group.get(monitored_resource, [])
+
+        return [res.get("monitored_environment_name") for res in resource_groups]
 
     def get_monitoring_groups_by_resource_names(self, resources: str) -> list[str]:
         """Retrieves monitoring groups based on resource names.
 
         Args:
-            resources (list[str]): The resource names to match against monitoring groups.
+            resources (list): The resource names to match against monitoring groups.
 
         Returns:
-            list[str] : List of matched monitoring group names.
+            list : List of matched monitoring group names.
         """
         matched_groups = set()  # Prevent duplicates
 
-        for group in self.monitoring_groups:
-            glue_jobs = group.get("glue_jobs", [])
-            lambda_functions = group.get("lambda_functions", [])
+        for group in self._monitoring_groups:
+            resource_groups = []
+            for monitored_resource in Settings.MONITORED_RESOURCES:
+                resource_groups += group.get(monitored_resource, [])
 
             for resource in resources:
                 matched_groups.update(
                     group.get("group_name")
-                    for job in glue_jobs
-                    if job.get("name") and fnmatch(resource, job.get("name"))
-                )
-                matched_groups.update(
-                    group.get("group_name")
-                    for function in lambda_functions
-                    if function.get("name") and fnmatch(resource, function.get("name"))
+                    for res in resource_groups
+                    if res.get("name") and fnmatch(resource, res.get("name"))
                 )
 
         return list(matched_groups)

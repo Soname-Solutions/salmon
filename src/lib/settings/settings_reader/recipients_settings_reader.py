@@ -23,15 +23,34 @@ class RecipientsSettingsReader(SettingsReader):
             settings_data (str): The content of the Recipients settings file in JSON format.
         """
         super().__init__(settings_file_name, settings_data)
-        self.recipients = self.get_setting("recipients")
+        self._recipients = self.get_setting("recipients")
 
-    def get_recipients(self) -> dict:
-        """Retrieves the recipient details.
+    @property
+    def recipients(self) -> dict:
+        """Property to get the recipients."""
+        return self._recipients
+
+    def get_monitoring_group_names(self) -> list[str]:
+        """Retrieves the Monitoring Group names from the Recipients settings.
 
         Returns:
-            dict: Dictionary of recipient details.
+            list: List of Monitoring Group names.
         """
-        return self.recipients
+        monitoring_group_names = []
+
+        for recipient in self._recipients:
+            for subscription in recipient.get("subscriptions"):
+                monitoring_group_names.append(subscription.get("monitoring_group"))
+
+        return monitoring_group_names
+
+    def get_delivery_method_names(self) -> list[str]:
+        """Retrieves the delivery_method names from the Recipients settings.
+
+        Returns:
+            list: List of delivery_method names.
+        """
+        return [rec.get("delivery_method") for rec in self._recipients]
 
     def get_recipients_by_monitoring_groups_and_type(
         self, monitoring_groups: list[str], notification_type: str
@@ -47,7 +66,7 @@ class RecipientsSettingsReader(SettingsReader):
         """
         matched_recipients = []
 
-        for recipient in self.recipients:
+        for recipient in self._recipients:
             subscriptions = recipient.get("subscriptions", [])
             for subscription in subscriptions:
                 for monitoring_group in monitoring_groups:

@@ -26,30 +26,37 @@ class GeneralSettingsReader(SettingsReader):
             settings_data (str): The content of the General settings file in JSON format.
         """
         super().__init__(settings_file_name, settings_data)
-        self.tooling_environment = self.get_setting("tooling_environment")
-        self.monitored_environments = self.get_setting("monitored_environments")
-        self.delivery_methods = self.get_setting("delivery_methods")
+        self._tooling_environment = self.get_setting("tooling_environment")
+        self._monitored_environments = self.get_setting("monitored_environments")
+        self._delivery_methods = self.get_setting("delivery_methods")
 
-    def get_tooling_environment(self) -> dict:
-        """Retrieves the tooling environment from the General settings.
+    @property
+    def tooling_environment(self) -> dict:
+        """Property to get the tooling environment."""
+        return self._tooling_environment
+
+    @property
+    def monitored_environments(self) -> dict:
+        """Property to get the monitored environment."""
+        return self._monitored_environments
+
+    @property
+    def delivery_methods(self) -> dict:
+        """Property to get the delivery methods."""
+        return self._delivery_methods
+
+    def get_monitored_environment_names(self) -> list[str]:
+        """Retrieves the monitored_environment names from the General settings.
 
         Returns:
-            dict: Dictionary of tooling environment.
+            list: List of monitored_environment names.
         """
-        return self.tooling_environment
+        return [m_env.get("name") for m_env in self._monitored_environments]
 
-    def get_monitored_environments(self) -> dict:
-        """Retrieves the monitored environments from the General settings.
+    def get_delivery_method_names(self) -> list[str]:
+        """Retrieves the delivery_method names from the General settings.
 
         Returns:
-            dict: Dictionary of monitored environments.
+            list: List of delivery_method names.
         """
-        return self.monitored_environments
-
-    def get_delivery_methods(self) -> dict:
-        """Retrieves the delivery methods from the General settings.
-
-        Returns:
-            dict: Dictionary of delivery methods.
-        """
-        return self.delivery_methods
+        return [dlvry_mthd.get("name") for dlvry_mthd in self._delivery_methods]

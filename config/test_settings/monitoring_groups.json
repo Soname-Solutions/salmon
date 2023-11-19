@@ -1,0 +1,52 @@
+{
+    "monitoring_groups": [
+        {
+            "group_name": "salmonts_pyjobs",
+            "glue_jobs": [
+                {
+                    "name": "glue-salmonts-pyjob*dev",
+                    "monitored_environment_name": "Dept1 Account [dev]",
+                    "sla_seconds": 0,
+                    "minimum_number_of_runs": 0
+                }
+            ]
+        },
+        {
+            "group_name": "salmonts_workflows_sparkjobs",
+            "glue_jobs": [
+                {
+                    "name": "glue-salmonts-sparkjob*dev",
+                    "monitored_environment_name": "Dept1 Account [dev]",
+                    "sla_seconds": 0,
+                    "minimum_number_of_runs": 0
+                }
+            ],
+            "glue_workflows": [
+                {
+                    "name": "glue-salmonts-workflow-dev",
+                    "monitored_environment_name": "Dept1 Account [dev]",
+                    "sla_seconds": 0,
+                    "minimum_number_of_runs": 0
+                }
+            ]
+        },
+        {
+            "group_name": "salmonts_lambdas_stepfunctions",
+            "lambda_functions": [
+                {
+                    "name": "lambda-salmonts*dev",
+                    "monitored_environment_name": "Dept1 Account [dev]",
+                    "minimum_number_of_runs": 0
+                }
+            ],
+            "step_functions": [
+                {
+                    "name": "stepfunction-salmonts*dev",
+                    "monitored_environment_name": "Dept1 Account [dev]",
+                    "sla_seconds": 0,
+                    "minimum_number_of_runs": 0
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "type": "object",
+    "properties": {
+      "recipients": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "recipient": {"type": "string"},
+            "delivery_method": {"type": "string"},
+            "subscriptions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "monitoring_group": {"type": "string"},
+                  "alerts": {"type": "boolean"},
+                  "digest": {"type": "boolean"}
+                },
+                "required": ["monitoring_group", "alerts", "digest"]
+              }
+            }
+          },
+          "required": ["delivery_method", "recipient", "subscriptions"]
+        }
+      }
+    },
+    "required": ["recipients"]
+}
+  
