@@ -11,4 +11,3 @@ class Settings:
         "lambda_functions",
         "step_functions",
     ]
-    SETTINGS_VALIDATION_RULES = []
