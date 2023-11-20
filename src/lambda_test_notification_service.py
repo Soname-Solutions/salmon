@@ -1,4 +1,3 @@
-import os
 import json
 
 from constants import NotificationServiceConfig
@@ -6,7 +5,7 @@ from constants import NotificationServiceConfig
 from notification_service.sender_provider import senders
 from notification_service.messages import Message
 
-
+# todo: the config will be read from settings config
 sender_config = {
     "ses_sender": NotificationServiceConfig.SES_SENDER,
     "smtp_sender": NotificationServiceConfig.SMTP_SENDER,
@@ -16,21 +15,33 @@ sender_config = {
     "smtp_password": "",
 }
 
+# todo: recipients should be got from settings
+recipients = [
+    "my_email@soname.de"
+    # , "vasilii_pupkin@salmon.com"
+]
+
 
 def lambda_handler(event, context):
+    """
+    Lambda function to process event data, and send the message via the delivery method.
+
+    Args:
+        event (object): Event data containing details about the AWS resource state change.
+        context: (object): AWS Lambda context (not utilized in this function).
+    """
     delivery_info = json.loads(event)
     delivery_method = delivery_info.get("delivery_method")
 
     if delivery_method is None:
         raise KeyError("Delivery method is not set.")
-    
-    message = Message(delivery_info.get("message"), NotificationServiceConfig.ALERT_HEADER)
-    #todo: recipients should be got from settings
-    recipients = ["natallia.alkhimovich@soname.de"
-                  #, "vasilii_pupkin@salmon.com"
-                  ]
 
-    sender = senders.get(delivery_method, message=message, recipients=recipients, **sender_config)
+    message = Message(
+        delivery_info.get("message"), NotificationServiceConfig.ALERT_HEADER
+    )
+    sender = senders.get(
+        delivery_method, message=message, recipients=recipients, **sender_config
+    )
 
     try:
         sender.pre_process()
@@ -43,7 +54,7 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     test_event = """
         {
-            "delivery_method": "SMTP",
+            "delivery_method": "AWS_SES",
             "message": "<html><head><style>table, th, td { border: 1px solid black; margin: 2px; }</style></head><body><h1>Hi</h1><table><tr><td>Glue Job 1 failed!</td></tr></table></body></html>"
         }
         """
