@@ -134,6 +134,12 @@ class InfraToolingAlertingStack(Stack):
             role_name=f"role-{self.project_name}-alerting-lambda-{self.stage_name}",
         )
 
+        alerting_lambda_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "service-role/AWSLambdaBasicExecutionRole"
+            )
+        )  
+
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["s3:GetObject"],

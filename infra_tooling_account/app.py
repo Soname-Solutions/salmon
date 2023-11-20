@@ -5,6 +5,7 @@ import aws_cdk as cdk
 
 from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
 from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlertingStack
+from infra_tooling_account.infra_tooling_monitoring_stack import InfraToolingMonitoringStack
 
 if "STAGE_NAME" in os.environ:
     pass
@@ -31,7 +32,15 @@ alerting_stack = InfraToolingAlertingStack(
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
 )
+monitoring_stack = InfraToolingMonitoringStack(
+    app,
+    f"cf-{PROJECT_NAME}-InfraToolingMonitoringStack-{STAGE_NAME}",
+    tags=TAGS,
+    stage_name=STAGE_NAME,
+    project_name=PROJECT_NAME,
+)
 
 alerting_stack.add_dependency(common_stack)
+monitoring_stack.add_dependency(common_stack)
 
 app.synth()
