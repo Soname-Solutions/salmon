@@ -1,14 +1,22 @@
 {
-    "monitored_accounts": [
+    "tooling_environment": {
+        "name": "Tooling Account [dev]",
+        "account_id": "323432554",
+        "region": "eu-central-1",
+        "metrics_collection_interval_min" : 5
+    },
+    "monitored_environments": [
         {
-            "Name": "Dept1 Account",
-            "AccountId": "123456789",
-            "MetricsExtractorRoleArn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
+            "name": "Dept1 Account [dev]",
+            "account_id": "123456789",
+            "region": "eu-central-1",
+            "metrics_extractor_role_arn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
         },
         {
-            "Name": "Data Lake Account",
-            "AccountId": "987654321",
-            "MetricsExtractorRoleArn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
+            "name": "Data Lake Account [dev]",
+            "account_id": "987654321",
+            "region": "eu-central-1",
+            "metrics_extractor_role_arn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
         }
     ],
     "delivery_methods": [

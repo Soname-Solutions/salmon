@@ -3,7 +3,8 @@
 
 1. General settings
 Contains the following parts:  
-- Monitored accounts.  List of account with resources we want to monitor.
+- Tooling environment.  Account and region where our monitoring and alerting infrastructure is located.
+- Monitored environment.  List of accounts and regions with resources we want to monitor.
 - Used Delivery methods (for notifications and digests)
 
 2. Monitored groups.
@@ -15,7 +16,7 @@ List of recipients (which might be an e-mail, slack channel, teams channel - pot
 Each recipient is subscribed to one or more "Monitored Groups".
 Recipient can opt-in to receive "notifications" and "e-mail digest" (e.g. daily) independently (subscribe to one, but don't subscribe to another).
 
-## Monitored accounts notes
+## Monitored environments notes
 
 - There should be created some artifacts on monitored account, so we can access data (IAM role) and get notifications/alerts (EventBridge Rules).  
 IAM Role Arn should be stated in config.
