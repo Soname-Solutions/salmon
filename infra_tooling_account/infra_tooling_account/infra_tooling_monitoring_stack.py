@@ -31,6 +31,17 @@ class InfraToolingMonitoringStack(Stack):
     """
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        """
+        Initialize the InfraToolingMonitoringStack.
+
+        Args:
+            scope (Construct): The CDK app or stack that this stack is a part of.
+            id (str): The identifier for this stack.
+            **kwargs: Arbitrary keyword arguments. Specifically looks for:
+                - project_name (str): The name of the project. Used for naming resources. Defaults to None.
+                - stage_name (str): The name of the deployment stage. Used for naming resources. Defaults to None.
+
+        """        
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
 
