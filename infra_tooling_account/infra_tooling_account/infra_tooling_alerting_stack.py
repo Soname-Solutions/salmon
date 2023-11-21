@@ -89,12 +89,13 @@ class InfraToolingAlertingStack(Stack):
                     e.pos,
                 )
 
-        monitored_account_ids = set(
+        monitored_account_ids = sorted(set(
             [
                 account["account_id"]
                 for account in general_config["monitored_environments"]
             ]
-        )
+        ), reverse=True) # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
+        
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
@@ -150,7 +151,7 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["queue:SendMessage"],
+                actions=["sqs:SendMessage"],
                 effect=iam.Effect.ALLOW,
                 resources=[notification_queue.queue_arn],
             )
@@ -166,11 +167,20 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["timestream:*"],
+                actions=["timestream:WriteRecords"],
                 effect=iam.Effect.ALLOW,
-                resources=[timestream_database_arn],
+                resources=[f"{timestream_database_arn}/table/*"],
             )
         )
+
+        # required as per AWS Doc
+        alerting_lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["timestream:DescribeEndpoints"],
+                effect=iam.Effect.ALLOW,
+                resources=["*"],
+            )
+        )        
 
         alerting_lambda_path = "../src/"
         alerting_lambda = lambda_.Function(
