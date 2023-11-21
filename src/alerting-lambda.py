@@ -1,16 +1,33 @@
 import os
 import json
 import boto3
+import logging
 
 from lib.aws.timestream_manager import (
     iso_time_to_epoch_milliseconds,
     TimestreamTableWriter,
 )
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 timestream_write_client = boto3.client("timestream-write")
 
 
 def write_event_to_timestream(records):
+    """
+    Writes a given list of records to an Amazon Timestream table.
+
+    Retrieves the database and table names from environment variables and uses
+    an instance of TimestreamTableWriter to write the provided records to the
+    specified Timestream table.
+
+    Args:
+        records (list): A list of records to be written to the Timestream table.
+
+    Returns:
+        None: This function does not return anything but logs the outcome.
+    """    
     db_name = os.environ["ALERT_EVENTS_DB_NAME"]
     table_name = os.environ["ALERT_EVENTS_TABLE_NAME"]
 
@@ -21,15 +38,38 @@ def write_event_to_timestream(records):
     )
     result = writer.write_records(records=records)
 
-    print("EventJSON has been written successfully")
-    print(result)
+    logger.info("EventJSON has been written successfully")
+    logger.info(result)
 
 
 def settings_stub_get_monitored_env_name(account, region):
+    """
+    A stub function to return a monitored environment name based on account and region.
+    To be replaced when Settings Component is ready
+
+    Args:
+        account (str): AWS account ID.
+        region (str): AWS region name.
+
+    Returns:
+        str: A string representing the name of the monitored environment.
+    """    
     return "monitored_env_from_stub"
 
 
 def parse_event_properties(event):
+    """
+    Extracts and structures properties from the given event.
+
+    Parses an event to extract its source, account ID, region, and time, and
+    assigns a monitored environment name to it using a stub function.
+
+    Args:
+        event (dict): The event data in dictionary format.
+
+    Returns:
+        dict: A dictionary containing structured event properties.
+    """    
     outp = {
         "source": event.get("source", "Source Unknown"),
         "account_id": event.get("account", None),
@@ -44,6 +84,19 @@ def parse_event_properties(event):
 
 
 def prepare_timestream_record(event_props, event):
+    """
+    Prepares a Timestream record from the given event and its properties.
+
+    Formats the event and its properties into the structure required by Timestream,
+    including dimensions and time conversion.
+
+    Args:
+        event_props (dict): The structured properties of the event.
+        event (dict): The original event data.
+
+    Returns:
+        list: A list containing the prepared Timestream record.
+    """    
     records = []
 
     dimensions = [
@@ -69,7 +122,7 @@ def prepare_timestream_record(event_props, event):
 
 
 def lambda_handler(event, context):
-    print(f"event = {event}")
+    logger.info(f"event = {event}")
 
     event_props = parse_event_properties(event)
 
