@@ -172,13 +172,13 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        alerting_lambda_path = os.path.join("../src/", "lambda/alerting-lambda")
+        alerting_lambda_path = "../src/"
         alerting_lambda = lambda_.Function(
             self,
             "salmonAlertingLambda",
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(alerting_lambda_path),
-            handler="index.lambda_handler",
+            handler="alerting-lambda.lambda_handler",
             timeout=Duration.seconds(30),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
