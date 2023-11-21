@@ -124,6 +124,12 @@ class InfraToolingCommonStack(Stack):
             role_name=f"role-{self.project_name}-notification-lambda-{self.stage_name}",
         )
 
+        notification_lambda_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "service-role/AWSLambdaBasicExecutionRole"
+            )
+        )        
+
         notification_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["ses:SendEmail", "ses:SendRawEmail"],
