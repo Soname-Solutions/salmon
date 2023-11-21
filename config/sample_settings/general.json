@@ -10,23 +10,25 @@
             "name": "Dept1 Account [dev]",
             "account_id": "123456789",
             "region": "eu-central-1",
-            "metrics_extractor_role_arn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
+            "metrics_extractor_role_arn": "arn:aws:iam::{AccountID}:role/role-salmon-cross-account-extract-metrics-dev"
         },
         {
             "name": "Data Lake Account [dev]",
             "account_id": "987654321",
             "region": "eu-central-1",
-            "metrics_extractor_role_arn": "arn:aws:iam::{AccountID}:role/iamr-alertsmon-ingestion-acc-d"
+            "metrics_extractor_role_arn": "arn:aws:iam::{AccountID}:role/role-salmon-cross-account-extract-metrics-dev"
         }
     ],
     "delivery_methods": [
         {
             "name": "aws_ses",
-            "delivery_method_type": "AWS_SES"
+            "delivery_method_type": "AWS_SES",
+            "sender_email" : "salmon-no-reply@soname.de"
         },
         {
             "name": "local_smtp",
             "delivery_method_type": "SMTP",
+            "sender_email" : "salmon-no-reply@soname.de",
             "credentials_secret_name": "sm-my-smtp-server-creds"
         },
         {
