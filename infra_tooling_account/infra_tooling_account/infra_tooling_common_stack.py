@@ -28,7 +28,9 @@ class InfraToolingCommonStack(Stack):
 
         timestream_storage = self.create_timestream_db()
 
-        timestream_table_alert_events = self.create_timestream_tables(timestream_storage)
+        timestream_table_alert_events = self.create_timestream_tables(
+            timestream_storage
+        )
 
         # Internal Error SNS topic
         internal_error_topic = sns.Topic(
@@ -66,6 +68,22 @@ class InfraToolingCommonStack(Stack):
             export_name=f"output-{self.project_name}-metrics-events-storage-arn-{self.stage_name}",
         )
 
+        output_timestream_database_name = CfnOutput(
+            self,
+            "salmonTimestreamDBName",
+            value=timestream_storage.database_name,
+            description="DB Name of the Metrics and Events Storage",
+            export_name=f"output-{self.project_name}-metrics-events-db-name-{self.stage_name}",
+        )
+
+        output_timestream_alerts_table_name = CfnOutput(
+            self,
+            "salmonTimestreamAlertsTableName",
+            value=timestream_table_alert_events.table_name,
+            description="Table Name for Alert Events storage",
+            export_name=f"output-{self.project_name}-alert-events-table-name-{self.stage_name}",
+        )
+
         output_notification_queue_arn = CfnOutput(
             self,
             "salmonNotificationQueueArn",
@@ -94,20 +112,22 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamDB",
             database_name=f"timestream-{self.project_name}-metrics-events-storage-{self.stage_name}",
             kms_key_id=timestream_kms_key.key_id,
-        )        
+        )
 
         return timestream_storage
-    
+
     def create_timestream_tables(self, timestream_storage):
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
             magnetic_store_retention_period_in_days="365",
-            memory_store_retention_period_in_hours="240"
+            memory_store_retention_period_in_hours="240",
         )
-        alert_events_table = timestream.CfnTable(self, "AlertEventsTable",
+        alert_events_table = timestream.CfnTable(
+            self,
+            "AlertEventsTable",
             database_name=timestream_storage.database_name,
             retention_properties=retention_properties_property,
-            table_name="alert-events"
-        )    
+            table_name="alert-events",
+        )
 
         return alert_events_table
 
@@ -143,7 +163,7 @@ class InfraToolingCommonStack(Stack):
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "service-role/AWSLambdaBasicExecutionRole"
             )
-        )        
+        )
 
         notification_lambda_role.add_to_policy(
             iam.PolicyStatement(
