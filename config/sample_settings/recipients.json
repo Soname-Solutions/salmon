@@ -15,7 +15,7 @@
                     "digest": true
                 },
                 {
-                    "name": "pipeline_sourceABC",
+                    "monitoring_group": "pipeline_sourceABC",
                     "alerts": true,
                     "digest": false
                 }

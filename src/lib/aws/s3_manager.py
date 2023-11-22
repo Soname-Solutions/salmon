@@ -4,9 +4,7 @@ import boto3
 class S3ManagerReadException(Exception):
     """Exception raised for errors encountered while reading files using S3Manager."""
 
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 class S3Manager:
@@ -25,10 +23,16 @@ class S3Manager:
 
     """
 
-    def __init__(self):
-        self.s3_client = boto3.client("s3")
+    def __init__(self, s3_client: boto3.client = None):
+        """S3Manager class constructor.
 
-    def read_settings_file(self, bucket_name: str, file_name: str) -> str:
+        Args:
+            s3_client (boto3.client): Custom s3 client.
+
+        """
+        self.s3_client = boto3.client("s3") if s3_client is None else s3_client
+
+    def read_file(self, bucket_name: str, file_name: str) -> str:
         """Read a file from the specified S3 bucket.
 
         Args:
