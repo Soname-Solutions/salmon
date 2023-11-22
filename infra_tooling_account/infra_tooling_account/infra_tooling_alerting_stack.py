@@ -13,9 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
-import json
 
-from lib.settings import settings_reader
 from lib.core.constants import CDKDeployExclusions
 
 
@@ -23,6 +21,7 @@ class InfraToolingAlertingStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
+        self.general_settings_reader = kwargs.pop("general_settings_reader", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -91,18 +90,11 @@ class InfraToolingAlertingStack(Stack):
         )
 
         # EventBridge bus resource policy
-        # TODO: use settings validation
-        general_settings_file_path = "../config/settings/general.json"
-        with open(general_settings_file_path) as f:
-            general_settings = settings_reader.GeneralSettingsReader(
-                general_settings_file_path, f.read()
-            )
-
         monitored_account_ids = sorted(
             set(
                 [
                     account["account_id"]
-                    for account in general_settings.get_monitored_environments()
+                    for account in self.general_settings_reader.monitored_environments
                 ]
             ),
             reverse=True,

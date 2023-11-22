@@ -5,15 +5,13 @@ from aws_cdk import (
     aws_events_targets as targets,
 )
 from constructs import Construct
-import json
-
-from lib.settings import settings_reader
 
 
 class InfraMonitoredStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
+        self.general_settings_reader = kwargs.pop("general_settings_reader", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -28,13 +26,6 @@ class InfraMonitoredStack(Stack):
 
     def create_cross_account_event_bus_role(self):
         # General settings config
-        # TODO: reuse existing settings reader
-        general_settings_file_path = "../config/settings/general.json"
-        with open(general_settings_file_path) as f:
-            general_settings = settings_reader.GeneralSettingsReader(
-                general_settings_file_path, f.read()
-            )
-
         cross_account_bus_role = iam.Role(
             self,
             "salmonCrossAccountPutEventsRole",
@@ -43,7 +34,7 @@ class InfraMonitoredStack(Stack):
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
 
-        tooling_environment = general_settings.get_tooling_environment()
+        tooling_environment = self.general_settings_reader.tooling_environment
         tooling_account_id = tooling_environment["account_id"]
         tooling_account_region = tooling_environment["region"]
         cross_account_event_bus_name = (

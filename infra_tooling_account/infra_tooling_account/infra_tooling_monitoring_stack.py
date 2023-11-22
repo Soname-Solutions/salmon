@@ -13,9 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
-import json
 
-from lib.settings import settings_reader
 from lib.core.constants import CDKDeployExclusions
 
 
@@ -48,6 +46,7 @@ class InfraToolingMonitoringStack(Stack):
         """
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
+        self.general_settings_reader = kwargs.pop("general_settings_reader", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -124,20 +123,14 @@ class InfraToolingMonitoringStack(Stack):
         Raises:
             Exception: If the 'metrics_collection_interval_min' key is not found in the configuration file.
         """
-        # TODO: use settings validation
-        general_settings_file_path = "../config/settings/general.json"
-        with open(general_settings_file_path) as f:
-            general_settings = settings_reader.GeneralSettingsReader(
-                general_settings_file_path, f.read()
+        tooling_section = self.general_settings_reader.tooling_environment
+        key = "metrics_collection_interval_min"
+        if key in tooling_section:
+            return tooling_section[key]
+        else:
+            raise Exception(
+                "metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)"
             )
-            tooling_section = general_settings.get_tooling_environment()
-            key = "metrics_collection_interval_min"
-            if key in tooling_section:
-                return tooling_section[key]
-            else:
-                raise Exception(
-                    "metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)"
-                )
 
     def create_extract_metrics_lambdas(
         self, settings_bucket, internal_error_topic, timestream_database_arn
