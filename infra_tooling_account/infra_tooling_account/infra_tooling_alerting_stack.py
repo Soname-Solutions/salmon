@@ -204,7 +204,7 @@ class InfraToolingAlertingStack(Stack):
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(alerting_lambda_path),
             handler="alerting-lambda.lambda_handler",
-            timeout=Duration.seconds(30),
+            timeout=Duration.seconds(120),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
                 "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
