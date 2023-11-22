@@ -203,7 +203,7 @@ class InfraToolingAlertingStack(Stack):
             "salmonAlertingLambda",
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(alerting_lambda_path),
-            handler="alerting-lambda.lambda_handler",
+            handler="lambda_alerting.lambda_handler",
             timeout=Duration.seconds(120),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
