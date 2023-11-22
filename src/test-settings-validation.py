@@ -26,7 +26,7 @@ def test_settings_validation():
 
     """
     schema_base_path = "src/schemas/"
-    config_base_path = "./config/test_settings/"
+    config_base_path = "./config/sample_settings/"
 
     # Settings
     general = GeneralSettingsReader(

@@ -6,26 +6,16 @@
         "items": {
           "type": "object",
           "properties": {
-            "group_name": {
-              "type": "string"
-            },
+            "group_name": {"type": "string"},
             "glue_jobs": {
               "type": "array",
               "items": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "monitored_environment_name": {
-                    "type": "string"
-                  },
-                  "sla_seconds": {
-                    "type": "integer"
-                  },
-                  "minimum_number_of_runs": {
-                    "type": "integer"
-                  }
+                  "name": {"type": "string"},
+                  "monitored_environment_name": {"type": "string"},
+                  "sla_seconds": {"type": "integer"},
+                  "minimum_number_of_runs": {"type": "integer"}
                 },
                 "required": ["name", "monitored_environment_name"]
               }
@@ -35,18 +25,10 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "monitored_environment_name": {
-                    "type": "string"
-                  },
-                  "sla_seconds": {
-                    "type": "integer"
-                  },
-                  "minimum_number_of_runs": {
-                    "type": "integer"
-                  }
+                  "name": {"type": "string"},
+                  "monitored_environment_name": {"type": "string"},
+                  "sla_seconds": {"type": "integer"},
+                  "minimum_number_of_runs": {"type": "integer"}
                 },
                 "required": ["name", "monitored_environment_name"]
               }
@@ -56,15 +38,9 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "monitored_environment_name": {
-                    "type": "string"
-                  },
-                  "minimum_number_of_runs": {
-                    "type": "integer"
-                  }
+                  "name": {"type": "string"},
+                  "monitored_environment_name": {"type": "string"},
+                  "minimum_number_of_runs": {"type": "integer"}
                 },
                 "required": ["name", "monitored_environment_name"]
               }
@@ -74,18 +50,10 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "monitored_environment_name": {
-                    "type": "string"
-                  },
-                  "sla_seconds": {
-                    "type": "integer"
-                  },
-                  "minimum_number_of_runs": {
-                    "type": "integer"
-                  }
+                  "name": {"type": "string"},
+                  "monitored_environment_name": {"type": "string"},
+                  "sla_seconds": {"type": "integer"},
+                  "minimum_number_of_runs": {"type": "integer"}
                 },
                 "required": ["name", "monitored_environment_name"]
               }

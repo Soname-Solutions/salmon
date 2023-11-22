@@ -6,7 +6,8 @@
         "properties": {
           "name": {"type": "string"},
           "account_id": {"type": "string"},
-          "region": {"type": "string"}
+          "region": {"type": "string"},
+          "metrics_collection_interval_min": {"type": "integer"}
         },
         "required": ["name", "account_id", "region"]
       },
@@ -17,7 +18,8 @@
           "properties": {
             "name": {"type": "string"},
             "account_id": {"type": "string"},
-            "region": {"type": "string"}
+            "region": {"type": "string"},
+            "metrics_extractor_role_arn": {"type": "string"}
           },
           "required": ["name", "account_id", "region"]
         }
@@ -29,6 +31,7 @@
           "properties": {
             "name": {"type": "string"},
             "delivery_method_type": {"type": "string"},
+            "sender_email": {"type": "string"},
             "credentials_secret_name": {"type": "string"}
           },
           "required": ["name", "delivery_method_type"]
