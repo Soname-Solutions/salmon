@@ -50,7 +50,7 @@ class MonitoringSettingsReader(SettingsReader):
         resource_groups = []
         for group in self._monitoring_groups:
             for monitored_resource in Settings.MONITORED_RESOURCES:
-                resource_groups += group.get(monitored_resource, [])
+                resource_groups.extend(group.get(monitored_resource, []))
 
         return [res.get("monitored_environment_name") for res in resource_groups]
 

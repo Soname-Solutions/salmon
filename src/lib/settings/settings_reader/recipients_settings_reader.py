@@ -36,11 +36,11 @@ class RecipientsSettingsReader(SettingsReader):
         Returns:
             list: List of Monitoring Group names.
         """
-        monitoring_group_names = []
-
-        for recipient in self._recipients:
-            for subscription in recipient.get("subscriptions"):
-                monitoring_group_names.append(subscription.get("monitoring_group"))
+        monitoring_group_names = [
+            subscription.get("monitoring_group")
+            for recipient in self._recipients
+            for subscription in recipient.get("subscriptions")
+        ]
 
         return monitoring_group_names
 

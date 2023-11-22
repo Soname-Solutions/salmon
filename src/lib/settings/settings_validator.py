@@ -8,9 +8,7 @@ from lib.settings.settings_reader import (
 class SettingsValidatorException(Exception):
     """Exception raised for errors during settings validation."""
 
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 # Main validation function

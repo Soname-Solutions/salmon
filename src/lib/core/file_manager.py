@@ -2,17 +2,13 @@
 class FileManagerReadException(Exception):
     """Exception raised for errors during file reading."""
 
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 class FileManagerWriteException(Exception):
     """Exception raised for errors during file writing."""
 
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 # Functions

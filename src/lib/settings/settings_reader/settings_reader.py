@@ -1,6 +1,6 @@
 import json
 
-from lib.core import json_utils
+from lib.core.json_utils import parse_json
 
 
 class SettingsReader:
@@ -31,7 +31,7 @@ class SettingsReader:
         """
         self._settings_file_name = settings_file_name
         try:
-            self._settings = json_utils.parse_json(settings_data)
+            self._settings = parse_json(settings_data)
         except json.decoder.JSONDecodeError as e:
             raise json.decoder.JSONDecodeError(
                 f"Error parsing JSON settings file '{settings_file_name}'", e.doc, e.pos

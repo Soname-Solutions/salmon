@@ -20,7 +20,7 @@ class TestS3Manager:
         }
         s3_manager.s3_client.get_object = MagicMock(return_value=expected_response)
 
-        read_content = s3_manager.read_settings_file(bucket_name, file_name)
+        read_content = s3_manager.read_file(bucket_name, file_name)
         assert read_content == content
 
     def test_read_settings_file_failure(self, s3_manager):
@@ -33,6 +33,6 @@ class TestS3Manager:
         )
 
         with pytest.raises(S3ManagerReadException) as exc_info:
-            s3_manager.read_settings_file(bucket_name, file_name)
+            s3_manager.read_file(bucket_name, file_name)
 
         assert "Error reading settings file" in str(exc_info.value)
