@@ -19,7 +19,7 @@ class LocalFileSystemSettingsProvider:
         recipients_settings_reader (RecipientsSettingsReader): Recipients Settings
 
     Methods:
-        read_settings: Reads settings from the initialized file path and saves the content
+        __read_settings: Reads settings from the initialized file path and saves the content
         validate_settings: Validates the saved settings
     """
 
@@ -34,7 +34,7 @@ class LocalFileSystemSettingsProvider:
             self._general_settings_reader,
             self._monitoring_groups_settings_reader,
             self._recipients_settings_reader,
-        ) = self.read_settings(settings_files_path)
+        ) = self.__read_settings(settings_files_path)
 
     @property
     def general_settings_reader(self) -> GeneralSettingsReader:
@@ -48,7 +48,7 @@ class LocalFileSystemSettingsProvider:
     def recipients_settings_reader(self) -> RecipientsSettingsReader:
         return self._recipients_settings_reader
 
-    def read_settings(self, settings_files_path: str):
+    def __read_settings(self, settings_files_path: str):
         """Reads the settings from the provided local filesystem path, producing reader objects as the result
 
         Args:
