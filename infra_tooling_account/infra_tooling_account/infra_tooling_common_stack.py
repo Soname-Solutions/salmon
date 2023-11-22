@@ -17,6 +17,8 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
+from lib.constants import Exclusions
+
 
 class InfraToolingCommonStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -203,7 +205,7 @@ class InfraToolingCommonStack(Stack):
             function_name=f"lambda-{self.project_name}-notification-{self.stage_name}",
             code=lambda_.Code.from_asset(
                 notification_lambda_path,
-                exclude=[".venv/", "__pycache__"],
+                exclude=Exclusions.LAMBDA_ASSET_EXCLUSIONS,
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_notification.lambda_handler",

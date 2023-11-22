@@ -15,7 +15,8 @@ from constructs import Construct
 import os
 import json
 
-import lib.settings.settings_reader as settings_reader
+from lib.settings import settings_reader
+from lib.constants import Exclusions
 
 
 class InfraToolingAlertingStack(Stack):
@@ -201,7 +202,7 @@ class InfraToolingAlertingStack(Stack):
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(
                 alerting_lambda_path,
-                exclude=[".venv/", "__pycache__"],
+                exclude=Exclusions.LAMBDA_ASSET_EXCLUSIONS,
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_alerting.lambda_handler",

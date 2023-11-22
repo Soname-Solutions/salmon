@@ -11,3 +11,7 @@ class Settings:
         "lambda_functions",
         "step_functions",
     ]
+
+
+class Exclusions:
+    LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]

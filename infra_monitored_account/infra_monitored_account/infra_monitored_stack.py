@@ -7,7 +7,7 @@ from aws_cdk import (
 from constructs import Construct
 import json
 
-import lib.settings.settings_reader as settings_reader
+from lib.settings import settings_reader
 
 
 class InfraMonitoredStack(Stack):

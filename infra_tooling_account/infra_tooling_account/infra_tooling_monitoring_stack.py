@@ -15,7 +15,8 @@ from constructs import Construct
 import os
 import json
 
-import lib.settings.settings_reader as settings_reader
+from lib.settings import settings_reader
+from lib.constants import Exclusions
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -197,7 +198,7 @@ class InfraToolingMonitoringStack(Stack):
             function_name=f"lambda-{self.project_name}-extract-metrics-{self.stage_name}",
             code=lambda_.Code.from_asset(
                 extract_metrics_lambda_path,
-                exclude=[".venv/", "__pycache__"],
+                exclude=Exclusions.LAMBDA_ASSET_EXCLUSIONS,
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_extract_metrics.lambda_handler",
@@ -216,7 +217,7 @@ class InfraToolingMonitoringStack(Stack):
             function_name=f"lambda-{self.project_name}-extract-metrics-orch-{self.stage_name}",
             code=lambda_.Code.from_asset(
                 extract_metrics_orch_lambda_path,
-                exclude=[".venv/", "__pycache__"],
+                exclude=Exclusions.LAMBDA_ASSET_EXCLUSIONS,
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_extract_metrics_orch.lambda_handler",
