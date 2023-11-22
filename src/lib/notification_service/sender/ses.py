@@ -1,18 +1,17 @@
-import boto3
-import botocore
 from email.message import Message as BaseEmailMessage
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List
 
-from .base import Sender
+from .sender import Sender
 from ..exceptions import (
     AwsSesSenderException,
     AwsSesUserNotVerifiedException,
     AwsSesNoRelevantRecipientsException,
 )
 from ..messages import Message, File
+from ...aws import AwsSesManager, AwsSesRawEmailSenderException
 
 
 class AwsSesSender(Sender):
@@ -27,7 +26,7 @@ class AwsSesSender(Sender):
             recipients (List[str]): Emails to
         """
         super().__init__(message)
-        self._ses_client = boto3.client("ses")
+        self._ses_manager = AwsSesManager()
         self._sender = sender
         self._recipients = recipients
         self.verified_recipients = []
@@ -41,37 +40,6 @@ class AwsSesSender(Sender):
     def verified_recipients(self, recepients: List[str]) -> None:
         """Verified by AWS SES recipiens."""
         self._verified_recipients = recepients
-
-    def _get_identities(self, next_token: str = None) -> List[str]:
-        """Get verified identities from AWS SES"""
-        kwargs = {"IdentityType": "EmailAddress", "MaxItems": 1000}
-
-        if next_token is not None:
-            kwargs.update({"NextToken": next_token})
-
-        response = self._ses_client.list_identities(**kwargs)
-
-        identities = response["Identities"]
-        next_token = response.get("NextToken")
-
-        if next_token is None:
-            return identities
-        else:
-            return identities + self._get_identities(next_token)
-
-    def _get_verification_status(self, identity: str):
-        """Get verification status for identity."""
-        return self._ses_client.get_identity_verification_attributes(
-            Identities=[identity]
-        )["VerificationAttributes"][identity]["VerificationStatus"]
-
-    def get_verified_identities(self):
-        """Get verified identities."""
-        return [
-            identity
-            for identity in self._get_identities()
-            if self._get_verification_status(identity) == "Success"
-        ]
 
     def _get_message(self) -> BaseEmailMessage:
         """Get message to send."""
@@ -108,7 +76,7 @@ class AwsSesSender(Sender):
 
     def pre_process(self) -> None:
         """Set verified recepients before sending a message."""
-        verified_identities = self.get_verified_identities()
+        verified_identities = self._ses_manager.get_verified_identities()
         self.verified_recipients = [
             recipient
             for recipient in self._recipients
@@ -134,10 +102,8 @@ class AwsSesSender(Sender):
             )
 
         try:
-            self._ses_client.send_raw_email(
-                RawMessage={"Data": self._get_message().as_string()}
-            )
-        except botocore.exceptions.ClientError as ex:
+            self._ses_manager.send_raw_email(self._get_message().as_string())
+        except AwsSesRawEmailSenderException as ex:
             raise AwsSesSenderException(
                 f"Error during sending message to {self.verified_recipients} "
                 f"by {self.__class__.__name__}: {str(ex)}."

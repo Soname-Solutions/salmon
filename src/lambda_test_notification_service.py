@@ -1,7 +1,7 @@
 import json
 
-from notification_service.sender_provider import senders
-from notification_service.messages import Message
+from lib.notification_service.sender_provider import senders
+from lib.notification_service.messages import Message
 
 
 # todo: the config will be read from settings config

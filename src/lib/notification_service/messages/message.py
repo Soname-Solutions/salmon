@@ -1,10 +1,9 @@
 import mimetypes
 
-DEFAULT_MIME_TYPE = 'application/octet-stream'
+DEFAULT_MIME_TYPE = "application/octet-stream"
 
 
 class File:
-
     def __init__(self, name: str, content: str):
         """Ititiate file class.
 
@@ -21,7 +20,6 @@ class File:
 
 
 class Message:
-
     def __init__(self, body: str, header: str = None, file: File = None):
         """Ititiate message class.
 
