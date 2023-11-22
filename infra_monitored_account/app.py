@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import os
+import sys
 
 import aws_cdk as cdk
 
+sys.path.append("../src")
 from infra_monitored_account.infra_monitored_stack import InfraMonitoredStack
 
 if "STAGE_NAME" in os.environ:

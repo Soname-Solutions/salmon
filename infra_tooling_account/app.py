@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 import os
+import sys
 
 import aws_cdk as cdk
 
+sys.path.append("../src")
 from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
 from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlertingStack
-from infra_tooling_account.infra_tooling_monitoring_stack import InfraToolingMonitoringStack
+from infra_tooling_account.infra_tooling_monitoring_stack import (
+    InfraToolingMonitoringStack,
+)
 
 if "STAGE_NAME" in os.environ:
     pass

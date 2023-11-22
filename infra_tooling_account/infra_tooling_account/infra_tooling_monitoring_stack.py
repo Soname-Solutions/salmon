@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Fn,
+    IgnoreMode,
     aws_s3 as s3,
     aws_events as events,
     aws_events_targets as targets,
@@ -13,6 +14,8 @@ from aws_cdk import (
 from constructs import Construct
 import os
 import json
+
+import lib.settings.settings_reader as settings_reader
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -41,7 +44,7 @@ class InfraToolingMonitoringStack(Stack):
                 - project_name (str): The name of the project. Used for naming resources. Defaults to None.
                 - stage_name (str): The name of the deployment stage. Used for naming resources. Defaults to None.
 
-        """        
+        """
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
 
@@ -120,11 +123,13 @@ class InfraToolingMonitoringStack(Stack):
         Raises:
             Exception: If the 'metrics_collection_interval_min' key is not found in the configuration file.
         """
-        # TODO: reuse existing settings reader
+        # TODO: use settings validation
         general_settings_file_path = "../config/settings/general.json"
         with open(general_settings_file_path) as f:
-            general_config = json.load(f)
-            tooling_section = general_config["tooling_environment"]
+            general_settings = settings_reader.GeneralSettingsReader(
+                general_settings_file_path, f.read()
+            )
+            tooling_section = general_settings.get_tooling_environment()
             key = "metrics_collection_interval_min"
             if key in tooling_section:
                 return tooling_section[key]
@@ -185,15 +190,17 @@ class InfraToolingMonitoringStack(Stack):
             )
         )
 
-        extract_metrics_lambda_path = os.path.join(
-            "../src/", "lambda/extract-metrics-lambda"
-        )
+        extract_metrics_lambda_path = os.path.join("../src/")
         extract_metrics_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsLambda",
             function_name=f"lambda-{self.project_name}-extract-metrics-{self.stage_name}",
-            code=lambda_.Code.from_asset(extract_metrics_lambda_path),
-            handler="index.lambda_handler",
+            code=lambda_.Code.from_asset(
+                extract_metrics_lambda_path,
+                exclude=[".venv/", "__pycache__"],
+                ignore_mode=IgnoreMode.GIT,
+            ),
+            handler="lambda_extract_metrics.lambda_handler",
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name},
@@ -202,15 +209,17 @@ class InfraToolingMonitoringStack(Stack):
             dead_letter_topic=internal_error_topic,
         )
 
-        extract_metrics_orch_lambda_path = os.path.join(
-            "../src/", "lambda/extract-metrics-orch-lambda"
-        )
+        extract_metrics_orch_lambda_path = os.path.join("../src/")
         extract_metrics_orch_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsOrchLambda",
             function_name=f"lambda-{self.project_name}-extract-metrics-orch-{self.stage_name}",
-            code=lambda_.Code.from_asset(extract_metrics_orch_lambda_path),
-            handler="index.lambda_handler",
+            code=lambda_.Code.from_asset(
+                extract_metrics_orch_lambda_path,
+                exclude=[".venv/", "__pycache__"],
+                ignore_mode=IgnoreMode.GIT,
+            ),
+            handler="lambda_extract_metrics_orch.lambda_handler",
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name},

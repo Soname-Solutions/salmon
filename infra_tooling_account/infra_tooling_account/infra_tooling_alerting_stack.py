@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Fn,
+    IgnoreMode,
     aws_s3 as s3,
     aws_events as events,
     aws_events_targets as targets,
@@ -13,6 +14,8 @@ from aws_cdk import (
 from constructs import Construct
 import os
 import json
+
+import lib.settings.settings_reader as settings_reader
 
 
 class InfraToolingAlertingStack(Stack):
@@ -87,28 +90,22 @@ class InfraToolingAlertingStack(Stack):
         )
 
         # EventBridge bus resource policy
-        # TODO: reuse existing settings reader
+        # TODO: use settings validation
         general_settings_file_path = "../config/settings/general.json"
         with open(general_settings_file_path) as f:
-            try:
-                general_config = json.load(f)
-            except json.decoder.JSONDecodeError as e:
-                raise json.decoder.JSONDecodeError(
-                    f"Error parsing JSON file {general_settings_file_path}",
-                    e.doc,
-                    e.pos,
-                )
+            general_settings = settings_reader.GeneralSettingsReader(
+                general_settings_file_path, f.read()
+            )
 
         monitored_account_ids = sorted(
             set(
                 [
                     account["account_id"]
-                    for account in general_config["monitored_environments"]
+                    for account in general_settings.get_monitored_environments()
                 ]
             ),
             reverse=True,
         )  # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
-
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
@@ -202,7 +199,11 @@ class InfraToolingAlertingStack(Stack):
             self,
             "salmonAlertingLambda",
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
-            code=lambda_.Code.from_asset(alerting_lambda_path),
+            code=lambda_.Code.from_asset(
+                alerting_lambda_path,
+                exclude=[".venv/", "__pycache__"],
+                ignore_mode=IgnoreMode.GIT,
+            ),
             handler="lambda_alerting.lambda_handler",
             timeout=Duration.seconds(120),
             runtime=lambda_.Runtime.PYTHON_3_11,
