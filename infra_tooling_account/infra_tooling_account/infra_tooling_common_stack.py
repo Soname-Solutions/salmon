@@ -17,7 +17,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.constants import Exclusions
+from lib.core.constants import CDKDeployExclusions
 
 
 class InfraToolingCommonStack(Stack):
@@ -205,7 +205,7 @@ class InfraToolingCommonStack(Stack):
             function_name=f"lambda-{self.project_name}-notification-{self.stage_name}",
             code=lambda_.Code.from_asset(
                 notification_lambda_path,
-                exclude=Exclusions.LAMBDA_ASSET_EXCLUSIONS,
+                exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_notification.lambda_handler",

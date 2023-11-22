@@ -16,7 +16,7 @@ import os
 import json
 
 from lib.settings import settings_reader
-from lib.constants import Exclusions
+from lib.core.constants import CDKDeployExclusions
 
 
 class InfraToolingAlertingStack(Stack):
@@ -202,7 +202,7 @@ class InfraToolingAlertingStack(Stack):
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(
                 alerting_lambda_path,
-                exclude=Exclusions.LAMBDA_ASSET_EXCLUSIONS,
+                exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_alerting.lambda_handler",

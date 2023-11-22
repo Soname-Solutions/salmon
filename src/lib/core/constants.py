@@ -13,5 +13,5 @@ class Settings:
     ]
 
 
-class Exclusions:
+class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]
