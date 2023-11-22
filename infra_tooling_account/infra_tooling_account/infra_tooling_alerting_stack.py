@@ -30,6 +30,14 @@ class InfraToolingAlertingStack(Stack):
             f"output-{self.project_name}-metrics-events-storage-arn-{self.stage_name}"
         )
 
+        input_timestream_database_name = Fn.import_value(
+            f"output-{self.project_name}-metrics-events-db-name-{self.stage_name}"
+        )
+
+        input_timestream_alert_events_table_name = Fn.import_value(
+            f"output-{self.project_name}-alert-events-table-name-{self.stage_name}"
+        )
+
         input_notification_queue_arn = Fn.import_value(
             f"output-{self.project_name}-notification-queue-arn-{self.stage_name}"
         )
@@ -66,6 +74,8 @@ class InfraToolingAlertingStack(Stack):
             notification_queue=notification_queue,
             internal_error_topic=internal_error_topic,
             timestream_database_arn=input_timestream_database_arn,
+            timestream_database_name=input_timestream_database_name,
+            timestream_alert_events_table_name=input_timestream_alert_events_table_name,
             alerting_lambda_event_rule=alerting_lambda_event_rule,
         )
 
@@ -89,12 +99,16 @@ class InfraToolingAlertingStack(Stack):
                     e.pos,
                 )
 
-        monitored_account_ids = set(
-            [
-                account["account_id"]
-                for account in general_config["monitored_environments"]
-            ]
-        )
+        monitored_account_ids = sorted(
+            set(
+                [
+                    account["account_id"]
+                    for account in general_config["monitored_environments"]
+                ]
+            ),
+            reverse=True,
+        )  # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
+
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
@@ -125,6 +139,8 @@ class InfraToolingAlertingStack(Stack):
         notification_queue,
         internal_error_topic,
         timestream_database_arn,
+        timestream_database_name,
+        timestream_alert_events_table_name,
         alerting_lambda_event_rule,
     ):
         alerting_lambda_role = iam.Role(
@@ -138,7 +154,7 @@ class InfraToolingAlertingStack(Stack):
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "service-role/AWSLambdaBasicExecutionRole"
             )
-        )  
+        )
 
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
@@ -150,7 +166,7 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["queue:SendMessage"],
+                actions=["sqs:SendMessage"],
                 effect=iam.Effect.ALLOW,
                 resources=[notification_queue.queue_arn],
             )
@@ -166,24 +182,35 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_lambda_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["timestream:*"],
+                actions=["timestream:WriteRecords"],
                 effect=iam.Effect.ALLOW,
-                resources=[timestream_database_arn],
+                resources=[f"{timestream_database_arn}/table/*"],
             )
         )
 
-        alerting_lambda_path = os.path.join("../src/", "lambda/alerting-lambda")
+        # required as per AWS Doc
+        alerting_lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["timestream:DescribeEndpoints"],
+                effect=iam.Effect.ALLOW,
+                resources=["*"],
+            )
+        )
+
+        alerting_lambda_path = "../src/"
         alerting_lambda = lambda_.Function(
             self,
             "salmonAlertingLambda",
             function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
             code=lambda_.Code.from_asset(alerting_lambda_path),
-            handler="index.lambda_handler",
-            timeout=Duration.seconds(30),
+            handler="lambda_alerting.lambda_handler",
+            timeout=Duration.seconds(120),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
                 "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
                 "NOTIFICATION_QUEUE_NAME": notification_queue.queue_name,
+                "ALERT_EVENTS_DB_NAME": timestream_database_name,
+                "ALERT_EVENTS_TABLE_NAME": timestream_alert_events_table_name,
             },
             role=alerting_lambda_role,
             retry_attempts=2,
