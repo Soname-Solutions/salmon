@@ -1,5 +1,7 @@
 import json
 
+from lib.core.json_utils import parse_json
+
 
 class SettingsReader:
     """Represents a reader for settings stored in JSON format.
@@ -28,34 +30,22 @@ class SettingsReader:
             settings_data (str): The content of the settings file in JSON format.
         """
         self._settings_file_name = settings_file_name
-        self.settings = self.parse_json(settings_data, settings_file_name)
+        try:
+            self._settings = parse_json(settings_data)
+        except json.decoder.JSONDecodeError as e:
+            raise json.decoder.JSONDecodeError(
+                f"Error parsing JSON settings file '{settings_file_name}'", e.doc, e.pos
+            )
 
     @property
     def settings_file_name(self) -> str:
         """Property to get the name of the settings file."""
         return self._settings_file_name
 
-    def parse_json(self, settings_data: str, settings_file_name: str) -> dict:
-        """Parses the input JSON data into a Python dictionary.
-
-        Args:
-            settings_data (str): The content of the settings file in JSON format.
-            settings_file_name (str): The name of the settings file.
-
-        Returns:
-            dict: Parsed settings data as a dictionary.
-
-        Raises:
-            json.JSONDecodeError: If there's an error parsing the JSON data.
-
-        """
-        try:
-            parsed_data = json.loads(settings_data)
-            return parsed_data
-        except json.decoder.JSONDecodeError as e:
-            raise json.decoder.JSONDecodeError(
-                f"Error parsing JSON file {settings_file_name}", e.doc, e.pos
-            )
+    @property
+    def settings(self) -> str:
+        """Property to get the name of the settings file."""
+        return self._settings
 
     def get_setting(self, setting_name: str):
         """Retrieves a specific setting by its name.
@@ -67,4 +57,4 @@ class SettingsReader:
             Any: The value of the specified setting.
 
         """
-        return self.settings.get(setting_name)
+        return self._settings.get(setting_name)
