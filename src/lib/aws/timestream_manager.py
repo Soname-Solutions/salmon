@@ -30,6 +30,12 @@ def iso_time_to_epoch_milliseconds(iso_date: str) -> str:
     return str(int(epoch_time * 1000))
 
 
+class TimestreamTableWriterException(Exception):
+    """Exception raised for errors encountered while writing data into TimeStream DB."""
+
+    pass
+
+
 class TimestreamTableWriter:
     """
     This class provides an interface to write records to a specified Amazon Timestream table.
@@ -55,7 +61,7 @@ class TimestreamTableWriter:
             table_name (str): The name of the Timestream table.
             timestream_write_client: An optional Boto3 Timestream write client.
                 If none is provided, a new client instance will be created.
-        """        
+        """
         self.db_name = db_name
         self.table_name = table_name
         self.timestream_write_client = (
@@ -76,10 +82,16 @@ class TimestreamTableWriter:
 
         Todo:
             Introduce records buffering to support batches of less than 100 records.
-        """                
-        result = self.timestream_write_client.write_records(
-            DatabaseName=self.db_name, TableName=self.table_name, Records=records
-        )
-        # todo: later need to introduce records buffering (batches < 100 records)
+        """
+        try:
+            result = self.timestream_write_client.write_records(
+                DatabaseName=self.db_name, TableName=self.table_name, Records=records
+            )
+            # todo: later need to introduce records buffering (batches < 100 records)
+        except Exception as e:
+            error_message = (
+                f"Error writing records into {self.db_name}.{self.table_name}: {e}"
+            )
+            raise TimestreamTableWriterException(error_message)
+
         return result
-        
