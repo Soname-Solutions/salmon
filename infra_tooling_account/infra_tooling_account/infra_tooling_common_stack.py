@@ -2,6 +2,7 @@ from aws_cdk import (
     Stack,
     CfnOutput,
     Duration,
+    IgnoreMode,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
     RemovalPolicy,
@@ -15,6 +16,8 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
+
+from lib.core.constants import CDKDeployExclusions
 
 
 class InfraToolingCommonStack(Stack):
@@ -195,13 +198,17 @@ class InfraToolingCommonStack(Stack):
             )
         )
 
-        notification_lambda_path = os.path.join("../src/", "lambda/notification-lambda")
+        notification_lambda_path = os.path.join("../src/")
         notification_lambda = lambda_.Function(
             self,
             "salmonNotificationLambda",
             function_name=f"lambda-{self.project_name}-notification-{self.stage_name}",
-            code=lambda_.Code.from_asset(notification_lambda_path),
-            handler="index.lambda_handler",
+            code=lambda_.Code.from_asset(
+                notification_lambda_path,
+                exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
+                ignore_mode=IgnoreMode.GIT,
+            ),
+            handler="lambda_notification.lambda_handler",
             timeout=Duration.seconds(60),
             runtime=lambda_.Runtime.PYTHON_3_11,
             role=notification_lambda_role,

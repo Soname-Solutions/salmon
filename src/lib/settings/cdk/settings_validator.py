@@ -1,4 +1,4 @@
-from lib.settings.settings_reader import (
+from ..settings_reader import (
     GeneralSettingsReader,
     MonitoringSettingsReader,
     RecipientsSettingsReader,

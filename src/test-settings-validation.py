@@ -10,7 +10,7 @@ from lib.settings.settings_reader import (
     MonitoringSettingsReader,
     RecipientsSettingsReader,
 )
-from lib.settings.settings_validator import validate
+from lib.settings.cdk.settings_validator import validate
 
 
 def test_settings_validation():

@@ -27,7 +27,7 @@ def write_event_to_timestream(records):
 
     Returns:
         None: This function does not return anything but logs the outcome.
-    """    
+    """
     db_name = os.environ["ALERT_EVENTS_DB_NAME"]
     table_name = os.environ["ALERT_EVENTS_TABLE_NAME"]
 
@@ -53,7 +53,7 @@ def settings_stub_get_monitored_env_name(account, region):
 
     Returns:
         str: A string representing the name of the monitored environment.
-    """    
+    """
     return "monitored_env_from_stub"
 
 
@@ -69,7 +69,7 @@ def parse_event_properties(event):
 
     Returns:
         dict: A dictionary containing structured event properties.
-    """    
+    """
     outp = {
         "source": event.get("source", "Source Unknown"),
         "account_id": event.get("account", None),
@@ -96,7 +96,7 @@ def prepare_timestream_record(event_props, event):
 
     Returns:
         list: A list containing the prepared Timestream record.
-    """    
+    """
     records = []
 
     dimensions = [
