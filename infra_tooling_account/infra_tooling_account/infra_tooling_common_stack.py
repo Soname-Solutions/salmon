@@ -35,6 +35,8 @@ class InfraToolingCommonStack(Stack):
             timestream_storage
         )
 
+        timestream_table_alert_events.add_dependency(timestream_storage)
+
         # Internal Error SNS topic
         internal_error_topic = sns.Topic(
             self,
@@ -141,6 +143,7 @@ class InfraToolingCommonStack(Stack):
             bucket_name=f"s3-{self.project_name}-settings-{self.stage_name}",
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
         )
 
         s3deploy.BucketDeployment(
