@@ -225,7 +225,7 @@ class InfraToolingCommonStack(Stack):
         )
 
         notification_lambda.add_event_source(
-            lambda_event_sources.SqsEventSource(notification_queue)
+            lambda_event_sources.SqsEventSource(queue=notification_queue, batch_size=1)
         )
 
         return notification_lambda
