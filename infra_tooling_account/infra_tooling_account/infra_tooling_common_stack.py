@@ -122,6 +122,8 @@ class InfraToolingCommonStack(Stack):
         return timestream_storage
 
     def create_timestream_tables(self, timestream_storage):
+        # this part throws a warning, but applies correctly
+        # waiting for the CDK fix: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1514
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
             magnetic_store_retention_period_in_days="365",
             memory_store_retention_period_in_hours="240",
