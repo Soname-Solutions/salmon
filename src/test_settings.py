@@ -7,12 +7,14 @@ from lib.settings import Settings
 
 
 def test_settings_validation():
+    """Test settings_validator.validate function"""
     settings = Settings.from_file_path("./config/sample_settings/")
     validate(settings)
     print("Settings validation passed")
 
 
 def lambda_handler(event, context):
+    """Test read from s3 and all the methods required for both CDK and lambdas"""
     settings_s3_bucket_name = os.environ.get("settings_s3_bucket_name")
     settings = Settings.from_s3_path(f"s3://{settings_s3_bucket_name}/settings/")
 
