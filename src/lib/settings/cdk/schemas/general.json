@@ -9,7 +9,7 @@
           "region": {"type": "string"},
           "metrics_collection_interval_min": {"type": "integer"}
         },
-        "required": ["name", "account_id", "region"]
+        "required": ["name", "account_id", "region", "metrics_collection_interval_min"]
       },
       "monitored_environments": {
         "type": "array",

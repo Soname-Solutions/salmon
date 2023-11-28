@@ -1,8 +1,14 @@
-from ..settings_reader import (
-    GeneralSettingsReader,
-    MonitoringSettingsReader,
-    RecipientsSettingsReader,
-)
+from typing import List
+import os
+import jsonschema
+
+import lib.core.file_manager as fm
+import lib.core.json_utils as ju
+from lib.core.constants import SettingFileNames
+from lib.settings import Settings
+
+SCHEMA_FILES_PATH = "src/lib/settings/cdk/schemas/"
+ERRORS_SEP = "\n\n--------------------------------------------------------------\n\n"
 
 
 class SettingsValidatorException(Exception):
@@ -12,63 +18,38 @@ class SettingsValidatorException(Exception):
 
 
 # Main validation function
-def validate(
-    general_settings: GeneralSettingsReader,
-    monitoring_group_settings: MonitoringSettingsReader,
-    recipient_settings: RecipientsSettingsReader,
-):
+def validate(settings: Settings):
     """Validates settings for consistency.
 
     This function performs multiple validation checks on the provided settings.
-
-    Args:
-        general (GeneralSettingsReader): The General settings reader.
-        monitoring_groups (MonitoringSettingsReader): The Monitoring Groups settings reader.
-        recipients (RecipientsSettingsReader): The Recipients settings reader.
 
     Raises:
         SettingsValidatorException: If any validation checks fail.
 
     """
     VALIDATION_RULES = [
-        validate_unique_monitored_environment_names,
-        validate_unique_monitoring_group_names,
-        validate_monitored_environment_name_for_monitoring_groups,
-        validate_monitoring_group_name_for_recipients,
-        validate_delivery_method_for_recipients,
+        validate_schemas,
+        validate_unique_monitored_environment_names_gs,
+        validate_unique_monitored_accout_id_region_combinations_gs,
+        validate_unique_monitoring_group_names_mgs,
+        validate_existing_monitored_environment_names_mgs,
+        validate_existing_monitoring_group_names_rs,
+        validate_existing_delivery_methods_rs,
     ]
     errors = []
 
     for rule in VALIDATION_RULES:
-        errors.append(
-            rule(
-                general_settings=general_settings,
-                monitoring_group_settings=monitoring_group_settings,
-                recipient_settings=recipient_settings,
-            )
-        )
+        errors.extend(rule(settings))
 
     error_messages = [msg for msg, result in errors if not result]
 
     if error_messages:
-        raise SettingsValidatorException("\n".join(error_messages))
+        raise SettingsValidatorException(ERRORS_SEP.join(error_messages))
 
 
-def validate_unique_names(func: object, error_message: str) -> tuple:
-    """Validates that names are unique.
-
-    This function checks if the names obtained from the specified function within the
-    given settings are unique.
-
-    Args:
-        func (object): The function to retrieve names from the settings.
-        error_message (str): Custom error message for the validation.
-
-    Returns:
-        tuple: Error message and boolean result. Empty message if validation passes.
-
-    """
-    names = func()
+# Helpers
+def validate_unique_names(names: List[str], error_message: str) -> List[tuple]:
+    """Validates that names are unique."""
     seen_names = set()
     duplicate_names = set()
 
@@ -78,145 +59,103 @@ def validate_unique_names(func: object, error_message: str) -> tuple:
         else:
             seen_names.add(name)
 
-    return (
+    return [
         (f"Error: {error_message} Non-unique names :{duplicate_names}", False)
         if duplicate_names
         else ("", True)
-    )
+    ]
+
+
+def validate_existing_names(
+    names: List[str], ref_names: List[str], error_message: str
+) -> List[tuple]:
+    """Validates that names match the ones in ref_names."""
+    not_existing_names = [name for name in names if name not in ref_names]
+
+    return [
+        (f"Error: {error_message} Non-existing names :{set(not_existing_names)}", False)
+        if not_existing_names
+        else ("", True)
+    ]
 
 
 # Rules
-def validate_unique_monitored_environment_names(**kwargs) -> tuple:
-    """Validates unique monitored environment names.
+def validate_schemas(settings: Settings) -> List[tuple]:
+    """Validate setting raw JSON files against schema."""
+    errors = []
+    for attr_name, file_name in SettingFileNames.__dict__.items():
+        if not attr_name.startswith("__"):
+            schema_file = fm.read_file(os.path.join(SCHEMA_FILES_PATH, file_name))
+            schema = ju.parse_json(schema_file)
 
-    This function checks if the monitored environment names in the General settings are unique.
+            try:
+                jsonschema.validate(settings.get_raw_settings(file_name), schema)
+                errors.append(("", True))
+            except jsonschema.ValidationError as e:
+                errors.append(
+                    (
+                        f"JSON schema validation failed for {file_name} settings: {e}",
+                        False,
+                    )
+                )
 
-    Args:
-        **kwargs: SettingReader objects.
+    return errors
 
-    Returns:
-        tuple: Error message and boolean result. Empty message if validation passes.
 
-    """
+def validate_unique_monitored_environment_names_gs(settings: Settings) -> List[tuple]:
+    """Validates unique monitored environment names in General settings."""
     return validate_unique_names(
-        kwargs.get("general_settings").get_monitored_environment_names,
-        "Monitored environment names are not unique in General config.",
+        settings.get_monitored_environment_names_raw_gs(),
+        "Monitored environment names are not unique in General settings.",
     )
 
 
-def validate_unique_monitoring_group_names(**kwargs) -> tuple:
-    """Validates unique monitoring group names.
-
-    This function checks if the monitoring group names in the Monitoring Groups settings are unique.
-
-    Args:
-        **kwargs: SettingReader objects.
-
-    Returns:
-        tuple: Error message and boolean result. Empty message if validation passes.
-
-    """
+def validate_unique_monitored_accout_id_region_combinations_gs(
+    settings: Settings,
+) -> List[tuple]:
+    """Validates unique account_id + region combinations in monitored environments in General settings."""
     return validate_unique_names(
-        kwargs.get("monitoring_group_settings").get_monitoring_group_names,
-        "Monitoring group names are not unique in Monitoring Groups config.",
+        settings.get_monitored_account_id_and_region_raw_gs(),
+        "Monitored environment account_id + region combinations are not unique in General settings.",
     )
 
 
-def validate_monitored_environment_name_for_monitoring_groups(**kwargs) -> tuple:
-    """Validates monitored environment names for monitoring groups.
-
-    This function checks if the monitored environment names in the Monitoring Groups settings
-    match the ones in the General settings.
-
-    Args:
-        **kwargs: SettingReader objects.
-
-    Returns:
-        tuple: Error message and boolean result. Empty message if validation passes.
-
-    """
-    not_existing_names = set()
-    monitored_environment_names = kwargs.get(
-        "monitoring_group_settings"
-    ).get_monitored_environment_names()
-
-    for m_env_name in monitored_environment_names:
-        if (
-            m_env_name
-            not in kwargs.get("general_settings").get_monitored_environment_names()
-        ):
-            not_existing_names.add(m_env_name)
-
-    return (
-        (
-            f"Error: monitored_environment_name in Monitoring Groups config do not match General config. Not existing names :{not_existing_names}",
-            False,
-        )
-        if not_existing_names
-        else ("", True)
+def validate_unique_monitoring_group_names_mgs(settings: Settings) -> List[tuple]:
+    """Validates unique monitoring group names in Monitoring Groups settings."""
+    return validate_unique_names(
+        settings.get_monitoring_group_names_raw_mgs(),
+        "Monitoring group names are not unique in Monitoring Groups settings.",
     )
 
 
-def validate_monitoring_group_name_for_recipients(**kwargs) -> tuple:
-    """Validates monitoring group names for recipients.
+def validate_existing_monitored_environment_names_mgs(
+    settings: Settings,
+) -> List[tuple]:
+    """Validates if the monitored environment names in the Monitoring Groups settings
+    match the ones in the General settings."""
 
-    This function checks if the monitoring group names in the Recipients settings
-    match the ones in the Monitoring Groups settings.
-
-    Args:
-        **kwargs: SettingReader objects.
-
-    Returns:
-        tuple: Error message and boolean result. Empty message if validation passes.
-
-    """
-    not_existing_names = set()
-    monitoring_group_names = kwargs.get(
-        "recipient_settings"
-    ).get_monitoring_group_names()
-
-    for m_grp_name in monitoring_group_names:
-        if (
-            m_grp_name
-            not in kwargs.get("monitoring_group_settings").get_monitoring_group_names()
-        ):
-            not_existing_names.add(m_grp_name)
-
-    return (
-        (
-            f"Error: monitoring_group names in Recipients do not match Monitoring Groups config. Not existing names :{not_existing_names}",
-            False,
-        )
-        if not_existing_names
-        else ("", True)
+    return validate_existing_names(
+        settings.get_monitored_environment_names_raw_mgs(),
+        settings.get_monitored_environment_names_raw_gs(),
+        "monitored_environment_name in Monitoring Groups settings does not match General settings.",
     )
 
 
-def validate_delivery_method_for_recipients(**kwargs) -> tuple:
-    """Validates delivery methods for recipients.
+def validate_existing_monitoring_group_names_rs(settings: Settings) -> List[tuple]:
+    """Validates if the monitoring group names in the Recipients settings
+    match the ones in the Monitoring Groups settings."""
+    return validate_existing_names(
+        settings.get_monitoring_group_names_raw_rs(),
+        settings.get_monitoring_group_names_raw_mgs(),
+        "monitoring_group names in Recipients do not match Monitoring Groups settings.",
+    )
 
-    This function checks if the delivery methods in the Recipients settings
-    match the ones in the General settings.
 
-    Args:
-        **kwargs: SettingReader objects.
-
-    Returns:
-        tuple: Error message and boolean result. Empty message if validation passes.
-
-    """
-    not_existing_methods = set()
-    delivery_method_names = kwargs.get("recipient_settings").get_delivery_method_names()
-
-    for dlvry_mthd in delivery_method_names:
-        if dlvry_mthd not in kwargs.get("general_settings").get_delivery_method_names():
-            not_existing_methods.add(dlvry_mthd)
-
-    return (
-        (
-            f"Error: Delivery methods in Recipients do not match General config. Not existing methods :{not_existing_methods}",
-            False,
-        )
-        if not_existing_methods
-        else ("", True)
+def validate_existing_delivery_methods_rs(settings: Settings) -> List[tuple]:
+    """Validates if the delivery methods in the Recipients settings
+    match the ones in the General settings."""
+    return validate_existing_names(
+        settings.get_delivery_method_names_raw_rs(),
+        settings.get_delivery_method_names_raw_gs(),
+        "delivery_method in Recipients do not match General settings.",
     )
