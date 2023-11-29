@@ -7,7 +7,9 @@ import lib.core.json_utils as ju
 from lib.core.constants import SettingFileNames, SettingConfigs
 from lib.settings import Settings
 
-SCHEMA_FILES_PATH = "src/lib/settings/cdk/schemas/"
+validator_dir = os.path.dirname(os.path.abspath(__file__))
+SCHEMA_FILES_PATH = os.path.join(validator_dir, "schemas")
+
 ERRORS_SEP = "\n\n--------------------------------------------------------------\n\n"
 
 
