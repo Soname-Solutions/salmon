@@ -1,4 +1,5 @@
 import boto3
+from urllib.parse import urlparse
 
 
 class S3ManagerReadException(Exception):
@@ -43,10 +44,10 @@ class S3Manager:
 
         """
         try:
-            s3_path_parts = s3_path.replace("s3://", "").split("/", 1)
-            bucket_name = s3_path_parts[0]
-            object_key = s3_path_parts[1] if len(s3_path_parts) > 1 else ""
-            response = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            s3_path_parts = urlparse(s3_path, allow_fragments=False)
+            response = self.s3_client.get_object(
+                Bucket=s3_path_parts.netloc, Key=s3_path_parts.path.lstrip("/")
+            )
             settings_data = response["Body"].read().decode("utf-8")
             return settings_data
         except Exception as e:

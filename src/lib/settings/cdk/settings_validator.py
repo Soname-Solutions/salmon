@@ -4,7 +4,7 @@ import jsonschema
 
 import lib.core.file_manager as fm
 import lib.core.json_utils as ju
-from lib.core.constants import SettingFileNames
+from lib.core.constants import SettingFileNames, SettingConfigs
 from lib.settings import Settings
 
 SCHEMA_FILES_PATH = "src/lib/settings/cdk/schemas/"
@@ -47,6 +47,88 @@ def validate(settings: Settings):
         raise SettingsValidatorException(ERRORS_SEP.join(error_messages))
 
 
+# Rules
+def validate_schemas(settings: Settings) -> List[tuple]:
+    """Validate setting raw JSON files against schema."""
+    errors = []
+    for attr_name, file_name in SettingFileNames.__dict__.items():
+        if not attr_name.startswith("__"):
+            schema_file = fm.read_file(os.path.join(SCHEMA_FILES_PATH, file_name))
+            schema = ju.parse_json(schema_file)
+
+            try:
+                jsonschema.validate(settings.get_raw_settings(file_name), schema)
+                errors.append(("", True))
+            except jsonschema.ValidationError as e:
+                errors.append(
+                    (
+                        f"JSON schema validation failed for {file_name} settings: {e}",
+                        False,
+                    )
+                )
+
+    return errors
+
+
+def validate_unique_monitored_environment_names_gs(settings: Settings) -> List[tuple]:
+    """Validates unique monitored environment names in General settings."""
+    return validate_unique_names(
+        get_monitored_environment_names_raw_gs(settings),
+        "Monitored environment names are not unique in General settings.",
+    )
+
+
+def validate_unique_monitored_accout_id_region_combinations_gs(
+    settings: Settings,
+) -> List[tuple]:
+    """Validates unique account_id + region combinations in monitored environments in General settings."""
+    return validate_unique_names(
+        get_monitored_account_id_and_region_raw_gs(settings),
+        "Monitored environment account_id + region combinations are not unique in General settings.",
+    )
+
+
+def validate_unique_monitoring_group_names_mgs(settings: Settings) -> List[tuple]:
+    """Validates unique monitoring group names in Monitoring Groups settings."""
+    return validate_unique_names(
+        get_monitoring_group_names_raw_mgs(settings),
+        "Monitoring group names are not unique in Monitoring Groups settings.",
+    )
+
+
+def validate_existing_monitored_environment_names_mgs(
+    settings: Settings,
+) -> List[tuple]:
+    """Validates if the monitored environment names in the Monitoring Groups settings
+    match the ones in the General settings."""
+
+    return validate_existing_names(
+        get_monitored_environment_names_raw_mgs(settings),
+        get_monitored_environment_names_raw_gs(settings),
+        "monitored_environment_name in Monitoring Groups settings does not match General settings.",
+    )
+
+
+def validate_existing_monitoring_group_names_rs(settings: Settings) -> List[tuple]:
+    """Validates if the monitoring group names in the Recipients settings
+    match the ones in the Monitoring Groups settings."""
+    return validate_existing_names(
+        get_monitoring_group_names_raw_rs(settings),
+        get_monitoring_group_names_raw_mgs(settings),
+        "monitoring_group names in Recipients do not match Monitoring Groups settings.",
+    )
+
+
+def validate_existing_delivery_methods_rs(settings: Settings) -> List[tuple]:
+    """Validates if the delivery methods in the Recipients settings
+    match the ones in the General settings."""
+    return validate_existing_names(
+        get_delivery_method_names_raw_rs(settings),
+        get_delivery_method_names_raw_gs(settings),
+        "delivery_method in Recipients do not match General settings.",
+    )
+
+
 # Helpers
 def validate_unique_names(names: List[str], error_message: str) -> List[tuple]:
     """Validates that names are unique."""
@@ -79,83 +161,75 @@ def validate_existing_names(
     ]
 
 
-# Rules
-def validate_schemas(settings: Settings) -> List[tuple]:
-    """Validate setting raw JSON files against schema."""
-    errors = []
-    for attr_name, file_name in SettingFileNames.__dict__.items():
-        if not attr_name.startswith("__"):
-            schema_file = fm.read_file(os.path.join(SCHEMA_FILES_PATH, file_name))
-            schema = ju.parse_json(schema_file)
-
-            try:
-                jsonschema.validate(settings.get_raw_settings(file_name), schema)
-                errors.append(("", True))
-            except jsonschema.ValidationError as e:
-                errors.append(
-                    (
-                        f"JSON schema validation failed for {file_name} settings: {e}",
-                        False,
-                    )
-                )
-
-    return errors
+# Methods for validation rules (work with raw settings)
+def get_monitored_environment_names_raw_gs(settings) -> List[str]:
+    """Retrieves the monitored_environment names from the General settings (raw)."""
+    return [
+        m_env["name"]
+        for m_env in settings.get_raw_settings(SettingFileNames.GENERAL).get(
+            "monitored_environments", []
+        )
+    ]
 
 
-def validate_unique_monitored_environment_names_gs(settings: Settings) -> List[tuple]:
-    """Validates unique monitored environment names in General settings."""
-    return validate_unique_names(
-        settings.get_monitored_environment_names_raw_gs(),
-        "Monitored environment names are not unique in General settings.",
-    )
+def get_monitored_account_id_and_region_raw_gs(settings) -> List[str]:
+    """Retrieves the monitored environments 'account_id|region' from the General settings (raw)."""
+    return [
+        f"""{m_env["account_id"]}|{m_env["region"]}"""
+        for m_env in settings.get_raw_settings(SettingFileNames.GENERAL).get(
+            "monitored_environments", []
+        )
+    ]
 
 
-def validate_unique_monitored_accout_id_region_combinations_gs(
-    settings: Settings,
-) -> List[tuple]:
-    """Validates unique account_id + region combinations in monitored environments in General settings."""
-    return validate_unique_names(
-        settings.get_monitored_account_id_and_region_raw_gs(),
-        "Monitored environment account_id + region combinations are not unique in General settings.",
-    )
+def get_delivery_method_names_raw_gs(settings) -> List[str]:
+    """Retrieves the delivery_method names from the General settings (raw)."""
+    return [
+        dlvry_mthd["name"]
+        for dlvry_mthd in settings.get_raw_settings(SettingFileNames.GENERAL).get(
+            "delivery_methods", []
+        )
+    ]
 
 
-def validate_unique_monitoring_group_names_mgs(settings: Settings) -> List[tuple]:
-    """Validates unique monitoring group names in Monitoring Groups settings."""
-    return validate_unique_names(
-        settings.get_monitoring_group_names_raw_mgs(),
-        "Monitoring group names are not unique in Monitoring Groups settings.",
-    )
+def get_monitoring_group_names_raw_mgs(settings) -> List[str]:
+    """Retrieves the group_names from the Monitoring Groups settings (raw)."""
+    return [
+        m_grp["group_name"]
+        for m_grp in settings.get_raw_settings(SettingFileNames.MONITORING_GROUPS).get(
+            "monitoring_groups", []
+        )
+    ]
 
 
-def validate_existing_monitored_environment_names_mgs(
-    settings: Settings,
-) -> List[tuple]:
-    """Validates if the monitored environment names in the Monitoring Groups settings
-    match the ones in the General settings."""
+def get_monitored_environment_names_raw_mgs(settings) -> List[str]:
+    """Retrieves the monitored_environment_names from the Monitoring settings (raw)."""
+    resource_groups = []
+    for group in settings.get_raw_settings(SettingFileNames.MONITORING_GROUPS).get(
+        "monitoring_groups", []
+    ):
+        for m_res in SettingConfigs.RESOURCE_TYPES:
+            resource_groups.extend(group.get(m_res, []))
 
-    return validate_existing_names(
-        settings.get_monitored_environment_names_raw_mgs(),
-        settings.get_monitored_environment_names_raw_gs(),
-        "monitored_environment_name in Monitoring Groups settings does not match General settings.",
-    )
-
-
-def validate_existing_monitoring_group_names_rs(settings: Settings) -> List[tuple]:
-    """Validates if the monitoring group names in the Recipients settings
-    match the ones in the Monitoring Groups settings."""
-    return validate_existing_names(
-        settings.get_monitoring_group_names_raw_rs(),
-        settings.get_monitoring_group_names_raw_mgs(),
-        "monitoring_group names in Recipients do not match Monitoring Groups settings.",
-    )
+    return [res.get("monitored_environment_name") for res in resource_groups]
 
 
-def validate_existing_delivery_methods_rs(settings: Settings) -> List[tuple]:
-    """Validates if the delivery methods in the Recipients settings
-    match the ones in the General settings."""
-    return validate_existing_names(
-        settings.get_delivery_method_names_raw_rs(),
-        settings.get_delivery_method_names_raw_gs(),
-        "delivery_method in Recipients do not match General settings.",
-    )
+def get_monitoring_group_names_raw_rs(settings) -> List[str]:
+    """Retrieves the monitoring_group names from the Recipients settings (raw)."""
+    return [
+        subscription["monitoring_group"]
+        for rec in settings.get_raw_settings(SettingFileNames.RECIPIENTS).get(
+            "recipients", []
+        )
+        for subscription in rec.get("subscriptions", [])
+    ]
+
+
+def get_delivery_method_names_raw_rs(settings) -> List[str]:
+    """Retrieves the delivery_method names from the Recipients settings (raw)."""
+    return [
+        rec["delivery_method"]
+        for rec in settings.get_raw_settings(SettingFileNames.RECIPIENTS).get(
+            "recipients", []
+        )
+    ]
