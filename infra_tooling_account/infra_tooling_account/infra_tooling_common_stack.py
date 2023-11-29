@@ -116,7 +116,7 @@ class InfraToolingCommonStack(Stack):
         timestream_storage = timestream.CfnDatabase(
             self,
             "salmonTimestreamDB",
-            database_name=AWSNaming.TimestreamDB(self, "metrics-events-storage"),  
+            database_name=AWSNaming.TimestreamDB(self, "metrics-events-storage"),
             kms_key_id=timestream_kms_key.key_id,
         )
 
@@ -132,7 +132,7 @@ class InfraToolingCommonStack(Stack):
             "AlertEventsTable",
             database_name=timestream_storage.database_name,
             retention_properties=retention_properties_property,
-            table_name="alert-events",
+            table_name=AWSNaming.TimestreamTable(self, "alert-events"),
         )
 
         return alert_events_table

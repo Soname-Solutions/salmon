@@ -17,6 +17,7 @@ import os
 from lib.core.constants import CDKDeployExclusions
 from lib.aws.aws_naming import AWSNaming
 
+
 class InfraToolingAlertingStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
@@ -26,27 +27,27 @@ class InfraToolingAlertingStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         input_settings_bucket_arn = Fn.import_value(
-            f"output-{self.project_name}-settings-bucket-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "settings-bucket-arn")
         )
 
         input_timestream_database_arn = Fn.import_value(
-            f"output-{self.project_name}-metrics-events-storage-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "metrics-events-storage-arn")
         )
 
         input_timestream_database_name = Fn.import_value(
-            f"output-{self.project_name}-metrics-events-db-name-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "metrics-events-db-name")
         )
 
         input_timestream_alert_events_table_name = Fn.import_value(
-            f"output-{self.project_name}-alert-events-table-name-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "alert-events-table-name")
         )
 
         input_notification_queue_arn = Fn.import_value(
-            f"output-{self.project_name}-notification-queue-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "notification-queue-arn")
         )
 
         input_internal_error_topic_arn = Fn.import_value(
-            f"output-{self.project_name}-internal-error-topic-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "internal-error-topic-arn")
         )
 
         # Settings S3 Bucket Import
@@ -86,7 +87,7 @@ class InfraToolingAlertingStack(Stack):
         alerting_bus = events.EventBus(
             self,
             "salmonAlertingBus",
-            event_bus_name=f"eventbus-{self.project_name}-alerting-{self.stage_name}",
+            event_bus_name=AWSNaming.EventBus(self, "alerting"),
         )
 
         # EventBridge bus resource policy
@@ -105,7 +106,7 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_bus.add_to_resource_policy(
             iam.PolicyStatement(
-                sid=f"policy-{self.project_name}-AllowMonitoredAccountsPutEvents-{self.stage_name}",
+                sid=AWSNaming.IAMPolicy(self, "AllowMonitoredAccountsPutEvents"),
                 actions=["events:PutEvents"],
                 effect=iam.Effect.ALLOW,
                 resources=[alerting_bus.event_bus_arn],
@@ -116,7 +117,7 @@ class InfraToolingAlertingStack(Stack):
         alerting_lambda_event_rule = events.Rule(
             self,
             "salmonAlertingLambdaEventRule",
-            rule_name=f"eventbusrule-{self.project_name}-alerting-lambda-{self.stage_name}",
+            rule_name=AWSNaming.EventBusRule(self, "alerting-lambda"),
             event_bus=alerting_bus,
             event_pattern=events.EventPattern(source=events.Match.prefix("aws")),
         )
@@ -137,7 +138,7 @@ class InfraToolingAlertingStack(Stack):
             self,
             "alertingLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=f"role-{self.project_name}-alerting-lambda-{self.stage_name}",
+            role_name=AWSNaming.IAMRole(self, "alerting-lambda"),
         )
 
         alerting_lambda_role.add_managed_policy(
@@ -191,7 +192,7 @@ class InfraToolingAlertingStack(Stack):
         alerting_lambda = lambda_.Function(
             self,
             "salmonAlertingLambda",
-            function_name=f"lambda-{self.project_name}-alerting-{self.stage_name}",
+            function_name=AWSNaming.LambdaFunction(self, "alerting"),
             code=lambda_.Code.from_asset(
                 alerting_lambda_path,
                 exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
