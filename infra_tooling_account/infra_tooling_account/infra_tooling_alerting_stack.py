@@ -15,7 +15,7 @@ from constructs import Construct
 import os
 
 from lib.core.constants import CDKDeployExclusions
-
+from lib.aws.aws_naming import AWSNaming
 
 class InfraToolingAlertingStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:

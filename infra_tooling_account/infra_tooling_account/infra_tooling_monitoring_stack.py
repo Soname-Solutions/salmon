@@ -15,7 +15,7 @@ from constructs import Construct
 import os
 
 from lib.core.constants import CDKDeployExclusions
-
+from lib.aws.aws_naming import AWSNaming
 
 class InfraToolingMonitoringStack(Stack):
     """
