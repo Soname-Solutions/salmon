@@ -17,7 +17,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions
+from lib.core.constants import CDKDeployExclusions, TimestreamRetention
 from lib.aws.aws_naming import AWSNaming
 
 
@@ -124,8 +124,8 @@ class InfraToolingCommonStack(Stack):
 
     def create_timestream_tables(self, timestream_storage):
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
-            magnetic_store_retention_period_in_days="365",
-            memory_store_retention_period_in_hours="240",
+            magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
+            memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
         )
         alert_events_table = timestream.CfnTable(
             self,

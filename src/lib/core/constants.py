@@ -12,6 +12,9 @@ class Settings:
         "step_functions",
     ]
 
+class TimestreamRetention:
+    MagneticStoreRetentionPeriodInDays = "365"
+    MemoryStoreRetentionPeriodInHours = "240"
 
 class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]

@@ -17,8 +17,6 @@ class AWSNaming:
 
         outp = f"{prefix}-{project_name}-{meaning}-{stage_name}"
 
-        # todo: if name longer than XX symbols (90? - AWS Limit) - throw an error
-
         return outp
 
     @classmethod
