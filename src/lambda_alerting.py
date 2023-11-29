@@ -3,10 +3,7 @@ import json
 import boto3
 import logging
 
-from lib.aws.timestream_manager import (
-    iso_time_to_epoch_milliseconds,
-    TimestreamTableWriter,
-)
+from lib.aws.timestream_manager import TimestreamTableWriter
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -101,17 +98,17 @@ def prepare_timestream_record(event_props, event):
 
     dimensions = [
         {
-            "Name": "Monitored_Environment",
+            "Name": "monitored_environment",
             "Value": event_props["monitored_environment"],
         },
-        {"Name": "Source", "Value": event_props["source"]},
+        {"Name": "source", "Value": event_props["source"]},
     ]
-    record_time = iso_time_to_epoch_milliseconds(event_props["time"])
+    record_time = TimestreamTableWriter.iso_time_to_epoch_milliseconds(event_props["time"])
 
     records.append(
         {
             "Dimensions": dimensions,
-            "MeasureName": "EventJson",
+            "MeasureName": "event_json",
             "MeasureValue": json.dumps(event, indent=4),
             "MeasureValueType": "VARCHAR",
             "Time": record_time,
