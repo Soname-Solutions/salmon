@@ -8,7 +8,9 @@ from lib.settings import Settings
 
 def test_settings_validation():
     """Test settings_validator.validate function"""
-    settings = Settings.from_file_path("./config/sample_settings/")
+    test_settings_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(test_settings_dir, "../config/sample_settings/")
+    settings = Settings.from_file_path(config_path)
     validate(settings)
     print("Settings validation passed")
 
