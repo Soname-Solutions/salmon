@@ -13,5 +13,10 @@ class SettingConfigs:
     ]
 
 
+class NotificationType:
+    ALERT = "alert"
+    DIGEST = "digest"
+
+
 class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]

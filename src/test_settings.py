@@ -2,6 +2,7 @@ import os
 import json
 
 from lib.core import json_utils as ju
+from lib.core.constants import NotificationType
 from lib.settings.cdk.settings_validator import validate
 from lib.settings import Settings
 
@@ -36,7 +37,9 @@ def lambda_handler(event, context):
     )
     monitoring_groups = settings.get_monitoring_groups([job_name])
     print(f"Monitoring groups for '{job_name}': {monitoring_groups}")
-    print(f"Recipients list: {settings.get_recipients(monitoring_groups, 'alert')}")
+    print(
+        f"Recipients list: {settings.get_recipients(monitoring_groups, NotificationType.ALERT)}"
+    )
 
     # Check processed settings
     print(json.dumps(settings.processed_settings, indent=4))

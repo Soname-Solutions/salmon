@@ -5,7 +5,7 @@ from fnmatch import fnmatch
 
 import lib.core.file_manager as fm
 import lib.core.json_utils as ju
-from lib.core.constants import SettingConfigs, SettingFileNames
+from lib.core.constants import SettingConfigs, SettingFileNames, NotificationType
 from lib.aws.s3_manager import S3Manager
 
 
@@ -159,7 +159,7 @@ class Settings:
         return list(matched_groups)
 
     def get_recipients(
-        self, monitoring_groups: List[str], notification_type: str
+        self, monitoring_groups: List[str], notification_type: NotificationType
     ) -> List[dict]:
         """Get recipients by monitoring groups."""
         matched_recipients = []
@@ -170,9 +170,11 @@ class Settings:
                 for monitoring_group in monitoring_groups:
                     if subscription.get("monitoring_group") == monitoring_group:
                         if (
-                            notification_type == "alert" and subscription.get("alerts")
+                            notification_type == NotificationType.ALERT
+                            and subscription.get("alerts")
                         ) or (
-                            notification_type == "digest" and subscription.get("digest")
+                            notification_type == NotificationType.DIGEST
+                            and subscription.get("digest")
                         ):
                             recipient_info = {
                                 "recipient": recipient.get("recipient"),
