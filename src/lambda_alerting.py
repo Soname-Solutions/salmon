@@ -44,8 +44,8 @@ def write_event_to_timestream(records):
     logger.info(result)
 
 
-def read_settings(s3_bucket_name):
-    settings_path = f"s3://{s3_bucket_name}/settings"
+def read_settings(s3_bucket_name) -> Settings:
+    settings_path = f"s3://{s3_bucket_name}/settings/"
     settings = Settings.from_s3_path(settings_path)
     return settings
 
@@ -58,7 +58,7 @@ def send_messages_to_sqs(queue_url, messages):
     logger.info(results)
 
 
-def parse_event_properties(event, settings):
+def parse_event_properties(event):
     """
     Extracts and structures properties from the given event.
 
@@ -76,7 +76,7 @@ def parse_event_properties(event, settings):
 
 
 def get_monitored_env_name(event, settings: Settings):
-    return settings.get_monitored_environment_name(event["account_id"], event["region"])
+    return settings.get_monitored_environment_name(event["account"], event["region"])
 
 
 def prepare_timestream_record(event_props, monitored_env_name, event):
@@ -129,11 +129,11 @@ def map_to_notification_messages(event_props, settings: Settings):
 def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
-    settings_bucket_name = os.environ("SETTINGS_S3_BUCKET_NAME")
+    settings_bucket_name = os.environ["SETTINGS_S3_BUCKET_NAME"]
     settings = read_settings(settings_bucket_name)
 
-    event_props = parse_event_properties(event, settings)
-    monitored_env_name = get_monitored_env_name(event, settings)
+    event_props = parse_event_properties(event)
+    monitored_env_name = get_monitored_env_name(event_props, settings)
 
     # 1. parses event to identify "source" - e.g. "glue"
     # 2. Create instance of <source>AlertParser class and calls method "parse"
@@ -169,10 +169,13 @@ if __name__ == "__main__":
     os.environ[
         "ALERT_EVENTS_DB_NAME"
     ] = "timestream-salmon-metrics-events-storage-devvd"
-    os.environ["NOTIFICATION_QUEUE_NAME"] = "queue-salmon-notification-devvd"
+    os.environ[
+        "NOTIFICATION_QUEUE_URL"
+    ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devvd"
     os.environ["SETTINGS_S3_BUCKET_NAME"] = "s3-salmon-settings-devvd"
     os.environ["ALERT_EVENTS_TABLE_NAME"] = "alert-events"
-    event = {
+    event = """
+    {
         "version": "0",
         "id": "cc90c8c7-57a6-f950-2248-c4c8db98a5ef",
         "detail-type": "test_event",
@@ -181,9 +184,11 @@ if __name__ == "__main__":
         "time": "2023-11-21T21:55:03Z",
         "region": "eu-central-1",
         "resources": [],
-        "detail": {"reason": "test777"},
+        "detail": {"reason": "test777"}
     }
-    glue_event = {
+    """
+    glue_event = """
+    {
         "version": "0",
         "id": "abcdef00-1234-5678-9abc-def012345678",
         "detail-type": "Glue Job State Change",
@@ -193,14 +198,16 @@ if __name__ == "__main__":
         "region": "us-east-1",
         "resources": [],
         "detail": {
-            "jobName": "MyJob",
+            "jobName": "glue-salmonts-pyjob-1-dev",
             "severity": "INFO",
             "state": "SUCCEEDED",
             "jobRunId": "jr_abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
-            "message": "Job run succeeded",
-        },
+            "message": "Job run succeeded"
+        }
     }
-    step_functions_event = {
+    """
+    step_functions_event = """
+    {
         "version": "0",
         "id": "315c1398-40ff-a850-213b-158f73e60175",
         "detail-type": "Step Functions Execution Status Change",
@@ -213,14 +220,15 @@ if __name__ == "__main__":
         ],
         "detail": {
             "executionArn": "arn:aws:states:us-east-1:123456789012:execution:state-machine-name:execution-name",
-            "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:state-machine",
+            "stateMachineArn": "arn:aws:states:eu-central-1:405389362913:stateMachine:stepfunction-salmonts-sample-dev",
             "name": "execution-name",
             "status": "FAILED",
             "startDate": 1551225146847,
             "stopDate": 1551225151881,
             "input": "{}",
-            "output": "null",
-        },
+            "output": "null"
+        }
     }
+    """
     context = None
     lambda_handler(glue_event, context)
