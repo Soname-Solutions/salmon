@@ -1,4 +1,5 @@
 import boto3
+from urllib.parse import urlparse
 
 
 class S3ManagerReadException(Exception):
@@ -32,21 +33,23 @@ class S3Manager:
         """
         self.s3_client = boto3.client("s3") if s3_client is None else s3_client
 
-    def read_file(self, bucket_name: str, file_name: str) -> str:
+    def read_file(self, s3_path: str) -> str:
         """Read a file from the specified S3 bucket.
 
         Args:
-            bucket_name (str): The name of the S3 bucket.
-            file_name (str): The name of the file to read.
+            s3_path (str): Full S3 path (e.g. s3://your_bucket_name/path/to/your/object/file.txt).
 
         Returns:
             str: The content of the file as a string or None if an error occurs.
 
         """
         try:
-            response = self.s3_client.get_object(Bucket=bucket_name, Key=file_name)
+            s3_path_parts = urlparse(s3_path, allow_fragments=False)
+            response = self.s3_client.get_object(
+                Bucket=s3_path_parts.netloc, Key=s3_path_parts.path.lstrip("/")
+            )
             settings_data = response["Body"].read().decode("utf-8")
             return settings_data
         except Exception as e:
-            error_message = f"Error reading settings file {file_name}: {e}"
+            error_message = f"Error reading settings file from '{s3_path}': {e}"
             raise S3ManagerReadException(error_message)
