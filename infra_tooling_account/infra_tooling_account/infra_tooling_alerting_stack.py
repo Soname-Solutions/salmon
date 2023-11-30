@@ -200,7 +200,7 @@ class InfraToolingAlertingStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
                 "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
-                "NOTIFICATION_QUEUE_NAME": notification_queue.queue_name,
+                "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
                 "ALERT_EVENTS_DB_NAME": timestream_database_name,
                 "ALERT_EVENTS_TABLE_NAME": timestream_alert_events_table_name,
             },
