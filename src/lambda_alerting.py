@@ -157,7 +157,7 @@ if __name__ == "__main__":
         "detail-type": "test_event",
         "source": "awssoname.test777",
         "account": "405389362913",
-        "time": "2023-11-21T21:55:03Z",
+        "time": "2023-11-28T21:55:03Z",
         "region": "eu-central-1",
         "resources": [],
         "detail": {"reason": "test777"},
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         "detail-type": "Glue Job State Change",
         "source": "aws.glue",
         "account": "405389362913",
-        "time": "2017-09-07T18:57:21Z",
+        "time": "2023-11-28T18:57:21Z",
         "region": "eu-central-1",
         "resources": [],
         "detail": {
@@ -187,7 +187,7 @@ if __name__ == "__main__":
         "detail-type": "Step Functions Execution Status Change",
         "source": "aws.states",
         "account": "405389362913",
-        "time": "2019-02-26T19:42:21Z",
+        "time": "2023-11-28T19:42:21Z",
         "region": "eu-central-1",
         "resources": [
             "arn:aws:states:us-east-1:123456789012:execution:state-machine-name:execution-name"
