@@ -1,0 +1,69 @@
+from abc import ABC, abstractmethod
+
+# TODO: import Settings
+
+SENDER_EMAIL = "salmon-no-reply@soname.de"  # TODO: do something with that
+
+
+class EventParsingException(Exception):
+    pass
+
+
+class GeneralAwsEventMapper(ABC):
+    def __init__(self, settings):
+        self.settings = settings
+
+    @abstractmethod
+    def get_resource_name(self, event):
+        pass
+
+    @abstractmethod
+    def get_message(self, event):
+        pass
+
+    def __get_delivery_options(self, resource_name):
+        delivery_options = []
+        recipients = {}
+        monitoring_groups = self.settings.get_monitoring_groups([resource_name])
+        recipients_settings = self.settings.get_recipients(
+            monitoring_groups, "alert"
+        )  # TODO: replace with constants
+
+        for recipient_setting in recipients_settings:
+            delivery_method = recipient_setting["delivery_method"]
+            recipient = recipient_setting["recipient"]
+
+            if delivery_method not in recipients:
+                recipients[delivery_method] = []
+
+            recipients[delivery_method].append(recipient)
+
+        for delivery_method, recipients_array in recipients.items():
+            delivery_option = {
+                "delivery_method": delivery_method,
+                "recipients": recipients_array,
+                "sender_email": SENDER_EMAIL,
+            }
+            delivery_options.append(delivery_option)
+
+        return delivery_options
+
+    def __to_notification_messages(self, delivery_options, message):
+        notification_messages = []
+
+        for delivery_option in delivery_options:
+            notification_message = {
+                "delivery_options": delivery_option,
+                "message": message,
+            }
+            notification_messages.append(notification_message)
+
+        return notification_messages
+
+    def to_notification_messages(self, event):
+        resource_name = self.get_resource_name(event)
+        delivery_options = self.__get_delivery_options(resource_name)
+
+        message = self.get_message(event)
+
+        return self.__to_notification_messages(delivery_options, message)
