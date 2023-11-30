@@ -3,12 +3,17 @@ import json
 import boto3
 import logging
 
+from lib.aws.sqs_manager import SQSQueueSender
 from lib.aws.timestream_manager import TimestreamTableWriter
+from lib.event_mapper.aws_event_mapper import AwsEventMapper
+from lib.core import json_utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 timestream_write_client = boto3.client("timestream-write")
+sqs_client = boto3.client("sqs")
+# TODO: import settingss
 
 
 def write_event_to_timestream(records):
@@ -39,22 +44,22 @@ def write_event_to_timestream(records):
     logger.info(result)
 
 
-def settings_stub_get_monitored_env_name(account, region):
-    """
-    A stub function to return a monitored environment name based on account and region.
-    To be replaced when Settings Component is ready
-
-    Args:
-        account (str): AWS account ID.
-        region (str): AWS region name.
-
-    Returns:
-        str: A string representing the name of the monitored environment.
-    """
-    return "monitored_env_from_stub"
+def read_settings(s3_bucket_name):
+    settings_path = f"s3://{s3_bucket_name}/settings"
+    settings = {}  # TODO: replace with real settings call
+    # settings = Settings.from_s3_path(settings_path)
+    return settings
 
 
-def parse_event_properties(event):
+def send_messages_to_sqs(queue_url, messages):
+    sender = SQSQueueSender(queue_url, sqs_client)
+    results = sender.send_messages(messages)
+
+    logger.info("Messages have been sent successfully to SQS")
+    logger.info(results)
+
+
+def parse_event_properties(event, settings):
     """
     Extracts and structures properties from the given event.
 
@@ -67,20 +72,16 @@ def parse_event_properties(event):
     Returns:
         dict: A dictionary containing structured event properties.
     """
-    outp = {
-        "source": event.get("source", "Source Unknown"),
-        "account_id": event.get("account", None),
-        "region": event.get("region", None),
-        "time": event.get("time", None),
-    }
-    outp["monitored_environment"] = settings_stub_get_monitored_env_name(
-        outp["account_id"], outp["region"]
-    )
-
+    outp = json_utils.parse_json(event)
     return outp
 
 
-def prepare_timestream_record(event_props, event):
+def get_monitored_env_name(event, settings):
+    # return settings.get_monitored_environment_name(event["account_id"], event["region"])
+    return "monitored_env_from_stub"  # TODO: replace with real settings call
+
+
+def prepare_timestream_record(event_props, monitored_env_name, event):
     """
     Prepares a Timestream record from the given event and its properties.
 
@@ -99,7 +100,7 @@ def prepare_timestream_record(event_props, event):
     dimensions = [
         {
             "Name": "monitored_environment",
-            "Value": event_props["monitored_environment"],
+            "Value": monitored_env_name,
         },
         {"Name": "source", "Value": event_props["source"]},
     ]
@@ -118,15 +119,26 @@ def prepare_timestream_record(event_props, event):
     return records
 
 
+def map_to_notification_messages(event_props, settings):
+    mapper = AwsEventMapper(settings)
+    messages = mapper.to_notification_messages(event_props)
+
+    return messages
+
+
 def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
-    event_props = parse_event_properties(event)
+    settings_bucket_name = os.environ("SETTINGS_S3_BUCKET_NAME")
+    settings = read_settings(settings_bucket_name)
+
+    event_props = parse_event_properties(event, settings)
+    monitored_env_name = get_monitored_env_name(event, settings)
 
     # 1. parses event to identify "source" - e.g. "glue"
-
     # 2. Create instance of <source>AlertParser class and calls method "parse"
     # parse method returns DSL-markedup message
+    messages = map_to_notification_messages(event_props, settings)
 
     # 3. asks settings module for
     # a) monitoring group item belongs to
@@ -135,20 +147,30 @@ def lambda_handler(event, context):
     # 3. for each recipient:
     # sends message to SQS queue (DSL-markup + recipient and delivery method info)
 
+    print(messages)
+
+    queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
+    send_messages_to_sqs(queue_url, messages)
+
     # 4. writes event into timestream DB table named <<TBD>>
     # dimensions: a) monitoring group, b) service
     # metric = error message
-    timestream_records = prepare_timestream_record(event_props, event)
+    timestream_records = prepare_timestream_record(
+        event_props, monitored_env_name, event
+    )
+
     write_event_to_timestream(timestream_records)
 
-    return {"event": event}
+    return {"messages": messages}
 
 
 if __name__ == "__main__":
     # os vars passed when lambda is created
     os.environ[
         "ALERT_EVENTS_DB_NAME"
-    ] = "timestream-salmon-metrics-events-storage-devam"
+    ] = "timestream-salmon-metrics-events-storage-devvd"
+    os.environ["NOTIFICATION_QUEUE_NAME"] = "queue-salmon-notification-devvd"
+    os.environ["SETTINGS_S3_BUCKET_NAME"] = "s3-salmon-settings-devvd"
     os.environ["ALERT_EVENTS_TABLE_NAME"] = "alert-events"
     event = {
         "version": "0",
@@ -161,5 +183,44 @@ if __name__ == "__main__":
         "resources": [],
         "detail": {"reason": "test777"},
     }
+    glue_event = {
+        "version": "0",
+        "id": "abcdef00-1234-5678-9abc-def012345678",
+        "detail-type": "Glue Job State Change",
+        "source": "aws.glue",
+        "account": "123456789012",
+        "time": "2017-09-07T18:57:21Z",
+        "region": "us-east-1",
+        "resources": [],
+        "detail": {
+            "jobName": "MyJob",
+            "severity": "INFO",
+            "state": "SUCCEEDED",
+            "jobRunId": "jr_abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+            "message": "Job run succeeded",
+        },
+    }
+    step_functions_event = {
+        "version": "0",
+        "id": "315c1398-40ff-a850-213b-158f73e60175",
+        "detail-type": "Step Functions Execution Status Change",
+        "source": "aws.states",
+        "account": "123456789012",
+        "time": "2019-02-26T19:42:21Z",
+        "region": "us-east-1",
+        "resources": [
+            "arn:aws:states:us-east-1:123456789012:execution:state-machine-name:execution-name"
+        ],
+        "detail": {
+            "executionArn": "arn:aws:states:us-east-1:123456789012:execution:state-machine-name:execution-name",
+            "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:state-machine",
+            "name": "execution-name",
+            "status": "FAILED",
+            "startDate": 1551225146847,
+            "stopDate": 1551225151881,
+            "input": "{}",
+            "output": "null",
+        },
+    }
     context = None
-    lambda_handler(event, context)
+    lambda_handler(glue_event, context)
