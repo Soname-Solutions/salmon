@@ -6,7 +6,6 @@ import logging
 from lib.aws.sqs_manager import SQSQueueSender
 from lib.aws.timestream_manager import TimestreamTableWriter
 from lib.event_mapper.aws_event_mapper import AwsEventMapper
-from lib.core import json_utils
 from lib.settings import Settings
 
 logger = logging.getLogger()
@@ -50,7 +49,7 @@ def read_settings(s3_bucket_name) -> Settings:
     return settings
 
 
-def send_messages_to_sqs(queue_url, messages):
+def send_messages_to_sqs(queue_url: str, messages: dict):
     sender = SQSQueueSender(queue_url, sqs_client)
     results = sender.send_messages(messages)
 

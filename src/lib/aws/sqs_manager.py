@@ -1,4 +1,5 @@
 import boto3
+import json
 
 
 class SQSQueueSenderException(Exception):
@@ -34,7 +35,7 @@ class SQSQueueSender:
         self.queue_url = queue_url
         self.sqs_client = boto3.client("sqs") if sqs_client is None else sqs_client
 
-    def send_messages(self, messages: str):
+    def send_messages(self, messages: dict):
         """
         Sends messages to the SQS queue.
 
@@ -48,14 +49,14 @@ class SQSQueueSender:
         results = []
         for message in messages:
             try:
-                result = self.sqs_client().send_message(
+                result = self.sqs_client.send_message(
                     QueueUrl=self.queue_url,
-                    MessageBody=message,
+                    MessageBody=json.dumps(message, indent=4),
                 )
                 results.append(result)
                 # todo: later need to introduce records buffering (batches < 100 records)
             except Exception as e:
-                error_message = f"Error sending messages to {self.queue_name}: {e}"
+                error_message = f"Error sending messages to {self.queue_url}: {e}"
                 raise SQSQueueSenderException(error_message)
 
         return results
