@@ -7,13 +7,13 @@ from lib.aws.sqs_manager import SQSQueueSender
 from lib.aws.timestream_manager import TimestreamTableWriter
 from lib.event_mapper.aws_event_mapper import AwsEventMapper
 from lib.core import json_utils
+from lib.settings import Settings
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 timestream_write_client = boto3.client("timestream-write")
 sqs_client = boto3.client("sqs")
-# TODO: import settingss
 
 
 def write_event_to_timestream(records):
@@ -46,8 +46,7 @@ def write_event_to_timestream(records):
 
 def read_settings(s3_bucket_name):
     settings_path = f"s3://{s3_bucket_name}/settings"
-    settings = {}  # TODO: replace with real settings call
-    # settings = Settings.from_s3_path(settings_path)
+    settings = Settings.from_s3_path(settings_path)
     return settings
 
 
@@ -76,9 +75,8 @@ def parse_event_properties(event, settings):
     return outp
 
 
-def get_monitored_env_name(event, settings):
-    # return settings.get_monitored_environment_name(event["account_id"], event["region"])
-    return "monitored_env_from_stub"  # TODO: replace with real settings call
+def get_monitored_env_name(event, settings: Settings):
+    return settings.get_monitored_environment_name(event["account_id"], event["region"])
 
 
 def prepare_timestream_record(event_props, monitored_env_name, event):
@@ -104,7 +102,9 @@ def prepare_timestream_record(event_props, monitored_env_name, event):
         },
         {"Name": "source", "Value": event_props["source"]},
     ]
-    record_time = TimestreamTableWriter.iso_time_to_epoch_milliseconds(event_props["time"])
+    record_time = TimestreamTableWriter.iso_time_to_epoch_milliseconds(
+        event_props["time"]
+    )
 
     records.append(
         {
@@ -119,7 +119,7 @@ def prepare_timestream_record(event_props, monitored_env_name, event):
     return records
 
 
-def map_to_notification_messages(event_props, settings):
+def map_to_notification_messages(event_props, settings: Settings):
     mapper = AwsEventMapper(settings)
     messages = mapper.to_notification_messages(event_props)
 

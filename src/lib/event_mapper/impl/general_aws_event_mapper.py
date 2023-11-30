@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-
-# TODO: import Settings
+from ...core.constants import NotificationType
+from ...settings import Settings
 
 SENDER_EMAIL = "salmon-no-reply@soname.de"  # TODO: do something with that
 
@@ -10,7 +10,7 @@ class EventParsingException(Exception):
 
 
 class GeneralAwsEventMapper(ABC):
-    def __init__(self, settings):
+    def __init__(self, settings: Settings):
         self.settings = settings
 
     @abstractmethod
@@ -26,8 +26,8 @@ class GeneralAwsEventMapper(ABC):
         recipients = {}
         monitoring_groups = self.settings.get_monitoring_groups([resource_name])
         recipients_settings = self.settings.get_recipients(
-            monitoring_groups, "alert"
-        )  # TODO: replace with constants
+            monitoring_groups, NotificationType.ALERT
+        )
 
         for recipient_setting in recipients_settings:
             delivery_method = recipient_setting["delivery_method"]

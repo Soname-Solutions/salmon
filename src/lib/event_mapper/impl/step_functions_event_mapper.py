@@ -1,8 +1,9 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
+from ...settings import Settings
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
-    def __init__(self, settings):
+    def __init__(self, settings: Settings):
         super().__init__(settings)
 
     def get_resource_name(self, event):

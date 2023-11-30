@@ -1,10 +1,9 @@
 from .impl import GlueEventMapper, StepFunctionsEventMapper, EventParsingException
-
-# TODO: import settings
+from ..settings import Settings
 
 
 class AwsEventMapper:
-    def __init__(self, settings):
+    def __init__(self, settings: Settings):
         self.settings = settings
 
         self.event_map = {
