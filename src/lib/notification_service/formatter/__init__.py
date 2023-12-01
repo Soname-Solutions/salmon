@@ -1,2 +1,2 @@
-from .htmp_formatter import HtmlFormatter
+from .html_formatter import HtmlFormatter
 from .formatter import Formatter
