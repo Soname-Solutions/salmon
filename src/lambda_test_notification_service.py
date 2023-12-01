@@ -1,18 +1,37 @@
-import json
-
+from lib.notification_service.formatter_provider import formatters
 from lib.notification_service.sender_provider import senders
 from lib.notification_service.messages import Message
 
 
 # todo: the config will be read from settings config
 sender_config = {
-    "ses_sender": "my_email@soname.de",
     "smtp_sender": "my_email@soname.de",
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 465,
     "smtp_login": "my_email@soname.de",
     "smtp_password": "my_pass",
 }
+
+
+def _get_formatted_message_body(message_body: list, delivery_method: str) -> str:
+    formatted_message_objects = []
+    formatter = formatters.get(delivery_method)
+
+    for message_object in message_body:
+        try:
+            object_type = [key for key in message_object.keys() if key != "style"][0]
+        except IndexError:
+            raise KeyError(f"Message object type {object_type} is not set.")
+
+        content = message_object.get(object_type)
+        style = message_object.get("style")
+
+        formatted_object = formatter.format(object_type, content=content, style=style)
+
+        if formatted_object is not None:
+            formatted_message_objects.append(formatted_object)
+
+    return "".join(formatted_message_objects)
 
 
 def lambda_handler(event, context):
@@ -23,20 +42,33 @@ def lambda_handler(event, context):
         event (object): Event data containing details about the AWS resource state change.
         context: (object): AWS Lambda context (not utilized in this function).
     """
-    delivery_info = json.loads(event)
-    delivery_method = delivery_info.get("delivery_method")
+    delivery_options_info = event.get("delivery_options")
+    message_info = event.get("message")
+
+    delivery_method = delivery_options_info.get("delivery_method")
 
     if delivery_method is None:
         raise KeyError("Delivery method is not set.")
 
-    message = Message(
-        delivery_info.get("message"), delivery_info.get("message_subject")
-    )
+    message_subject = message_info.get("message_subject")
+    message_body = message_info.get("message_body")
+
+    if message_subject is None:
+        raise KeyError("Message subject is not set.")
+
+    if message_body is None:
+        raise KeyError("Message body is not set.")
+
+    formatted_message_body = _get_formatted_message_body(message_body, delivery_method)
+
+    message = Message(formatted_message_body, message_subject)
+
     sender = senders.get(
         delivery_method,
         message=message,
-        recipients=delivery_info.get("recipients"),
-        **sender_config
+        ses_sender=delivery_options_info.get("sender_email"),
+        recipients=delivery_options_info.get("recipients"),
+        **sender_config,
     )
 
     try:
@@ -48,14 +80,54 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    test_event = """
-        {
+    test_event = {
+        "delivery_options": {
+            "sender_email": "salmon-no-reply@soname.de",
+            "recipients": ["vasya_pupking@soname.cn"],
             "delivery_method": "AWS_SES",
-            "message_subject": "SDM [DEV] SAP Lean Glue Failure",
-            "recipients": ["my_email@soname.de", "vasilii_pupkin@salmon.com"],
-            "message": "<html><head><style>table, th, td { border: 1px solid black; margin: 2px; }</style></head><body><h1>Hi</h1><table><tr><td>Glue Job 1 failed!</td></tr></table></body></html>"
-        }
-        """
+        },
+        "message": {
+            "message_subject": "Super important Alert",
+            "message_body": [
+                {"text": "Daily monitoring report", "style": "header_777"},
+                {
+                    "table": {
+                        "caption": "My Lovely Table",
+                        "header": {
+                            "values": ["colname1", "colname2", "colname3"],
+                            "style": "error",
+                        },
+                        "rows": [
+                            {
+                                "values": ["colname1", "colname2", "colname3"],
+                                "style": "error",
+                            },
+                            {
+                                "values": ["colname1", "colname2", "colname3"],
+                                "style": "error",
+                            },
+                        ],
+                    }
+                },
+                {"text": "Daily monitoring report", "style": "header_1"},
+                {
+                    "table": {
+                        "caption": "My Lovely Table",
+                        "header": {
+                            "values": ["colname1", "colname2", "colname3"],
+                            "style": "error",
+                        },
+                        "rows": [
+                            {
+                                "values": ["colname1", "colname2", "colname3"],
+                                "style": "error",
+                            }
+                        ],
+                    }
+                },
+            ],
+        },
+    }
     context = ""
 
     lambda_handler(test_event, context)
