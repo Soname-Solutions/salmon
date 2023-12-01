@@ -12,6 +12,9 @@ class SettingConfigs:
         "step_functions",
     ]
 
+class TimestreamRetention:
+    MagneticStoreRetentionPeriodInDays = "365"
+    MemoryStoreRetentionPeriodInHours = "240"
 
 class NotificationType:
     ALERT = "alert"

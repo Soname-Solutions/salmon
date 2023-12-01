@@ -15,6 +15,7 @@ from constructs import Construct
 import os
 
 from lib.core.constants import CDKDeployExclusions
+from lib.aws.aws_naming import AWSNaming
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -73,7 +74,7 @@ class InfraToolingMonitoringStack(Stack):
             schedule=events.Schedule.rate(
                 Duration.minutes(metrics_collection_interval_min)
             ),
-            rule_name=f"rule-{self.project_name}-metrics-extract-cron-{self.stage_name}",
+            rule_name=AWSNaming.EventBusRule(self, "metrics-extract-cron"),
         )
         rule.add_target(targets.LambdaFunction(extract_metrics_orch_lambda))
 
@@ -86,15 +87,15 @@ class InfraToolingMonitoringStack(Stack):
             tuple: A tuple containing references to the settings S3 bucket, internal error topic, and Timestream database ARN.
         """
         input_settings_bucket_arn = Fn.import_value(
-            f"output-{self.project_name}-settings-bucket-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "settings-bucket-arn")
         )
 
         input_timestream_database_arn = Fn.import_value(
-            f"output-{self.project_name}-metrics-events-storage-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "metrics-events-storage-arn")
         )
 
         input_internal_error_topic_arn = Fn.import_value(
-            f"output-{self.project_name}-internal-error-topic-arn-{self.stage_name}"
+            AWSNaming.CfnOutput(self, "internal-error-topic-arn")
         )
 
         # Settings S3 Bucket Import
@@ -151,7 +152,7 @@ class InfraToolingMonitoringStack(Stack):
             self,
             "extract-metricsLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=f"role-{self.project_name}-extract-metrics-lambda-{self.stage_name}",
+            role_name=AWSNaming.IAMRole(self, "extract-metrics-lambda"),
         )
 
         extract_metrics_lambda_role.add_managed_policy(
@@ -188,7 +189,7 @@ class InfraToolingMonitoringStack(Stack):
         extract_metrics_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsLambda",
-            function_name=f"lambda-{self.project_name}-extract-metrics-{self.stage_name}",
+            function_name=AWSNaming.LambdaFunction(self, "extract-metrics"),
             code=lambda_.Code.from_asset(
                 extract_metrics_lambda_path,
                 exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
@@ -207,7 +208,7 @@ class InfraToolingMonitoringStack(Stack):
         extract_metrics_orch_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsOrchLambda",
-            function_name=f"lambda-{self.project_name}-extract-metrics-orch-{self.stage_name}",
+            function_name=AWSNaming.LambdaFunction(self, "extract-metrics-orch"),
             code=lambda_.Code.from_asset(
                 extract_metrics_orch_lambda_path,
                 exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
