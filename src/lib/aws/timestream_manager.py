@@ -4,43 +4,16 @@ from datetime import datetime
 import time
 
 
-def iso_time_to_epoch_milliseconds(iso_date: str) -> str:
-    """
-    Convert an ISO 8601 formatted date string to the number of milliseconds since the Unix epoch.
-    If the input is None, the current time in milliseconds since the Unix epoch is returned.
-
-    Parameters:
-    iso_date (str): An ISO 8601 formatted date string (e.g., "2023-11-21T21:39:09Z").
-                    If None, the current time is used.
-
-    Returns:
-    str: The number of milliseconds since the Unix epoch as a string.
-    """
-
-    # If the input is None, use the current time
-    if iso_date is None:
-        epoch_time = time.time()
-    else:
-        # Convert the ISO date string to a datetime object
-        dt = datetime.fromisoformat(iso_date.rstrip("Z"))
-        # Convert the datetime object to epoch time in seconds
-        epoch_time = dt.timestamp()
-
-    # Convert epoch time to milliseconds and return as string
-    return str(int(epoch_time * 1000))
-
-
 class TimestreamTableWriterException(Exception):
-    """Exception raised for errors encountered while writing data into TimeStream DB."""
+    """Exception raised for errors encountered while interacting with TimeStream DB."""
 
     pass
 
 
 class TimestreamTableWriter:
     """
-    This class provides an interface to write records to a specified Amazon Timestream table.
-    It uses the AWS SDK for Python (Boto3) to interact with the
-    Timestream service.
+    This class provides an interface to write records to a specified Amazon Timestream table as well as some helper methods.
+    It uses the AWS SDK for Python (Boto3) to interact with the Timestream service.
 
     Attributes:
         db_name (str): The name of the Timestream database.
@@ -51,6 +24,10 @@ class TimestreamTableWriter:
     Methods:
         write_records(records): Writes a list of records to the Timestream table.
     """
+
+    RECORDS_BATCH_SIZE = (
+        100  # Maximum number of records inserted per one write (AWS Limit)
+    )
 
     def __init__(self, db_name: str, table_name: str, timestream_write_client=None):
         """
@@ -70,9 +47,70 @@ class TimestreamTableWriter:
             else timestream_write_client
         )
 
-    def write_records(self, records):
+    @staticmethod
+    def print_rejected_records_exceptions(err):
         """
-        Writes a list of records to the Timestream table.
+        Prints detailed information about rejected records exceptions.
+
+        This method is useful for debugging when the Timestream write client rejects records.
+
+        Args:
+            err: The exception object received from the Timestream write client which contains
+                 details about the rejected records.
+
+        Returns:
+            None
+        """        
+        print("RejectedRecords: ", err)
+        for rr in err.response["RejectedRecords"]:
+            print("Rejected Index " + str(rr["RecordIndex"]) + ": " + rr["Reason"])
+            if "ExistingVersion" in rr:
+                print("Rejected record existing version: ", rr["ExistingVersion"])
+
+    @staticmethod
+    def epoch_milliseconds_str(epoch_seconds: float = None) -> str:
+        """
+        Converts epoch time in seconds to a string representation in milliseconds.
+
+        If no argument is provided, the current time is used. 
+
+        Args:
+            epoch_seconds (float, optional): The epoch time in seconds. If None,
+                                             the current time is used. Defaults to None.
+
+        Returns:
+            str: The epoch time in milliseconds as a string.
+        """        
+        tmp = epoch_seconds if epoch_seconds is not None else time.time()
+        return str(int(round(tmp * 1000)))
+
+    @staticmethod
+    def iso_time_to_epoch_milliseconds(iso_date: str) -> str:
+        """
+        Convert an ISO 8601 formatted date string to the number of milliseconds since the Unix epoch.
+        If the input is None, the current time in milliseconds since the Unix epoch is returned.
+
+        Parameters:
+        iso_date (str): An ISO 8601 formatted date string (e.g., "2023-11-21T21:39:09Z").
+                        If None, the current time is used.
+
+        Returns:
+        str: The number of milliseconds since the Unix epoch as a string.
+        """
+
+        # If the input is None, use the current time
+        if iso_date is None:
+            return TimestreamTableWriter.epoch_milliseconds_str()
+        else:
+            # Convert the ISO date string to a datetime object
+            dt = datetime.fromisoformat(iso_date.rstrip("Z"))
+            # Convert the datetime object to epoch time in seconds
+            epoch_time = dt.timestamp()
+            return TimestreamTableWriter.epoch_milliseconds_str(epoch_time)
+
+    def _write_batch(self, records, common_attributes={}):
+        """
+        Writes a single batch (up to 100 records) to the Timestream table.
 
         Args:
             records: A list of records to be written to the Timestream table.
@@ -85,13 +123,102 @@ class TimestreamTableWriter:
         """
         try:
             result = self.timestream_write_client.write_records(
-                DatabaseName=self.db_name, TableName=self.table_name, Records=records
+                DatabaseName=self.db_name,
+                TableName=self.table_name,
+                Records=records,
+                CommonAttributes=common_attributes,
             )
-            # todo: later need to introduce records buffering (batches < 100 records)
-        except Exception as e:
+            print(
+                "WriteRecords Status: [%s]"
+                % result["ResponseMetadata"]["HTTPStatusCode"]
+            )
+            return result
+        except self.timestream_write_client.exceptions.RejectedRecordsException as err:
             error_message = (
-                f"Error writing records into {self.db_name}.{self.table_name}: {e}"
+                f"Records were rejected for {self.db_name}.{self.table_name}: {err}."
             )
-            raise TimestreamTableWriterException(error_message)
+            self.print_rejected_records_exceptions(err)
+            raise (TimestreamTableWriterException(error_message))
+        except Exception as err:
+            error_message = (
+                f"Error writing records into {self.db_name}.{self.table_name}: {err}."
+            )
+            raise (TimestreamTableWriterException(error_message))
 
-        return result
+    def write_records(self, records, common_attributes={}):
+        """
+        Orchestrates the process of writing records to the Timestream table in batches of 100.
+
+        Args:
+            records: A list of records to be written to the Timestream table.
+
+        Returns:
+            A list of responses from the Timestream write_records API call for each batch.
+        """
+        responses = []
+
+        for i in range(0, len(records), self.RECORDS_BATCH_SIZE):
+            batch = records[i : i + self.RECORDS_BATCH_SIZE]
+            response = self._write_batch(batch, common_attributes)
+            responses.append(response)
+
+        return responses
+
+    def _get_table_props(self):
+        """
+        Retrieves the properties of the specified Timestream table. For internal use.
+
+        Returns:
+            dict: A dictionary containing the properties of the table.
+        """        
+        try:
+            result = self.timestream_write_client.describe_table(
+                DatabaseName=self.db_name, TableName=self.table_name
+            )
+            return result
+        except Exception as err:
+            error_message = (
+                f"Error getting table info for {self.db_name}.{self.table_name}: {err}."
+            )
+            raise (TimestreamTableWriterException(error_message))
+
+    def get_MemoryStoreRetentionPeriodInHours(self):
+        """
+        Gets the Memory Store retention period in hours for the Timestream table.
+
+        Returns:
+            int: The retention period of the Memory Store in hours.
+        """        
+        table_props = self._get_table_props()
+
+        try:
+            value = (
+                table_props.get("Table")
+                .get("RetentionProperties")
+                .get("MemoryStoreRetentionPeriodInHours")
+            )
+            return int(value)
+        except Exception as err:
+            error_message = f"Error getting MemoryStoreRetentionPeriodInHours for {self.db_name}.{self.table_name}: {err}."
+            raise (TimestreamTableWriterException(error_message))
+
+    def get_MagneticStoreRetentionPeriodInDays(self):
+        """
+        Gets the Magnetic Store retention period in days for the Timestream table.
+
+        Returns:
+            int: The retention period of the Magnetic Store in days.
+        """
+
+        table_props = self._get_table_props()
+
+        try:
+            value = (
+                table_props.get("Table")
+                .get("RetentionProperties")
+                .get("MagneticStoreRetentionPeriodInDays")
+            )
+            return int(value)
+        except Exception as err:
+            error_message = f"Error getting MagneticStoreRetentionPeriodInDays for {self.db_name}.{self.table_name}: {err}."
+            raise (TimestreamTableWriterException(error_message))

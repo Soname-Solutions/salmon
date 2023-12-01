@@ -6,6 +6,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+from lib.aws.aws_naming import AWSNaming
 
 class InfraMonitoredStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -29,7 +30,7 @@ class InfraMonitoredStack(Stack):
         cross_account_bus_role = iam.Role(
             self,
             "salmonCrossAccountPutEventsRole",
-            role_name=f"role-{self.project_name}-cross-account-put-events-{self.stage_name}",
+            role_name=AWSNaming.IAMRole(self, "cross-account-put-events"),
             description="Role assumed by EventBridge to put events to the centralized bus",
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
@@ -37,9 +38,8 @@ class InfraMonitoredStack(Stack):
         tooling_environment = self.general_settings_reader.tooling_environment
         tooling_account_id = tooling_environment["account_id"]
         tooling_account_region = tooling_environment["region"]
-        cross_account_event_bus_name = (
-            f"eventbus-{self.project_name}-alerting-{self.stage_name}"
-        )
+        cross_account_event_bus_name = AWSNaming.EventBus(self, "alerting")
+        
         cross_account_event_bus_arn = f"arn:aws:events:{tooling_account_region}:{tooling_account_id}:event-bus/{cross_account_event_bus_name}"
         cross_account_bus_role.add_to_policy(
             iam.PolicyStatement(
@@ -59,7 +59,7 @@ class InfraMonitoredStack(Stack):
         glue_alerting_event_rule = events.Rule(
             self,
             "salmonGlueAlertingEventRule",
-            rule_name=f"eventbusrule-{self.project_name}-glue-{self.stage_name}",
+            rule_name=AWSNaming.EventBusRule(self, "glue"),
             event_pattern=events.EventPattern(source=["aws.glue"]),
         )
 
@@ -67,7 +67,7 @@ class InfraMonitoredStack(Stack):
         step_functions_alerting_event_rule = events.Rule(
             self,
             "salmonStepFunctionsAlertingEventRule",
-            rule_name=f"eventbusrule-{self.project_name}-step-functions-{self.stage_name}",
+            rule_name=AWSNaming.EventBusRule(self, "step-functions"),
             event_pattern=events.EventPattern(source=["aws.states"]),
         )
 

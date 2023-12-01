@@ -17,7 +17,8 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions
+from lib.core.constants import CDKDeployExclusions, TimestreamRetention
+from lib.aws.aws_naming import AWSNaming
 
 
 class InfraToolingCommonStack(Stack):
@@ -41,7 +42,7 @@ class InfraToolingCommonStack(Stack):
         internal_error_topic = sns.Topic(
             self,
             "salmonInternalErrorTopic",
-            topic_name=f"topic-{self.project_name}-internal-error-{self.stage_name}",
+            topic_name=AWSNaming.SNSTopic(self, "internal-error"),
         )
 
         # Notification SQS Queue
@@ -49,7 +50,7 @@ class InfraToolingCommonStack(Stack):
         notification_queue = sqs.Queue(
             self,
             "salmonNotificationQueue",
-            queue_name=f"queue-{self.project_name}-notification-{self.stage_name}",
+            queue_name=AWSNaming.SQSQueue(self, "notification"),
             visibility_timeout=Duration.seconds(60),
         )
 
@@ -62,7 +63,7 @@ class InfraToolingCommonStack(Stack):
             "salmonSettingsBucketArn",
             value=settings_bucket.bucket_arn,
             description="The ARN of the Settings S3 Bucket",
-            export_name=f"output-{self.project_name}-settings-bucket-arn-{self.stage_name}",
+            export_name=AWSNaming.CfnOutput(self, "settings-bucket-arn"),
         )
 
         output_timestream_database_arn = CfnOutput(
@@ -70,7 +71,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamDBArn",
             value=timestream_storage.attr_arn,
             description="The ARN of the Metrics and Events Storage",
-            export_name=f"output-{self.project_name}-metrics-events-storage-arn-{self.stage_name}",
+            export_name=AWSNaming.CfnOutput(self, "metrics-events-storage-arn"),
         )
 
         output_timestream_database_name = CfnOutput(
@@ -78,7 +79,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamDBName",
             value=timestream_storage.database_name,
             description="DB Name of the Metrics and Events Storage",
-            export_name=f"output-{self.project_name}-metrics-events-db-name-{self.stage_name}",
+            export_name=AWSNaming.CfnOutput(self, "metrics-events-db-name"),
         )
 
         output_timestream_alerts_table_name = CfnOutput(
@@ -86,7 +87,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamAlertsTableName",
             value=timestream_table_alert_events.table_name,
             description="Table Name for Alert Events storage",
-            export_name=f"output-{self.project_name}-alert-events-table-name-{self.stage_name}",
+            export_name=AWSNaming.CfnOutput(self, "alert-events-table-name"),
         )
 
         output_notification_queue_arn = CfnOutput(
@@ -94,7 +95,7 @@ class InfraToolingCommonStack(Stack):
             "salmonNotificationQueueArn",
             value=notification_queue.queue_arn,
             description="The ARN of the Notification SQS Queue",
-            export_name=f"output-{self.project_name}-notification-queue-arn-{self.stage_name}",
+            export_name=AWSNaming.CfnOutput(self, "notification-queue-arn"),
         )
 
         output_internal_error_topic_arn = CfnOutput(
@@ -102,36 +103,38 @@ class InfraToolingCommonStack(Stack):
             "salmonInternalErrorTopicArn",
             value=internal_error_topic.topic_arn,
             description="The ARN of the Internal Error Topic",
-            export_name=f"output-{self.project_name}-internal-error-topic-arn-{self.stage_name}",
+            export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
     def create_timestream_db(self):
         timestream_kms_key = kms.Key(
             self,
             "salmonTimestreamKMSKey",
-            alias=f"key-{self.project_name}-timestream-{self.stage_name}",
+            alias=AWSNaming.KMSKey(self, "timestream"),
             description="Key that protects Timestream data",
         )
         timestream_storage = timestream.CfnDatabase(
             self,
             "salmonTimestreamDB",
-            database_name=f"timestream-{self.project_name}-metrics-events-storage-{self.stage_name}",
+            database_name=AWSNaming.TimestreamDB(self, "metrics-events-storage"),
             kms_key_id=timestream_kms_key.key_id,
         )
 
         return timestream_storage
 
     def create_timestream_tables(self, timestream_storage):
+        # this part throws a warning, but applies correctly
+        # waiting for the CDK fix: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1514
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
-            magnetic_store_retention_period_in_days="365",
-            memory_store_retention_period_in_hours="240",
+            magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
+            memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
         )
         alert_events_table = timestream.CfnTable(
             self,
             "AlertEventsTable",
             database_name=timestream_storage.database_name,
             retention_properties=retention_properties_property,
-            table_name="alert-events",
+            table_name=AWSNaming.TimestreamTable(self, "alert-events"),
         )
 
         return alert_events_table
@@ -140,7 +143,7 @@ class InfraToolingCommonStack(Stack):
         settings_bucket = s3.Bucket(
             self,
             "salmonSettingsBucket",
-            bucket_name=f"s3-{self.project_name}-settings-{self.stage_name}",
+            bucket_name=AWSNaming.S3Bucket(self, "settings"),
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
@@ -162,7 +165,7 @@ class InfraToolingCommonStack(Stack):
             self,
             "salmonNotificationLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=f"role-{self.project_name}-notification-lambda-{self.stage_name}",
+            role_name=AWSNaming.IAMRole(self, "notification-lambda"),
         )
 
         notification_lambda_role.add_managed_policy(
@@ -205,7 +208,7 @@ class InfraToolingCommonStack(Stack):
         notification_lambda = lambda_.Function(
             self,
             "salmonNotificationLambda",
-            function_name=f"lambda-{self.project_name}-notification-{self.stage_name}",
+            function_name=AWSNaming.LambdaFunction(self, "notification"),
             code=lambda_.Code.from_asset(
                 notification_lambda_path,
                 exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
