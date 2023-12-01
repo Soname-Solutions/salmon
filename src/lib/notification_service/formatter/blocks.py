@@ -1,17 +1,18 @@
 class Block:
-    def __init__(self, text: str, css_class: str = None) -> None:
+    def __init__(self, text: str, style: str = None) -> None:
         self._text = text
-        self._css_class = css_class
+        self._style = style
 
     @property
-    def css_class(self):
-        return "" if self._css_class is None else f' class="{self._css_class}"'
+    def css_class(self) -> str:
+        """Css class for a HTML block."""
+        return "" if self._style is None else f' class="{self._style}"'
 
 
-class Header(Block):
+class Text(Block):
     def get_html(self) -> str:
-        """Get HTML for the header."""
-        return f"<h1>{self._text}</h1>"
+        """Get HTML for the text."""
+        return f"<div{self.css_class}>{self._text}</div>"
 
 
 class TableHeaderCell(Block):
@@ -35,4 +36,10 @@ class TableRow(Block):
 class Table(Block):
     def get_html(self) -> str:
         """Get HTML for the table."""
-        return f"<table>{self._text}</table>"
+        return f"<table{self.css_class}>{self._text}</table>"
+
+
+class TableCaption(Block):
+    def get_html(self) -> str:
+        """Get HTML for the caption."""
+        return f"<caption>{self._text}</caption>"

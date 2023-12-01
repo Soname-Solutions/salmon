@@ -1,59 +1,88 @@
-import json
 from lib.notification_service.formatter_provider import formatters
 
 
 def lambda_handler(event, context):
-    event_info = json.loads(event)
-    delivery_options_info = event_info.get("delivery_options")
-    data_info = event_info.get("data")
+    delivery_options_info = event.get("delivery_options")
+    message_info = event.get("message")
 
     delivery_method = delivery_options_info.get("delivery_method")
 
     if delivery_method is None:
         raise KeyError("Delivery method is not set.")
 
-    table_info = data_info.get("table")
-    table_header = table_info.get("table_header")
-    table_items = table_info.get("table_items")
-
+    message_subject = message_info.get("message_subject")
+    message_body = message_info.get("message_body", [])
     formatter = formatters.get(delivery_method)
-    table = formatter.get_table(table_items, table_header)
 
-    print(table)
+    formatted_message = []
+
+    for message_object in message_body:
+        try:
+            object_type = [key for key in message_object.keys() if key != "style"][0]
+        except IndexError:
+            raise KeyError(f"Message object type {object_type} is not set.")
+
+        content = message_object.get(object_type)
+        style = message_object.get("style")
+
+        formatted_object = formatter.format(object_type, content=content, style=style)
+
+        if formatted_object is not None:
+            formatted_message.append(formatted_object)
+
+    print(formatted_message)
 
 
 if __name__ == "__main__":
-    test_event = """
-    {
-   "delivery_options":{
-      "sender_email":"salmon-no-reply@soname.de",
-      "recipients":[
-         "vasya_pupking@soname.cn"
-      ],
-      "delivery_method":"AWS_SES"
-   },
-   "data":{
-      "subject":"[monitored env 1] Glue Job 1 has failed",
-      "header":"Oh my gosh. Something went wrong",
-      "table":{
-         "table_items":[
-            {
-               "cells":[
-                  "AWS Account",
-                  "1234"
-               ]
-            },
-            {
-               "cells":[
-                  "Time",
-                  "2022-09-09 09:00:00"
-               ]
-            }
-         ]
-      }
-   }
-}
-    """
+    test_event = {
+        "delivery_options": {
+            "sender_email": "salmon-no-reply@soname.de",
+            "recipients": ["vasya_pupking@soname.cn"],
+            "delivery_method": "AWS_SES",
+        },
+        "message": {
+            "message_subject": "Super important Alert",
+            "message_body": [
+                {"text": "Daily monitoring report", "style": "header_777"},
+                {
+                    "table": {
+                        "caption": "My Lovely Table",
+                        "header": {
+                            "values": ["colname1", "colname2", "colname3"],
+                            "style": "error",
+                        },
+                        "rows": [
+                            {
+                                "values": ["colname1", "colname2", "colname3"],
+                                "style": "error",
+                            },
+                            {
+                                "values": ["colname1", "colname2", "colname3"],
+                                "style": "error",
+                            },
+                        ],
+                    }
+                },
+                {"text": "Daily monitoring report", "style": "header_1"},
+                {
+                    "table": {
+                        "caption": "My Lovely Table",
+                        "header": {
+                            "values": ["colname1", "colname2", "colname3"],
+                            "style": "error",
+                        },
+                        "rows": [
+                            {
+                                "values": ["colname1", "colname2", "colname3"],
+                                "style": "error",
+                            }
+                        ],
+                    }
+                },
+            ],
+        },
+    }
+
     context = ""
 
     lambda_handler(test_event, context)
