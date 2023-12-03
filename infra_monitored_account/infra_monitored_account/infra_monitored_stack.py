@@ -98,13 +98,14 @@ class InfraMonitoredStack(Stack):
         # todo rename
         cross_account_iam_role_extract_metrics = iam.Role(
             self, "MonitoredAccExtractMetricsRole",
-            role_name=AWSNaming.IAMRole(self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS),
+            role_name=AWSNaming.IAMRole(self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS),            
             assumed_by=iam.ArnPrincipal(principal_arn)
         )
 
         # Glue Policy
         glue_policy_statement = iam.PolicyStatement(
             actions=[
+                "glue:ListJobs",
                 "glue:GetJob",
                 "glue:GetJobs",
                 "glue:GetJobRun",
