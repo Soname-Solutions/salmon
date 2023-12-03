@@ -23,3 +23,10 @@ class NotificationType:
 
 class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]
+
+class CDKResourceNames:
+    """ Contains 'meaningful' part of AWS resources names. 
+    Specifically, ones referred in both, tooling and monitored accounts
+    """
+    IAMROLE_EXTRACT_METRICS_LAMBDA = "extract-metrics-lambda"
+

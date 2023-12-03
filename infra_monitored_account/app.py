@@ -7,12 +7,8 @@ import aws_cdk as cdk
 sys.path.append("../src")
 from infra_monitored_account.infra_monitored_stack import InfraMonitoredStack
 
-# todo
-# from lib.settings.cdk.local_file_system_settings_provider import (
-#     LocalFileSystemSettingsProvider,
-# )
 from lib.settings import Settings
-
+from lib.settings.cdk import settings_validator
 
 if "STAGE_NAME" in os.environ:
     pass
@@ -22,14 +18,8 @@ STAGE_NAME = os.environ["STAGE_NAME"]
 
 PROJECT_NAME = "salmon"
 
-# todo
-# settings_provider = LocalFileSystemSettingsProvider("../config/settings")
-# settings_provider.validate_settings()
-
 settings = Settings.from_file_path("../config/settings")
-
-# todo
-#settings.validate()
+settings_validator.validate(settings)
 
 app = cdk.App()
 InfraMonitoredStack(

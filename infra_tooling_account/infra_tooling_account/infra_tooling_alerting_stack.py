@@ -16,13 +16,14 @@ import os
 
 from lib.core.constants import CDKDeployExclusions
 from lib.aws.aws_naming import AWSNaming
+from lib.settings.settings import Settings
 
 
 class InfraToolingAlertingStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
-        self.general_settings_reader = kwargs.pop("general_settings_reader", None)
+        self.settings: Settings = kwargs.pop("settings", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -92,14 +93,10 @@ class InfraToolingAlertingStack(Stack):
 
         # EventBridge bus resource policy
         monitored_account_ids = sorted(
-            set(
-                [
-                    account["account_id"]
-                    for account in self.general_settings_reader.monitored_environments
-                ]
-            ),
-            reverse=True,
-        )  # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
+            self.settings.get_monitored_account_ids(), reverse=True
+        )
+        # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
+        
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]

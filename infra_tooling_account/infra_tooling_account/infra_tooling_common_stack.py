@@ -19,12 +19,14 @@ import os
 
 from lib.core.constants import CDKDeployExclusions, TimestreamRetention
 from lib.aws.aws_naming import AWSNaming
+from lib.settings.settings import Settings
 
 
 class InfraToolingCommonStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
+        self.settings: Settings = kwargs.pop("settings", None)
 
         super().__init__(scope, construct_id, **kwargs)
 

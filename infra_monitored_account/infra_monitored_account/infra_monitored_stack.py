@@ -7,20 +7,16 @@ from aws_cdk import (
 from constructs import Construct
 
 from lib.aws.aws_naming import AWSNaming
+from lib.core.constants import CDKResourceNames
 from lib.settings import Settings
 
 class InfraMonitoredStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
-        self.settings = kwargs.pop("settings", None)
+        self.settings: Settings = kwargs.pop("settings", None)
 
-        # todo
-        st = Settings()
-        #st.get_tooling
-        self.tooling_account_id = "405389362913"
-        self.tooling_region = "eu-central-1"
-
+        self.tooling_account_id, self.tooling_account_region = self.settings.get_tooling_account_props()
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -96,9 +92,9 @@ class InfraMonitoredStack(Stack):
         """ 
         # todo: do we need multiple arns (lambdas)?
         # todo: how to get tooling extract lambda role -> through AWSNaming?
-        tooling_extract_lambda_name = "role-salmon-extract-metrics-lambda-devam"
-        principal_arn = f"arn:aws:iam::{self.tooling_account_id}:role/{tooling_extract_lambda_name}"
-
+        tooling_extract_lambda_role_name = AWSNaming.IAMRole(self, CDKResourceNames.IAMROLE_EXTRACT_METRICS_LAMBDA)
+        principal_arn = AWSNaming.Arn_IAMRole(self, self.tooling_account_id, tooling_extract_lambda_role_name)
+        
         # todo rename
         cross_account_iam_role_extract_metrics = iam.Role(
             self, "CrossAccountIAMRoleGlue",

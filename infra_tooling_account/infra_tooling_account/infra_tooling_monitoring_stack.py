@@ -14,8 +14,9 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions
+from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
+from lib.settings.settings import Settings
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -28,7 +29,6 @@ class InfraToolingMonitoringStack(Stack):
 
     Methods:
         get_common_stack_references(): Retrieves references to artifacts created in common stack (like S3 bucket, SNS topic, ...)
-        get_metrics_collection_interval_min(): Fetches the interval for metrics collection from general.json.
         create_extract_metrics_lambdas(settings_bucket, internal_error_topic, timestream_database_arn):
             Creates Lambda functions for extracting metrics.
     """
@@ -47,7 +47,7 @@ class InfraToolingMonitoringStack(Stack):
         """
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
-        self.general_settings_reader = kwargs.pop("general_settings_reader", None)
+        self.settings: Settings = kwargs.pop("settings", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -66,7 +66,9 @@ class InfraToolingMonitoringStack(Stack):
             timestream_database_arn=input_timestream_database_arn,
         )
 
-        metrics_collection_interval_min = self.get_metrics_collection_interval_min()
+        metrics_collection_interval_min = (
+            self.settings.get_metrics_collection_interval_min()
+        )
 
         rule = events.Rule(
             self,
@@ -114,25 +116,6 @@ class InfraToolingMonitoringStack(Stack):
 
         return settings_bucket, internal_error_topic, input_timestream_database_arn
 
-    def get_metrics_collection_interval_min(self):
-        """
-        Reads the metrics collection interval from a configuration file. The interval is defined in minutes.
-
-        Returns:
-            int: The interval in minutes for collecting metrics.
-
-        Raises:
-            Exception: If the 'metrics_collection_interval_min' key is not found in the configuration file.
-        """
-        tooling_section = self.general_settings_reader.tooling_environment
-        key = "metrics_collection_interval_min"
-        if key in tooling_section:
-            return tooling_section[key]
-        else:
-            raise Exception(
-                "metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)"
-            )
-
     def create_extract_metrics_lambdas(
         self, settings_bucket, internal_error_topic, timestream_database_arn
     ):
@@ -152,7 +135,9 @@ class InfraToolingMonitoringStack(Stack):
             self,
             "extract-metricsLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=AWSNaming.IAMRole(self, "extract-metrics-lambda"),
+            role_name=AWSNaming.IAMRole(
+                self, CDKResourceNames.IAMROLE_EXTRACT_METRICS_LAMBDA
+            ),
         )
 
         extract_metrics_lambda_role.add_managed_policy(
