@@ -10,7 +10,7 @@ sts_client = boto3.client('sts')
 
 
 def run_sample_code():
-    account_id = '405389362913' # map to value from event
+    account_id = '025590872641' # For now to demonstrate cross-account access
     role_name = os.environ['IAMROLE_MONITORED_ACC_EXTRACT_METRICS']
     current_service = 'glue'
     
