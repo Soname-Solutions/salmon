@@ -29,4 +29,8 @@ class CDKResourceNames:
     Specifically, ones referred in both, tooling and monitored accounts
     """
     IAMROLE_EXTRACT_METRICS_LAMBDA = "extract-metrics-lambda"
+    IAMROLE_MONITORED_ACC_PUT_EVENTS = "monitored-acc-put-events"
+    IAMROLE_MONITORED_ACC_EXTRACT_METRICS = "monitored-acc-extract-metrics"
+
+    
 

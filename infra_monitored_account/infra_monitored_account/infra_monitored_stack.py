@@ -35,8 +35,8 @@ class InfraMonitoredStack(Stack):
         # General settings config
         cross_account_bus_role = iam.Role(
             self,
-            "salmonCrossAccountPutEventsRole",
-            role_name=AWSNaming.IAMRole(self, "cross-account-put-events"),
+            "MonitoredAccPutEventsRole",
+            role_name=AWSNaming.IAMRole(self, CDKResourceNames.IAMROLE_MONITORED_ACC_PUT_EVENTS),
             description="Role assumed by EventBridge to put events to the centralized bus",
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
@@ -97,8 +97,8 @@ class InfraMonitoredStack(Stack):
         
         # todo rename
         cross_account_iam_role_extract_metrics = iam.Role(
-            self, "CrossAccountIAMRoleGlue",
-            role_name=AWSNaming.IAMRole(self, "cross-account-extract-metrics"),
+            self, "MonitoredAccExtractMetricsRole",
+            role_name=AWSNaming.IAMRole(self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS),
             assumed_by=iam.ArnPrincipal(principal_arn)
         )
 
