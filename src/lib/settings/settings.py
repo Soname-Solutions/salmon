@@ -46,7 +46,11 @@ class Settings:
     """
 
     def __init__(
-        self, general_settings: str, monitoring_settings: str, recipients_settings: str
+        self,
+        general_settings: str,
+        monitoring_settings: str,
+        recipients_settings: str,
+        replacements_settings: str,
     ):
         general = ju.parse_json(general_settings)
         monitoring = ju.parse_json(monitoring_settings)
@@ -62,9 +66,18 @@ class Settings:
             SettingFileNames.MONITORING_GROUPS: monitoring,
             SettingFileNames.RECIPIENTS: recipients,
         }
+        self._replacements = (
+            ju.parse_json(replacements_settings) if replacements_settings else {}
+        )
 
     @cached_property
     def processed_settings(self):
+        # Replace placeholders
+        for key, value in self._replacements.items():
+            placeholder = f"<<{key}>>"
+            self._processed_settings = self._nested_replace_placeholder(
+                self._processed_settings, placeholder, value
+            )
         # Add default metrics_extractor_role_arn
         for m_env in self._processed_settings[SettingFileNames.GENERAL].get(
             "monitored_environments", []
@@ -101,6 +114,25 @@ class Settings:
         return self.processed_settings[SettingFileNames.RECIPIENTS]
 
     # Processing methods
+    def _nested_replace_placeholder(self, config, placeholder, replacement):
+        """Recursive function to replace placeholder with value inside any nested structure"""
+        if type(config) == list:
+            return [
+                self._nested_replace_placeholder(item, placeholder, replacement)
+                for item in config
+            ]
+
+        if type(config) == dict:
+            return {
+                key: self._nested_replace_placeholder(value, placeholder, replacement)
+                for key, value in config.items()
+            }
+
+        if type(config) == str:
+            return config.replace(placeholder, replacement)
+        else:
+            return config
+
     def _get_default_metrics_extractor_role_arn(self, account_id: str) -> str:
         return f"arn:aws:iam::{account_id}:role/role-salmon-cross-account-extract-metrics-dev"
 
@@ -187,30 +219,59 @@ class Settings:
 
     @staticmethod
     def _read_settings(base_path: str, read_file_func, *file_names):
-        return [
-            read_file_func(os.path.join(base_path, file_name))
-            for file_name in file_names
-        ]
+        settings = []
+        for file_name in file_names:
+            try:
+                file_content = read_file_func(os.path.join(base_path, file_name))
+                settings.append(file_content)
+            except Exception as e:
+                if file_name == SettingFileNames.REPLACEMENTS:
+                    settings.append(None)
+                else:
+                    raise e
+        return settings
 
     @classmethod
     def from_file_path(cls, base_path: str):
-        general_settings, monitoring_settings, recipients_settings = cls._read_settings(
+        (
+            general_settings,
+            monitoring_settings,
+            recipients_settings,
+            replacements_settings,
+        ) = cls._read_settings(
             base_path,
             fm.read_file,
             SettingFileNames.GENERAL,
             SettingFileNames.MONITORING_GROUPS,
             SettingFileNames.RECIPIENTS,
+            SettingFileNames.REPLACEMENTS,
         )
-        return cls(general_settings, monitoring_settings, recipients_settings)
+        return cls(
+            general_settings,
+            monitoring_settings,
+            recipients_settings,
+            replacements_settings,
+        )
 
     @classmethod
     def from_s3_path(cls, base_path: str):
         s3 = S3Manager()
-        general_settings, monitoring_settings, recipients_settings = cls._read_settings(
+        (
+            general_settings,
+            monitoring_settings,
+            recipients_settings,
+            replacements_settings,
+        ) = cls._read_settings(
             base_path,
             s3.read_file,
             SettingFileNames.GENERAL,
             SettingFileNames.MONITORING_GROUPS,
             SettingFileNames.RECIPIENTS,
+            SettingFileNames.REPLACEMENTS,
         )
-        return cls(general_settings, monitoring_settings, recipients_settings)
+        return cls(
+            general_settings,
+            monitoring_settings,
+            recipients_settings,
+            replacements_settings,
+        )
