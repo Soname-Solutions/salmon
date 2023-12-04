@@ -147,7 +147,7 @@ class Settings:
         return self._raw_settings[file_name]
 
     # CDK methods
-    def get_monitored_account_ids(self) -> List[str]:
+    def get_monitored_account_ids(self) -> set[str]:
         """Get monitored account_ids"""
         return set([
             m_env["account_id"]
