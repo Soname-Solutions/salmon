@@ -13,7 +13,7 @@ sender_config = {
 }
 
 
-def _get_formatted_message_body(message_body: list, delivery_method: str) -> str:
+def _get_formatted_message(message_body: list, delivery_method: str) -> str:
     formatted_message_objects = []
     formatter = formatters.get(delivery_method)
 
@@ -31,7 +31,10 @@ def _get_formatted_message_body(message_body: list, delivery_method: str) -> str
         if formatted_object is not None:
             formatted_message_objects.append(formatted_object)
 
-    return "".join(formatted_message_objects)
+    formatted_message_body = "".join(formatted_message_objects)
+    formatted_message = formatter.get_complete_html(formatted_message_body)
+
+    return formatted_message
 
 
 def lambda_handler(event, context):
@@ -59,9 +62,9 @@ def lambda_handler(event, context):
     if message_body is None:
         raise KeyError("Message body is not set.")
 
-    formatted_message_body = _get_formatted_message_body(message_body, delivery_method)
+    formatted_message = _get_formatted_message(message_body, delivery_method)
 
-    message = Message(formatted_message_body, message_subject)
+    message = Message(formatted_message, message_subject)
 
     sender = senders.get(
         delivery_method,
@@ -82,8 +85,8 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     test_event = {
         "delivery_options": {
-            "sender_email": "salmon-no-reply@soname.de",
-            "recipients": ["vasya_pupking@soname.cn"],
+            "sender_email": "natallia.alkhimovich@soname.de",
+            "recipients": ["natallia.alkhimovich@soname.de", "vasya_pupking@soname.cn"],
             "delivery_method": "AWS_SES",
         },
         "message": {
@@ -95,7 +98,7 @@ if __name__ == "__main__":
                         "caption": "My Lovely Table",
                         "header": {
                             "values": ["colname1", "colname2", "colname3"],
-                            "style": "error",
+                            "style": "th",
                         },
                         "rows": [
                             {
@@ -104,7 +107,7 @@ if __name__ == "__main__":
                             },
                             {
                                 "values": ["colname1", "colname2", "colname3"],
-                                "style": "error",
+                                "style": "ok",
                             },
                         ],
                     }
@@ -115,12 +118,12 @@ if __name__ == "__main__":
                         "caption": "My Lovely Table",
                         "header": {
                             "values": ["colname1", "colname2", "colname3"],
-                            "style": "error",
+                            "style": "th",
                         },
                         "rows": [
                             {
                                 "values": ["colname1", "colname2", "colname3"],
-                                "style": "error",
+                                "style": "tr",
                             }
                         ],
                     }

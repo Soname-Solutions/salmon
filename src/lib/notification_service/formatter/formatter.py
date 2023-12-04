@@ -7,7 +7,6 @@ class Formatter(ABC):
         """All available methods to apply during formatting."""
         return {"text": self.get_text, "table": self.get_table}
 
-    # @staticmethod
     def format(self, object_type: str, **kwargs):
         """Get a method based on an object type."""
         method = self._available_methods.get(object_type)

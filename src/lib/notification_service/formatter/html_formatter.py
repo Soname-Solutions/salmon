@@ -3,6 +3,18 @@ from .blocks import Text, Table, TableCell, TableRow, TableHeaderCell, TableCapt
 
 
 class HtmlFormatter(Formatter):
+    @property
+    def _css_style(self):
+        return """
+            .table { border: 1px solid black; margin: 2px; border-collapse: collapse; }
+            .th { border: 1px solid black; margin: 2px; background-color: lightgray; }
+            .td { border: 1px solid black; margin: 2px; padding-right: 10px; padding-left: 10px; }
+            .tr {background: #EEE}
+            .ok { background-color: lightgreen; }
+            .error { background-color: #FFCCCB; }
+            .warning { background-color: lightblue; }
+            """
+
     @staticmethod
     def _get_formatted_table_row(row: list, is_header: bool = False) -> str:
         cells = row.get("values")
@@ -42,7 +54,11 @@ class HtmlFormatter(Formatter):
         formatted_table_content = formatted_caption + formatted_table_rows
 
         return (
-            Table("".join(formatted_table_content)).get_html()
+            Table("".join(formatted_table_content), style).get_html()
             if formatted_table_content
             else None
         )
+
+    @staticmethod
+    def get_complete_html(body_content: str) -> str:
+        return f"<html><head><style>{HtmlFormatter._css_style}</style></head><body>{body_content}</body></html>"

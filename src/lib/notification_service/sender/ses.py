@@ -48,7 +48,7 @@ class AwsSesSender(Sender):
         message = MIMEMultipart("mixed")
         message_body = MIMEMultipart("alternative")
 
-        message["Subject"] = self._message.header
+        message["Subject"] = self._message.subject
         message["From"] = self._sender
         message["To"] = ",".join(self.verified_recipients)
 
