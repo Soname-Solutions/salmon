@@ -98,7 +98,6 @@ if __name__ == "__main__":
                         "caption": "My Lovely Table",
                         "header": {
                             "values": ["colname1", "colname2", "colname3"],
-                            "style": "th",
                         },
                         "rows": [
                             {
@@ -118,12 +117,11 @@ if __name__ == "__main__":
                         "caption": "My Lovely Table",
                         "header": {
                             "values": ["colname1", "colname2", "colname3"],
-                            "style": "th",
                         },
                         "rows": [
                             {
                                 "values": ["colname1", "colname2", "colname3"],
-                                "style": "tr",
+                                "style": "error",
                             }
                         ],
                     }

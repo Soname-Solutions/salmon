@@ -6,10 +6,15 @@ class HtmlFormatter(Formatter):
     @property
     def _css_style(self):
         return """
-            .table { border: 1px solid black; margin: 2px; border-collapse: collapse; }
-            .th { border: 1px solid black; margin: 2px; background-color: lightgray; }
-            .td { border: 1px solid black; margin: 2px; padding-right: 10px; padding-left: 10px; }
-            .tr {background: #EEE}
+            body {}
+            table, th, td { border: 1px solid black; margin: 2px; }       
+            table { border-collapse: collapse; }
+            th { background-color: lightgray; }
+            tr:nth-child(odd) {background: #EEE}
+            tr:nth-child(even) {background: #FFF}
+            th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), 
+            td:nth-last-child(3) { text-align: left; }       
+            td {  padding-right: 10px; padding-left: 10px; }  
             .ok { background-color: lightgreen; }
             .error { background-color: #FFCCCB; }
             .warning { background-color: lightblue; }
