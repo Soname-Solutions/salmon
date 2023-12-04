@@ -14,7 +14,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions
+from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
 from lib.settings.settings import Settings
 
@@ -88,7 +88,7 @@ class InfraToolingAlertingStack(Stack):
         alerting_bus = events.EventBus(
             self,
             "salmonAlertingBus",
-            event_bus_name=AWSNaming.EventBus(self, "alerting"),
+            event_bus_name=AWSNaming.EventBus(self, CDKResourceNames.EVENTBUS_ALERTING),
         )
 
         # EventBridge bus resource policy

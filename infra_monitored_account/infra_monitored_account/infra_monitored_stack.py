@@ -41,7 +41,7 @@ class InfraMonitoredStack(Stack):
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
 
-        cross_account_event_bus_name = AWSNaming.EventBus(self, "alerting")
+        cross_account_event_bus_name = AWSNaming.EventBus(self, CDKResourceNames.EVENTBUS_ALERTING)
         
         cross_account_event_bus_arn = f"arn:aws:events:{self.tooling_account_region}:{self.tooling_account_id}:event-bus/{cross_account_event_bus_name}"
         cross_account_bus_role.add_to_policy(
