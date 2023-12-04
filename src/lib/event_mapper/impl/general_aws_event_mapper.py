@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 from ...core.constants import NotificationType
 from ...settings import Settings
 
-SENDER_EMAIL = "salmon-no-reply@soname.de"  # TODO: do something with that
-
 
 class EventParsingException(Exception):
     pass
@@ -42,7 +40,7 @@ class GeneralAwsEventMapper(ABC):
             delivery_option = {
                 "delivery_method": delivery_method,
                 "recipients": recipients_array,
-                "sender_email": SENDER_EMAIL,
+                "sender_email": self.settings.get_sender_email(delivery_method),
             }
             delivery_options.append(delivery_option)
 

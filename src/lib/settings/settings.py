@@ -32,6 +32,7 @@ class Settings:
         get_monitored_environment_name: Retrieves monitored environment name by account ID and region.
         get_monitoring_groups: Retrieves monitoring groups by resource names.
         get_recipients: Retrieves recipients for specified monitoring groups and notification type.
+        get_sender_email: Retrieves sender email based on delivery method name provided.
         ----
         get_monitored_environment_names_raw_gs: Retrieves monitored environment names from raw general settings.
         get_monitored_account_id_and_region_raw_gs: Retrieves monitored environments 'account_id|region' from raw general settings.
@@ -221,6 +222,13 @@ class Settings:
                                 matched_recipients.append(recipient_info)
 
         return matched_recipients
+
+    def get_sender_email(self, delivery_method: str) -> str:
+        """Get sender email per delivery method"""
+        for method in self.general.get("delivery_methods", []):
+            if method.get("name") == delivery_method:
+                return method.get("sender_email", "")
+        return ""
 
     @staticmethod
     def _read_settings(base_path: str, read_file_func, *file_names):
