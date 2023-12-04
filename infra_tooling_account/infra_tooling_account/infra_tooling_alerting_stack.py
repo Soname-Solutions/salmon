@@ -96,7 +96,7 @@ class InfraToolingAlertingStack(Stack):
             self.settings.get_monitored_account_ids(), reverse=True
         )
         # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
-        
+
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
