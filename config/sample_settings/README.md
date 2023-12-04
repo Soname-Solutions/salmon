@@ -55,4 +55,4 @@ They should be provided as a part of AWS-based secret
 
 ## Replacements (optional)
 Replacements list for placeholders in other setting JSON files.
-**P"Placeholders inside general and other settings should be in double curly brackets (e.g. <<value>>)** 
+**Placeholders inside general and other settings should be in double curly brackets (e.g. `<<value>>`)** 
