@@ -16,7 +16,7 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_message(self, event):
+    def get_message_body(self, event):
         pass
 
     def __get_delivery_options(self, resource_name):
@@ -58,10 +58,26 @@ class GeneralAwsEventMapper(ABC):
 
         return notification_messages
 
+    def __get_message_subject(self, event):
+        monitored_env_name = self.settings.get_monitored_environment_name(
+            event["account"], event["region"]
+        )
+        event_message = event["detail-type"]
+        return f"{monitored_env_name}: {event_message}"
+
+    def create_table_row(self, values, style=None):
+        row = {"values": values}
+        if style is not None:
+            row["style"] = style
+        return row
+
     def to_notification_messages(self, event):
         resource_name = self.get_resource_name(event)
         delivery_options = self.__get_delivery_options(resource_name)
 
-        message = self.get_message(event)
+        message = {
+            "message_subject": self.__get_message_subject(event),
+            "message_body": self.get_message_body(event),
+        }
 
         return self.__to_notification_messages(delivery_options, message)
