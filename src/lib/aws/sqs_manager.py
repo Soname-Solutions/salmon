@@ -54,7 +54,6 @@ class SQSQueueSender:
                     MessageBody=json.dumps(message, indent=4),
                 )
                 results.append(result)
-                # todo: later need to introduce records buffering (batches < 100 records)
             except Exception as e:
                 error_message = f"Error sending messages to {self.queue_url}: {e}"
                 raise SQSQueueSenderException(error_message)

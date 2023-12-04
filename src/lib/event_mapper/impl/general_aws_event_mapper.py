@@ -8,7 +8,14 @@ class EventParsingException(Exception):
 
 
 class GeneralAwsEventMapper(ABC):
-    """Abstract class containing common logic to map AWS events to notification messages"""
+    """Abstract class containing common logic to map AWS events to notification messages.
+
+    Attributes:
+        settings(Settings): Settings object
+
+    Methods:
+        to_notification_messages(dict): maps AWS event object to a list of notification message objects
+    """
 
     def __init__(self, settings: Settings):
         self.settings = settings
