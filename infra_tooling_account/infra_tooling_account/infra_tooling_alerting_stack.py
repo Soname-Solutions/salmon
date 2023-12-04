@@ -148,7 +148,7 @@ class InfraToolingAlertingStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
-                resources=[settings_bucket.bucket_arn],
+                resources=[f"{settings_bucket.bucket_arn}/*"],
             )
         )
 
