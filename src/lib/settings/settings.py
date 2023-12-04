@@ -115,7 +115,7 @@ class Settings:
 
     # Processing methods
     def _nested_replace_placeholder(self, config, placeholder, replacement):
-        """Recursive function to replace placeholder with value inside any nested structure"""
+        """Recursive function to replace placeholder with its value inside any nested structure"""
         if type(config) == list:
             return [
                 self._nested_replace_placeholder(item, placeholder, replacement)
