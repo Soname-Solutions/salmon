@@ -12,7 +12,15 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         return arn.split("stateMachine:")[1]
 
     @staticmethod
-    def __timestamp_to_datetime(timestamp: int):
+    def __timestamp_to_datetime(timestamp: int) -> str:
+        """Formats integer datetime from the event to the ISO formatted datetime string
+
+        Args:
+            timestamp (int): Timestamp with milliseconds
+
+        Returns:
+            str: ISO formatted datetime
+        """
         return datetime.fromtimestamp(timestamp / 1e3).isoformat()
 
     def get_message_body(self, event):

@@ -43,13 +43,27 @@ def write_event_to_timestream(records):
     logger.info(result)
 
 
-def read_settings(s3_bucket_name) -> Settings:
+def read_settings(s3_bucket_name: str) -> Settings:
+    """Reads settings from the dedicated S3 bucket
+
+    Args:
+        s3_bucket_name (str): Name of the Settings S3 bucket
+
+    Returns:
+        Settings: Setting container
+    """
     settings_path = f"s3://{s3_bucket_name}/settings/"
     settings = Settings.from_s3_path(settings_path)
     return settings
 
 
-def send_messages_to_sqs(queue_url: str, messages: dict):
+def send_messages_to_sqs(queue_url: str, messages: list[dict]):
+    """Sends messages array to the given SQS queue
+
+    Args:
+        queue_url (str): SQS queue URL
+        messages (list[dict]): list of message objects
+    """
     sender = SQSQueueSender(queue_url, sqs_client)
     results = sender.send_messages(messages)
 
@@ -57,7 +71,16 @@ def send_messages_to_sqs(queue_url: str, messages: dict):
     logger.info(results)
 
 
-def get_monitored_env_name(event, settings: Settings):
+def get_monitored_env_name(event: dict, settings: Settings) -> str:
+    """Returns monitored environment name related to the given event
+
+    Args:
+        event (dict): Event Object
+        settings (Settings): Settings Object
+
+    Returns:
+        str: Monitored environment name
+    """
     return settings.get_monitored_environment_name(event["account"], event["region"])
 
 
@@ -99,7 +122,16 @@ def prepare_timestream_record(monitored_env_name, event):
     return records
 
 
-def map_to_notification_messages(event_props, settings: Settings):
+def map_to_notification_messages(event_props: dict, settings: Settings) -> list[dict]:
+    """Maps given event object to notification messages array
+
+    Args:
+        event_props (dict): Event object
+        settings (Settings): Settings object
+
+    Returns:
+        list[dict]: List of message objects
+    """
     mapper = AwsEventMapper(settings)
     messages = mapper.to_notification_messages(event_props)
 
@@ -114,28 +146,13 @@ def lambda_handler(event, context):
 
     monitored_env_name = get_monitored_env_name(event, settings)
 
-    # 1. parses event to identify "source" - e.g. "glue"
-    # 2. Create instance of <source>AlertParser class and calls method "parse"
-    # parse method returns DSL-markedup message
     messages = map_to_notification_messages(event, settings)
-
-    # 3. asks settings module for
-    # a) monitoring group item belongs to
-    # b) list of relevant recipients and their delivery method
-
-    # 3. for each recipient:
-    # sends message to SQS queue (DSL-markup + recipient and delivery method info)
-
     print(messages)
 
     queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
     send_messages_to_sqs(queue_url, messages)
 
-    # 4. writes event into timestream DB table named <<TBD>>
-    # dimensions: a) monitoring group, b) service
-    # metric = error message
     timestream_records = prepare_timestream_record(monitored_env_name, event)
-
     write_event_to_timestream(timestream_records)
 
     return {"messages": messages}

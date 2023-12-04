@@ -35,12 +35,12 @@ class SQSQueueSender:
         self.queue_url = queue_url
         self.sqs_client = boto3.client("sqs") if sqs_client is None else sqs_client
 
-    def send_messages(self, messages: dict):
+    def send_messages(self, messages: list[dict]):
         """
         Sends messages to the SQS queue.
 
         Args:
-            message: A message string array to be sent to the SQS queue.
+            message: A message dictionary array to be sent to the SQS queue.
 
         Returns:
             The responses from the SQS send_message API calls.
