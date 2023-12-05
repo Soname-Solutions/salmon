@@ -14,8 +14,9 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions
+from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
+from lib.settings.settings import Settings
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -28,7 +29,6 @@ class InfraToolingMonitoringStack(Stack):
 
     Methods:
         get_common_stack_references(): Retrieves references to artifacts created in common stack (like S3 bucket, SNS topic, ...)
-        get_metrics_collection_interval_min(): Fetches the interval for metrics collection from general.json.
         create_extract_metrics_lambdas(settings_bucket, internal_error_topic, timestream_database_arn):
             Creates Lambda functions for extracting metrics.
     """
@@ -47,7 +47,7 @@ class InfraToolingMonitoringStack(Stack):
         """
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
-        self.general_settings_reader = kwargs.pop("general_settings_reader", None)
+        self.settings: Settings = kwargs.pop("settings", None)
 
         super().__init__(scope, construct_id, **kwargs)
 
@@ -66,7 +66,9 @@ class InfraToolingMonitoringStack(Stack):
             timestream_database_arn=input_timestream_database_arn,
         )
 
-        metrics_collection_interval_min = self.get_metrics_collection_interval_min()
+        metrics_collection_interval_min = (
+            self.settings.get_metrics_collection_interval_min()
+        )
 
         rule = events.Rule(
             self,
@@ -114,25 +116,6 @@ class InfraToolingMonitoringStack(Stack):
 
         return settings_bucket, internal_error_topic, input_timestream_database_arn
 
-    def get_metrics_collection_interval_min(self):
-        """
-        Reads the metrics collection interval from a configuration file. The interval is defined in minutes.
-
-        Returns:
-            int: The interval in minutes for collecting metrics.
-
-        Raises:
-            Exception: If the 'metrics_collection_interval_min' key is not found in the configuration file.
-        """
-        tooling_section = self.general_settings_reader.tooling_environment
-        key = "metrics_collection_interval_min"
-        if key in tooling_section:
-            return tooling_section[key]
-        else:
-            raise Exception(
-                "metrics_collection_interval_min key not found in general.json config file ('tooling_environment' section)"
-            )
-
     def create_extract_metrics_lambdas(
         self, settings_bucket, internal_error_topic, timestream_database_arn
     ):
@@ -150,9 +133,11 @@ class InfraToolingMonitoringStack(Stack):
         """
         extract_metrics_lambda_role = iam.Role(
             self,
-            "extract-metricsLambdaRole",
+            "ExtractMetricsLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=AWSNaming.IAMRole(self, "extract-metrics-lambda"),
+            role_name=AWSNaming.IAMRole(
+                self, CDKResourceNames.IAMROLE_EXTRACT_METRICS_LAMBDA
+            ),
         )
 
         extract_metrics_lambda_role.add_managed_policy(
@@ -161,29 +146,61 @@ class InfraToolingMonitoringStack(Stack):
             )
         )
 
-        extract_metrics_lambda_role.add_to_policy(
+        tooling_acc_inline_policy = iam.Policy(
+            self,
+            "ToolingAccPermissions",
+            policy_name=AWSNaming.IAMPolicy(self, "tooling-acc-permissions"),
+        )
+        extract_metrics_lambda_role.attach_inline_policy(tooling_acc_inline_policy)
+
+        tooling_acc_inline_policy.add_statements(
+            # to be able to read settings
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
                 resources=[settings_bucket.bucket_arn],
             )
         )
-
-        extract_metrics_lambda_role.add_to_policy(
+        tooling_acc_inline_policy.add_statements(
+            # to be able to throw internal Salmon errors
             iam.PolicyStatement(
                 actions=["sns:Publish"],
                 effect=iam.Effect.ALLOW,
                 resources=[internal_error_topic.topic_arn],
             )
         )
-
-        extract_metrics_lambda_role.add_to_policy(
+        tooling_acc_inline_policy.add_statements(
+            # to be able to write extracted metrics to Timestream DB
             iam.PolicyStatement(
                 actions=["timestream:*"],
                 effect=iam.Effect.ALLOW,
                 resources=[timestream_database_arn],
             )
         )
+
+        monitored_assume_inline_policy = iam.Policy(
+            self,
+            "MonitoredAccAssumePermissions",
+            policy_name=AWSNaming.IAMPolicy(self, "monitored-acc-assume-permissions"),
+        )
+        extract_metrics_lambda_role.attach_inline_policy(monitored_assume_inline_policy)
+
+        monitored_account_ids = self.settings.get_monitored_account_ids()
+        extr_metr_role_name = AWSNaming.IAMRole(
+            self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS
+        )
+        for monitored_account_id in monitored_account_ids:
+            mon_acc_extr_metr_role_arn = AWSNaming.Arn_IAMRole(
+                self, monitored_account_id, extr_metr_role_name
+            )
+            monitored_assume_inline_policy.add_statements(
+                # to be able to assume role in monitored account to extract metrics
+                iam.PolicyStatement(
+                    actions=["sts:AssumeRole"],
+                    effect=iam.Effect.ALLOW,
+                    resources=[mon_acc_extr_metr_role_arn],
+                )
+            )
 
         extract_metrics_lambda_path = os.path.join("../src/")
         extract_metrics_lambda = lambda_.Function(
@@ -198,7 +215,10 @@ class InfraToolingMonitoringStack(Stack):
             handler="lambda_extract_metrics.lambda_handler",
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
-            environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name},
+            environment={
+                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
+            },
             role=extract_metrics_lambda_role,
             retry_attempts=2,
             dead_letter_topic=internal_error_topic,
@@ -217,7 +237,10 @@ class InfraToolingMonitoringStack(Stack):
             handler="lambda_extract_metrics_orch.lambda_handler",
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
-            environment={"SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name},
+            environment={
+                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
+            },
             role=extract_metrics_lambda_role,
             retry_attempts=2,
             dead_letter_topic=internal_error_topic,

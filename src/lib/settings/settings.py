@@ -116,18 +116,23 @@ class Settings:
     # CDK methods
     def get_monitored_account_ids(self) -> List[str]:
         """Get monitored account_ids"""
-        return [
+        return set([
             m_env["account_id"]
             for m_env in self.processed_settings[SettingFileNames.GENERAL].get(
                 "monitored_environments", []
             )
-        ]
+        ])
 
     def get_metrics_collection_interval_min(self) -> int:
         """Get metrics_collection_interval_min"""
         return self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"][
             "metrics_collection_interval_min"
         ]
+
+    def get_tooling_account_props(self) -> str:
+        """Returns account_id and region of tooling environment."""
+        tooling = self.processed_settings[SettingFileNames.GENERAL].get("tooling_environment")
+        return tooling.get("account_id"), tooling.get("region")
 
     # Lambda methods
     def get_monitored_environment_name(self, account_id: str, region: str) -> str:

@@ -4,6 +4,7 @@ import sys
 
 import aws_cdk as cdk
 
+
 sys.path.append("../src")
 from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
 from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlertingStack
@@ -11,9 +12,8 @@ from infra_tooling_account.infra_tooling_monitoring_stack import (
     InfraToolingMonitoringStack,
 )
 
-from lib.settings.cdk.local_file_system_settings_provider import (
-    LocalFileSystemSettingsProvider,
-)
+from lib.settings.settings import Settings
+from lib.settings.cdk import settings_validator
 
 
 if "STAGE_NAME" in os.environ:
@@ -26,8 +26,9 @@ PROJECT_NAME = "salmon"
 
 TAGS = {"project_name": PROJECT_NAME, "stage_name": STAGE_NAME}
 
-settings_provider = LocalFileSystemSettingsProvider("../config/settings")
-settings_provider.validate_settings()
+settings = Settings.from_file_path("../config/settings")
+settings_validator.validate(settings)
+
 
 app = cdk.App()
 common_stack = InfraToolingCommonStack(
@@ -36,6 +37,7 @@ common_stack = InfraToolingCommonStack(
     tags=TAGS,
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
+    settings=settings,
 )
 alerting_stack = InfraToolingAlertingStack(
     app,
@@ -43,7 +45,7 @@ alerting_stack = InfraToolingAlertingStack(
     tags=TAGS,
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
-    general_settings_reader=settings_provider.general_settings_reader,
+    settings=settings,
 )
 monitoring_stack = InfraToolingMonitoringStack(
     app,
@@ -51,7 +53,7 @@ monitoring_stack = InfraToolingMonitoringStack(
     tags=TAGS,
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
-    general_settings_reader=settings_provider.general_settings_reader,
+    settings=settings,
 )
 
 alerting_stack.add_dependency(common_stack)

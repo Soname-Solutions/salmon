@@ -78,3 +78,8 @@ class AWSNaming:
     def TimestreamTable(cls, stack_obj: object, meaning: str) -> str:
         prefix = "tstable"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
+
+    @classmethod
+    def Arn_IAMRole(cls, stack_obj: object, account_id: str, role_name: str) -> str:
+        return f"arn:aws:iam::{account_id}:role/{role_name}"
