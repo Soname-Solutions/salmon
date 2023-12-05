@@ -23,7 +23,32 @@ from lib.settings.settings import Settings
 
 
 class InfraToolingCommonStack(Stack):
+    """
+    This class represents a stack for infrastructure tooling and common functionality in AWS CloudFormation.
+
+    Attributes:
+        stage_name (str): The stage name of the deployment, used for naming resources.
+        project_name (str): The name of the project, used for naming resources.
+
+    Methods:
+        create_timestream_db(): Creates Timestream database for events and metrics
+        create_timestream_tables(timestream.CfnDatabase): Creates necessary tables in Timestream DB
+        create_settings_bucket(): Creates Settings files storage and uploads files to it
+        create_notification_lambda(sns.Topic, sqs.Queue): Creates Lambda function for notification functionality
+    """
+
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        """
+        Initialize the InfraToolingCommonStack.
+
+        Args:
+            scope (Construct): The CDK app or stack that this stack is a part of.
+            id (str): The identifier for this stack.
+            **kwargs: Arbitrary keyword arguments. Specifically looks for:
+                - project_name (str): The name of the project. Used for naming resources. Defaults to None.
+                - stage_name (str): The name of the deployment stage. Used for naming resources. Defaults to None.
+
+        """
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
         self.settings: Settings = kwargs.pop("settings", None)
@@ -108,7 +133,12 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
-    def create_timestream_db(self):
+    def create_timestream_db(self) -> timestream.CfnDatabase:
+        """Creates Timestream database for events and metrics
+
+        Returns:
+            timestream.CfnDatabase: Timestream database
+        """
         timestream_kms_key = kms.Key(
             self,
             "salmonTimestreamKMSKey",
@@ -124,7 +154,17 @@ class InfraToolingCommonStack(Stack):
 
         return timestream_storage
 
-    def create_timestream_tables(self, timestream_storage):
+    def create_timestream_tables(
+        self, timestream_storage: timestream.CfnDatabase
+    ) -> timestream.CfnTable:
+        """Creates necessary tables in Timestream DB
+
+        Args:
+            timestream_storage (timestream.CfnDatabase): Timestream database
+
+        Returns:
+            timestream.CfnTable: Alert Events table
+        """
         # this part throws a warning, but applies correctly
         # waiting for the CDK fix: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1514
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
@@ -141,7 +181,12 @@ class InfraToolingCommonStack(Stack):
 
         return alert_events_table
 
-    def create_settings_bucket(self):
+    def create_settings_bucket(self) -> s3.Bucket:
+        """Creates Settings files storage and uploads files from the local directory to it
+
+        Returns:
+            s3.Bucket: S3 Bucket with settings files
+        """
         settings_bucket = s3.Bucket(
             self,
             "salmonSettingsBucket",
@@ -162,7 +207,18 @@ class InfraToolingCommonStack(Stack):
 
         return settings_bucket
 
-    def create_notification_lambda(self, internal_error_topic, notification_queue):
+    def create_notification_lambda(
+        self, internal_error_topic: sns.Topic, notification_queue: sqs.Queue
+    ) -> lambda_.Function:
+        """Creates Lambda function for notification functionality
+
+        Args:
+            internal_error_topic (sns.Topic): SNS Topic for DLQ alerts
+            notification_queue (sqs.Queue): SQS queue as the input for notification lambda
+
+        Returns:
+            lambda_.Function: Notification Lambda
+        """
         notification_lambda_role = iam.Role(
             self,
             "salmonNotificationLambdaRole",
