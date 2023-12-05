@@ -1,4 +1,9 @@
-from .impl import GlueEventMapper, StepFunctionsEventMapper, EventParsingException
+from .impl import (
+    GeneralAwsEventMapper,
+    GlueEventMapper,
+    StepFunctionsEventMapper,
+    EventParsingException,
+)
 from ..settings import Settings
 
 
@@ -30,6 +35,6 @@ class AwsEventMapper:
         if event_source not in self.event_map:
             raise EventParsingException(f"No parsing logic for source {event_source}.")
 
-        target_mapper = self.event_map[event_source]
+        target_mapper: GeneralAwsEventMapper = self.event_map[event_source]
 
         return target_mapper.to_notification_messages(event)
