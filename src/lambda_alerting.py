@@ -43,17 +43,16 @@ def write_event_to_timestream(records):
     logger.info(result)
 
 
-def read_settings(s3_bucket_name: str) -> Settings:
-    """Reads settings from the dedicated S3 bucket
+def read_settings(settings_s3_path: str) -> Settings:
+    """Reads settings from the provided S3 bucket and path
 
     Args:
-        s3_bucket_name (str): Name of the Settings S3 bucket
+        settings_s3_path (str): Path to Settings files in the S3 bucket
 
     Returns:
         Settings: Setting container
     """
-    settings_path = f"s3://{s3_bucket_name}/settings/"
-    settings = Settings.from_s3_path(settings_path)
+    settings = Settings.from_s3_path(settings_s3_path)
     return settings
 
 
@@ -141,8 +140,8 @@ def map_to_notification_messages(event_props: dict, settings: Settings) -> list[
 def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
-    settings_bucket_name = os.environ["SETTINGS_S3_BUCKET_NAME"]
-    settings = read_settings(settings_bucket_name)
+    settings_s3_path = os.environ["SETTINGS_S3_PATH"]
+    settings = read_settings(settings_s3_path)
 
     monitored_env_name = get_monitored_env_name(event, settings)
 
@@ -166,7 +165,7 @@ if __name__ == "__main__":
     os.environ[
         "NOTIFICATION_QUEUE_URL"
     ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devvd"
-    os.environ["SETTINGS_S3_BUCKET_NAME"] = "s3-salmon-settings-devvd"
+    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devvd/settings/"
     os.environ["ALERT_EVENTS_TABLE_NAME"] = "alert-events"
     event = {
         "version": "0",

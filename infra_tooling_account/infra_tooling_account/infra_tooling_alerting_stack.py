@@ -123,13 +123,13 @@ class InfraToolingAlertingStack(Stack):
 
     def create_alerting_lambda(
         self,
-        settings_bucket,
-        notification_queue,
-        internal_error_topic,
-        timestream_database_arn,
-        timestream_database_name,
-        timestream_alert_events_table_name,
-        alerting_lambda_event_rule,
+        settings_bucket: s3.Bucket,
+        notification_queue: sqs.Queue,
+        internal_error_topic: sns.Topic,
+        timestream_database_arn: str,
+        timestream_database_name: str,
+        timestream_alert_events_table_name: str,
+        alerting_lambda_event_rule: events.Rule,
     ):
         alerting_lambda_role = iam.Role(
             self,
@@ -199,7 +199,7 @@ class InfraToolingAlertingStack(Stack):
             timeout=Duration.seconds(120),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
                 "ALERT_EVENTS_DB_NAME": timestream_database_name,
                 "ALERT_EVENTS_TABLE_NAME": timestream_alert_events_table_name,
