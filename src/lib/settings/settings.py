@@ -224,7 +224,7 @@ class Settings:
             try:
                 file_content = read_file_func(os.path.join(base_path, file_name))
                 settings.append(file_content)
-            except Exception as e:
+            except FileNotFoundError as e:
                 if file_name == SettingFileNames.REPLACEMENTS:
                     settings.append(None)
                 else:

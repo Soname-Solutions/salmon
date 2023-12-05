@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 from urllib.parse import urlparse
 
 
@@ -50,6 +51,9 @@ class S3Manager:
             )
             settings_data = response["Body"].read().decode("utf-8")
             return settings_data
-        except Exception as e:
-            error_message = f"Error reading settings file from '{s3_path}': {e}"
-            raise S3ManagerReadException(error_message)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchKey":
+                raise FileNotFoundError(f"File not found: {s3_path}") from e
+            else:
+                error_message = f"Error reading settings file from '{s3_path}': {e}"
+                raise S3ManagerReadException(error_message)
