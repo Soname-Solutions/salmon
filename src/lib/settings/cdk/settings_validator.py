@@ -54,7 +54,7 @@ def validate_schemas(settings: Settings) -> List[tuple]:
     """Validate setting raw JSON files against schema."""
     errors = []
     for attr_name, file_name in SettingFileNames.__dict__.items():
-        if not attr_name.startswith("__"):
+        if not attr_name.startswith("__") and attr_name != "REPLACEMENTS":
             schema_file = fm.read_file(os.path.join(SCHEMA_FILES_PATH, file_name))
             schema = ju.parse_json(schema_file)
 

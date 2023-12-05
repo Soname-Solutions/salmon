@@ -51,3 +51,8 @@ For majority communication options some properties / credentials might be needed
 They should be provided as a part of AWS-based secret
 
 **For AWS SES and SMTP delivery methods** - mandatory field "sender_email" (for the field "From")
+
+
+## Replacements (optional)
+Replacements list for placeholders in other setting JSON files.
+**Placeholders inside general and other settings should be in double curly brackets (e.g. `<<value>>`)** 
