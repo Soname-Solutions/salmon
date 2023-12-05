@@ -146,7 +146,7 @@ def lambda_handler(event, context):
     monitored_env_name = get_monitored_env_name(event, settings)
 
     messages = map_to_notification_messages(event, settings)
-    print(messages)
+    logger.info(f"Notification messages: {messages}")
 
     queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
     send_messages_to_sqs(queue_url, messages)
