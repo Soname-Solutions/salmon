@@ -21,7 +21,9 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         Returns:
             str: ISO formatted datetime
         """
-        return datetime.fromtimestamp(timestamp / 1e3).isoformat()
+        if timestamp is not None:
+            return datetime.fromtimestamp(timestamp / 1e3).isoformat()
+        return None
 
     def get_message_body(self, event):
         message_body = []
