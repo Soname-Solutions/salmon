@@ -20,14 +20,14 @@ class File:
 
 
 class Message:
-    def __init__(self, body: str, header: str = None, file: File = None):
+    def __init__(self, body: str, subject: str, file: File = None):
         """Ititiate message class.
 
         Args
             body (str): Message body to send.
-            header (str): Message header.
+            subject (str): Message subject.
             file (File): File to attach.
         """
         self.body = body
-        self.header = header
+        self.subject = subject
         self.file = file
