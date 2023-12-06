@@ -53,8 +53,7 @@ def send_messages_to_sqs(queue_url: str, messages: list[dict]):
     sender = SQSQueueSender(queue_url, sqs_client)
     results = sender.send_messages(messages)
 
-    logger.info("Messages have been sent successfully to SQS")
-    logger.info(results)
+    logger.info(f"Results of sending messages to SQS: {results}")
 
 
 def prepare_timestream_record(monitored_env_name, event):
