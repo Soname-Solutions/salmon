@@ -43,19 +43,6 @@ def write_event_to_timestream(records):
     logger.info(result)
 
 
-def read_settings(settings_s3_path: str) -> Settings:
-    """Reads settings from the provided S3 bucket and path
-
-    Args:
-        settings_s3_path (str): Path to Settings files in the S3 bucket
-
-    Returns:
-        Settings: Setting container
-    """
-    settings = Settings.from_s3_path(settings_s3_path)
-    return settings
-
-
 def send_messages_to_sqs(queue_url: str, messages: list[dict]):
     """Sends messages array to the given SQS queue
 
@@ -68,19 +55,6 @@ def send_messages_to_sqs(queue_url: str, messages: list[dict]):
 
     logger.info("Messages have been sent successfully to SQS")
     logger.info(results)
-
-
-def get_monitored_env_name(event: dict, settings: Settings) -> str:
-    """Returns monitored environment name related to the given event
-
-    Args:
-        event (dict): Event Object
-        settings (Settings): Settings Object
-
-    Returns:
-        str: Monitored environment name
-    """
-    return settings.get_monitored_environment_name(event["account"], event["region"])
 
 
 def prepare_timestream_record(monitored_env_name, event):
@@ -141,9 +115,11 @@ def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
-    settings = read_settings(settings_s3_path)
+    settings = Settings.from_s3_path(settings_s3_path)
 
-    monitored_env_name = get_monitored_env_name(event, settings)
+    monitored_env_name = settings.get_monitored_environment_name(
+        event["account"], event["region"]
+    )
 
     messages = map_to_notification_messages(event, settings)
     logger.info(f"Notification messages: {messages}")
