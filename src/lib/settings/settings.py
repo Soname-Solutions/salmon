@@ -149,12 +149,14 @@ class Settings:
     # CDK methods
     def get_monitored_account_ids(self) -> set[str]:
         """Get monitored account_ids"""
-        return set([
-            m_env["account_id"]
-            for m_env in self.processed_settings[SettingFileNames.GENERAL].get(
-                "monitored_environments", []
-            )
-        ])
+        return set(
+            [
+                m_env["account_id"]
+                for m_env in self.processed_settings[SettingFileNames.GENERAL].get(
+                    "monitored_environments", []
+                )
+            ]
+        )
 
     def get_metrics_collection_interval_min(self) -> int:
         """Get metrics_collection_interval_min"""
@@ -164,7 +166,9 @@ class Settings:
 
     def get_tooling_account_props(self) -> str:
         """Returns account_id and region of tooling environment."""
-        tooling = self.processed_settings[SettingFileNames.GENERAL].get("tooling_environment")
+        tooling = self.processed_settings[SettingFileNames.GENERAL].get(
+            "tooling_environment"
+        )
         return tooling.get("account_id"), tooling.get("region")
 
     # Lambda methods
@@ -227,8 +231,8 @@ class Settings:
         """Get sender email per delivery method"""
         for method in self.general.get("delivery_methods", []):
             if method.get("name") == delivery_method:
-                return method.get("sender_email", "")
-        return ""
+                return method.get("sender_email", None)
+        return None
 
     @staticmethod
     def _read_settings(base_path: str, read_file_func, *file_names):
