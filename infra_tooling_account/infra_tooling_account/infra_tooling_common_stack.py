@@ -11,9 +11,10 @@ from aws_cdk import (
     aws_timestream as timestream,
     aws_sqs as sqs,
     aws_lambda as lambda_,
-    aws_lambda_destinations as lambda_destinations,
     aws_lambda_event_sources as lambda_event_sources,
     aws_sns as sns,
+    aws_cloudwatch as cloudwatch,
+    aws_cloudwatch_actions as cloudwatch_actions,
 )
 from constructs import Construct
 import os
@@ -73,6 +74,33 @@ class InfraToolingCommonStack(Stack):
             topic_name=AWSNaming.SNSTopic(self, "internal-error"),
         )
 
+        notification_dlq = sqs.DeadLetterQueue(
+            max_receive_count=3,
+            queue=sqs.Queue(
+                self,
+                "salmonNotificationDlq",
+                queue_name=AWSNaming.SQSQueue(self, "notification-dlq"),
+            ),
+        )
+
+        dlq_alarm = cloudwatch.Alarm(
+            self,
+            "salmonNotificationDlqCloudwatchAlarm",
+            alarm_name=AWSNaming.CloudWatchAlarm(self, "notification-dlq"),
+            metric=cloudwatch.Metric(
+                metric_name="ApproximateNumberOfMessagesVisible",
+                namespace="AWS/SQS",
+                statistic=cloudwatch.Stats.SUM,
+                period=Duration.minutes(5),
+                dimensions_map={"QueueName": notification_dlq.queue.queue_name},
+            ),
+            evaluation_periods=1,
+            threshold=0,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+
+        dlq_alarm.add_alarm_action(cloudwatch_actions.SnsAction(internal_error_topic))
+
         # Notification SQS Queue
         # TODO: confirm visibility timeout
         notification_queue = sqs.Queue(
@@ -80,6 +108,7 @@ class InfraToolingCommonStack(Stack):
             "salmonNotificationQueue",
             queue_name=AWSNaming.SQSQueue(self, "notification"),
             visibility_timeout=Duration.seconds(60),
+            dead_letter_queue=notification_dlq,
         )
 
         notification_lambda = self.create_notification_lambda(
@@ -291,7 +320,6 @@ class InfraToolingCommonStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             role=notification_lambda_role,
             retry_attempts=2,
-            on_failure=lambda_destinations.SnsDestination(internal_error_topic),
         )
 
         notification_lambda.add_event_source(

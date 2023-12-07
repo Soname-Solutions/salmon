@@ -80,6 +80,10 @@ class AWSNaming:
         outp = f"{prefix}-{meaning}" # Table lives inside DB, so we identify project and stage names by DB
         return outp
 
+    @classmethod
+    def CloudWatchAlarm(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "alarm"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
     def Arn_IAMRole(cls, stack_obj: object, account_id: str, role_name: str) -> str:

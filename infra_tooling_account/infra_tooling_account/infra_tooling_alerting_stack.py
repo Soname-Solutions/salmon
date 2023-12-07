@@ -10,6 +10,8 @@ from aws_cdk import (
     aws_sns as sns,
     aws_sqs as sqs,
     Duration,
+    aws_cloudwatch as cloudwatch,
+    aws_cloudwatch_actions as cloudwatch_actions,
 )
 from constructs import Construct
 import os
@@ -258,10 +260,39 @@ class InfraToolingAlertingStack(Stack):
             role=alerting_lambda_role,
             retry_attempts=2,
             layers=[powertools_layer],
-            dead_letter_topic=internal_error_topic,
         )
 
+        alerting_dlq = sqs.Queue(
+            self,
+            "salmonAlertingDlq",
+            queue_name=AWSNaming.SQSQueue(self, "alerting-dlq"),
+        )
+
+        dlq_alarm = cloudwatch.Alarm(
+            self,
+            "salmonAlertingDlqCloudwatchAlarm",
+            alarm_name=AWSNaming.CloudWatchAlarm(self, "alerting-dlq"),
+            metric=cloudwatch.Metric(
+                metric_name="ApproximateNumberOfMessagesVisible",
+                namespace="AWS/SQS",
+                statistic=cloudwatch.Stats.SUM,
+                period=Duration.minutes(5),
+                dimensions_map={"QueueName": alerting_dlq.queue_name},
+            ),
+            evaluation_periods=1,
+            threshold=0,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+
+        dlq_alarm.add_alarm_action(cloudwatch_actions.SnsAction(internal_error_topic))
+
         # Alerting Lambda EventBridge Trigger
-        alerting_lambda_event_rule.add_target(targets.LambdaFunction(alerting_lambda))
+        alerting_lambda_event_rule.add_target(
+            targets.LambdaFunction(
+                handler=alerting_lambda,
+                dead_letter_queue=alerting_dlq,
+                retry_attempts=3,
+            )
+        )
 
         return alerting_lambda
