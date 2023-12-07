@@ -234,7 +234,12 @@ class InfraToolingCommonStack(Stack):
 
         notification_lambda_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["ses:SendEmail", "ses:SendRawEmail"],
+                actions=[
+                    "ses:ListIdentities",
+                    "ses:GetIdentityVerificationAttributes",
+                    "ses:SendEmail",
+                    "ses:SendRawEmail",
+                ],
                 effect=iam.Effect.ALLOW,
                 resources=["*"],
             )
