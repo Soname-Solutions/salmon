@@ -17,4 +17,13 @@ class GlueManager:
         except Exception as e:
             error_message = f"Error getting list of glue jobs : {e}"
             raise GlueManagerException(error_message)            
+        
+    def get_job_runs(self, job_name):
+        try:
+            response = self.glue_client.get_job_runs(JobName=job_name)
+            return response
+
+        except Exception as e:
+            error_message = f"Error getting glue job runs : {e}"
+            raise GlueManagerException(error_message)
 

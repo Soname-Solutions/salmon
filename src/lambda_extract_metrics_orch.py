@@ -16,3 +16,16 @@ def lambda_handler(event, context):
 
     helloworld = generate_hello_world()
     return {"message": helloworld}
+
+# for future reference
+# lambda_client = boto3.client('lambda')
+
+# lambda_name = "lambda-salmon-extract-metrics-devam"
+
+
+
+# response = lambda_client.invoke(
+#     FunctionName=lambda_name,
+#     InvocationType='Event',
+#     Payload=json.dumps({"account_id":"123", "service":"glue"})
+# )

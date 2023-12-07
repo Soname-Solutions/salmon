@@ -16,6 +16,7 @@ import os
 
 from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.aws_common_resources import AWS_Common_Resources
 from lib.settings.settings import Settings
 
 
@@ -202,6 +203,14 @@ class InfraToolingMonitoringStack(Stack):
                 )
             )
 
+        current_region = Stack.of(self).region
+        print(f"Current region: {current_region}")
+        powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            id="lambda-powertools",
+            layer_version_arn=AWS_Common_Resources.get_Lambda_Powertools_Layer_Arn(current_region)
+        )
+
         extract_metrics_lambda_path = os.path.join("../src/")
         extract_metrics_lambda = lambda_.Function(
             self,
@@ -220,6 +229,7 @@ class InfraToolingMonitoringStack(Stack):
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
             },
             role=extract_metrics_lambda_role,
+            layers=[powertools_layer],
             retry_attempts=2,
             dead_letter_topic=internal_error_topic,
         )
