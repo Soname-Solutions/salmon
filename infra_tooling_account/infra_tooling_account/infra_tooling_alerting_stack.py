@@ -20,7 +20,31 @@ from lib.settings.settings import Settings
 
 
 class InfraToolingAlertingStack(Stack):
+    """
+    This class represents a stack for infrastructure tooling and alerting in AWS CloudFormation.
+
+    Attributes:
+        stage_name (str): The stage name of the deployment, used for naming resources.
+        project_name (str): The name of the project, used for naming resources.
+
+    Methods:
+        create_event_bus(): Creates alerting event bus along with the rule to forward all AWS events
+        create_alerting_lambda(s3.Bucket, sqs.Queue, sns.Topic, str, str, str, events.Rule):
+            Creates Lambda function for events alerting.
+    """
+
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        """
+        Initialize the InfraToolingAlertingStack.
+
+        Args:
+            scope (Construct): The CDK app or stack that this stack is a part of.
+            id (str): The identifier for this stack.
+            **kwargs: Arbitrary keyword arguments. Specifically looks for:
+                - project_name (str): The name of the project. Used for naming resources. Defaults to None.
+                - stage_name (str): The name of the deployment stage. Used for naming resources. Defaults to None.
+
+        """
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
         self.settings: Settings = kwargs.pop("settings", None)
@@ -84,7 +108,12 @@ class InfraToolingAlertingStack(Stack):
             alerting_lambda_event_rule=alerting_lambda_event_rule,
         )
 
-    def create_event_bus(self):
+    def create_event_bus(self) -> tuple[events.EventBus, events.Rule]:
+        """Creates alerting event bus along with the rule to forward all AWS events.
+
+        Returns:
+            tuple[events.EventBus, events.Rule]: Alerting Event Bus with the Rule to forward all AWS events
+        """
         alerting_bus = events.EventBus(
             self,
             "salmonAlertingBus",
@@ -96,7 +125,7 @@ class InfraToolingAlertingStack(Stack):
             self.settings.get_monitored_account_ids(), reverse=True
         )
         # sorted is required. Otherwise, it shuffles Event Bus policy after each deploy
-        
+
         monitored_principals = [
             iam.AccountPrincipal(account_id) for account_id in monitored_account_ids
         ]
@@ -123,14 +152,28 @@ class InfraToolingAlertingStack(Stack):
 
     def create_alerting_lambda(
         self,
-        settings_bucket,
-        notification_queue,
-        internal_error_topic,
-        timestream_database_arn,
-        timestream_database_name,
-        timestream_alert_events_table_name,
-        alerting_lambda_event_rule,
-    ):
+        settings_bucket: s3.Bucket,
+        notification_queue: sqs.Queue,
+        internal_error_topic: sns.Topic,
+        timestream_database_arn: str,
+        timestream_database_name: str,
+        timestream_alert_events_table_name: str,
+        alerting_lambda_event_rule: events.Rule,
+    ) -> lambda_.Function:
+        """Creates Lambda function for events alerting.
+
+        Args:
+            settings_bucket (s3.Bucket): Settings S3 Bucket
+            notification_queue (sqs.Queue): SQS queue for notification messages
+            internal_error_topic (sns.Topic): SNS topic for DLQ error alerts
+            timestream_database_arn (str): ARN of the Timestream DB for alerts and metrics
+            timestream_database_name (str): Name of the Timestream DB for alerts and metrics
+            timestream_alert_events_table_name (str): Timestream table name for alert events
+            alerting_lambda_event_rule (events.Rule): EventBridge rule which forwards AWS events
+
+        Returns:
+            lambda_.Function: Function responsible for alerting functionality
+        """
         alerting_lambda_role = iam.Role(
             self,
             "alertingLambdaRole",
@@ -148,7 +191,7 @@ class InfraToolingAlertingStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
-                resources=[settings_bucket.bucket_arn],
+                resources=[f"{settings_bucket.bucket_arn}/*"],
             )
         )
 
@@ -199,8 +242,8 @@ class InfraToolingAlertingStack(Stack):
             timeout=Duration.seconds(120),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
-                "NOTIFICATION_QUEUE_NAME": notification_queue.queue_name,
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
+                "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
                 "ALERT_EVENTS_DB_NAME": timestream_database_name,
                 "ALERT_EVENTS_TABLE_NAME": timestream_alert_events_table_name,
             },

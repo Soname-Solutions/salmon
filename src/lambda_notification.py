@@ -2,6 +2,8 @@ from lib.notification_service.formatter_provider import formatters
 from lib.notification_service.sender_provider import senders
 from lib.notification_service.messages import Message
 
+import logging
+import json
 
 # todo: the config will be read from settings config
 sender_config = {
@@ -11,6 +13,9 @@ sender_config = {
     "smtp_login": "my_email@soname.de",
     "smtp_password": "my_pass",
 }
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def _get_formatted_message(message_body: list, delivery_method: str) -> str:
@@ -45,8 +50,11 @@ def lambda_handler(event, context):
         event (object): Event data containing details about the AWS resource state change.
         context: (object): AWS Lambda context (not utilized in this function).
     """
-    delivery_options_info = event.get("delivery_options")
-    message_info = event.get("message")
+    logging.info(f"Event: {event}")
+    event_record = event.get("Records")[0]
+    notification_message = json.loads(event_record.get("body"))
+    delivery_options_info = notification_message.get("delivery_options")
+    message_info = notification_message.get("message")
 
     delivery_method = delivery_options_info.get("delivery_method")
 

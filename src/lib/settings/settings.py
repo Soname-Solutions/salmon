@@ -32,6 +32,7 @@ class Settings:
         get_monitored_environment_name: Retrieves monitored environment name by account ID and region.
         get_monitoring_groups: Retrieves monitoring groups by resource names.
         get_recipients: Retrieves recipients for specified monitoring groups and notification type.
+        get_sender_email: Retrieves sender email based on delivery method name provided.
         ----
         get_monitored_environment_names_raw_gs: Retrieves monitored environment names from raw general settings.
         get_monitored_account_id_and_region_raw_gs: Retrieves monitored environments 'account_id|region' from raw general settings.
@@ -146,14 +147,16 @@ class Settings:
         return self._raw_settings[file_name]
 
     # CDK methods
-    def get_monitored_account_ids(self) -> List[str]:
+    def get_monitored_account_ids(self) -> set[str]:
         """Get monitored account_ids"""
-        return set([
-            m_env["account_id"]
-            for m_env in self.processed_settings[SettingFileNames.GENERAL].get(
-                "monitored_environments", []
-            )
-        ])
+        return set(
+            [
+                m_env["account_id"]
+                for m_env in self.processed_settings[SettingFileNames.GENERAL].get(
+                    "monitored_environments", []
+                )
+            ]
+        )
 
     def get_metrics_collection_interval_min(self) -> int:
         """Get metrics_collection_interval_min"""
@@ -163,7 +166,9 @@ class Settings:
 
     def get_tooling_account_props(self) -> str:
         """Returns account_id and region of tooling environment."""
-        tooling = self.processed_settings[SettingFileNames.GENERAL].get("tooling_environment")
+        tooling = self.processed_settings[SettingFileNames.GENERAL].get(
+            "tooling_environment"
+        )
         return tooling.get("account_id"), tooling.get("region")
 
     # Lambda methods
@@ -221,6 +226,13 @@ class Settings:
                                 matched_recipients.append(recipient_info)
 
         return matched_recipients
+
+    def get_sender_email(self, delivery_method: str) -> str:
+        """Get sender email per delivery method"""
+        for method in self.general.get("delivery_methods", []):
+            if method.get("name") == delivery_method:
+                return method.get("sender_email", None)
+        return None
 
     @staticmethod
     def _read_settings(base_path: str, read_file_func, *file_names):
