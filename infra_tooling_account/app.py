@@ -4,7 +4,6 @@ import sys
 
 import aws_cdk as cdk
 
-
 sys.path.append("../src")
 from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
 from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlertingStack
