@@ -66,7 +66,7 @@ class GlueManager:
             response = self.glue_client.get_job_runs(JobName=job_name)
 
             job_runs_data = JobRunsData.model_validate(response)
-            outp = [x for x in job_runs_data.JobRuns if x.StartedOn >= since_time]
+            outp = [x for x in job_runs_data.JobRuns if x.StartedOn > since_time]
 
             return outp
 

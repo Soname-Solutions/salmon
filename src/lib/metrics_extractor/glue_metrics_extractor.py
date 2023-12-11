@@ -28,10 +28,10 @@ class GlueMetricExtractor:
         return last_date
 
 
-    def _extract_metrics_data(self) -> list[JobRun]:
+    def _extract_metrics_data(self, since_time: datetime) -> list[JobRun]:
         glue_man = GlueManager(self.glue_client)
         job_runs = glue_man.get_job_runs(
-            job_name=self.glue_job_name, since_time=self.since_time
+            job_name=self.glue_job_name, since_time=since_time
         )
         return job_runs
 
@@ -83,13 +83,12 @@ class GlueMetricExtractor:
 
         return records, common_attributes
 
-    def _prepare_metrics_data(self):
-        job_runs = self._extract_metrics_data()
+    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
+        job_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(job_runs)
         return records, common_attributes
       
         
-    def extract_and_write_metrics(self, timestream_table_writer: TimestreamTableWriter):
-        records, common_attributes = self._prepare_metrics_data()
+    def write_metrics(self, records, common_attributes, timestream_table_writer: TimestreamTableWriter):        
         timestream_table_writer.write_records(records, common_attributes)
         return records, common_attributes

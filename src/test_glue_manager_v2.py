@@ -16,11 +16,10 @@ db_name = "timestream-salmon-metrics-events-storage-devam"
 table_name = "tstable-salmon-glue-metrics-devam"
 ##########################################################################
 
-glue_man = GlueManager(glue_client)
+#glue_man = GlueManager(glue_client)
 timestream_man = TimestreamTableWriter(
     db_name=db_name, table_name=table_name, timestream_write_client=timestream_client
 )
-
 
 monitored_env0 = "test_monitored_env"
 glue_job_names = ["glue-salmonts-pyjob-one-dev", "glue-salmonts-sparkjob-one-dev"]
@@ -44,9 +43,11 @@ for glue_job_name in glue_job_names:
     print(f"Extracting metrics since {since_time}")    
 
     # # 3. Extract metrics data in form of prepared list of timestream records
-
+    records, common_attributes = glue_extractor.prepare_metrics_data(since_time=since_time)
+    print(f"Extracted {len(records)} records")
 
     # # 4. Write extracted data to timestream table
-    # glue_extractor.extract_and_write_metrics(timestream_table_writer=timestream_man)
+    glue_extractor.write_metrics(records, common_attributes, timestream_table_writer=timestream_man)
+    print(f"Written {len(records)} records to timestream")
 
 

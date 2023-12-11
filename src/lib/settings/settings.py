@@ -180,6 +180,10 @@ class Settings:
             if m_env["account_id"] == account_id and m_env["region"] == region:
                 return m_env["name"]
         return None
+    
+    def list_monitoring_groups(self) -> List[str]:
+        """List monitoring groups"""
+        return [group["group_name"] for group in self.monitoring_groups.get("monitoring_groups", [])]
 
     def get_monitoring_groups(self, resources: List[str]) -> List[str]:
         """Get monitoring groups by resources list."""

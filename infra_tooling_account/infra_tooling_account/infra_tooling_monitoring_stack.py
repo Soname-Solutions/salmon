@@ -169,7 +169,7 @@ class InfraToolingMonitoringStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
-                resources=[settings_bucket.bucket_arn],
+                resources=[f"{settings_bucket.bucket_arn}/*"],
             )
         )
         tooling_acc_inline_policy.add_statements(
@@ -234,7 +234,7 @@ class InfraToolingMonitoringStack(Stack):
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
             },
             role=extract_metrics_lambda_role,
@@ -257,7 +257,7 @@ class InfraToolingMonitoringStack(Stack):
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
             },
             role=extract_metrics_lambda_role,
