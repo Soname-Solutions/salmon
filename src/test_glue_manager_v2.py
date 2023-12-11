@@ -3,78 +3,50 @@ from datetime import datetime, timedelta
 import boto3
 import pytz
 
-from lib.aws.glue_manager_v2 import GlueManager
-from lib.aws.timestream_manager import TimestreamTableWriter
+from lib.aws.glue_manager import GlueManager
+from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
+from lib.metrics_extractor.glue_metrics_extractor import GlueMetricExtractor
 
 glue_client = boto3.client("glue")
 timestream_client = boto3.client("timestream-write")
+timestream_query_client = boto3.client("timestream-query")
 
-def prepare_records(glue_job_name, monitored_environment_name, job_runs):   
-    common_dimensions = [{ "Name" : "monitored_environment", "Value" : monitored_environment_name },
-                     { "Name" : "job_name", "Value" : glue_job_name }
-                    ]
-
-    common_attributes = {"Dimensions": common_dimensions}
-
-    records = []
-    for job_run in job_runs:
-        dimensions = [{"Name" : "job_run_id", "Value" : job_run.Id}]
-
-        metric_values = [
-            ("execution", 1, "BIGINT"),
-            ("succeeded", int(job_run.IsSuccess), "BIGINT"),
-            ("failed", int(job_run.IsFailure), "BIGINT"),
-            ("duration", job_run.ExecutionTime, "DOUBLE"),
-        ]
-        measure_values = [{"Name" : metric_name, "Value" : str(metric_value), "Type" : metric_type} for metric_name, metric_value, metric_type in metric_values]
-
-        record_time = TimestreamTableWriter.datetime_to_epoch_milliseconds(job_run.StartedOn)
-
-        records.append(
-            {
-                "Dimensions": dimensions,
-                "MeasureName": 'job_execution',
-                "MeasureValueType": 'MULTI',
-                "MeasureValues": measure_values,
-                "Time": record_time,
-            }
-        )
-
-    return records, common_attributes
-
-def get_latest_record_time(job_name):
-    # query timestream table for latest record time (filter by job_name)
-    # return latest record time
-    timestream_query_client = boto3.client("timestream-query")
-    query = f"""SELECT MAX(time) AS latest_record_time FROM {db_name}.{table_name} WHERE job_name = '{job_name}'
-    """
-    response = timestream_query_client.query(QueryString=query, MaxRows=1)
-    print(response)
-
-
-##########################################################################
-
-##########################################################################
-monitored_env0 = "test_monitored_env"
-glue_job_name = "glue-salmonts-pyjob-one-dev"
-since_time = datetime.now(tz=pytz.UTC) - timedelta(hours=5)
 ##########################################################################
 db_name = "timestream-salmon-metrics-events-storage-devam"
 table_name = "tstable-salmon-glue-metrics-devam"
 ##########################################################################
 
 glue_man = GlueManager(glue_client)
-timestream_man = TimestreamTableWriter(db_name=db_name, table_name=table_name, timestream_write_client=timestream_client)
+timestream_man = TimestreamTableWriter(
+    db_name=db_name, table_name=table_name, timestream_write_client=timestream_client
+)
 
-# 1.
-job_runs = glue_man.get_job_runs(glue_job_name, since_time=since_time)
 
-# 2.
-records, common_attributes = prepare_records(glue_job_name, monitored_env0, job_runs)
+monitored_env0 = "test_monitored_env"
+glue_job_names = ["glue-salmonts-pyjob-one-dev", "glue-salmonts-sparkjob-one-dev"]
 
-# 3.
-response = timestream_man.write_records(records, common_attributes)
+for glue_job_name in glue_job_names:
+    print(f"Processing glue job {glue_job_name}")
 
-print(response)
+    # 1. Create an extractor object for a specific service
+    glue_extractor = GlueMetricExtractor(
+        glue_client=glue_client,
+        glue_job_name=glue_job_name,
+        monitored_environment_name=monitored_env0,
+        timestream_db_name=db_name,
+        timestream_metrics_table_name=table_name,
+    )
+
+    # 2. Get time of this entity's data latest update (we append data since that time only)
+    since_time = glue_extractor.get_last_update_time(timestream_query_client = timestream_query_client)
+    if since_time is None:
+        since_time = timestream_man.get_earliest_writeable_time_for_table()    
+    print(f"Extracting metrics since {since_time}")    
+
+    # # 3. Extract metrics data in form of prepared list of timestream records
+
+
+    # # 4. Write extracted data to timestream table
+    # glue_extractor.extract_and_write_metrics(timestream_table_writer=timestream_man)
 
 

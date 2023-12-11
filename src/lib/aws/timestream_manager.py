@@ -1,14 +1,17 @@
 import boto3
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+import pytz
 
 
 class TimestreamTableWriterException(Exception):
     """Exception raised for errors encountered while interacting with TimeStream DB."""
-
     pass
 
+class TimestreamQueryException(Exception):
+    """Exception raised for errors encountered while interacting with TimeStream DB."""
+    pass
 
 class TimestreamTableWriter:
     """
@@ -235,3 +238,58 @@ class TimestreamTableWriter:
         except Exception as err:
             error_message = f"Error getting MagneticStoreRetentionPeriodInDays for {self.db_name}.{self.table_name}: {err}."
             raise (TimestreamTableWriterException(error_message))
+
+
+    def get_earliest_writeable_time_for_table(self):
+        return datetime.now(tz=pytz.UTC) - timedelta(hours=self.get_MemoryStoreRetentionPeriodInHours())
+
+class TimeStreamQueryRunner:
+    def __init__(self, timestream_query_client):
+        self.timestream_query_client = timestream_query_client
+
+    def execute_scalar_query(self, query):
+        """
+        Executes a scalar query (result = one row, one column) and returns the result.
+
+        Args:
+            query (str): The query to be executed.
+
+        Returns:
+            str: The result of the query.            
+        """
+        try:
+            response = self.timestream_query_client.query(QueryString=query)
+            first_record_data = response["Rows"][0]["Data"]
+            first_field_data = first_record_data[0]
+            if "ScalarValue" in first_field_data:
+                return first_field_data["ScalarValue"]
+            else:
+                return None
+        except Exception as e:
+            error_message = f"Error running query: {e}"
+            raise (TimestreamQueryException(error_message))
+        
+    def execute_scalar_query_date_field(self, query):
+        """
+        Executes a scalar query specifically for date results field (result = one row, one column) 
+        and returns the result as a datetime object.
+
+        Args:
+            query (str): The query to be executed.
+
+        Returns:
+            datetime: The result of the query as a datetime object.            
+        """
+        result_str = self.execute_scalar_query(query)        
+
+        if result_str is None:
+            return None
+
+        try:
+            result_datetime = datetime.strptime(result_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f")
+            result_datetime = result_datetime.replace(tzinfo=pytz.UTC)
+            return result_datetime
+        except Exception as e:
+            error_message = f"Error converting result to datetime: {e}"
+            raise (TimestreamQueryException(error_message))
+ 
