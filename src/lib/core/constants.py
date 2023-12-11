@@ -16,7 +16,7 @@ class SettingConfigs:
 
 class TimestreamRetention:
     MagneticStoreRetentionPeriodInDays = "365"
-    MemoryStoreRetentionPeriodInHours = "240"
+    MemoryStoreRetentionPeriodInHours = "24"
 
 
 class NotificationType:
@@ -27,14 +27,20 @@ class NotificationType:
 class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]
 
+
 class CDKResourceNames:
-    """ Contains 'meaningful' part of AWS resources names. 
+    """Contains 'meaningful' part of AWS resources names.
     Specifically, ones referred in both, tooling and monitored accounts
     """
+
     EVENTBUS_ALERTING = "alerting"
     IAMROLE_EXTRACT_METRICS_LAMBDA = "extract-metrics-lambda"
     IAMROLE_MONITORED_ACC_PUT_EVENTS = "monitored-acc-put-events"
     IAMROLE_MONITORED_ACC_EXTRACT_METRICS = "monitored-acc-extract-metrics"
 
-    
-
+    TIMESTREAM_TABLE_METRICS = {
+        "Glue": "glue-metrics",
+        "GlueWorkflow": "glue-workflow-metrics",
+        "Lambda": "lambda-metrics",
+        "StepFunction": "step-function-metrics",
+    }

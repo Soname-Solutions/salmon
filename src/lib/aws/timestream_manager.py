@@ -83,6 +83,19 @@ class TimestreamTableWriter:
         """        
         tmp = epoch_seconds if epoch_seconds is not None else time.time()
         return str(int(round(tmp * 1000)))
+    
+    @staticmethod
+    def datetime_to_epoch_milliseconds(datetime_value: datetime) -> str:
+        """
+            Convert a datetime object to a string representation in milliseconds (which is required to timestream record)
+
+            Parameters:
+            datetime_value (datetime): The datetime object to be converted.
+
+            Returns:
+            str: The datetime object as a string in milliseconds.        
+        """        
+        return TimestreamTableWriter.epoch_milliseconds_str(datetime_value.timestamp())
 
     @staticmethod
     def iso_time_to_epoch_milliseconds(iso_date: str) -> str:

@@ -9,6 +9,7 @@ from aws_cdk import (
     aws_iam as iam,
     aws_sns as sns,
     aws_sqs as sqs,
+    aws_timestream as timestream,
     Duration,
 )
 from constructs import Construct
@@ -18,6 +19,7 @@ from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import AWS_Common_Resources
 from lib.settings.settings import Settings
+from lib.core.constants import CDKResourceNames, TimestreamRetention
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -56,6 +58,7 @@ class InfraToolingMonitoringStack(Stack):
             settings_bucket,
             internal_error_topic,
             input_timestream_database_arn,
+            input_timestream_database_name,
         ) = self.get_common_stack_references()
 
         (
@@ -66,6 +69,9 @@ class InfraToolingMonitoringStack(Stack):
             internal_error_topic=internal_error_topic,
             timestream_database_arn=input_timestream_database_arn,
         )
+
+        # Create table for metrics storage (1 per service)
+        self.create_metrics_tables(timestream_database_name=input_timestream_database_name)
 
         metrics_collection_interval_min = (
             self.settings.get_metrics_collection_interval_min()
@@ -97,6 +103,10 @@ class InfraToolingMonitoringStack(Stack):
             AWSNaming.CfnOutput(self, "metrics-events-storage-arn")
         )
 
+        input_timestream_database_name = Fn.import_value(
+            AWSNaming.CfnOutput(self, "metrics-events-db-name")
+        )        
+
         input_internal_error_topic_arn = Fn.import_value(
             AWSNaming.CfnOutput(self, "internal-error-topic-arn")
         )
@@ -115,7 +125,7 @@ class InfraToolingMonitoringStack(Stack):
             topic_arn=input_internal_error_topic_arn,
         )
 
-        return settings_bucket, internal_error_topic, input_timestream_database_arn
+        return settings_bucket, internal_error_topic, input_timestream_database_arn, input_timestream_database_name
 
     def create_extract_metrics_lambdas(
         self, settings_bucket, internal_error_topic, timestream_database_arn
@@ -204,7 +214,6 @@ class InfraToolingMonitoringStack(Stack):
             )
 
         current_region = Stack.of(self).region
-        print(f"Current region: {current_region}")
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
@@ -257,3 +266,28 @@ class InfraToolingMonitoringStack(Stack):
         )
 
         return extract_metrics_orch_lambda, extract_metrics_lambda
+
+    def create_metrics_tables(self, timestream_database_name):
+        """
+        Creates Timestream tables for storing metrics for each service.
+
+        Parameters:
+            timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
+        """
+        metric_table_names = CDKResourceNames.TIMESTREAM_TABLE_METRICS
+        services = metric_table_names.keys()
+
+        retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
+            magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
+            memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
+        )
+
+        for service in services:
+            timestream.CfnTable(
+                self,
+                f"MetricsTable{service}",
+                database_name=timestream_database_name,
+                retention_properties=retention_properties_property,
+                table_name=AWSNaming.TimestreamTable(self, metric_table_names[service]),
+            )
+

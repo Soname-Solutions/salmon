@@ -99,11 +99,11 @@ class RecipientsConfig(BaseModel):
 
 
 class Config(BaseModel):
-    general_json: GeneralConfig = Field(..., alias="general.json")
-    monitoring_groups_json: MonitoringGroupsConfig = Field(
+    general: GeneralConfig = Field(..., alias="general.json")
+    monitoring_groups: MonitoringGroupsConfig = Field(
         ..., alias="monitoring_groups.json"
     )
-    recipients_json: RecipientsConfig = Field(..., alias="recipients.json")
+    recipients: RecipientsConfig = Field(..., alias="recipients.json")
 
 
 #########################
@@ -115,10 +115,10 @@ json_data = settings.processed_settings
 pydantic_settings = Config.model_validate(json_data)
 
 #1
-print(f"Tooling env : {pydantic_settings.general_json.tooling_environment}")
+print(f"Tooling env : {pydantic_settings.general.tooling_environment}")
 
 #2
-for mon_env in pydantic_settings.general_json.monitored_environments:
+for mon_env in pydantic_settings.general.monitored_environments:
     print(f"Monitored env : {mon_env}")
 
 #3
@@ -126,7 +126,7 @@ monitoring_group = "salmonts_pyjobs"
 # only for subscriptions where alerts=True
 relevant_recipients = [
     (r.delivery_method, r.recipient)
-    for r in pydantic_settings.recipients_json.recipients
+    for r in pydantic_settings.recipients.recipients
     if monitoring_group in [s.monitoring_group for s in r.subscriptions if s.alerts ]
 ]
 
