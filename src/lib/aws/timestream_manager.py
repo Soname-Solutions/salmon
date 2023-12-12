@@ -2,7 +2,7 @@ import boto3
 
 from datetime import datetime, timedelta
 import time
-import pytz
+import dateutil.tz
 
 
 class TimestreamTableWriterException(Exception):
@@ -241,7 +241,8 @@ class TimestreamTableWriter:
 
 
     def get_earliest_writeable_time_for_table(self):
-        return datetime.now(tz=pytz.UTC) - timedelta(hours=self.get_MemoryStoreRetentionPeriodInHours())
+        utc_tz = dateutil.tz.gettz('UTC')
+        return datetime.now(tz=utc_tz) - timedelta(hours=self.get_MemoryStoreRetentionPeriodInHours())
 
 class TimeStreamQueryRunner:
     def __init__(self, timestream_query_client):
@@ -287,7 +288,8 @@ class TimeStreamQueryRunner:
 
         try:
             result_datetime = datetime.strptime(result_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f")
-            result_datetime = result_datetime.replace(tzinfo=pytz.UTC)
+            utc_tz = dateutil.tz.gettz('UTC')
+            result_datetime = result_datetime.replace(tzinfo=utc_tz)
             return result_datetime
         except Exception as e:
             error_message = f"Error converting result to datetime: {e}"

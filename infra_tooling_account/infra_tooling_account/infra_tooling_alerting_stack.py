@@ -95,7 +95,7 @@ class InfraToolingAlertingStack(Stack):
             self,
             "salmonInternalErrorTopic",
             topic_arn=input_internal_error_topic_arn,
-        )
+        )        
 
         alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 

@@ -14,6 +14,13 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
         Get time of this entity's data latest update (we append data since that time only)
         """
         queryRunner = TimeStreamQueryRunner(timestream_query_client=timestream_query_client)
+
+        # check if table is empty
+        query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
+        count_rec = int(queryRunner.execute_scalar_query(query=query))
+        if count_rec == 0:
+            return None
+
         query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE job_name = \'{self.entity_name}\''
         last_date = queryRunner.execute_scalar_query_date_field(query=query)
         return last_date

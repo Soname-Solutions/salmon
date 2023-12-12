@@ -11,6 +11,7 @@ class SettingConfigResourceTypes:
     LAMBDA_FUNCTIONS = "lambda_functions"
     STEP_FUNCTIONS = "step_functions"
 
+
 class SettingConfigs:
     RESOURCE_TYPES = [
         SettingConfigResourceTypes.GLUE_JOBS,
@@ -18,6 +19,13 @@ class SettingConfigs:
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS,
         SettingConfigResourceTypes.STEP_FUNCTIONS,
     ]
+
+    RESOURCE_TYPES_LINKED_AWS_SERVICES = {
+        SettingConfigResourceTypes.GLUE_JOBS: "glue",
+        SettingConfigResourceTypes.GLUE_WORKFLOWS: "glue",
+        SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
+        SettingConfigResourceTypes.STEP_FUNCTIONS: "states",
+    }
 
 
 class TimestreamRetention:
@@ -43,10 +51,3 @@ class CDKResourceNames:
     IAMROLE_EXTRACT_METRICS_LAMBDA = "extract-metrics-lambda"
     IAMROLE_MONITORED_ACC_PUT_EVENTS = "monitored-acc-put-events"
     IAMROLE_MONITORED_ACC_EXTRACT_METRICS = "monitored-acc-extract-metrics"
-
-    TIMESTREAM_TABLE_METRICS = {
-        "Glue": "glue-metrics",
-        "GlueWorkflow": "glue-workflow-metrics",
-        "Lambda": "lambda-metrics",
-        "StepFunction": "step-function-metrics",
-    }
