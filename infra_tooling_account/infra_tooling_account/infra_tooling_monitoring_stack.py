@@ -59,7 +59,7 @@ class InfraToolingMonitoringStack(Stack):
             internal_error_topic,
             input_timestream_database_arn,
             input_timestream_database_name,
-            input_timestream_kms_key_arn
+            input_timestream_kms_key_arn,
         ) = self.get_common_stack_references()
 
         (
@@ -74,7 +74,9 @@ class InfraToolingMonitoringStack(Stack):
         )
 
         # Create table for metrics storage (1 per service)
-        self.create_metrics_tables(timestream_database_name=input_timestream_database_name)
+        self.create_metrics_tables(
+            timestream_database_name=input_timestream_database_name
+        )
 
         metrics_collection_interval_min = (
             self.settings.get_metrics_collection_interval_min()
@@ -108,11 +110,11 @@ class InfraToolingMonitoringStack(Stack):
 
         input_timestream_database_name = Fn.import_value(
             AWSNaming.CfnOutput(self, "metrics-events-db-name")
-        )  
+        )
 
         input_timestream_kms_key_arn = Fn.import_value(
             AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn")
-        )              
+        )
 
         input_internal_error_topic_arn = Fn.import_value(
             AWSNaming.CfnOutput(self, "internal-error-topic-arn")
@@ -132,10 +134,21 @@ class InfraToolingMonitoringStack(Stack):
             topic_arn=input_internal_error_topic_arn,
         )
 
-        return settings_bucket, internal_error_topic, input_timestream_database_arn, input_timestream_database_name, input_timestream_kms_key_arn
+        return (
+            settings_bucket,
+            internal_error_topic,
+            input_timestream_database_arn,
+            input_timestream_database_name,
+            input_timestream_kms_key_arn,
+        )
 
     def create_extract_metrics_lambdas(
-        self, settings_bucket, internal_error_topic, timestream_database_arn, timestream_database_name, timestream_kms_key_arn
+        self,
+        settings_bucket,
+        internal_error_topic,
+        timestream_database_arn,
+        timestream_database_name,
+        timestream_kms_key_arn,
     ):
         """
         Creates two AWS Lambda functions for extracting metrics. One function orchestrates the process,
@@ -190,7 +203,11 @@ class InfraToolingMonitoringStack(Stack):
         tooling_acc_inline_policy.add_statements(
             # to be able to write extracted metrics to Timestream DB
             iam.PolicyStatement(
-                actions=["timestream:WriteRecords","timestream:Select","timestream:DescribeTable"],
+                actions=[
+                    "timestream:WriteRecords",
+                    "timestream:Select",
+                    "timestream:DescribeTable",
+                ],
                 effect=iam.Effect.ALLOW,
                 resources=[f"{timestream_database_arn}/table/*"],
             )
@@ -206,11 +223,17 @@ class InfraToolingMonitoringStack(Stack):
         tooling_acc_inline_policy.add_statements(
             # to be able to write extracted metrics to Timestream DB
             iam.PolicyStatement(
-                actions=["kms:*"],
+                actions=[
+                    "kms:Encrypt",
+                    "kms:Decrypt",
+                    "kms:ReEncrypt*",
+                    "kms:GenerateDataKey*",
+                    "kms:DescribeKey",
+                ],
                 effect=iam.Effect.ALLOW,
                 resources=[timestream_kms_key_arn],
             )
-        )      
+        )
 
         monitored_assume_inline_policy = iam.Policy(
             self,
@@ -240,7 +263,9 @@ class InfraToolingMonitoringStack(Stack):
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
-            layer_version_arn=AWS_Common_Resources.get_Lambda_Powertools_Layer_Arn(current_region)
+            layer_version_arn=AWS_Common_Resources.get_Lambda_Powertools_Layer_Arn(
+                current_region
+            ),
         )
 
         extract_metrics_lambda_path = os.path.join("../src/")
@@ -324,4 +349,3 @@ class InfraToolingMonitoringStack(Stack):
                 retention_properties=retention_properties_property,
                 table_name=AWSNaming.TimestreamTable(self, metric_table_names[service]),
             )
-
