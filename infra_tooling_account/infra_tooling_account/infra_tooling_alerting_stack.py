@@ -95,7 +95,7 @@ class InfraToolingAlertingStack(Stack):
             self,
             "salmonInternalErrorTopic",
             topic_arn=input_internal_error_topic_arn,
-        )        
+        )
 
         alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
@@ -234,7 +234,7 @@ class InfraToolingAlertingStack(Stack):
             self,
             id="lambda-powertools",
             layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(current_region)
-        )        
+        )
 
         alerting_lambda_path = "../src/"
         alerting_lambda = lambda_.Function(

@@ -11,6 +11,7 @@ from aws_cdk import (
     aws_timestream as timestream,
     aws_sqs as sqs,
     aws_lambda as lambda_,
+    aws_lambda_destinations as lambda_destinations,
     aws_lambda_event_sources as lambda_event_sources,
     aws_sns as sns,
 )
@@ -290,7 +291,7 @@ class InfraToolingCommonStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             role=notification_lambda_role,
             retry_attempts=2,
-            dead_letter_topic=internal_error_topic,
+            on_failure=lambda_destinations.SnsDestination(internal_error_topic),
         )
 
         notification_lambda.add_event_source(
