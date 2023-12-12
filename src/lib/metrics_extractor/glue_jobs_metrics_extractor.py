@@ -1,44 +1,35 @@
 from datetime import datetime
 from lib.aws.glue_manager import GlueManager, JobRun
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
+from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 
 
-
-class GlueMetricExtractor:
+class GlueJobsMetricExtractor(BaseMetricsExtractor):
     """
     Class is responsible for extracting glue job metrics
-    """
-
-    def __init__(
-        self, glue_client, glue_job_name, monitored_environment_name, timestream_db_name, timestream_metrics_table_name
-    ):
-        self.glue_client = glue_client
-        self.glue_job_name = glue_job_name
-        self.monitored_environment_name = monitored_environment_name
-        self.timestream_db_name = timestream_db_name
-        self.timestream_metrics_table_name = timestream_metrics_table_name        
+    """ 
 
     def get_last_update_time(self, timestream_query_client) -> datetime:
         """
         Get time of this entity's data latest update (we append data since that time only)
         """
         queryRunner = TimeStreamQueryRunner(timestream_query_client=timestream_query_client)
-        query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE job_name = \'{self.glue_job_name}\''
+        query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE job_name = \'{self.entity_name}\''
         last_date = queryRunner.execute_scalar_query_date_field(query=query)
         return last_date
 
 
     def _extract_metrics_data(self, since_time: datetime) -> list[JobRun]:
-        glue_man = GlueManager(self.glue_client)
+        glue_man = GlueManager(self.aws_service_client)
         job_runs = glue_man.get_job_runs(
-            job_name=self.glue_job_name, since_time=since_time
+            job_name=self.entity_name, since_time=since_time
         )
         return job_runs
 
     def _data_to_timestream_records(self, job_runs: list[JobRun]) -> list:
         common_dimensions = [
             {"Name": "monitored_environment", "Value": self.monitored_environment_name},
-            {"Name": "job_name", "Value": self.glue_job_name},
+            {"Name": "job_name", "Value": self.entity_name},
         ]
 
         common_attributes = {"Dimensions": common_dimensions}
@@ -89,6 +80,3 @@ class GlueMetricExtractor:
         return records, common_attributes
       
         
-    def write_metrics(self, records, common_attributes, timestream_table_writer: TimestreamTableWriter):        
-        timestream_table_writer.write_records(records, common_attributes)
-        return records, common_attributes

@@ -25,7 +25,7 @@ class StsManager:
 
     # retrieves temporary credentials via assuming role (cross-account)
     # creates and returns boto3 client for requested services - using credentials from assume role action
-    def get_client_via_assumed_role(self, service_to_create_client_for, via_assume_role_arn):
+    def get_client_via_assumed_role(self, aws_service_name, via_assume_role_arn, region):
         try:
             credentials = self.assume_role(via_assume_role_arn)
 
@@ -34,10 +34,11 @@ class StsManager:
             SESSION_TOKEN = credentials['SessionToken']
 
             outp_client = boto3.client(
-                service_to_create_client_for,
+                aws_service_name,
                 aws_access_key_id=ACCESS_KEY,
                 aws_secret_access_key=SECRET_KEY,
                 aws_session_token=SESSION_TOKEN,
+                region_name=region
             )
 
             return outp_client

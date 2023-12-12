@@ -8,7 +8,6 @@ import lib.core.json_utils as ju
 from lib.core.constants import SettingConfigs, SettingFileNames, NotificationType
 from lib.aws.s3_manager import S3Manager
 
-
 class Settings:
     """Manages and processes settings.
 
@@ -181,9 +180,25 @@ class Settings:
                 return m_env["name"]
         return None
     
+    def get_monitored_environment_props(self, monitored_environment_name: str) -> (str, str):
+        """Get monitored environment properties (account_id and region) by env name."""
+        for m_env in self.processed_settings[SettingFileNames.GENERAL].get(
+            "monitored_environments", []
+        ):
+            if m_env["name"] == monitored_environment_name:
+                return m_env["account_id"], m_env["region"]            
+        return None    
+    
     def list_monitoring_groups(self) -> List[str]:
         """List monitoring groups"""
         return [group["group_name"] for group in self.monitoring_groups.get("monitoring_groups", [])]
+    
+    def get_monitoring_group_content(self, group_name: str) -> dict:
+        """Get monitoring group content"""
+        for group in self.monitoring_groups.get("monitoring_groups", []):
+            if group["group_name"] == group_name:
+                return group
+        return None
 
     def get_monitoring_groups(self, resources: List[str]) -> List[str]:
         """Get monitoring groups by resources list."""

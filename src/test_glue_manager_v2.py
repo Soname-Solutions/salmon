@@ -5,7 +5,7 @@ import pytz
 
 from lib.aws.glue_manager import GlueManager
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
-from lib.metrics_extractor.glue_metrics_extractor import GlueMetricExtractor
+from lib.metrics_extractor.glue_metrics_extractor import GlueJobsMetricExtractor
 
 glue_client = boto3.client("glue")
 timestream_client = boto3.client("timestream-write")
@@ -28,9 +28,9 @@ for glue_job_name in glue_job_names:
     print(f"Processing glue job {glue_job_name}")
 
     # 1. Create an extractor object for a specific service
-    glue_extractor = GlueMetricExtractor(
-        glue_client=glue_client,
-        glue_job_name=glue_job_name,
+    glue_extractor = GlueJobsMetricExtractor(
+        aws_service_client=glue_client,
+        entity_name=glue_job_name,
         monitored_environment_name=monitored_env0,
         timestream_db_name=db_name,
         timestream_metrics_table_name=table_name,

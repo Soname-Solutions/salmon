@@ -243,6 +243,15 @@ class InfraToolingMonitoringStack(Stack):
             dead_letter_topic=internal_error_topic,
         )
 
+        tooling_acc_inline_policy.add_statements(
+            # to be able to read settings
+            iam.PolicyStatement(
+                actions=["lambda:InvokeFunction"],
+                effect=iam.Effect.ALLOW,
+                resources=[extract_metrics_lambda.function_arn],
+            )
+        )
+
         extract_metrics_orch_lambda_path = os.path.join("../src/")
         extract_metrics_orch_lambda = lambda_.Function(
             self,
@@ -259,6 +268,7 @@ class InfraToolingMonitoringStack(Stack):
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
+                "LAMBDA_EXTRACT_METRICS_NAME": extract_metrics_lambda.function_name,
             },
             role=extract_metrics_lambda_role,
             retry_attempts=2,

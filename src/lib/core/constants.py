@@ -5,12 +5,18 @@ class SettingFileNames:
     REPLACEMENTS = "replacements.json"
 
 
+class SettingConfigResourceTypes:
+    GLUE_JOBS = "glue_jobs"
+    GLUE_WORKFLOWS = "glue_workflows"
+    LAMBDA_FUNCTIONS = "lambda_functions"
+    STEP_FUNCTIONS = "step_functions"
+
 class SettingConfigs:
     RESOURCE_TYPES = [
-        "glue_jobs",
-        "glue_workflows",
-        "lambda_functions",
-        "step_functions",
+        SettingConfigResourceTypes.GLUE_JOBS,
+        SettingConfigResourceTypes.GLUE_WORKFLOWS,
+        SettingConfigResourceTypes.LAMBDA_FUNCTIONS,
+        SettingConfigResourceTypes.STEP_FUNCTIONS,
     ]
 
 
