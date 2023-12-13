@@ -293,5 +293,5 @@ class TimeStreamQueryRunner:
             return result_datetime
         except Exception as e:
             error_message = f"Error converting result to datetime: {e}"
-            raise (TimestreamQueryException(error_message))
+            raise TimestreamQueryException(error_message)
  

@@ -62,7 +62,6 @@ class GlueManager:
         
     def get_job_runs(self, job_name: str, since_time: datetime) -> list[JobRun]:
         try:
-            outp = []
             response = self.glue_client.get_job_runs(JobName=job_name)
 
             job_runs_data = JobRunsData(**response)

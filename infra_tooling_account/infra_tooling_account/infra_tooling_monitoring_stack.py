@@ -17,7 +17,7 @@ import os
 
 from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
-from lib.aws.aws_common_resources import AWS_Common_Resources
+from lib.aws.aws_common_resources import AWSCommonResources
 from lib.settings.settings import Settings
 from lib.core.constants import CDKResourceNames, TimestreamRetention, SettingConfigs
 
@@ -263,7 +263,7 @@ class InfraToolingMonitoringStack(Stack):
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
-            layer_version_arn=AWS_Common_Resources.get_Lambda_Powertools_Layer_Arn(
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(
                 current_region
             ),
         )

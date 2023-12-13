@@ -13,7 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
-from lib.aws.aws_common_resources import AWS_Common_Resources
+from lib.aws.aws_common_resources import AWSCommonResources
 
 from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
@@ -233,7 +233,7 @@ class InfraToolingAlertingStack(Stack):
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
-            layer_version_arn=AWS_Common_Resources.get_Lambda_Powertools_Layer_Arn(current_region)
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(current_region)
         )        
 
         alerting_lambda_path = "../src/"

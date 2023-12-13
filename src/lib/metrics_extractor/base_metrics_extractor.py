@@ -45,4 +45,4 @@ class BaseMetricsExtractor(ABC):
 
     def write_metrics(self, records, common_attributes, timestream_table_writer: TimestreamTableWriter):        
         timestream_table_writer.write_records(records, common_attributes)
-        return records, common_attributes    
+

@@ -1,6 +1,6 @@
 
 
-class AWS_Common_Resources:
+class AWSCommonResources:
     @classmethod
-    def get_Lambda_Powertools_Layer_Arn(cls, region):
+    def get_lambda_powertools_layer_arn(cls, region):
         return f"arn:aws:lambda:{region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:52"
