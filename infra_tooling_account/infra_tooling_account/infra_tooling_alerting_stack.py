@@ -13,6 +13,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
+from lib.aws.aws_common_resources import AWSCommonResources
 
 from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
@@ -94,7 +95,7 @@ class InfraToolingAlertingStack(Stack):
             self,
             "salmonInternalErrorTopic",
             topic_arn=input_internal_error_topic_arn,
-        )
+        )        
 
         alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
@@ -228,6 +229,13 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
+        current_region = Stack.of(self).region
+        powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            id="lambda-powertools",
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(current_region)
+        )        
+
         alerting_lambda_path = "../src/"
         alerting_lambda = lambda_.Function(
             self,
@@ -249,6 +257,7 @@ class InfraToolingAlertingStack(Stack):
             },
             role=alerting_lambda_role,
             retry_attempts=2,
+            layers=[powertools_layer],
             dead_letter_topic=internal_error_topic,
         )
 

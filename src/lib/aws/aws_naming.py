@@ -77,7 +77,8 @@ class AWSNaming:
     @classmethod
     def TimestreamTable(cls, stack_obj: object, meaning: str) -> str:
         prefix = "tstable"
-        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+        outp = f"{prefix}-{meaning}" # Table lives inside DB, so we identify project and stage names by DB
+        return outp
 
 
     @classmethod

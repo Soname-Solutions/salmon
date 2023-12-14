@@ -57,7 +57,7 @@ class InfraToolingCommonStack(Stack):
 
         settings_bucket = self.create_settings_bucket()
 
-        timestream_storage = self.create_timestream_db()
+        timestream_storage, kms_key = self.create_timestream_db()
 
         timestream_table_alert_events = self.create_timestream_tables(
             timestream_storage
@@ -109,6 +109,14 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "metrics-events-db-name"),
         )
 
+        output_timestream_kms_key = CfnOutput(
+            self,
+            "salmonTimestreamKmsKey",
+            value=kms_key.key_arn,
+            description="Arn of KMS Key for Timestream DB",
+            export_name=AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn"),
+        )        
+
         output_timestream_alerts_table_name = CfnOutput(
             self,
             "salmonTimestreamAlertsTableName",
@@ -133,7 +141,7 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
-    def create_timestream_db(self) -> timestream.CfnDatabase:
+    def create_timestream_db(self) -> (timestream.CfnDatabase, kms.Key):
         """Creates Timestream database for events and metrics
 
         Returns:
@@ -144,7 +152,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamKMSKey",
             alias=AWSNaming.KMSKey(self, "timestream"),
             description="Key that protects Timestream data",
-        )
+        )        
         timestream_storage = timestream.CfnDatabase(
             self,
             "salmonTimestreamDB",
@@ -152,7 +160,7 @@ class InfraToolingCommonStack(Stack):
             kms_key_id=timestream_kms_key.key_id,
         )
 
-        return timestream_storage
+        return timestream_storage, timestream_kms_key
 
     def create_timestream_tables(
         self, timestream_storage: timestream.CfnDatabase
