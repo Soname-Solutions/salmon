@@ -134,16 +134,7 @@ class Settings:
 
     @cached_property
     def monitoring_groups(self):
-        # Get resource names dict
-        resource_names = self._get_all_resource_names()
-
-        # Replace wildcards for all the resource types (glue, lambda, etc.)
-        for m_env in self._processed_settings[SettingFileNames.MONITORING_GROUPS].get(
-            "monitoring_groups", []
-        ):
-            for m_res in SettingConfigs.RESOURCE_TYPES:
-                self._replace_wildcards(m_env, m_res, resource_names[m_res])
-
+        self._process_monitoring_groups()
         return self.processed_settings[SettingFileNames.MONITORING_GROUPS]
 
     @property
@@ -172,6 +163,17 @@ class Settings:
 
     def _get_default_metrics_extractor_role_arn(self, account_id: str) -> str:
         return f"arn:aws:iam::{account_id}:role/role-salmon-cross-account-extract-metrics-dev"
+
+    def _process_monitoring_groups(self):
+        # Get resource names dict
+        resource_names = self._get_all_resource_names()
+
+        # Replace wildcards for all the resource types (glue, lambda, etc.)
+        for m_env in self._processed_settings[SettingFileNames.MONITORING_GROUPS].get(
+            "monitoring_groups", []
+        ):
+            for m_res in SettingConfigs.RESOURCE_TYPES:
+                self._replace_wildcards(m_env, m_res, resource_names[m_res])
 
     def _get_all_resource_names(self) -> dict:
         """Get all resource names for all the monitored account ids.
