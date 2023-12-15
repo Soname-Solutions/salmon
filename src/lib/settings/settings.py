@@ -140,9 +140,7 @@ class Settings:
 
     @cached_property
     def monitoring_groups(self):
-        # TODO: uncomment when alerting lambda changes implemented
-        # (role to assume created and lambda code changed)
-        # self._process_monitoring_groups()
+        self._process_monitoring_groups()
         return self.processed_settings[SettingFileNames.MONITORING_GROUPS]
 
     @property
@@ -332,7 +330,9 @@ class Settings:
         """Get monitoring groups by resources list."""
         matched_groups = set()  # Prevent duplicates
 
-        for group in self.monitoring_groups.get("monitoring_groups", []):
+        for group in self._raw_settings[SettingFileNames.MONITORING_GROUPS].get(
+            "monitoring_groups", []
+        ):
             resource_groups = []
             for monitored_resource in SettingConfigs.RESOURCE_TYPES:
                 resource_groups += group.get(monitored_resource, [])
