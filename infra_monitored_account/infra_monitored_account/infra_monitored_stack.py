@@ -130,7 +130,20 @@ class InfraMonitoredStack(Stack):
         lambda_inline_policy = iam.Policy(self, "lambda-extract", policy_name=AWSNaming.IAMPolicy(self,"lambda-extract"))
         lambda_inline_policy.add_statements(lambda_policy_statement)
 
+        # Step Functions Policy
+        step_functions_policy_statement = iam.PolicyStatement(
+            actions=[
+                "states:ListStateMachines",
+                "states:ListExecutions",
+            ],
+            resources=["*"],
+            effect=iam.Effect.ALLOW
+        )
+        step_functions_policy = iam.Policy(self, "step-functions-extract", policy_name=AWSNaming.IAMPolicy(self,"step-functions-extract"))
+        step_functions_policy.add_statements(step_functions_policy_statement)
+        
         cross_account_iam_role_extract_metrics.attach_inline_policy(glue_inline_policy)
         cross_account_iam_role_extract_metrics.attach_inline_policy(lambda_inline_policy)
+        cross_account_iam_role_extract_metrics.attach_inline_policy(step_functions_policy)
 
         return cross_account_iam_role_extract_metrics

@@ -24,7 +24,7 @@ class SettingConfigs:
         SettingConfigResourceTypes.GLUE_JOBS: "glue",
         SettingConfigResourceTypes.GLUE_WORKFLOWS: "glue",
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
-        SettingConfigResourceTypes.STEP_FUNCTIONS: "states",
+        SettingConfigResourceTypes.STEP_FUNCTIONS: "stepfunctions",
     }
 
 
