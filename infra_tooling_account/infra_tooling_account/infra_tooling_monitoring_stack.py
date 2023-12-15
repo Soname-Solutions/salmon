@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as targets,
     aws_lambda as lambda_,
+    aws_lambda_destinations as lambda_destiantions,
     aws_iam as iam,
     aws_sns as sns,
     aws_sqs as sqs,
@@ -289,7 +290,7 @@ class InfraToolingMonitoringStack(Stack):
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
             retry_attempts=2,
-            dead_letter_topic=internal_error_topic,
+            on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
         tooling_acc_inline_policy.add_statements(
@@ -322,7 +323,7 @@ class InfraToolingMonitoringStack(Stack):
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
             retry_attempts=2,
-            dead_letter_topic=internal_error_topic,
+            on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
         return extract_metrics_orch_lambda, extract_metrics_lambda

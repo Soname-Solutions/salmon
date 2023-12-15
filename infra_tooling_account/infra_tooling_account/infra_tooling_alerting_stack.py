@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as targets,
     aws_lambda as lambda_,
+    aws_lambda_destinations as lambda_destiantions,
     aws_iam as iam,
     aws_sns as sns,
     aws_sqs as sqs,
@@ -233,7 +234,9 @@ class InfraToolingAlertingStack(Stack):
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
-            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(current_region)
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(
+                current_region
+            ),
         )
 
         alerting_lambda_path = "../src/"
@@ -258,7 +261,7 @@ class InfraToolingAlertingStack(Stack):
             role=alerting_lambda_role,
             retry_attempts=2,
             layers=[powertools_layer],
-            dead_letter_topic=internal_error_topic,
+            on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
         # Alerting Lambda EventBridge Trigger

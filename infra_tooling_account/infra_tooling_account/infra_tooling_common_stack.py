@@ -11,7 +11,6 @@ from aws_cdk import (
     aws_timestream as timestream,
     aws_sqs as sqs,
     aws_lambda as lambda_,
-    aws_lambda_destinations as lambda_destinations,
     aws_lambda_event_sources as lambda_event_sources,
     aws_sns as sns,
 )
@@ -116,7 +115,7 @@ class InfraToolingCommonStack(Stack):
             value=kms_key.key_arn,
             description="Arn of KMS Key for Timestream DB",
             export_name=AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn"),
-        )        
+        )
 
         output_timestream_alerts_table_name = CfnOutput(
             self,
@@ -153,7 +152,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamKMSKey",
             alias=AWSNaming.KMSKey(self, "timestream"),
             description="Key that protects Timestream data",
-        )        
+        )
         timestream_storage = timestream.CfnDatabase(
             self,
             "salmonTimestreamDB",
@@ -276,6 +275,16 @@ class InfraToolingCommonStack(Stack):
             )
         )
 
+        notification_lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "sns:Publish",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=[internal_error_topic.topic_arn],
+            )
+        )
+
         notification_lambda_path = os.path.join("../src/")
         notification_lambda = lambda_.Function(
             self,
@@ -287,11 +296,14 @@ class InfraToolingCommonStack(Stack):
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_notification.lambda_handler",
+            environment={
+                "INTERNAL_ERROR_TOPIC_ARN": internal_error_topic.topic_arn,
+            },
             timeout=Duration.seconds(60),
             runtime=lambda_.Runtime.PYTHON_3_11,
             role=notification_lambda_role,
             retry_attempts=2,
-            on_failure=lambda_destinations.SnsDestination(internal_error_topic),
+            # no destinations configuration because destinations do not support SQS lambda event source
         )
 
         notification_lambda.add_event_source(
