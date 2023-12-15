@@ -29,6 +29,12 @@ RESOURCE_TYPES_LINKED_AWS_MANAGERS = {
 }
 
 
+class SettingsException(Exception):
+    """Exception raised during setting processing errors."""
+
+    pass
+
+
 class Settings:
     """Manages and processes settings.
 
@@ -134,7 +140,9 @@ class Settings:
 
     @cached_property
     def monitoring_groups(self):
-        self._process_monitoring_groups()
+        # TODO: uncomment when alerting lambda changes implemented
+        # (role to assume created and lambda code changed)
+        # self._process_monitoring_groups()
         return self.processed_settings[SettingFileNames.MONITORING_GROUPS]
 
     @property
@@ -203,11 +211,21 @@ class Settings:
                 aws_client_name = SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
                     res_type
                 ]
-                extract_metrics_role_arn = AWSNaming.Arn_IAMRole(
-                    None,
-                    account_id,
-                    self._iam_role_extract_metrics,
-                )
+                try:
+                    if not self._iam_role_extract_metrics:
+                        raise SettingsException(
+                            "IAM Role for metrics extraction not provided"
+                        )
+
+                    extract_metrics_role_arn = AWSNaming.Arn_IAMRole(
+                        None,
+                        account_id,
+                        self._iam_role_extract_metrics,
+                    )
+                except Exception as e:
+                    raise SettingsException(
+                        f"Error getting resource names for settings wildcards replacement: {e}"
+                    )
 
                 sts_manager = StsManager()
                 client = sts_manager.get_client_via_assumed_role(
@@ -298,7 +316,9 @@ class Settings:
         """List monitoring groups"""
         return [
             group["group_name"]
-            for group in self.monitoring_groups.get("monitoring_groups", [])
+            for group in self._raw_settings[SettingFileNames.MONITORING_GROUPS].get(
+                "monitoring_groups", []
+            )
         ]
 
     def get_monitoring_group_content(self, group_name: str) -> dict:
@@ -321,7 +341,6 @@ class Settings:
                 matched_groups.update(
                     group["group_name"]
                     for res in resource_groups
-                    # TODO: replace fnmatch with == when _process_monitoring_groups() implemented
                     if res["name"] and fnmatch(resource, res.get("name"))
                 )
 
