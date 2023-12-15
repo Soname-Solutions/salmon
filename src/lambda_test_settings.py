@@ -35,6 +35,9 @@ def lambda_handler(event, context):
     # Check processed settings
     print(json.dumps(settings.processed_settings, indent=4))
 
+    # Check processed monitoring groups (should be used only when needed)
+    print(json.dumps(settings.monitoring_groups, indent=4))
+
 
 if __name__ == "__main__":
     test_event = """
