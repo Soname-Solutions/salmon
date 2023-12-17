@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     )
 
     # Lambda methods
-    account_id, region = "405389362913", "eu-central-1"
+    account_id, region = "123456789", "eu-central-1"
     print(
         f"Monitored account name: {settings.get_monitored_environment_name(account_id, region)}"
     )

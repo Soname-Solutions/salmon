@@ -45,7 +45,9 @@ def lambda_handler(event, context):
     timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
     monitoring_group_name = event.get("monitoring_group")
 
-    settings = Settings.from_s3_path(settings_s3_path, iam_role_name)
+    settings = Settings.from_s3_path(
+        settings_s3_path, iam_role_list_monitored_res=iam_role_name
+    )
 
     # getting content of the monitoring group (in pydantic class form)
     content = settings.get_monitoring_group_content(monitoring_group_name)

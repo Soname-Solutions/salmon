@@ -52,8 +52,10 @@ class S3Manager:
             settings_data = response["Body"].read().decode("utf-8")
             return settings_data
         except ClientError as e:
-            if e.response["Error"]["Code"] in ["NoSuchKey", "AccessDenied"]:
+            if e.response["Error"]["Code"] == "NoSuchKey":
                 raise FileNotFoundError(f"File not found: {s3_path}") from e
+            elif e.response["Error"]["Code"] == "AccessDenied":
+                raise FileNotFoundError(f"Access denied for file: {s3_path}") from e
             else:
                 error_message = f"Error reading settings file from '{s3_path}': {e}"
                 raise S3ManagerReadException(error_message)

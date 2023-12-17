@@ -1,5 +1,6 @@
 import os
 from copy import deepcopy
+from collections import defaultdict
 from functools import cached_property
 from fnmatch import fnmatch
 
@@ -46,7 +47,7 @@ class Settings:
         _raw_settings (dict): Raw configuration settings loaded from JSON files.
         _processed_settings (dict): Processed configuration settings with added defaults, replaced wildcards, etc.
         _replacements (dict): Replacement values for placeholders in settings.
-        _iam_role_extract_metrics (str): IAM role to get the list of glue jobs, workflows, etc. for the wildcards replacement.
+        _iam_role_list_monitored_res (str): IAM role to get the list of glue jobs, workflows, etc. for the wildcards replacement.
 
     Methods:
         _nested_replace_placeholder: Recursive function to replace placeholder with its value inside any nested structure.
@@ -83,7 +84,7 @@ class Settings:
         monitoring_settings: str,
         recipients_settings: str,
         replacements_settings: str,
-        iam_role_extract_metrics: str,
+        iam_role_list_monitored_res: str,
     ):
         general = ju.parse_json(general_settings)
         monitoring = ju.parse_json(monitoring_settings)
@@ -102,7 +103,7 @@ class Settings:
         self._replacements = (
             ju.parse_json(replacements_settings) if replacements_settings else {}
         )
-        self._iam_role_extract_metrics = iam_role_extract_metrics
+        self._iam_role_list_monitored_res = iam_role_list_monitored_res
 
     @cached_property
     def processed_settings(self):
@@ -175,11 +176,11 @@ class Settings:
         resource_names = self._get_all_resource_names()
 
         # Replace wildcards for all the resource types (glue, lambda, etc.)
-        for m_env in self._processed_settings[SettingFileNames.MONITORING_GROUPS].get(
+        for m_grp in self._processed_settings[SettingFileNames.MONITORING_GROUPS].get(
             "monitoring_groups", []
         ):
             for m_res in SettingConfigs.RESOURCE_TYPES:
-                self._replace_wildcards(m_env, m_res, resource_names[m_res])
+                self._replace_wildcards(m_grp, m_res, resource_names[m_res])
 
     def _get_all_resource_names(self) -> dict:
         """Get all resource names for all the monitored account ids.
@@ -196,9 +197,7 @@ class Settings:
         monitored_accounts = self.general.get("monitored_environments", [])
 
         # Initialize an empty dictionary for each resource type
-        resource_names = dict()
-        for res_type in SettingConfigs.RESOURCE_TYPES:
-            resource_names[res_type] = {}
+        resource_names = defaultdict(dict)
 
         # Get all names for the resource type for all the monitored accounts
         for res_type in SettingConfigs.RESOURCE_TYPES:
@@ -210,7 +209,7 @@ class Settings:
                     res_type
                 ]
                 try:
-                    if not self._iam_role_extract_metrics:
+                    if not self._iam_role_list_monitored_res:
                         raise SettingsException(
                             "IAM Role for metrics extraction not provided"
                         )
@@ -218,7 +217,7 @@ class Settings:
                     extract_metrics_role_arn = AWSNaming.Arn_IAMRole(
                         None,
                         account_id,
-                        self._iam_role_extract_metrics,
+                        self._iam_role_list_monitored_res,
                     )
                 except Exception as e:
                     raise SettingsException(
@@ -395,7 +394,7 @@ class Settings:
         return settings
 
     @classmethod
-    def from_file_path(cls, base_path: str, iam_role_extract_metrics: str = None):
+    def from_file_path(cls, base_path: str, iam_role_list_monitored_res: str = None):
         (
             general_settings,
             monitoring_settings,
@@ -414,11 +413,11 @@ class Settings:
             monitoring_settings,
             recipients_settings,
             replacements_settings,
-            iam_role_extract_metrics,
+            iam_role_list_monitored_res,
         )
 
     @classmethod
-    def from_s3_path(cls, base_path: str, iam_role_extract_metrics: str = None):
+    def from_s3_path(cls, base_path: str, iam_role_list_monitored_res: str = None):
         s3 = S3Manager()
         (
             general_settings,
@@ -438,5 +437,5 @@ class Settings:
             monitoring_settings,
             recipients_settings,
             replacements_settings,
-            iam_role_extract_metrics,
+            iam_role_list_monitored_res,
         )
