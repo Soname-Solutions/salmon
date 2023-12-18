@@ -38,14 +38,16 @@ def lambda_handler(event, context):
     logger.info(f"Event = {event}")
 
     # TODO: add a "semaphore" - if lambda works with a specific monitoring group, new invocation of lambda for the same monitoring group
-    # doesn't proceed    
+    # doesn't proceed
 
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
     timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
     monitoring_group_name = event.get("monitoring_group")
 
-    settings = Settings.from_s3_path(settings_s3_path)
+    settings = Settings.from_s3_path(
+        settings_s3_path, iam_role_list_monitored_res=iam_role_name
+    )
 
     # getting content of the monitoring group (in pydantic class form)
     content = settings.get_monitoring_group_content(monitoring_group_name)
@@ -76,11 +78,13 @@ def lambda_handler(event, context):
                     aws_client_name=aws_client_name,
                     role_name=iam_role_name,
                 )
-                
+
                 # for local debugging:
                 # aws_service_client = boto3.client(aws_client_name)
 
-                metrics_table_name = AWSNaming.TimestreamTable(None, f"{aws_service_name}-metrics")
+                metrics_table_name = AWSNaming.TimestreamTable(
+                    None, f"{aws_service_name}-metrics"
+                )
 
                 timestream_man = TimestreamTableWriter(
                     db_name=timestream_metrics_db_name,
@@ -134,7 +138,7 @@ if __name__ == "__main__":
     ] = "timestream-salmon-metrics-events-storage-devam"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devam/settings/"
 
-    event = {'monitoring_group': 'salmonts_pyjobs'}
-    #event = {"monitoring_group": "salmonts_workflows_sparkjobs"}
+    event = {"monitoring_group": "salmonts_pyjobs"}
+    # event = {"monitoring_group": "salmonts_workflows_sparkjobs"}
 
     lambda_handler(event, None)

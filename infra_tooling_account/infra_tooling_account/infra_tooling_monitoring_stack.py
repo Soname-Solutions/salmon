@@ -320,6 +320,7 @@ class InfraToolingMonitoringStack(Stack):
                 "LAMBDA_EXTRACT_METRICS_NAME": extract_metrics_lambda.function_name,
             },
             role=extract_metrics_lambda_role,
+            layers=[powertools_layer],
             retry_attempts=2,
             dead_letter_topic=internal_error_topic,
         )

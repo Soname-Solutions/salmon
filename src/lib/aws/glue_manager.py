@@ -4,10 +4,13 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
+from ..core.constants import SettingConfigResourceTypes
+
+
 class JobRun(BaseModel):
     Id: str
     Attempt: int
-    #TriggerName: str
+    # TriggerName: str
     JobName: str
     StartedOn: datetime
     LastModifiedOn: datetime
@@ -26,19 +29,22 @@ class JobRun(BaseModel):
     @property
     def IsSuccess(self) -> bool:
         return self.JobRunState in GlueManager.States_Success
-    
+
     @property
     def IsFailure(self) -> bool:
         return self.JobRunState in GlueManager.States_Failure
+
 
 class JobRunsData(BaseModel):
     JobRuns: list[JobRun]
     NextToken: Optional[str] = None
 
+
 class GlueManagerException(Exception):
     """Exception raised for errors encountered while running Glue client methods."""
 
     pass
+
 
 class GlueManager:
     States_Success = ["SUCCEEDED"]
@@ -51,15 +57,35 @@ class GlueManager:
     def is_final_state(cls, state: str) -> bool:
         return state in cls.States_Success or state in cls.States_Failure
 
-    def get_all_job_names(self):
+    def _get_all_job_names(self):
         try:
             response = self.glue_client.list_jobs()
-            return response.get('JobNames')
+            return response.get("JobNames")
 
         except Exception as e:
-            error_message = f"Error getting list of glue jobs : {e}"
-            raise GlueManagerException(error_message)            
-        
+            raise GlueManagerException(f"Error getting list of glue jobs : {e}")
+
+    def _get_all_workflow_names(self):
+        try:
+            response = self.glue_client.list_workflows()
+            return response.get("Workflows")
+
+        except Exception as e:
+            raise GlueManagerException(f"Error getting list of glue workflows : {e}")
+
+    def get_all_names(self, **kwargs):
+        resource_type = kwargs.pop("resource_type", None)
+        if (
+            # default behavior to return jobs list
+            resource_type is None
+            or resource_type == SettingConfigResourceTypes.GLUE_JOBS
+        ):
+            return self._get_all_job_names()
+        elif resource_type == SettingConfigResourceTypes.GLUE_WORKFLOWS:
+            return self._get_all_workflow_names()
+        else:
+            raise GlueManagerException(f"Unknown glue resource type {resource_type}")
+
     def get_job_runs(self, job_name: str, since_time: datetime) -> list[JobRun]:
         try:
             response = self.glue_client.get_job_runs(JobName=job_name)
@@ -69,8 +95,6 @@ class GlueManager:
 
             return outp
 
-
         except Exception as e:
             error_message = f"Error getting glue job runs : {e}"
             raise GlueManagerException(error_message)
-
