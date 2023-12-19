@@ -157,6 +157,7 @@ class InfraMonitoredStack(Stack):
         step_functions_policy_statement = iam.PolicyStatement(
             actions=[
                 "states:ListStateMachines",
+                "states:ListExecutions",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,

@@ -138,7 +138,8 @@ if __name__ == "__main__":
     ] = "timestream-salmon-metrics-events-storage-devam"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devam/settings/"
 
-    event = {"monitoring_group": "salmonts_pyjobs"}
+    # event = {'monitoring_group': 'salmonts_pyjobs'}
     # event = {"monitoring_group": "salmonts_workflows_sparkjobs"}
+    event = {"monitoring_group": "salmonts_lambdas_stepfunctions"}
 
     lambda_handler(event, None)
