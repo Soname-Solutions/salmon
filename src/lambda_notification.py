@@ -98,7 +98,8 @@ def lambda_handler(event, context):
 
     except Exception as e:
         logger.error(f"Error while processing an event: {e}")
-        event["ProcessingException"] = e
+        event["errorMessage"] = str(e)
+        event["errorType"] = e.__class__.__name__
         sns_publisher.publish_message(event)
 
     return {"event": event}
