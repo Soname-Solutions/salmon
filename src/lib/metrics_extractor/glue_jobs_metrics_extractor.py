@@ -43,7 +43,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
 
         records = []
         for job_run in job_runs:
-            if GlueManager.is_final_state(
+            if GlueManager.is_job_final_state(
                 job_run.JobRunState
             ):  # exclude writing metrics for Running/Waiting Job etc. (not finished)
                 dimensions = [{"Name": "job_run_id", "Value": job_run.Id}]
