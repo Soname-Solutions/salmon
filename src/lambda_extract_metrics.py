@@ -60,11 +60,11 @@ def lambda_handler(event, context):
             aws_client_name = SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
                 attr_name
             ]
-            print(f"Service name: {aws_service_name}")
+            logger.info(f"Service name: {aws_service_name}")
             for item in attr_value:
                 entity_name = item["name"]
                 monitored_env = item["monitored_environment_name"]
-                print(
+                logger.info(
                     f"Processing: {aws_service_name}: [{entity_name}] at env:{monitored_env}"
                 )
 
@@ -111,19 +111,19 @@ def lambda_handler(event, context):
                 )
                 if since_time is None:
                     since_time = timestream_man.get_earliest_writeable_time_for_table()
-                print(f"Extracting metrics since {since_time}")
+                logger.info(f"Extracting metrics since {since_time}")
 
                 # # 3. Extract metrics data in form of prepared list of timestream records
                 records, common_attributes = metrics_extractor.prepare_metrics_data(
                     since_time=since_time
                 )
-                print(f"Extracted {len(records)} records")
+                logger.info(f"Extracted {len(records)} records")
 
                 # # 4. Write extracted data to timestream table
                 metrics_extractor.write_metrics(
                     records, common_attributes, timestream_table_writer=timestream_man
                 )
-                print(f"Written {len(records)} records to timestream")
+                logger.info(f"Written {len(records)} records to timestream")
 
 
 if __name__ == "__main__":
@@ -138,7 +138,8 @@ if __name__ == "__main__":
     ] = "timestream-salmon-metrics-events-storage-devam"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devam/settings/"
 
-    event = {"monitoring_group": "salmonts_pyjobs"}
+    # event = {'monitoring_group': 'salmonts_pyjobs'}
     # event = {"monitoring_group": "salmonts_workflows_sparkjobs"}
+    event = {"monitoring_group": "salmonts_lambdas_stepfunctions"}
 
     lambda_handler(event, None)
