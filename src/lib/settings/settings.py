@@ -58,7 +58,8 @@ class Settings:
         ---
         processed_settings: Retrieves the processed configuration settings with defaults.
         general: Retrieves the processed general settings.
-        monitoring_groups: Retrieves the processed monitoring groups settings.
+        monitoring_groups: the processed monitoring groups settings (without replaced wildcards).
+        processed_monitoring_groups: the processed monitoring groups settings (with replaced wildcards)
         recipients: Retrieves the processed recipients settings.
         ---
         get_monitored_account_ids: Get monitored account IDs.
@@ -139,8 +140,14 @@ class Settings:
     def general(self):
         return self.processed_settings[SettingFileNames.GENERAL]
 
-    @cached_property
+    @property
     def monitoring_groups(self):
+        """monitoring_groups without wildcards replacement"""
+        return self.processed_settings[SettingFileNames.MONITORING_GROUPS]
+
+    @cached_property
+    def processed_monitoring_groups(self):
+        """monitoring_groups with wildcards replacement"""
         self._process_monitoring_groups()
         return self.processed_settings[SettingFileNames.MONITORING_GROUPS]
 
@@ -313,14 +320,12 @@ class Settings:
         """List monitoring groups"""
         return [
             group["group_name"]
-            for group in self._raw_settings[SettingFileNames.MONITORING_GROUPS].get(
-                "monitoring_groups", []
-            )
+            for group in self.monitoring_groups.get("monitoring_groups", [])
         ]
 
     def get_monitoring_group_content(self, group_name: str) -> dict:
-        """Get monitoring group content"""
-        for group in self.monitoring_groups.get("monitoring_groups", []):
+        """Get monitoring group content with replaced wildcards"""
+        for group in self.processed_monitoring_groups.get("monitoring_groups", []):
             if group["group_name"] == group_name:
                 return group
         return None
@@ -329,9 +334,7 @@ class Settings:
         """Get monitoring groups by resources list."""
         matched_groups = set()  # Prevent duplicates
 
-        for group in self._raw_settings[SettingFileNames.MONITORING_GROUPS].get(
-            "monitoring_groups", []
-        ):
+        for group in self.monitoring_groups.get("monitoring_groups", []):
             resource_groups = []
             for monitored_resource in SettingConfigs.RESOURCE_TYPES:
                 resource_groups += group.get(monitored_resource, [])
