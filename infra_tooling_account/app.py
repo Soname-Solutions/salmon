@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import logging
 
 import aws_cdk as cdk
 
@@ -15,21 +16,23 @@ from lib.settings.settings import Settings
 from lib.settings.cdk import settings_validator
 
 
-if "STAGE_NAME" in os.environ:
-    pass
-else:
-    exec('raise ValueError("Environment variable STAGE_NAME is undefined")')
-STAGE_NAME = os.environ["STAGE_NAME"]
-
-PROJECT_NAME = "salmon"
-
-TAGS = {"project_name": PROJECT_NAME, "stage_name": STAGE_NAME}
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 settings = Settings.from_file_path("../config/settings")
 settings_validator.validate(settings)
 
-
 app = cdk.App()
+
+STAGE_NAME = app.node.try_get_context("stage-name")
+if STAGE_NAME is None:
+    raise KeyError("stage-name context variable is not set.")
+
+logging.info(f"stage-name: {STAGE_NAME}")
+PROJECT_NAME = "salmon"
+
+TAGS = {"project_name": PROJECT_NAME, "stage_name": STAGE_NAME}
+
 common_stack = InfraToolingCommonStack(
     app,
     f"cf-{PROJECT_NAME}-InfraToolingCommonStack-{STAGE_NAME}",
