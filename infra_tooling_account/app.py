@@ -26,8 +26,7 @@ app = cdk.App()
 
 STAGE_NAME = app.node.try_get_context("stage-name")
 if STAGE_NAME is None:
-    logging.info('stage-name is not set. Using "default".')
-    STAGE_NAME = "default"
+    raise KeyError("stage-name conext variable is not set.")
 
 logging.info(f"stage-name: {STAGE_NAME}")
 PROJECT_NAME = "salmon"
