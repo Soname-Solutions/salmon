@@ -74,30 +74,6 @@ class TimestreamTableWriter:
             if "ExistingVersion" in rr:
                 print("Rejected record existing version: ", rr["ExistingVersion"])
 
-    @staticmethod
-    def iso_time_to_epoch_milliseconds(iso_date: str) -> str:
-        """
-        Convert an ISO 8601 formatted date string to the number of milliseconds since the Unix epoch.
-        If the input is None, the current time in milliseconds since the Unix epoch is returned.
-
-        Parameters:
-        iso_date (str): An ISO 8601 formatted date string (e.g., "2023-11-21T21:39:09Z").
-                        If None, the current time is used.
-
-        Returns:
-        str: The number of milliseconds since the Unix epoch as a string.
-        """
-
-        # If the input is None, use the current time
-        if iso_date is None:
-            return time_utils.epoch_milliseconds_str()
-        else:
-            # Convert the ISO date string to a datetime object
-            dt = datetime.fromisoformat(iso_date.rstrip("Z"))
-            # Convert the datetime object to epoch time in seconds
-            epoch_time = dt.timestamp()
-            return time_utils.epoch_milliseconds_str(epoch_time)
-
     def _write_batch(self, records, common_attributes={}):
         """
         Writes a single batch (up to 100 records) to the Timestream table.
