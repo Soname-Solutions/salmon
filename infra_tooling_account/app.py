@@ -10,6 +10,7 @@ from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlert
 from infra_tooling_account.infra_tooling_monitoring_stack import (
     InfraToolingMonitoringStack,
 )
+from infra_tooling_account.infra_tooling_grafana_stack import InfraToolingGrafanaStack
 
 from lib.settings.settings import Settings
 from lib.settings.cdk import settings_validator
@@ -27,7 +28,6 @@ TAGS = {"project_name": PROJECT_NAME, "stage_name": STAGE_NAME}
 
 settings = Settings.from_file_path("../config/settings")
 settings_validator.validate(settings)
-
 
 app = cdk.App()
 common_stack = InfraToolingCommonStack(
@@ -57,5 +57,20 @@ monitoring_stack = InfraToolingMonitoringStack(
 
 alerting_stack.add_dependency(common_stack)
 monitoring_stack.add_dependency(common_stack)
+
+if all(setting is not None for setting in settings.get_grafana_mandatory_settings()):
+    grafana_stack = InfraToolingGrafanaStack(
+        app,
+        f"cf-{PROJECT_NAME}-InfraToolingGrafanaStack-{STAGE_NAME}",
+        tags=TAGS,
+        stage_name=STAGE_NAME,
+        project_name=PROJECT_NAME,
+        settings=settings,
+        env={
+            "region": os.getenv('CDK_DEFAULT_REGION'),
+            "account":os.getenv('CDK_DEFAULT_ACCOUNT'),
+        },
+    )
+    grafana_stack.add_dependency(common_stack)
 
 app.synth()

@@ -3,7 +3,9 @@
         "name": "Tooling Account [<<env>>]",
         "account_id": "<<tooling_account_id>>",
         "region": "eu-central-1",
-        "metrics_collection_interval_min" : 5
+        "metrics_collection_interval_min" : 5,
+        "grafana_vpc_id": "<<vpc_id>>", 
+        "grafana_security_group_id": "<<security_group_id>>"
     },
     "monitored_environments": [
         {
