@@ -7,9 +7,11 @@ from aws_cdk import (
     aws_events_targets as targets,
     aws_lambda as lambda_,
     aws_lambda_destinations as lambda_destiantions,
+    aws_logs as cloudwatch_logs,
     aws_iam as iam,
     aws_sns as sns,
     aws_sqs as sqs,
+    RemovalPolicy,
     Duration,
 )
 from constructs import Construct
@@ -57,18 +59,6 @@ class InfraToolingAlertingStack(Stack):
             AWSNaming.CfnOutput(self, "settings-bucket-arn")
         )
 
-        input_timestream_database_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "metrics-events-storage-arn")
-        )
-
-        input_timestream_database_name = Fn.import_value(
-            AWSNaming.CfnOutput(self, "metrics-events-db-name")
-        )
-
-        input_timestream_alert_events_table_name = Fn.import_value(
-            AWSNaming.CfnOutput(self, "alert-events-table-name")
-        )
-
         input_notification_queue_arn = Fn.import_value(
             AWSNaming.CfnOutput(self, "notification-queue-arn")
         )
@@ -100,13 +90,14 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
+        log_group_name, log_stream_name = self.create_alert_events_log_stream()
+
         alerting_lambda = self.create_alerting_lambda(
             settings_bucket=settings_bucket,
             notification_queue=notification_queue,
             internal_error_topic=internal_error_topic,
-            timestream_database_arn=input_timestream_database_arn,
-            timestream_database_name=input_timestream_database_name,
-            timestream_alert_events_table_name=input_timestream_alert_events_table_name,
+            log_group_name=log_group_name,
+            log_stream_name=log_stream_name,
             alerting_lambda_event_rule=alerting_lambda_event_rule,
         )
 
@@ -152,14 +143,37 @@ class InfraToolingAlertingStack(Stack):
 
         return alerting_bus, alerting_lambda_event_rule
 
+    def create_alert_events_log_stream(self) -> tuple[str, str]:
+        """Creates a log grop and a log stream in CloudWatch to store alert events.
+
+        Returns:
+            tuple[str, str]: Log group name and log stream name.
+        """
+        log_group = cloudwatch_logs.LogGroup(
+            self,
+            "salmonAlertEventsLogGroup",
+            log_group_name=AWSNaming.LogGroupName(self, "alert-events"),
+            removal_policy=RemovalPolicy.DESTROY,
+            retention=cloudwatch_logs.RetentionDays.ONE_YEAR,
+        )
+
+        log_stream = cloudwatch_logs.LogStream(
+            self,
+            "salmonAlertEventsLogStream",
+            log_group=log_group,
+            log_stream_name=AWSNaming.LogStreamName(self, "alert-events"),
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
+        return log_group.log_group_name, log_stream.log_stream_name
+
     def create_alerting_lambda(
         self,
         settings_bucket: s3.Bucket,
         notification_queue: sqs.Queue,
         internal_error_topic: sns.Topic,
-        timestream_database_arn: str,
-        timestream_database_name: str,
-        timestream_alert_events_table_name: str,
+        log_group_name: str,
+        log_stream_name: str,
         alerting_lambda_event_rule: events.Rule,
     ) -> lambda_.Function:
         """Creates Lambda function for events alerting.
@@ -168,9 +182,8 @@ class InfraToolingAlertingStack(Stack):
             settings_bucket (s3.Bucket): Settings S3 Bucket
             notification_queue (sqs.Queue): SQS queue for notification messages
             internal_error_topic (sns.Topic): SNS topic for DLQ error alerts
-            timestream_database_arn (str): ARN of the Timestream DB for alerts and metrics
-            timestream_database_name (str): Name of the Timestream DB for alerts and metrics
-            timestream_alert_events_table_name (str): Timestream table name for alert events
+            log_group_name (str): Log group name to store alert events,
+            log_stream_name (str): Log stream name to store alert events,
             alerting_lambda_event_rule (events.Rule): EventBridge rule which forwards AWS events
 
         Returns:
@@ -213,23 +226,6 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        alerting_lambda_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=["timestream:WriteRecords"],
-                effect=iam.Effect.ALLOW,
-                resources=[f"{timestream_database_arn}/table/*"],
-            )
-        )
-
-        # required as per AWS Doc
-        alerting_lambda_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=["timestream:DescribeEndpoints"],
-                effect=iam.Effect.ALLOW,
-                resources=["*"],
-            )
-        )
-
         current_region = Stack.of(self).region
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
@@ -255,8 +251,8 @@ class InfraToolingAlertingStack(Stack):
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
-                "ALERT_EVENTS_DB_NAME": timestream_database_name,
-                "ALERT_EVENTS_TABLE_NAME": timestream_alert_events_table_name,
+                "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME": log_group_name,
+                "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME": log_stream_name,
             },
             role=alerting_lambda_role,
             retry_attempts=2,
