@@ -9,6 +9,12 @@ class GlueEventMapper(GeneralAwsEventMapper):
     def get_resource_name(self, event):
         return event["detail"]["jobName"]
 
+    def get_service_name(self):
+        return "Glue"
+
+    def get_event_severity(self, event):  # todo: implement
+        return "Unknown"
+
     def get_message_body(self, event):
         message_body = []
         table = {}
