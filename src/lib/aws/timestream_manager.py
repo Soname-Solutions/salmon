@@ -1,17 +1,21 @@
 import boto3
 
 from datetime import datetime, timedelta
-import time
 import dateutil.tz
+from ..core import time_utils
 
 
 class TimestreamTableWriterException(Exception):
     """Exception raised for errors encountered while interacting with TimeStream DB."""
+
     pass
+
 
 class TimestreamQueryException(Exception):
     """Exception raised for errors encountered while interacting with TimeStream DB."""
+
     pass
+
 
 class TimestreamTableWriter:
     """
@@ -63,42 +67,12 @@ class TimestreamTableWriter:
 
         Returns:
             None
-        """        
+        """
         print("RejectedRecords: ", err)
         for rr in err.response["RejectedRecords"]:
             print("Rejected Index " + str(rr["RecordIndex"]) + ": " + rr["Reason"])
             if "ExistingVersion" in rr:
                 print("Rejected record existing version: ", rr["ExistingVersion"])
-
-    @staticmethod
-    def epoch_milliseconds_str(epoch_seconds: float = None) -> str:
-        """
-        Converts epoch time in seconds to a string representation in milliseconds.
-
-        If no argument is provided, the current time is used. 
-
-        Args:
-            epoch_seconds (float, optional): The epoch time in seconds. If None,
-                                             the current time is used. Defaults to None.
-
-        Returns:
-            str: The epoch time in milliseconds as a string.
-        """        
-        tmp = epoch_seconds if epoch_seconds is not None else time.time()
-        return str(int(round(tmp * 1000)))
-    
-    @staticmethod
-    def datetime_to_epoch_milliseconds(datetime_value: datetime) -> str:
-        """
-            Convert a datetime object to a string representation in milliseconds (which is required to timestream record)
-
-            Parameters:
-            datetime_value (datetime): The datetime object to be converted.
-
-            Returns:
-            str: The datetime object as a string in milliseconds.        
-        """        
-        return TimestreamTableWriter.epoch_milliseconds_str(datetime_value.timestamp())
 
     @staticmethod
     def iso_time_to_epoch_milliseconds(iso_date: str) -> str:
@@ -116,13 +90,13 @@ class TimestreamTableWriter:
 
         # If the input is None, use the current time
         if iso_date is None:
-            return TimestreamTableWriter.epoch_milliseconds_str()
+            return time_utils.epoch_milliseconds_str()
         else:
             # Convert the ISO date string to a datetime object
             dt = datetime.fromisoformat(iso_date.rstrip("Z"))
             # Convert the datetime object to epoch time in seconds
             epoch_time = dt.timestamp()
-            return TimestreamTableWriter.epoch_milliseconds_str(epoch_time)
+            return time_utils.epoch_milliseconds_str(epoch_time)
 
     def _write_batch(self, records, common_attributes={}):
         """
@@ -186,7 +160,7 @@ class TimestreamTableWriter:
 
         Returns:
             dict: A dictionary containing the properties of the table.
-        """        
+        """
         try:
             result = self.timestream_write_client.describe_table(
                 DatabaseName=self.db_name, TableName=self.table_name
@@ -204,7 +178,7 @@ class TimestreamTableWriter:
 
         Returns:
             int: The retention period of the Memory Store in hours.
-        """        
+        """
         table_props = self._get_table_props()
 
         try:
@@ -239,10 +213,12 @@ class TimestreamTableWriter:
             error_message = f"Error getting MagneticStoreRetentionPeriodInDays for {self.db_name}.{self.table_name}: {err}."
             raise (TimestreamTableWriterException(error_message))
 
-
     def get_earliest_writeable_time_for_table(self):
-        utc_tz = dateutil.tz.gettz('UTC')
-        return datetime.now(tz=utc_tz) - timedelta(hours=self.get_MemoryStoreRetentionPeriodInHours())
+        utc_tz = dateutil.tz.gettz("UTC")
+        return datetime.now(tz=utc_tz) - timedelta(
+            hours=self.get_MemoryStoreRetentionPeriodInHours()
+        )
+
 
 class TimeStreamQueryRunner:
     def __init__(self, timestream_query_client):
@@ -256,7 +232,7 @@ class TimeStreamQueryRunner:
             query (str): The query to be executed.
 
         Returns:
-            str: The result of the query.            
+            str: The result of the query.
         """
         try:
             response = self.timestream_query_client.query(QueryString=query)
@@ -269,29 +245,30 @@ class TimeStreamQueryRunner:
         except Exception as e:
             error_message = f"Error running query: {e}"
             raise (TimestreamQueryException(error_message))
-        
+
     def execute_scalar_query_date_field(self, query):
         """
-        Executes a scalar query specifically for date results field (result = one row, one column) 
+        Executes a scalar query specifically for date results field (result = one row, one column)
         and returns the result as a datetime object.
 
         Args:
             query (str): The query to be executed.
 
         Returns:
-            datetime: The result of the query as a datetime object.            
+            datetime: The result of the query as a datetime object.
         """
-        result_str = self.execute_scalar_query(query)        
+        result_str = self.execute_scalar_query(query)
 
         if result_str is None:
             return None
 
         try:
-            result_datetime = datetime.strptime(result_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f")
-            utc_tz = dateutil.tz.gettz('UTC')
+            result_datetime = datetime.strptime(
+                result_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f"
+            )
+            utc_tz = dateutil.tz.gettz("UTC")
             result_datetime = result_datetime.replace(tzinfo=utc_tz)
             return result_datetime
         except Exception as e:
             error_message = f"Error converting result to datetime: {e}"
             raise TimestreamQueryException(error_message)
- 
