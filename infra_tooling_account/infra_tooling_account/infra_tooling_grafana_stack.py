@@ -91,13 +91,13 @@ class InfraToolingGrafanaStack(Stack):
             settings_bucket_name=settings_bucket.bucket_name,
         )
 
-        output_grafana_instance_public_ip = CfnOutput(
+        output_grafana_url = CfnOutput(
             self,
-            "GrafanaPublicIp",
+            "GrafanaURL",
             # To sign in to Grafana, go to http://<grafana-instance-public-ip>:3000
             value=f"http://{grafana_instance.instance_public_ip}:3000",
-            description="The Public IP of the Grafana Instance",
-            export_name=AWSNaming.CfnOutput(self, "grafana-instance-public-ip"),
+            description="Grafana URL",
+            export_name=AWSNaming.CfnOutput(self, "grafana-url"),
         )
 
     def get_common_stack_references(self) -> tuple[str, str, str, s3.Bucket]:
