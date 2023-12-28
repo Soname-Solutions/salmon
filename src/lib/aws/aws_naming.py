@@ -86,8 +86,8 @@ class AWSNaming:
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
     
     @classmethod
-    def SM(cls, stack_obj: object, meaning: str) -> str:
-        prefix = "sm"
+    def Secret(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "secret"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
 

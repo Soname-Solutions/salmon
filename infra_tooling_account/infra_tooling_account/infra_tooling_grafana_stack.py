@@ -61,13 +61,10 @@ class InfraToolingGrafanaStack(Stack):
         (
             grafana_vpc_id,
             grafana_security_group_id,
-        ) = self.settings.get_grafana_mandatory_settings()
-
-        (
             grafana_key_pair_name,
             grafana_bitnami_image,
             grafana_instance_type,
-        ) = self.settings.get_grafana_optional_settings()
+        ) = self.settings.get_grafana_settings()
 
         (
             grafana_admin_secret_name,
@@ -97,9 +94,9 @@ class InfraToolingGrafanaStack(Stack):
         output_grafana_instance_public_ip = CfnOutput(
             self,
             "GrafanaPublicIp",
-            value=grafana_instance.instance_public_ip,
-            description="The Public IP of the Grafana Instance",
             # To sign in to Grafana, go to http://<grafana-instance-public-ip>:3000
+            value=f"http://{grafana_instance.instance_public_ip}:3000",
+            description="The Public IP of the Grafana Instance",
             export_name=AWSNaming.CfnOutput(self, "grafana-instance-public-ip"),
         )
 
@@ -146,7 +143,7 @@ class InfraToolingGrafanaStack(Stack):
         grafana_admin_secret = secretsmanager.Secret(
             self,
             "GrafanaSecret",
-            secret_name=AWSNaming.SM(self, "grafana-secret"),
+            secret_name=AWSNaming.Secret(self, "grafana-password"),
             description="Grafana secret stored in AWS Secrets Manager",
             generate_secret_string=secretsmanager.SecretStringGenerator(
                 include_space=False,

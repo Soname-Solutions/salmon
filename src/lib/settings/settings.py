@@ -19,6 +19,7 @@ from lib.core.constants import (
     SettingConfigs,
     SettingFileNames,
     NotificationType,
+    GrafanaDefaultSettings,
 )
 
 # Used for settings only
@@ -132,6 +133,10 @@ class Settings:
                         res["sla_seconds"] = 0
                     if "minimum_number_of_runs" not in res:
                         res["minimum_number_of_runs"] = 0
+        # Add Grafana default settings
+        grafana_instance_settings = self._processed_settings[SettingFileNames.GENERAL].get("grafana_instance", {})
+        grafana_instance_settings.setdefault("grafana_bitnami_image", GrafanaDefaultSettings.BITNAMI_IMAGE)
+        grafana_instance_settings.setdefault("grafana_instance_type", GrafanaDefaultSettings.INSTANCE_TYPE)                
 
         return self._processed_settings
 
@@ -280,32 +285,21 @@ class Settings:
         return self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"][
             "metrics_collection_interval_min"
         ]
-    
-    def get_grafana_mandatory_settings(self) -> tuple[str, str]:
-        """
-        Get mandatory grafana settings:
-            - grafana_vpc_id: VPC ID for Grafana instance
-            - grafana_security_group_id: Security Group ID for Grafana instance
-        If not provided, the Grafana stack will be skipped.
-        """
-        grafana_settings = self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"]
-        return (
-            grafana_settings.get("grafana_vpc_id"),
-            grafana_settings.get("grafana_security_group_id"))
 
-    def get_grafana_optional_settings(self) -> tuple[str, str, str]:
-        """
-        Get optional grafana settings:
-            - grafana_key_pair_name: Key pair name. if not provided, will be created in the Grafana stack
-            - grafana_image: Bitnami Grafana image. Defaults to "bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami"
-            - grafana_instance_type: Grafana Instance type. Defaults to "t3.micro"
-        """
-        grafana_settings = self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"]
-        return (
-            grafana_settings.get("grafana_key_pair_name"),
-            grafana_settings.get("grafana_bitnami_image", "bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami"),
-            grafana_settings.get("grafana_instance_type", "t3.micro"),
+    def get_grafana_settings(self) -> tuple[str, str, str, str, str]:
+        """Get grafana settings. Defaults to None"""
+        grafana_settings = self.processed_settings[SettingFileNames.GENERAL].get(
+            "grafana_instance", None
         )
+        if grafana_settings:
+            return (
+                grafana_settings.get("grafana_vpc_id"),
+                grafana_settings.get("grafana_security_group_id"),
+                grafana_settings.get("grafana_key_pair_name"),
+                grafana_settings.get("grafana_bitnami_image"),
+                grafana_settings.get("grafana_instance_type"),
+            )
+        return grafana_settings
 
     def get_tooling_account_props(self) -> (str, str):
         """Returns account_id and region of tooling environment."""

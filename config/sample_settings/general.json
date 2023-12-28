@@ -3,9 +3,7 @@
         "name": "Tooling Account [<<env>>]",
         "account_id": "<<tooling_account_id>>",
         "region": "eu-central-1",
-        "metrics_collection_interval_min" : 5,
-        "grafana_vpc_id": "<<vpc_id>>", 
-        "grafana_security_group_id": "<<security_group_id>>"
+        "metrics_collection_interval_min" : 5
     },
     "monitored_environments": [
         {
@@ -37,5 +35,9 @@
             "delivery_method_type": "SLACK",
             "credentials_secret_name": "sm-soname-slack-creds"
         }
-    ]
+    ],
+    "grafana_instance": {
+        "grafana_vpc_id": "<<grafana_vpc_id>>", 
+        "grafana_security_group_id": "<<grafana_security_group_id>>"
+    }
 }

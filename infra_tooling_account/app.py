@@ -58,7 +58,7 @@ monitoring_stack = InfraToolingMonitoringStack(
 alerting_stack.add_dependency(common_stack)
 monitoring_stack.add_dependency(common_stack)
 
-if all(setting is not None for setting in settings.get_grafana_mandatory_settings()):
+if settings.get_grafana_settings():
     grafana_stack = InfraToolingGrafanaStack(
         app,
         f"cf-{PROJECT_NAME}-InfraToolingGrafanaStack-{STAGE_NAME}",
@@ -67,8 +67,8 @@ if all(setting is not None for setting in settings.get_grafana_mandatory_setting
         project_name=PROJECT_NAME,
         settings=settings,
         env={
-            "region": os.getenv('CDK_DEFAULT_REGION'),
-            "account":os.getenv('CDK_DEFAULT_ACCOUNT'),
+            "region": os.getenv("CDK_DEFAULT_REGION"),
+            "account": os.getenv("CDK_DEFAULT_ACCOUNT"),
         },
     )
     grafana_stack.add_dependency(common_stack)
