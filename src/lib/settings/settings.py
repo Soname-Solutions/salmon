@@ -134,9 +134,15 @@ class Settings:
                     if "minimum_number_of_runs" not in res:
                         res["minimum_number_of_runs"] = 0
         # Add Grafana default settings
-        grafana_instance_settings = self._processed_settings[SettingFileNames.GENERAL].get("grafana_instance", {})
-        grafana_instance_settings.setdefault("grafana_bitnami_image", GrafanaDefaultSettings.BITNAMI_IMAGE)
-        grafana_instance_settings.setdefault("grafana_instance_type", GrafanaDefaultSettings.INSTANCE_TYPE)                
+        grafana_instance_settings = self._processed_settings[
+            SettingFileNames.GENERAL
+        ].get("grafana_instance", {})
+        grafana_instance_settings.setdefault(
+            "grafana_bitnami_image", GrafanaDefaultSettings.BITNAMI_IMAGE
+        )
+        grafana_instance_settings.setdefault(
+            "grafana_instance_type", GrafanaDefaultSettings.INSTANCE_TYPE
+        )
 
         return self._processed_settings
 
@@ -287,10 +293,8 @@ class Settings:
         ]
 
     def get_grafana_settings(self) -> tuple[str, str, str, str, str]:
-        """Get grafana settings. Defaults to None"""
-        grafana_settings = self.processed_settings[SettingFileNames.GENERAL].get(
-            "grafana_instance", None
-        )
+        """Get grafana settings"""
+        grafana_settings = self.general.get("grafana_instance")
         if grafana_settings:
             return (
                 grafana_settings.get("grafana_vpc_id"),
@@ -299,7 +303,7 @@ class Settings:
                 grafana_settings.get("grafana_bitnami_image"),
                 grafana_settings.get("grafana_instance_type"),
             )
-        return grafana_settings
+        return None
 
     def get_tooling_account_props(self) -> (str, str):
         """Returns account_id and region of tooling environment."""
