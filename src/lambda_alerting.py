@@ -57,7 +57,7 @@ def write_event_to_cloudwatch(
     logged_event["event_severity"] = event_severity
 
     logged_event_time = time_utils.iso_time_to_epoch_milliseconds(event["time"])
-    result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=-4))
+    result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=4))
 
     logger.info("EventJSON has been written successfully")
     logger.info(result)
