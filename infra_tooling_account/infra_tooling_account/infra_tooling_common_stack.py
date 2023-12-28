@@ -59,12 +59,6 @@ class InfraToolingCommonStack(Stack):
 
         timestream_storage, kms_key = self.create_timestream_db()
 
-        timestream_table_alert_events = self.create_timestream_tables(
-            timestream_storage
-        )
-
-        timestream_table_alert_events.add_dependency(timestream_storage)
-
         # Internal Error SNS topic
         internal_error_topic = sns.Topic(
             self,
@@ -117,14 +111,6 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn"),
         )
 
-        output_timestream_alerts_table_name = CfnOutput(
-            self,
-            "salmonTimestreamAlertsTableName",
-            value=timestream_table_alert_events.table_name,
-            description="Table Name for Alert Events storage",
-            export_name=AWSNaming.CfnOutput(self, "alert-events-table-name"),
-        )
-
         output_notification_queue_arn = CfnOutput(
             self,
             "salmonNotificationQueueArn",
@@ -161,33 +147,6 @@ class InfraToolingCommonStack(Stack):
         )
 
         return timestream_storage, timestream_kms_key
-
-    def create_timestream_tables(
-        self, timestream_storage: timestream.CfnDatabase
-    ) -> timestream.CfnTable:
-        """Creates necessary tables in Timestream DB
-
-        Args:
-            timestream_storage (timestream.CfnDatabase): Timestream database
-
-        Returns:
-            timestream.CfnTable: Alert Events table
-        """
-        # this part throws a warning, but applies correctly
-        # waiting for the CDK fix: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1514
-        retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
-            magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
-            memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
-        )
-        alert_events_table = timestream.CfnTable(
-            self,
-            "AlertEventsTable",
-            database_name=timestream_storage.database_name,
-            retention_properties=retention_properties_property,
-            table_name=AWSNaming.TimestreamTable(self, "alert-events"),
-        )
-
-        return alert_events_table
 
     def create_settings_bucket(self) -> s3.Bucket:
         """Creates Settings files storage and uploads files from the local directory to it
