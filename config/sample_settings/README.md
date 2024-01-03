@@ -12,7 +12,7 @@ Contains the following parts:
 - metrics_collection_interval_min - interval (in minutes) for extracting metrics from monitored environments
 
 #### Grafana settings
-The Grafana stack will be deployed only if the Grafana related settings are provided in the "grafana_instance" section, nested within the "tooling_environment" configuration. \
+The Grafana stack will be deployed only if the Grafana related settings are provided in the "grafana_instance" section, nested within the "tooling_environment" configuration.
 The deployment requires two mandatory configurations: "grafana_vpc_id" and "grafana_security_group_id":
 - "grafana_vpc_id": the ID of the Amazon VPC where the Grafana instance will be deployed.
 - "grafana_security_group_id": the ID of the security group that will be associated with the Grafana instance.
