@@ -77,7 +77,7 @@ class AWSNaming:
     @classmethod
     def TimestreamTable(cls, stack_obj: object, meaning: str) -> str:
         prefix = "tstable"
-        outp = f"{prefix}-{meaning}" # Table lives inside DB, so we identify project and stage names by DB
+        outp = f"{prefix}-{meaning}"  # Table lives inside DB, so we identify project and stage names by DB
         return outp
         
     @classmethod
@@ -90,6 +90,17 @@ class AWSNaming:
         prefix = "secret"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
+    @classmethod
+    def LogGroupName(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "log-group"
+        outp = AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+        return outp
+
+    @classmethod
+    def LogStreamName(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "log-stream"
+        outp = AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+        return outp
 
     @classmethod
     def Arn_IAMRole(cls, stack_obj: object, account_id: str, role_name: str) -> str:

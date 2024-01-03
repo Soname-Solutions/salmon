@@ -2,18 +2,21 @@ from datetime import datetime
 from lib.aws.glue_manager import GlueManager, JobRun
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
+from lib.core import time_utils
 
 
 class GlueJobsMetricExtractor(BaseMetricsExtractor):
     """
     Class is responsible for extracting glue job metrics
-    """ 
+    """
 
     def get_last_update_time(self, timestream_query_client) -> datetime:
         """
         Get time of this entity's data latest update (we append data since that time only)
         """
-        queryRunner = TimeStreamQueryRunner(timestream_query_client=timestream_query_client)
+        queryRunner = TimeStreamQueryRunner(
+            timestream_query_client=timestream_query_client
+        )
 
         # check if table is empty
         query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
@@ -24,7 +27,6 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
         query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE job_name = \'{self.entity_name}\''
         last_date = queryRunner.execute_scalar_query_date_field(query=query)
         return last_date
-
 
     def _extract_metrics_data(self, since_time: datetime) -> list[JobRun]:
         glue_man = GlueManager(self.aws_service_client)
@@ -43,7 +45,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
 
         records = []
         for job_run in job_runs:
-            if GlueManager.is_final_state(
+            if GlueManager.is_job_final_state(
                 job_run.JobRunState
             ):  # exclude writing metrics for Running/Waiting Job etc. (not finished)
                 dimensions = [{"Name": "job_run_id", "Value": job_run.Id}]
@@ -65,7 +67,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
                     for metric_name, metric_value, metric_type in metric_values
                 ]
 
-                record_time = TimestreamTableWriter.datetime_to_epoch_milliseconds(
+                record_time = time_utils.timedatetime_to_epoch_milliseconds(
                     job_run.StartedOn
                 )
 
@@ -85,5 +87,3 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
         job_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(job_runs)
         return records, common_attributes
-      
-        

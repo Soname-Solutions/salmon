@@ -3,41 +3,61 @@ import json
 import boto3
 import logging
 
+from lib.core import time_utils
 from lib.aws.sqs_manager import SQSQueueSender
-from lib.aws.timestream_manager import TimestreamTableWriter
+from lib.aws.cloudwatch_manager import CloudWatchEventsPublisher
 from lib.event_mapper.aws_event_mapper import AwsEventMapper
 from lib.settings import Settings
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-timestream_write_client = boto3.client("timestream-write")
 sqs_client = boto3.client("sqs")
+cloudwatch_client = boto3.client("logs")
 
 
-def write_event_to_timestream(records):
+def write_event_to_cloudwatch(
+    monitored_env_name: str,
+    resource_name: str,
+    service_name: str,
+    event_severity: str,
+    event: dict,
+):
     """
-    Writes a given list of records to an Amazon Timestream table.
+    Writes a given list of records to an Amazon CloudWatch logs.
 
-    Retrieves the database and table names from environment variables and uses
-    an instance of TimestreamTableWriter to write the provided records to the
-    specified Timestream table.
+    Retrieves the log group and log stream names from environment variables and uses
+    an instance of CloudWatchEventPublisher to write the provided records to the
+    specified CloudWatch log stream.
 
     Args:
-        records (list): A list of records to be written to the Timestream table.
+        monitored_env_name (str): The name of the monitored environment.
+        resource_name (str): The name of the AWS resource.
+        service_name (str): The name of the AWS service.
+        event_severity (str): Severity of the event.
+        event (dict): The event dict to be written to the CloudWatch stream.
 
     Returns:
         None: This function does not return anything but logs the outcome.
     """
-    db_name = os.environ["ALERT_EVENTS_DB_NAME"]
-    table_name = os.environ["ALERT_EVENTS_TABLE_NAME"]
+    log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
+    log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
 
-    writer = TimestreamTableWriter(
-        db_name=db_name,
-        table_name=table_name,
-        timestream_write_client=timestream_write_client,
+    publisher = CloudWatchEventsPublisher(
+        log_group_name=log_group_name,
+        log_stream_name=log_stream_name,
+        cloudwatch_client=cloudwatch_client,
     )
-    result = writer.write_records(records=records)
+
+    logged_event = {}
+    logged_event["event"] = event
+    logged_event["monitored_environment"] = monitored_env_name
+    logged_event["resource_name"] = resource_name
+    logged_event["service_name"] = service_name
+    logged_event["event_severity"] = event_severity
+
+    logged_event_time = time_utils.iso_time_to_epoch_milliseconds(event["time"])
+    result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=4))
 
     logger.info("EventJSON has been written successfully")
     logger.info(result)
@@ -56,60 +76,6 @@ def send_messages_to_sqs(queue_url: str, messages: list[dict]):
     logger.info(f"Results of sending messages to SQS: {results}")
 
 
-def prepare_timestream_record(monitored_env_name, event):
-    """
-    Prepares a Timestream record from the given event and its properties.
-
-    Formats the event and its properties into the structure required by Timestream,
-    including dimensions and time conversion.
-
-    Args:
-        event_props (dict): The structured properties of the event.
-        event (dict): The original event data.
-
-    Returns:
-        list: A list containing the prepared Timestream record.
-    """
-    records = []
-
-    dimensions = [
-        {
-            "Name": "monitored_environment",
-            "Value": monitored_env_name,
-        },
-        {"Name": "source", "Value": event["source"]},
-    ]
-    record_time = TimestreamTableWriter.iso_time_to_epoch_milliseconds(event["time"])
-
-    records.append(
-        {
-            "Dimensions": dimensions,
-            "MeasureName": "event_json",
-            "MeasureValue": json.dumps(event, indent=4),
-            "MeasureValueType": "VARCHAR",
-            "Time": record_time,
-        }
-    )
-
-    return records
-
-
-def map_to_notification_messages(event_props: dict, settings: Settings) -> list[dict]:
-    """Maps given event object to notification messages array
-
-    Args:
-        event_props (dict): Event object
-        settings (Settings): Settings object
-
-    Returns:
-        list[dict]: List of message objects
-    """
-    mapper = AwsEventMapper(settings)
-    messages = mapper.to_notification_messages(event_props)
-
-    return messages
-
-
 def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
@@ -120,14 +86,20 @@ def lambda_handler(event, context):
         event["account"], event["region"]
     )
 
-    messages = map_to_notification_messages(event, settings)
+    mapper = AwsEventMapper(settings)
+    messages = mapper.to_notification_messages(event)
+
     logger.info(f"Notification messages: {messages}")
 
     queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
     send_messages_to_sqs(queue_url, messages)
 
-    timestream_records = prepare_timestream_record(monitored_env_name, event)
-    write_event_to_timestream(timestream_records)
+    resource_name = mapper.to_resource_name(event)
+    service_name = mapper.to_service_name(event)
+    event_severity = mapper.to_event_severity(event)
+    write_event_to_cloudwatch(
+        monitored_env_name, resource_name, service_name, event_severity, event
+    )
 
     return {"messages": messages}
 

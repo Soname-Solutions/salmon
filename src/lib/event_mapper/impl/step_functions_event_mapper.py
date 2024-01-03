@@ -11,6 +11,12 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         arn = event["detail"]["stateMachineArn"]
         return arn.split("stateMachine:")[1]
 
+    def get_service_name(self):
+        return "Step Functions"
+
+    def get_event_severity(self, event):  # todo: implement
+        return "Unknown"
+
     @staticmethod
     def __timestamp_to_datetime(timestamp: int) -> str:
         """Formats integer datetime from the event to the ISO formatted datetime string
