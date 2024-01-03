@@ -3,18 +3,21 @@ from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 
 from lib.aws.glue_manager import GlueManager, WorkflowRun
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
+from lib.core import time_utils
 
 
 class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
     """
     Class is responsible for extracting glue job metrics
-    """ 
+    """
 
     def get_last_update_time(self, timestream_query_client) -> datetime:
         """
         Get time of this entity's data latest update (we append data since that time only)
         """
-        queryRunner = TimeStreamQueryRunner(timestream_query_client=timestream_query_client)
+        queryRunner = TimeStreamQueryRunner(
+            timestream_query_client=timestream_query_client
+        )
 
         # check if table is empty
         query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
@@ -25,7 +28,7 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
         query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE workflow_name = \'{self.entity_name}\''
         last_date = queryRunner.execute_scalar_query_date_field(query=query)
         return last_date
-      
+
     def _extract_metrics_data(self, since_time: datetime) -> list[WorkflowRun]:
         glue_man = GlueManager(self.aws_service_client)
         workflow_runs = glue_man.get_workflow_runs(
@@ -46,7 +49,9 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
             if GlueManager.is_workflow_final_state(
                 workflow_run.Status
             ):  # exclude writing metrics for Running/Waiting Job etc. (not finished)
-                dimensions = [{"Name": "workflow_run_id", "Value": workflow_run.WorkflowRunId}]
+                dimensions = [
+                    {"Name": "workflow_run_id", "Value": workflow_run.WorkflowRunId}
+                ]
 
                 metric_values = [
                     ("execution", 1, "BIGINT"),
@@ -55,11 +60,27 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
                     ("execution_time_sec", workflow_run.Duration, "DOUBLE"),
                     ("error_message", workflow_run.ErrorMessage, "VARCHAR"),
                     ("actions_total", workflow_run.Statistics.TotalActions, "BIGINT"),
-                    ("actions_timeouted", workflow_run.Statistics.TimeoutActions, "BIGINT"),
+                    (
+                        "actions_timeouted",
+                        workflow_run.Statistics.TimeoutActions,
+                        "BIGINT",
+                    ),
                     ("actions_failed", workflow_run.Statistics.FailedActions, "BIGINT"),
-                    ("actions_stopped", workflow_run.Statistics.StoppedActions, "BIGINT"),
-                    ("actions_succeeded", workflow_run.Statistics.SucceededActions, "BIGINT"),
-                    ("actions_errored", workflow_run.Statistics.ErroredActions, "BIGINT"),
+                    (
+                        "actions_stopped",
+                        workflow_run.Statistics.StoppedActions,
+                        "BIGINT",
+                    ),
+                    (
+                        "actions_succeeded",
+                        workflow_run.Statistics.SucceededActions,
+                        "BIGINT",
+                    ),
+                    (
+                        "actions_errored",
+                        workflow_run.Statistics.ErroredActions,
+                        "BIGINT",
+                    ),
                 ]
                 measure_values = [
                     {
@@ -70,7 +91,7 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
                     for metric_name, metric_value, metric_type in metric_values
                 ]
 
-                record_time = TimestreamTableWriter.datetime_to_epoch_milliseconds(
+                record_time = time_utils.datetime_to_epoch_milliseconds(
                     workflow_run.StartedOn
                 )
 
@@ -89,4 +110,4 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
     def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         workflow_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(workflow_runs)
-        return records, common_attributes        
+        return records, common_attributes
