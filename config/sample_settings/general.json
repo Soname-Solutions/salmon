@@ -3,7 +3,11 @@
         "name": "Tooling Account [<<env>>]",
         "account_id": "<<tooling_account_id>>",
         "region": "eu-central-1",
-        "metrics_collection_interval_min" : 5
+        "metrics_collection_interval_min": 5,
+        "grafana_instance": {
+            "grafana_vpc_id": "<<grafana_vpc_id>>",
+            "grafana_security_group_id": "<<grafana_security_group_id>>"
+        }
     },
     "monitored_environments": [
         {
@@ -27,7 +31,7 @@
         {
             "name": "local_smtp",
             "delivery_method_type": "SMTP",
-            "sender_email" : "<<sender_email>>",
+            "sender_email": "<<sender_email>>",
             "credentials_secret_name": "sm-my-smtp-server-creds"
         },
         {
@@ -35,9 +39,5 @@
             "delivery_method_type": "SLACK",
             "credentials_secret_name": "sm-soname-slack-creds"
         }
-    ],
-    "grafana_instance": {
-        "grafana_vpc_id": "<<grafana_vpc_id>>", 
-        "grafana_security_group_id": "<<grafana_security_group_id>>"
-    }
+    ]
 }
