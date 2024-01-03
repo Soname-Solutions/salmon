@@ -29,6 +29,12 @@ TAGS = {"project_name": PROJECT_NAME, "stage_name": STAGE_NAME}
 settings = Settings.from_file_path("../config/settings")
 settings_validator.validate(settings)
 
+account_id, region = settings.get_tooling_account_props()
+env = {
+    "region": region,
+    "account": account_id,
+}
+
 app = cdk.App()
 common_stack = InfraToolingCommonStack(
     app,
@@ -37,6 +43,7 @@ common_stack = InfraToolingCommonStack(
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
     settings=settings,
+    env=env,
 )
 alerting_stack = InfraToolingAlertingStack(
     app,
@@ -45,6 +52,7 @@ alerting_stack = InfraToolingAlertingStack(
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
     settings=settings,
+    env=env,
 )
 monitoring_stack = InfraToolingMonitoringStack(
     app,
@@ -53,6 +61,7 @@ monitoring_stack = InfraToolingMonitoringStack(
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
     settings=settings,
+    env=env,
 )
 
 alerting_stack.add_dependency(common_stack)
@@ -66,10 +75,7 @@ if settings.get_grafana_settings():
         stage_name=STAGE_NAME,
         project_name=PROJECT_NAME,
         settings=settings,
-        env={
-            "region": os.getenv("CDK_DEFAULT_REGION"),
-            "account": os.getenv("CDK_DEFAULT_ACCOUNT"),
-        },
+        env=env,
     )
     grafana_stack.add_dependency(common_stack)
 
