@@ -48,13 +48,24 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
             ):  # exclude writing metrics for Running/Waiting Job etc. (not finished)
                 dimensions = [{"Name": "job_run_id", "Value": job_run.Id}]
 
+                # Calculate DPU Seconds
+                if job_run.DPUSeconds:
+                    # if it's given by Glue explicitly (when auto-scaling is on))
+                    dpu_seconds = job_run.DPUSeconds 
+                else:
+                    # otherwise, we calculate - allocated capacity * execution time
+                    # MaxCapacity is an up-to-date fields (instead of deprecated AllocatedCapacity)
+                    dpu_seconds = float(job_run.ExecutionTime) * job_run.MaxCapacity
+
+                dpu_seconds = round(dpu_seconds, 3)
+
                 metric_values = [
                     ("execution", 1, "BIGINT"),
                     ("succeeded", int(job_run.IsSuccess), "BIGINT"),
                     ("failed", int(job_run.IsFailure), "BIGINT"),
                     ("execution_time_sec", job_run.ExecutionTime, "DOUBLE"),
                     ("error_message", job_run.ErrorMessage, "VARCHAR"),
-                    ("dpu_seconds", job_run.DPUSeconds, "DOUBLE"),
+                    ("dpu_seconds", dpu_seconds, "DOUBLE"),
                 ]
                 measure_values = [
                     {
