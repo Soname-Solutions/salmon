@@ -6,6 +6,9 @@ from typing import Optional
 
 from ..core.constants import SettingConfigResourceTypes
 
+###########################################################
+# Job-related pydantic classes
+
 
 class JobRun(BaseModel):
     Id: str
@@ -28,16 +31,64 @@ class JobRun(BaseModel):
 
     @property
     def IsSuccess(self) -> bool:
-        return self.JobRunState in GlueManager.States_Success
+        return self.JobRunState in GlueManager.Job_States_Success
 
     @property
     def IsFailure(self) -> bool:
-        return self.JobRunState in GlueManager.States_Failure
+        return self.JobRunState in GlueManager.Job_States_Failure
 
 
 class JobRunsData(BaseModel):
     JobRuns: list[JobRun]
     NextToken: Optional[str] = None
+
+
+###########################################################
+# Workflow-related pydantic classes
+
+
+class WorkflowStatistics(BaseModel):
+    TotalActions: int
+    TimeoutActions: int
+    FailedActions: int
+    StoppedActions: int
+    SucceededActions: int
+    RunningActions: int
+    ErroredActions: int
+    WaitingActions: int
+
+
+class WorkflowRun(BaseModel):
+    Name: str
+    WorkflowRunId: str
+    WorkflowRunProperties: dict
+    StartedOn: datetime
+    CompletedOn: datetime
+    Status: str
+    ErrorMessage: Optional[str] = None
+    Statistics: WorkflowStatistics
+
+    @property
+    def IsSuccess(self) -> bool:
+        return self.Status in GlueManager.Workflow_States_Success
+
+    @property
+    def IsFailure(self) -> bool:
+        return self.Status in GlueManager.Workflow_States_Failure
+
+    @property
+    def Duration(self) -> float:
+        return (self.CompletedOn - self.StartedOn).total_seconds()
+
+
+class WorkflowRunsData(BaseModel):
+    Runs: list[WorkflowRun]
+    NextToken: str
+    ResponseMetadata: dict
+
+
+###########################################################
+# Glue manager classes
 
 
 class GlueManagerException(Exception):
@@ -47,15 +98,24 @@ class GlueManagerException(Exception):
 
 
 class GlueManager:
-    States_Success = ["SUCCEEDED"]
-    States_Failure = ["FAILED", "ERROR", "TIMEOUT", "STOPPED"]
+    Job_States_Success = ["SUCCEEDED"]
+    Job_States_Failure = ["FAILED", "ERROR", "TIMEOUT", "STOPPED"]
+
+    Workflow_States_Success = ["COMPLETED"]
+    Workflow_States_Failure = ["STOPPED", "ERROR"]
 
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
 
     @classmethod
-    def is_final_state(cls, state: str) -> bool:
-        return state in cls.States_Success or state in cls.States_Failure
+    def is_job_final_state(cls, state: str) -> bool:
+        return state in cls.Job_States_Success or state in cls.Job_States_Failure
+
+    @classmethod
+    def is_workflow_final_state(cls, state: str) -> bool:
+        return (
+            state in cls.Workflow_States_Success or state in cls.Workflow_States_Failure
+        )
 
     def _get_all_job_names(self):
         try:
@@ -97,4 +157,19 @@ class GlueManager:
 
         except Exception as e:
             error_message = f"Error getting glue job runs : {e}"
+            raise GlueManagerException(error_message)
+
+    def get_workflow_runs(
+        self, workflow_name: str, since_time: datetime
+    ) -> list[WorkflowRun]:
+        try:
+            response = self.glue_client.get_workflow_runs(Name=workflow_name)
+
+            workflow_runs_data = WorkflowRunsData(**response)
+            outp = [x for x in workflow_runs_data.Runs if x.StartedOn > since_time]
+
+            return outp
+
+        except Exception as e:
+            error_message = f"Error getting glue workflow runs : {e}"
             raise GlueManagerException(error_message)

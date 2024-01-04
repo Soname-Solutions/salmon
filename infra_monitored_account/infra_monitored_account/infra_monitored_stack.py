@@ -126,6 +126,7 @@ class InfraMonitoredStack(Stack):
                 "glue:GetJobs",
                 "glue:GetJobRun",
                 "glue:GetJobRuns",
+                "glue:GetWorkflowRuns",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,
@@ -157,6 +158,7 @@ class InfraMonitoredStack(Stack):
         step_functions_policy_statement = iam.PolicyStatement(
             actions=[
                 "states:ListStateMachines",
+                "states:ListExecutions",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,

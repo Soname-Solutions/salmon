@@ -21,7 +21,7 @@ class GeneralAwsEventMapper(ABC):
         self.settings = settings
 
     @abstractmethod
-    def get_resource_name(self, event: dict):
+    def get_resource_name(self, event: dict) -> str:
         """Returns name of the AWS resource the given event belongs to (job/stateMachine/function etc.)
 
         Args:
@@ -30,7 +30,21 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_message_body(self, event: dict):
+    def get_service_name(self) -> str:
+        """Returns name of the AWS service the given event belongs to (Glue/Step Functions/Lambda etc.)"""
+        pass
+
+    @abstractmethod
+    def get_event_severity(self, event: dict) -> str:
+        """Returns the severity of the occurred event
+
+        Args:
+            event (dict): Event object
+        """
+        pass
+
+    @abstractmethod
+    def get_message_body(self, event: dict) -> list[dict]:
         """Returns composed message body for the given AWS event
 
         Args:
