@@ -7,7 +7,18 @@
           "name": {"type": "string"},
           "account_id": {"type": "string"},
           "region": {"type": "string"},
-          "metrics_collection_interval_min": {"type": "integer"}
+          "metrics_collection_interval_min": {"type": "integer"},
+          "grafana_instance": {
+            "type": "object",
+            "properties": {
+              "grafana_vpc_id": {"type": "string"},
+              "grafana_security_group_id": {"type": "string"},
+              "grafana_key_pair_name": {"type": "string"},
+              "grafana_bitnami_image": {"type": "string"},
+              "grafana_instance_type": {"type": "string"}
+            },
+            "required": ["grafana_vpc_id", "grafana_security_group_id"]
+          }
         },
         "required": ["name", "account_id", "region", "metrics_collection_interval_min"]
       },
@@ -38,5 +49,5 @@
         }
       }
     },
-    "required": ["tooling_environment", "monitored_environments", "delivery_methods"]
+    "required": ["tooling_environment", "monitored_environments", "delivery_methods"]   
 }

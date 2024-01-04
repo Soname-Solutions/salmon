@@ -19,6 +19,7 @@ from lib.core.constants import (
     SettingConfigs,
     SettingFileNames,
     NotificationType,
+    GrafanaDefaultSettings,
 )
 
 # Used for settings only
@@ -133,6 +134,17 @@ class Settings:
                         res["sla_seconds"] = 0
                     if "minimum_number_of_runs" not in res:
                         res["minimum_number_of_runs"] = 0
+        # Add Grafana default settings
+        grafana_instance_settings = self._processed_settings[SettingFileNames.GENERAL][
+            "tooling_environment"
+        ].get("grafana_instance", {})
+        if grafana_instance_settings:
+            grafana_instance_settings.setdefault(
+                "grafana_bitnami_image", GrafanaDefaultSettings.BITNAMI_IMAGE
+            )
+            grafana_instance_settings.setdefault(
+                "grafana_instance_type", GrafanaDefaultSettings.INSTANCE_TYPE
+            )
 
         return self._processed_settings
 
@@ -287,6 +299,19 @@ class Settings:
         return self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"][
             "metrics_collection_interval_min"
         ]
+
+    def get_grafana_settings(self) -> tuple[str, str, str, str, str]:
+        """Get grafana settings"""
+        grafana_settings = self.general["tooling_environment"].get("grafana_instance")
+        if grafana_settings:
+            return (
+                grafana_settings.get("grafana_vpc_id"),
+                grafana_settings.get("grafana_security_group_id"),
+                grafana_settings.get("grafana_key_pair_name"),
+                grafana_settings.get("grafana_bitnami_image"),
+                grafana_settings.get("grafana_instance_type"),
+            )
+        return None
 
     def get_tooling_account_props(self) -> (str, str):
         """Returns account_id and region of tooling environment."""

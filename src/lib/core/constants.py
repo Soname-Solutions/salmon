@@ -51,3 +51,8 @@ class CDKResourceNames:
     IAMROLE_EXTRACT_METRICS_LAMBDA = "extract-metrics-lambda"
     IAMROLE_MONITORED_ACC_PUT_EVENTS = "monitored-acc-put-events"
     IAMROLE_MONITORED_ACC_EXTRACT_METRICS = "monitored-acc-extract-metrics"
+
+
+class GrafanaDefaultSettings:
+    INSTANCE_TYPE = "t3.micro"
+    BITNAMI_IMAGE = "bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami"
