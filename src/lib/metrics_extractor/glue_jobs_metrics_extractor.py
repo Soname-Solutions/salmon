@@ -1,6 +1,6 @@
 from datetime import datetime
 from lib.aws.glue_manager import GlueManager, JobRun
-from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
+
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 from lib.core import time_utils
 
@@ -10,35 +10,17 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
     Class is responsible for extracting glue job metrics
     """
 
-    def get_last_update_time(self, timestream_query_client) -> datetime:
-        """
-        Get time of this entity's data latest update (we append data since that time only)
-        """
-        queryRunner = TimeStreamQueryRunner(
-            timestream_query_client=timestream_query_client
-        )
-
-        # check if table is empty
-        query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
-        count_rec = int(queryRunner.execute_scalar_query(query=query))
-        if count_rec == 0:
-            return None
-
-        query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE job_name = \'{self.entity_name}\''
-        last_date = queryRunner.execute_scalar_query_date_field(query=query)
-        return last_date
-
     def _extract_metrics_data(self, since_time: datetime) -> list[JobRun]:
         glue_man = GlueManager(self.aws_service_client)
         job_runs = glue_man.get_job_runs(
-            job_name=self.entity_name, since_time=since_time
+            job_name=self.resource_name, since_time=since_time
         )
         return job_runs
 
     def _data_to_timestream_records(self, job_runs: list[JobRun]) -> list:
         common_dimensions = [
             {"Name": "monitored_environment", "Value": self.monitored_environment_name},
-            {"Name": "job_name", "Value": self.entity_name},
+            {"Name": self.RESOURCE_NAME_COLUMN_NAME, "Value": self.resource_name},
         ]
 
         common_attributes = {"Dimensions": common_dimensions}
@@ -78,14 +60,14 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
                     for metric_name, metric_value, metric_type in metric_values
                 ]
 
-                record_time = time_utils.timedatetime_to_epoch_milliseconds(
+                record_time = time_utils.datetime_to_epoch_milliseconds(
                     job_run.StartedOn
                 )
 
                 records.append(
                     {
                         "Dimensions": dimensions,
-                        "MeasureName": "job_execution",
+                        "MeasureName": self.EXECUTION_MEASURE_NAME,
                         "MeasureValueType": "MULTI",
                         "MeasureValues": measure_values,
                         "Time": record_time,

@@ -335,19 +335,19 @@ class InfraToolingMonitoringStack(Stack):
         Parameters:
             timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
         """
-        metric_table_names = {x: f"{x}-metrics" for x in SettingConfigs.RESOURCE_TYPES}
-        services = metric_table_names.keys()
+        metric_table_names = {x: AWSNaming.TimestreamMetricsTable(None,x) for x in SettingConfigs.RESOURCE_TYPES}
+        resource_types = metric_table_names.keys()
 
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
             magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
             memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
         )
 
-        for service in services:
+        for resource_type in resource_types:
             timestream.CfnTable(
                 self,
-                f"MetricsTable{service}",
+                f"MetricsTable{resource_type}",
                 database_name=timestream_database_name,
                 retention_properties=retention_properties_property,
-                table_name=AWSNaming.TimestreamTable(self, metric_table_names[service]),
+                table_name=metric_table_names[resource_type],
             )

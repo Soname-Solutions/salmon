@@ -56,16 +56,16 @@ def lambda_handler(event, context):
         attr_value = content[attr_name]
         # checking if it's our section like "glue_jobs", "lambda_functions" etc.
         if isinstance(attr_value, list) and attr_name in SettingConfigs.RESOURCE_TYPES:
-            aws_service_name = attr_name
+            resource_type = attr_name
             aws_client_name = SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
                 attr_name
             ]
-            logger.info(f"Service name: {aws_service_name}")
+            logger.info(f"Processing resource type: {resource_type}")
             for item in attr_value:
-                entity_name = item["name"]
+                resource_name = item["name"]
                 monitored_env = item["monitored_environment_name"]
                 logger.info(
-                    f"Processing: {aws_service_name}: [{entity_name}] at env:{monitored_env}"
+                    f"Processing: {resource_type}: [{resource_name}] at env:{monitored_env}"
                 )
 
                 account_id, region = settings.get_monitored_environment_props(
@@ -82,9 +82,7 @@ def lambda_handler(event, context):
                 # for local debugging:
                 # aws_service_client = boto3.client(aws_client_name)
 
-                metrics_table_name = AWSNaming.TimestreamTable(
-                    None, f"{aws_service_name}-metrics"
-                )
+                metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
 
                 timestream_man = TimestreamTableWriter(
                     db_name=timestream_metrics_db_name,
@@ -94,9 +92,9 @@ def lambda_handler(event, context):
 
                 # 1. Create an extractor object for a specific service
                 metrics_extractor = MetricsExtractorProvider.get_metrics_extractor(
-                    service_name=aws_service_name,
+                    resource_type=resource_type,
                     aws_service_client=aws_service_client,
-                    entity_name=entity_name,
+                    resource_name=resource_name,
                     monitored_environment_name=monitored_env,
                     timestream_db_name=timestream_metrics_db_name,
                     timestream_metrics_table_name=metrics_table_name,

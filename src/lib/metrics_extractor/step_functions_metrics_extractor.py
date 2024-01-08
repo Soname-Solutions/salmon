@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from lib.aws.step_functions_manager import StepFunctionsManager, ExecutionData
-from lib.aws.timestream_manager import TimeStreamQueryRunner, TimestreamTableWriter
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 from lib.core import time_utils
 
@@ -11,28 +10,10 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
     Class is responsible for extracting glue job metrics
     """
 
-    def get_last_update_time(self, timestream_query_client) -> datetime:
-        """
-        Get time of this entity's data latest update (we append data since that time only)
-        """
-        queryRunner = TimeStreamQueryRunner(
-            timestream_query_client=timestream_query_client
-        )
-
-        # check if table is empty
-        query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
-        count_rec = int(queryRunner.execute_scalar_query(query=query))
-        if count_rec == 0:
-            return None
-
-        query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE step_function_name = \'{self.entity_name}\''
-        last_date = queryRunner.execute_scalar_query_date_field(query=query)
-        return last_date
-
     def _extract_metrics_data(self, since_time: datetime) -> list[ExecutionData]:
         step_functions_man = StepFunctionsManager(self.aws_service_client)
         step_function_executions = step_functions_man.get_step_function_executions(
-            step_function_name=self.entity_name, since_time=since_time
+            step_function_name=self.resource_name, since_time=since_time
         )
         return step_function_executions
 
@@ -41,7 +22,7 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
     ) -> list:
         common_dimensions = [
             {"Name": "monitored_environment", "Value": self.monitored_environment_name},
-            {"Name": "step_function_name", "Value": self.entity_name},
+            {"Name": self.RESOURCE_NAME_COLUMN_NAME, "Value": self.resource_name},
         ]
 
         common_attributes = {"Dimensions": common_dimensions}
@@ -80,7 +61,7 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
                 records.append(
                     {
                         "Dimensions": dimensions,
-                        "MeasureName": "job_execution",
+                        "MeasureName": self.EXECUTION_MEASURE_NAME,
                         "MeasureValueType": "MULTI",
                         "MeasureValues": measure_values,
                         "Time": record_time,
