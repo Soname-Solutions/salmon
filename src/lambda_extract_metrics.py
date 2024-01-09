@@ -8,7 +8,7 @@ from lib.aws.aws_naming import AWSNaming
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
-from lib.metrics_extractor import MetricsExtractorProvider
+from lib.metrics_extractor import MetricsExtractorProvider, get_last_update_time
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -44,6 +44,7 @@ def lambda_handler(event, context):
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
     timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
     monitoring_group_name = event.get("monitoring_group")
+    last_update_times = event.get("last_update_times")
 
     settings = Settings.from_s3_path(
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
@@ -82,7 +83,9 @@ def lambda_handler(event, context):
                 # for local debugging:
                 # aws_service_client = boto3.client(aws_client_name)
 
-                metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
+                metrics_table_name = AWSNaming.TimestreamMetricsTable(
+                    None, resource_type
+                )
 
                 timestream_man = TimestreamTableWriter(
                     db_name=timestream_metrics_db_name,
@@ -104,10 +107,25 @@ def lambda_handler(event, context):
                 )
 
                 # 2. Get time of this entity's data latest update (we append data since that time only)
-                since_time = metrics_extractor.get_last_update_time(
-                    timestream_query_client=timestream_query_client
+                since_time = get_last_update_time(
+                    last_update_times, resource_type, resource_name
                 )
+                logger.info(f"Last update time (from payload) for {resource_type}[{resource_name}] = {since_time}")
+
                 if since_time is None:
+                    # if last_update_time was not given or missing - query for specific resource directly from table
+                    logger.info(
+                        f"No last_update_time for {resource_type}[{resource_name}] - querying directly from table"
+                    )
+                    since_time = metrics_extractor.get_last_update_time(
+                        timestream_query_client=timestream_query_client
+                    )
+
+                if since_time is None:
+                    # if still there is no last_update_time - extract since time which Timestream is able to accept
+                    logger.info(
+                        f"No last_update_time for {resource_type}[{resource_name}] - querying from Timestream"
+                    )
                     since_time = timestream_man.get_earliest_writeable_time_for_table()
                 logger.info(f"Extracting metrics since {since_time}")
 
@@ -136,8 +154,11 @@ if __name__ == "__main__":
     ] = "timestream-salmon-metrics-events-storage-devam"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devam/settings/"
 
-    # event = {'monitoring_group': 'salmonts_pyjobs'}
+    event = {'monitoring_group': 'salmonts_pyjobs', "last_update_times": {}}
     # event = {"monitoring_group": "salmonts_workflows_sparkjobs"}
-    event = {"monitoring_group": "salmonts_lambdas_stepfunctions"}
+    # event = {
+    #     "monitoring_group": "salmonts_lambdas_stepfunctions",
+    #     "last_update_times": {},
+    # }
 
     lambda_handler(event, None)

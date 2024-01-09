@@ -319,6 +319,7 @@ class InfraToolingMonitoringStack(Stack):
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
                 "LAMBDA_EXTRACT_METRICS_NAME": extract_metrics_lambda.function_name,
+                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
             },
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
