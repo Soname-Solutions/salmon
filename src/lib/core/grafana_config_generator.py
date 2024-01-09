@@ -1,73 +1,191 @@
 import os
 import json
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
-def generate_dashboard_model(
-    service, timestream_database_name, timestream_table_name
+def replace_values_in_json(json_data: json, replacements: dict) -> dict:
+    """
+    Replaces values in a JSON object based on a dictionary of replacements.
+
+    Args:
+        json_data (dict): The JSON object.
+        replacements (dict): Dictionary with keys as the values to be replaced and
+                            corresponding values as the replacements.
+
+    Returns:
+        dict: Updated JSON object.
+    """
+
+    def replace_recursive(obj):
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                obj[key] = replace_recursive(value)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                obj[i] = replace_recursive(item)
+        elif isinstance(obj, str) and obj in replacements:
+            obj = replacements[obj]
+        return obj
+
+    return replace_recursive(json_data)
+
+
+def generate_cloudwatch_dashboard_model(
+    cloudwatch_log_group_name: str, cloudwatch_log_group_arn: str, account_id: str
 ) -> dict:
-    """Generates Dashboard json model for each Service"""
+    """
+    Generates Dashboard json model for CloudWatch Log Group.
+
+    Args:
+        cloudwatch_log_group_name (str): Alerts Events Log Group name in CloudWatch.
+        cloudwatch_log_group_arn (str): ARN of Alerts Events Log Group in CloudWatch.
+        account_id (str): Account ID.
+
+    Returns:
+        dashboard_data (dict): Dashboard json model.
+    """
     dashboard_path = os.path.join(
-        "infra_tooling_account", "grafana", "sample_dashboard.json"
+        "infra_tooling_account", "grafana", "cloudwatch_dashboard.sample.json"
     )
     with open(dashboard_path) as json_file:
-        dashboard_data = json.load(json_file)
+        json_data = json.load(json_file)
 
-    dashboard_data["title"] = f"Metrics Dashboard for {service}"
-    dashboard_data["panels"][0]["datasource"] = f"Amazon-Timestream-{service}"
-    dashboard_data["panels"][0]["title"] = f"{service}"
-    dashboard_data["panels"][0]["targets"][0][
-        "datasource"
-    ] = f"Amazon-Timestream-{service}"
-    dashboard_data["panels"][0]["targets"][0][
-        "database"
-    ] = f'"{timestream_database_name}"'
-    dashboard_data["panels"][0]["targets"][0]["table"] = f'"{timestream_table_name}"'
+    replacements = {
+        "<<LOG_GROUP_NAME>>": cloudwatch_log_group_name,
+        "<<LOG_GROUP_ARN>>": cloudwatch_log_group_arn,
+        "<<ACCOUNT_ID>>": account_id,
+    }
+    dashboard_data = replace_values_in_json(json_data, replacements)
 
     return dashboard_data
 
 
-def generate_datasources_config_section(
-    service, region, timestream_database_name, timestream_table_name
+def generate_timestream_dashboard_model(
+    resource_type: str, timestream_database_name: str, timestream_table_name: str
 ) -> dict:
-    """Generates Datasource config section for each Service"""
+    """
+    Generates Dashboard json model for Timestream table.
+
+    Args:
+        timestream_database_name (str): Timestream database name.
+        timestream_table_name (str): Timestream table name.
+
+    Returns:
+        dashboard_data (dict): Dashboard json model.
+    """
+    dashboard_path = os.path.join(
+        "infra_tooling_account", "grafana", f"{resource_type}_dashboard.sample.json"
+    )
+    try:
+        with open(dashboard_path) as json_file:
+            json_data = json.load(json_file)
+    except FileNotFoundError:
+        logger.warning(f"Dashboard file for {resource_type} not found: {dashboard_path}. Skipping.")
+        return None
+
+    replacements = {
+        "<<DATABASE_NAME>>": f'"{timestream_database_name}"',
+        "<<DATABASE_TABLE>>": f'"{timestream_table_name}"',
+    }
+    dashboard_data = replace_values_in_json(json_data, replacements)
+
+    return dashboard_data
+
+
+def generate_datasources_config(region: str, timestream_database_name: str) -> dict:
+    """
+    Generates Timestream and CloudWatch Datasources provisioning config file.
+
+    Args:
+        region (str): Region name.
+        timestream_database_name (str):Timestream Database name.
+
+    Returns:
+        dict: Datasources provisioning config.
+    """
     return {
-        "name": f"Amazon-Timestream-{service}",
-        "type": "grafana-timestream-datasource",
-        "isDefault": False,
-        "jsonData": {
-            "authType": "default",
-            "defaultRegion": region,
-            "defaultDatabase": f'"{timestream_database_name}"',
-            "defaultTable": f'"{timestream_table_name}"',
-        },
+        "apiVersion": 1,
+        "datasources": [
+            {
+                "name": "Amazon-Timestream",
+                "type": "grafana-timestream-datasource",
+                "isDefault": False,
+                "jsonData": {
+                    "authType": "default",
+                    "defaultRegion": region,
+                    "defaultDatabase": f'"{timestream_database_name}"',
+                },
+            },
+            {
+                "name": "Cloudwatch",
+                "type": "cloudwatch",
+                "isDefault": False,
+                "jsonData": {
+                    "authType": "default",
+                    "defaultRegion": region,
+                },
+            },
+        ],
     }
 
 
-def generate_dashboards_config_section(service) -> dict:
-    """Generates Dashboard config section for each Service"""
-    return {
-        "name": f"{service}_dashboard",
+def generate_dashboards_config(resource_types: list) -> dict:
+    """
+    Generates Dashboards provisioning config file.
+
+    Args:
+        resource_types (list): List of Resource types.
+
+    Returns:
+        dashboards_config (dict): Dashboards provisioning config.
+    """
+    dashboards_sections = []
+    for resource_type in resource_types:
+        dashboard_path = os.path.join(
+        "infra_tooling_account", "grafana", f"{resource_type}_dashboard.sample.json"
+        )
+        if os.path.exists(dashboard_path):
+            dashboard_section = {
+                "name": f"{resource_type}_dashboard",
+                "type": "file",
+                "allowUiUpdates": True,
+                "updateIntervalSeconds": 30,
+                "options": {"path": f"data/{resource_type}_dashboard.json"},
+            }
+            dashboards_sections.append(dashboard_section)
+
+    cw_dashboard_section = {
+        "name": "cw_dashboard",
         "type": "file",
         "allowUiUpdates": True,
         "updateIntervalSeconds": 30,
-        "options": {"path": f"data/{service}_dashboard.json"},
+        "options": {"path": "data/cloudwatch_dashboard.json"},
     }
+    dashboards_sections.append(cw_dashboard_section)
+    dashboards_config = {"apiVersion": 1, "providers": dashboards_sections}
+
+    return dashboards_config
 
 
 def generate_user_data_script(
     region: str, settings_bucket_name: str, grafana_admin_secret_name: str
 ) -> str:
-    """Generates User Data script that should be run at Grafana launch.
+    """
+    Generates User Data script that should be run at Grafana launch.
 
     Args:
-        settings_bucket_name (str): Settings S3 Bucket name
-        grafana_admin_secret_name (str): Grafana Secret name
+        region (str): Region name.
+        settings_bucket_name (str): Settings S3 Bucket name.
+        grafana_admin_secret_name (str): Grafana Secret name.
 
     Returns:
-        str: User data with set of commands
+        user_data_content (str): User data with set of commands.
     """
     user_data_file_path = os.path.join(
-        "infra_tooling_account", "grafana", "sample_user_data.sh"
+        "infra_tooling_account", "grafana", "grafana_user_data.sample.sh"
     )
     with open(user_data_file_path, "r") as user_data_file:
         user_data_content = user_data_file.read()

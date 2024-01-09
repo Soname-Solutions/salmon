@@ -1,0 +1,714 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "Cloudwatch",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Cloudwatch logs dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "gnetId": 14109,
+  "graphTooltip": 0,
+  "id": 5,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "Cloudwatch",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "alias": "",
+          "datasource": "Cloudwatch",
+          "dimensions": {
+            "LogGroupName": "<<LOG_GROUP_NAME>>"
+          },
+          "expression": "| stats count(*) \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n",
+          "id": "",
+          "label": "",
+          "logGroups": [
+            {
+              "accountId": "<<ACCOUNT_ID>>",
+              "arn": "<<LOG_GROUP_ARN>>",
+              "name": "<<LOG_GROUP_NAME>>"
+            }
+          ],
+          "matchExact": true,
+          "metricEditorMode": 1,
+          "metricName": "IncomingLogEvents",
+          "metricQueryType": 1,
+          "namespace": "AWS/Logs",
+          "period": "",
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "default",
+          "sqlExpression": "| stats count(*) by $service_name",
+          "statistic": "Average",
+          "statsGroups": []
+        }
+      ],
+      "title": "Total events",
+      "type": "stat"
+    },
+    {
+      "datasource": "Cloudwatch",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "FAILED": {
+                  "color": "red",
+                  "index": 0
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "coalesce(event.detail.status, event.detail.state)"
+            },
+            "properties": [
+              {
+                "id": "color"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "FAILED": {
+                        "color": "red",
+                        "index": 0
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 10,
+        "x": 4,
+        "y": 0
+      },
+      "id": 9,
+      "options": {
+        "displayMode": "basic",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "alias": "",
+          "datasource": "Cloudwatch",
+          "dimensions": {
+            "LogGroupName": "<<LOG_GROUP_NAME>>"
+          },
+          "expression": "| stats count(*) as cnt by coalesce(event.detail.status, event.detail.state) \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by cnt\r\n",
+          "id": "",
+          "label": "",
+          "logGroups": [
+            {
+              "accountId": "<<ACCOUNT_ID>>",
+              "arn": "<<LOG_GROUP_ARN>>",
+              "name": "<<LOG_GROUP_NAME>>"
+            }
+          ],
+          "matchExact": true,
+          "metricEditorMode": 1,
+          "metricName": "IncomingLogEvents",
+          "metricQueryType": 1,
+          "namespace": "AWS/Logs",
+          "period": "",
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "default",
+          "sqlExpression": "| stats count(*) by $service_name",
+          "statistic": "Average",
+          "statsGroups": [
+            "coalesce(event.detail.status",
+            "event.detail.state)"
+          ]
+        }
+      ],
+      "title": "Events by Statuses",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Cloudwatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "points",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [
+            {
+              "options": {
+                "FAILED": {
+                  "color": "red",
+                  "index": 0
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "coalesce(event.detail.status, event.detail.state)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "palette-classic"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "FAILED": {
+                        "color": "red",
+                        "index": 0
+                      },
+                      "RUNNING": {
+                        "color": "orange",
+                        "index": 1
+                      },
+                      "SUCCEEDED": {
+                        "color": "green",
+                        "index": 2
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              },
+              {
+                "id": "custom.axisColorMode",
+                "value": "series"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "palette-classic"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 4,
+      "interval": "5m",
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "alias": "Log events",
+          "datasource": "Cloudwatch",
+          "dimensions": {
+            "LogGroupName": "$log_group"
+          },
+          "expression": "| stats count(*) by @timestamp, coalesce(event.detail.status, event.detail.state)\r\n| filter service_name IN [$service_name]\r\n| filter coalesce(event.detail.status, event.detail.state) IN [$event_severity]\r\n| filter resource_name like /(?i)$search/",
+          "id": "",
+          "label": "Log events",
+          "logGroups": [
+            {
+              "accountId": "<<ACCOUNT_ID>>",
+              "arn": "<<LOG_GROUP_ARN>>",
+              "name": "<<LOG_GROUP_NAME>>"
+            }
+          ],
+          "matchExact": true,
+          "metricEditorMode": 1,
+          "metricName": "IncomingLogEvents",
+          "metricQueryType": 0,
+          "namespace": "AWS/Logs",
+          "period": "",
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "default",
+          "sqlExpression": "",
+          "statistic": "Average",
+          "statsGroups": [
+            "@timestamp",
+            "coalesce(event.detail.status",
+            "event.detail.state)"
+          ]
+        }
+      ],
+      "title": "Events timeline",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Cloudwatch",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "noValue": "-",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "service_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 144
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 174
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "status_or_state"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 145
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "resource_name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 283
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "@message"
+            },
+            "properties": [
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "event_severity"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "service_name"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Time"
+          }
+        ]
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "datasource": "Cloudwatch",
+          "dimensions": {},
+          "expression": "fields @timestamp, service_name, resource_name, coalesce(event.detail.status, event.detail.state) as status_or_state,event_severity, @message \n| filter service_name IN [$service_name]\n| filter coalesce(event.detail.status, event.detail.state) IN [$event_severity]\n| filter resource_name like /(?i)$search/\n",
+          "id": "",
+          "label": "",
+          "logGroups": [
+            {
+              "accountId": "<<ACCOUNT_ID>>",
+              "arn": "<<LOG_GROUP_ARN>>",
+              "name": "<<LOG_GROUP_NAME>>"
+            }
+          ],
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "",
+          "metricQueryType": 0,
+          "namespace": "",
+          "period": "",
+          "queryMode": "Logs",
+          "refId": "A",
+          "region": "default",
+          "sqlExpression": "",
+          "statistic": "Average",
+          "statsGroups": []
+        }
+      ],
+      "title": "All Events",
+      "type": "table"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 38,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text":"<<LOG_GROUP_NAME>>",
+          "value":"<<LOG_GROUP_NAME>>"
+        },
+        "description": "Cloudwatch Log groups",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Log Group",
+        "multi": false,
+        "name": "log_group",
+        "options": [
+          {
+            "selected": true,
+            "text": "<<LOG_GROUP_NAME>>",
+            "value": "<<LOG_GROUP_NAME>>"
+          }
+        ],
+        "query": "<<LOG_GROUP_NAME>>",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service Name",
+        "multi": true,
+        "name": "service_name",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "\"step_functions\"",
+            "value": "\"step_functions\""
+          },
+          {
+            "selected": false,
+            "text": "\"glue_jobs\"",
+            "value": "\"glue_jobs\""
+          },
+          {
+            "selected": false,
+            "text": "\"lambda_functions\"",
+            "value": "\"lambda_functions\""
+          },
+          {
+            "selected": false,
+            "text": "\"glue_workflows\"",
+            "value": "\"glue_workflows\""
+          }
+        ],
+        "query": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"", 
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "allValue": "\"FAILED\", \"SUCCEEDED\", \"RUNNING\"",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Event Severity",
+        "multi": true,
+        "name": "event_severity",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "\"FAILED\"",
+            "value": "\"FAILED\""
+          },
+          {
+            "selected": false,
+            "text": "\"SUCCEEDED\"",
+            "value": "\"SUCCEEDED\""
+          },
+          {
+            "selected": false,
+            "text": "\"RUNNING\"",
+            "value": "\"RUNNING\""
+          }
+        ],
+        "query": "\"FAILED\", \"SUCCEEDED\", \"RUNNING\"",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
+        "label": "Resource Name",
+        "name": "search",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Cloudwatch Logs with Alert Events",
+  "version": 7,
+  "weekStart": ""
+}

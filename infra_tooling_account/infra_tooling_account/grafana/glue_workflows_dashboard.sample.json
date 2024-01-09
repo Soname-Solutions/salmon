@@ -3,14 +3,11 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": "Amazon-Timestream",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "Metrics Dashboard",
         "type": "dashboard"
       }
     ]
@@ -23,7 +20,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "Amazon-Timestream-glue_jobs",
+      "datasource": "Amazon-Timestream",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -99,15 +96,15 @@
       },
       "targets": [
         {
-          "database": "\"timestream-salmon-metrics-events-storage-devay\"",
-          "datasource": "Amazon-Timestream-glue_jobs",
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
           "measure": "job_execution",
           "rawQuery": "SELECT * FROM $__database.$__table LIMIT 10",
           "refId": "A",
-          "table": "\"tstable-glue_jobs-metrics\""
+          "table": "<<DATABASE_TABLE>>"
         }
       ],
-      "title": "Glue Jobs",
+      "title": "Glue Workflows",
       "type": "timeseries"
     }
   ],
@@ -131,7 +128,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "New dashboard",
+  "title": "Metrics Dashboard for Glue Workflows",
   "version": 3,
   "weekStart": ""
 }

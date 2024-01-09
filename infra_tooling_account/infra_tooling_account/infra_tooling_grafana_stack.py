@@ -9,15 +9,17 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_s3_deployment as s3deploy,
     aws_secretsmanager as secretsmanager,
+    aws_logs as cloudwatch_logs,
 )
 from constructs import Construct
 from lib.aws.aws_naming import AWSNaming
 from lib.settings.settings import Settings
 from lib.core.constants import SettingConfigs
 from lib.core.grafana_config_generator import (
-    generate_dashboard_model,
-    generate_datasources_config_section,
-    generate_dashboards_config_section,
+    generate_timestream_dashboard_model,
+    generate_cloudwatch_dashboard_model,
+    generate_datasources_config,
+    generate_dashboards_config,
     generate_user_data_script,
 )
 
@@ -30,6 +32,13 @@ class InfraToolingGrafanaStack(Stack):
         stage_name (str): The stage name of the deployment, used for naming resources.
         project_name (str): The name of the project, used for naming resources.
 
+    Methods:
+        get_common_stack_references(): Retrieves references to artifacts created in common stack.
+        get_grafana_settings(): Retrieves Grafana related settings.
+        create_grafana_admin_secret(): Creates Grafana Admin Secret in Secrets Manager.
+        create_grafana_key_pair(): Creates Grafana Key Pair.
+        generate_grafana_configuration_files(): Generates Grafana provisioning config files and uploads to S3 bucket.
+        create_grafana_instance(): Creates Grafana instance.
     """
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -55,6 +64,7 @@ class InfraToolingGrafanaStack(Stack):
             input_timestream_database_arn,
             input_timestream_kms_key_arn,
             input_settings_bucket_arn,
+            alert_events_log_group,
             settings_bucket,
         ) = self.get_common_stack_references()
 
@@ -75,14 +85,19 @@ class InfraToolingGrafanaStack(Stack):
         if not grafana_key_pair_name:
             grafana_key_pair_name = self.create_grafana_key_pair()
 
-        self.prepare_and_upload_grafana_configuration_files(settings_bucket)
+        self.generate_grafana_configuration_files(
+            settings_bucket=settings_bucket,
+            cloudwatch_log_group_arn=alert_events_log_group.log_group_arn,
+            cloudwatch_log_group_name=alert_events_log_group.log_group_name,
+        )
 
         grafana_instance = self.create_grafana_instance(
             grafana_vpc_id=grafana_vpc_id,
             grafana_security_group_id=grafana_security_group_id,
-            input_timestream_kms_key_arn=input_timestream_kms_key_arn,
-            input_timestream_database_arn=input_timestream_database_arn,
-            input_settings_bucket_arn=input_settings_bucket_arn,
+            timestream_kms_key_arn=input_timestream_kms_key_arn,
+            timestream_database_arn=input_timestream_database_arn,
+            settings_bucket_arn=input_settings_bucket_arn,
+            alert_events_log_group_arn=alert_events_log_group.log_group_arn,
             grafana_admin_secret_name=grafana_admin_secret_name,
             grafana_admin_secret_arn=grafana_admin_secret_arn,
             grafana_bitnami_image=grafana_bitnami_image,
@@ -100,14 +115,16 @@ class InfraToolingGrafanaStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "grafana-url"),
         )
 
-    def get_common_stack_references(self) -> tuple[str, str, str, s3.Bucket]:
+    def get_common_stack_references(
+        self,
+    ) -> tuple[str, str, str, cloudwatch_logs.LogGroup, s3.Bucket]:
         """
         Retrieves common stack references required for the stack's operations.
-        These include the Timestream database ARN, Timestream KMS key ARN, settings S3 bucket and its ARN.
+        These include the Timestream database ARN, Timestream KMS key ARN, CloudWatch Log Group, settings S3 bucket and its ARN.
 
         Returns:
             tuple: A tuple containing references to the Timestream database ARN, Timestream KMS key ARN,
-                   settings S3 bucket and its ARN.
+                   CloudWatch Log Group, settings S3 bucket and its ARN.
         """
 
         input_timestream_database_arn = Fn.import_value(
@@ -119,7 +136,11 @@ class InfraToolingGrafanaStack(Stack):
         input_settings_bucket_arn = Fn.import_value(
             AWSNaming.CfnOutput(self, "settings-bucket-arn")
         )
-
+        alert_events_log_group = cloudwatch_logs.LogGroup.from_log_group_name(
+            self,
+            "salmonAlertEventsLogGroup",
+            log_group_name=AWSNaming.LogGroupName(self, "alert-events"),
+        )
         settings_bucket = s3.Bucket.from_bucket_arn(
             self,
             "salmonSettingsBucket",
@@ -130,6 +151,7 @@ class InfraToolingGrafanaStack(Stack):
             input_timestream_database_arn,
             input_timestream_kms_key_arn,
             input_settings_bucket_arn,
+            alert_events_log_group,
             settings_bucket,
         )
 
@@ -146,6 +168,7 @@ class InfraToolingGrafanaStack(Stack):
             secret_name=AWSNaming.Secret(self, "grafana-password"),
             description="Grafana secret stored in AWS Secrets Manager",
             generate_secret_string=secretsmanager.SecretStringGenerator(
+                exclude_characters="-",
                 include_space=False,
                 generate_string_key="password",
                 password_length=20,
@@ -160,7 +183,7 @@ class InfraToolingGrafanaStack(Stack):
         Creates Key Pair for Grafana instance.
 
         Returns:
-            str: Key Pair name
+            grafana_key_pair_name (str): Key Pair name.
         """
         grafana_key_pair = ec2.CfnKeyPair(
             self,
@@ -170,92 +193,135 @@ class InfraToolingGrafanaStack(Stack):
 
         return grafana_key_pair.key_name
 
-    def prepare_and_upload_grafana_configuration_files(self, settings_bucket) -> None:
+    def generate_grafana_configuration_files(
+        self,
+        settings_bucket: s3.Bucket,
+        cloudwatch_log_group_name: str,
+        cloudwatch_log_group_arn: str,
+    ) -> None:
         """
-        Generates and uploads Grafana configuration files to S3 bucket.
-        For each Service, a separate dashboard and data source will be provisioned.
-        The files will be uploaded to settings/grafana dedicated folder.
+        Generates the following Grafana provisioning configuration files and uploads them to S3 bucket:
+            - the dashboards for each Resource type based on the Timestream corresponding table
+            - the dashboard based on the CloudWatch Alerts Events Log Stream
+            - YAML provisioning config files with the data sources and dashboards
 
         Args:
-            settings_bucket (s3.Bucket): Settings S3 Bucket
+            settings_bucket (s3.Bucket): Settings S3 Bucket.
+            cloudwatch_log_group_name (str): Alerts Events Log Group name in CloudWatch.
+            cloudwatch_log_group_arn (str): Alerts Events Log Group ARN in CloudWatch.
         """
-        metric_table_names = {x: f"{x}-metrics" for x in SettingConfigs.RESOURCE_TYPES}
-        services = metric_table_names.keys()
+        metric_table_names = {
+            x: AWSNaming.TimestreamMetricsTable(None, x)
+            for x in SettingConfigs.RESOURCE_TYPES
+        }
+        resource_types = metric_table_names.keys()
         timestream_database_name = AWSNaming.TimestreamDB(
             self, "metrics-events-storage"
         )
 
-        # Generate Dashboard JSON model for each Service
-        for i, service in enumerate(services):
-            timestream_table_name = AWSNaming.TimestreamTable(
-                self, metric_table_names[service]
+        # Generate Timestream Dashboard JSON model for each Resource type and upload to S3
+        for i, resource_type in enumerate(resource_types):
+            dashboard_data = generate_timestream_dashboard_model(
+                resource_type=resource_type,
+                timestream_database_name=timestream_database_name,
+                timestream_table_name=metric_table_names[resource_type],
             )
-            dashboard_data = generate_dashboard_model(
-                service, timestream_database_name, timestream_table_name
-            )
-
-            # Upload to S3 settings/grafana/dashboards bucket
-            s3deploy.BucketDeployment(
-                self,
-                f"GrafanaDashboardsDeployment{i}",
-                sources=[
+            if dashboard_data:
+                sources = [
                     s3deploy.Source.data(
-                        f"{service}_dashboard.json",
+                        f"{resource_type}_dashboard.json",
                         json.dumps(dashboard_data, sort_keys=False),
                     )
-                ],
-                destination_bucket=settings_bucket,
-                destination_key_prefix="settings/grafana/dashboards",
-                prune=False,
-            )
+                ]
+                self.upload_grafana_config_files_to_s3(
+                    deployment_name=f"GrafanaTimestreamDashboardDeployment{i}",
+                    sources=sources,
+                    settings_bucket=settings_bucket,
+                    destination_key_prefix="settings/grafana/dashboards",
+                    prune_option=False,
+                )
 
-        # Generate Data sources and Dashboards YAML config files
-        datasources_sections = [
-            generate_datasources_config_section(
-                service=service,
-                region=Stack.of(self).region,
-                timestream_database_name=timestream_database_name,
-                timestream_table_name=AWSNaming.TimestreamTable(
-                    self, metric_table_names[service]
+        # Generate CloudWatch Dashboard JSON model and upload to S3
+        cw_dashboard_data = generate_cloudwatch_dashboard_model(
+            cloudwatch_log_group_name=cloudwatch_log_group_name,
+            cloudwatch_log_group_arn=cloudwatch_log_group_arn,
+            account_id=Stack.of(self).account,
+        )
+        sources = [
+            s3deploy.Source.data(
+                "cloudwatch_dashboard.json",
+                json.dumps(cw_dashboard_data, sort_keys=False),
+            )
+        ]
+        self.upload_grafana_config_files_to_s3(
+            deployment_name=f"GrafanaCloudWatchDashboardDeployment",
+            sources=sources,
+            settings_bucket=settings_bucket,
+            destination_key_prefix="settings/grafana/dashboards",
+            prune_option=False,
+        )
+
+        # Generate YAML provisioning config files and upload to S3
+        datasources_config = generate_datasources_config(
+            region=Stack.of(self).region,
+            timestream_database_name=timestream_database_name,
+        )
+        dashboards_config = generate_dashboards_config(resource_types=resource_types)
+        sources = [
+            s3deploy.Source.data(
+                "datasources.yaml",
+                yaml.dump(
+                    datasources_config, default_flow_style=False, sort_keys=False
                 ),
-            )
-            for service in services
+            ),
+            s3deploy.Source.data(
+                "dashboards.yaml",
+                yaml.dump(dashboards_config, default_flow_style=False, sort_keys=False),
+            ),
         ]
-        dashboards_sections = [
-            generate_dashboards_config_section(service) for service in services
-        ]
-        datasources_config = {"apiVersion": 1, "datasources": datasources_sections}
-        dashboards_config = {"apiVersion": 1, "providers": dashboards_sections}
+        self.upload_grafana_config_files_to_s3(
+            deployment_name="GrafanaYamlConfigsDeployment",
+            sources=sources,
+            settings_bucket=settings_bucket,
+            destination_key_prefix="settings/grafana/conf",
+            prune_option=True,
+        )
 
-        # Upload to S3 settings/grafana/conf bucket
+    def upload_grafana_config_files_to_s3(
+        self,
+        deployment_name: str,
+        sources: s3deploy.ISource,
+        settings_bucket: s3.Bucket,
+        destination_key_prefix: str,
+        prune_option: bool,
+    ) -> None:
+        """
+        Uploads Grafana configuration files to settings/grafana dedicated folder in S3 bucket.
+
+        Args:
+            deployment_name (str): The deployment name.
+            sources (s3deploy.ISource): The sources from which to deploy the contents of this bucket.
+            settings_bucket (s3.Bucket): Settings S3 Bucket.
+            destination_key_prefix (str): Key prefix in the destination bucket.
+            prune_option (bool): Prune option.
+        """
         s3deploy.BucketDeployment(
             self,
-            "GrafanaYamlConfigsDeployment",
-            sources=[
-                s3deploy.Source.data(
-                    "datasources.yaml",
-                    yaml.dump(
-                        datasources_config, default_flow_style=False, sort_keys=False
-                    ),
-                ),
-                s3deploy.Source.data(
-                    "dashboards.yaml",
-                    yaml.dump(
-                        dashboards_config, default_flow_style=False, sort_keys=False
-                    ),
-                ),
-            ],
+            deployment_name,
+            sources=sources,
             destination_bucket=settings_bucket,
-            destination_key_prefix="settings/grafana/conf",
+            destination_key_prefix=destination_key_prefix,
+            prune=prune_option,
         )
 
     def create_grafana_instance(
         self,
         grafana_vpc_id: str,
         grafana_security_group_id: str,
-        input_timestream_kms_key_arn: str,
-        input_timestream_database_arn: str,
-        input_settings_bucket_arn: str,
+        timestream_kms_key_arn: str,
+        timestream_database_arn: str,
+        settings_bucket_arn: str,
+        alert_events_log_group_arn: str,
         grafana_admin_secret_arn: str,
         grafana_instance_type: str,
         grafana_bitnami_image: str,
@@ -263,14 +329,15 @@ class InfraToolingGrafanaStack(Stack):
         settings_bucket_name: str,
         grafana_admin_secret_name: str,
     ) -> ec2.Instance:
-        """Creates Grafana instance with the provisioned dashboards.
+        """Creates Grafana instance with the provisioned dashboards and datasources.
 
         Args:
             grafana_vpc_id (str): VPC ID for Grafana instance
             grafana_security_group_id (str): Security Group ID for Grafana instance
-            input_timestream_kms_key_arn (str): ARN of Timestream KMS Key
-            input_timestream_database_arn (str): ARN of Timestream DB
-            input_settings_bucket_arn (str): ARN of Settings S3 Bucket
+            timestream_kms_key_arn (str): ARN of Timestream KMS Key
+            timestream_database_arn (str): ARN of Timestream DB
+            settings_bucket_arn (str): ARN of Settings S3 Bucket
+            alert_events_log_group_arn (str): ARN of CloudWatch Log Group with Alert Events
             grafana_admin_secret_arn (str): ARN of Grafana secret
             grafana_instance_type (str): Grafana Instance type
             grafana_image (str): Bitnami Grafana image from AWS Marketplace
@@ -301,7 +368,7 @@ class InfraToolingGrafanaStack(Stack):
             iam.PolicyStatement(
                 actions=["kms:Decrypt"],
                 effect=iam.Effect.ALLOW,
-                resources=[input_timestream_kms_key_arn],
+                resources=[timestream_kms_key_arn],
             )
         )
         grafana_role.add_to_policy(
@@ -321,7 +388,7 @@ class InfraToolingGrafanaStack(Stack):
             iam.PolicyStatement(
                 actions=["timestream:ListTables", "timestream:DescribeDatabase"],
                 effect=iam.Effect.ALLOW,
-                resources=[input_timestream_database_arn],
+                resources=[timestream_database_arn],
             )
         )
         grafana_role.add_to_policy(
@@ -333,7 +400,7 @@ class InfraToolingGrafanaStack(Stack):
                     "timestream:DescribeTable",
                 ],
                 effect=iam.Effect.ALLOW,
-                resources=[f"{input_timestream_database_arn}/table/*"],
+                resources=[f"{timestream_database_arn}/table/*"],
             )
         )
         grafana_role.add_to_policy(
@@ -341,7 +408,7 @@ class InfraToolingGrafanaStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:ListBucket"],
                 effect=iam.Effect.ALLOW,
-                resources=[input_settings_bucket_arn],
+                resources=[settings_bucket_arn],
             )
         )
         grafana_role.add_to_policy(
@@ -349,7 +416,7 @@ class InfraToolingGrafanaStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
-                resources=[f"{input_settings_bucket_arn}/*"],
+                resources=[f"{settings_bucket_arn}/*"],
             )
         )
         grafana_role.add_to_policy(
@@ -358,6 +425,22 @@ class InfraToolingGrafanaStack(Stack):
                 actions=["secretsmanager:GetSecretValue"],
                 effect=iam.Effect.ALLOW,
                 resources=[grafana_admin_secret_arn],
+            )
+        )
+        grafana_role.add_to_policy(
+            # to be able to read CloudWatch logs
+            iam.PolicyStatement(
+                actions=[
+                    "logs:Describe*",
+                    "logs:Get*",
+                    "logs:List*",
+                    "logs:StartQuery",
+                    "logs:StopQuery",
+                    "logs:TestMetricFilter",
+                    "logs:FilterLogEvents",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=[alert_events_log_group_arn],
             )
         )
 
