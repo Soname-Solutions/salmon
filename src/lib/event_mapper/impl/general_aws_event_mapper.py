@@ -36,7 +36,7 @@ class GeneralAwsEventMapper(ABC):
 
     @abstractmethod
     def get_event_status(self, event: dict) -> str:
-        """Returns the severity of the occurred event
+        """Returns the status of the occurred event
 
         Args:
             event (dict): Event object
