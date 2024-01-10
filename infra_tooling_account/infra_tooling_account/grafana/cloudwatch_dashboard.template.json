@@ -405,7 +405,6 @@
             "inspect": false
           },
           "mappings": [],
-          "noValue": "-",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -638,7 +637,7 @@
         "type": "custom"
       },
       {
-        "allValue": "\"FAILED\", \"SUCCEEDED\", \"RUNNING\"",
+        "allValue": "\"Unknown\"",
         "current": {
           "selected": true,
           "text": [
@@ -661,21 +660,11 @@
           },
           {
             "selected": false,
-            "text": "\"FAILED\"",
-            "value": "\"FAILED\""
-          },
-          {
-            "selected": false,
-            "text": "\"SUCCEEDED\"",
-            "value": "\"SUCCEEDED\""
-          },
-          {
-            "selected": false,
-            "text": "\"RUNNING\"",
-            "value": "\"RUNNING\""
+            "text": "\"Unknown\"",
+            "value": "\"Unknown\""
           }
         ],
-        "query": "\"FAILED\", \"SUCCEEDED\", \"RUNNING\"",
+        "query": "\"Unknown\"",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
