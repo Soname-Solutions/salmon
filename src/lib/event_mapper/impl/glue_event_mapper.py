@@ -1,5 +1,6 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
+from ...core.constants import SettingConfigResourceTypes
 
 
 class GlueEventMapper(GeneralAwsEventMapper):
@@ -10,7 +11,10 @@ class GlueEventMapper(GeneralAwsEventMapper):
         return event["detail"]["jobName"]
 
     def get_service_name(self):
-        return "Glue"
+        return SettingConfigResourceTypes.GLUE_JOBS
+
+    def get_event_status(self, event):
+        return event["detail"]["state"]
 
     def get_event_severity(self, event):  # todo: implement
         return "Unknown"

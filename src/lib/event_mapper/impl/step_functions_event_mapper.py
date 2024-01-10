@@ -1,5 +1,6 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
+from ...core.constants import SettingConfigResourceTypes
 from datetime import datetime
 
 
@@ -12,7 +13,10 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         return arn.split("stateMachine:")[1]
 
     def get_service_name(self):
-        return "Step Functions"
+        return SettingConfigResourceTypes.STEP_FUNCTIONS
+
+    def get_event_status(self, event):
+        return event["detail"]["status"]
 
     def get_event_severity(self, event):  # todo: implement
         return "Unknown"

@@ -20,6 +20,7 @@ def write_event_to_cloudwatch(
     monitored_env_name: str,
     resource_name: str,
     service_name: str,
+    event_status: str,
     event_severity: str,
     event: dict,
 ):
@@ -34,6 +35,7 @@ def write_event_to_cloudwatch(
         monitored_env_name (str): The name of the monitored environment.
         resource_name (str): The name of the AWS resource.
         service_name (str): The name of the AWS service.
+        event_status (str): The status of the event.
         event_severity (str): Severity of the event.
         event (dict): The event dict to be written to the CloudWatch stream.
 
@@ -54,6 +56,7 @@ def write_event_to_cloudwatch(
     logged_event["monitored_environment"] = monitored_env_name
     logged_event["resource_name"] = resource_name
     logged_event["service_name"] = service_name
+    logged_event["event_status"] = event_status
     logged_event["event_severity"] = event_severity
 
     logged_event_time = time_utils.iso_time_to_epoch_milliseconds(event["time"])
@@ -96,9 +99,15 @@ def lambda_handler(event, context):
 
     resource_name = mapper.to_resource_name(event)
     service_name = mapper.to_service_name(event)
+    event_status = mapper.to_event_status(event)
     event_severity = mapper.to_event_severity(event)
     write_event_to_cloudwatch(
-        monitored_env_name, resource_name, service_name, event_severity, event
+        monitored_env_name,
+        resource_name,
+        service_name,
+        event_status,
+        event_severity,
+        event,
     )
 
     return {"messages": messages}
