@@ -3,7 +3,7 @@ from lib.core.constants import SettingConfigs
 from lib.aws.aws_naming import AWSNaming
 from logging import Logger
 
-from lib.core.time_utils import str_utc_datetime_to_datetime
+from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
 
 def retrieve_last_update_time_for_all_resources(

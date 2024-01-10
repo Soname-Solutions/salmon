@@ -2,7 +2,7 @@ from datetime import datetime
 from lib.aws.glue_manager import GlueManager, JobRun
 
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
-from lib.core import time_utils
+from lib.core import datetime_utils
 
 
 class GlueJobsMetricExtractor(BaseMetricsExtractor):
@@ -60,7 +60,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
                     for metric_name, metric_value, metric_type in metric_values
                 ]
 
-                record_time = time_utils.datetime_to_epoch_milliseconds(
+                record_time = datetime_utils.datetime_to_epoch_milliseconds(
                     job_run.StartedOn
                 )
 

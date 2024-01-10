@@ -2,7 +2,7 @@ import boto3
 
 from datetime import datetime, timedelta
 import dateutil.tz
-from ..core import time_utils
+from ..core import datetime_utils
 
 from pydantic import BaseModel
 from typing import List, Optional

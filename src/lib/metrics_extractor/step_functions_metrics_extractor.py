@@ -2,7 +2,7 @@ from datetime import datetime
 
 from lib.aws.step_functions_manager import StepFunctionsManager, ExecutionData
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
-from lib.core import time_utils
+from lib.core import datetime_utils
 
 
 class StepFunctionsMetricExtractor(BaseMetricsExtractor):
@@ -54,7 +54,7 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
                     for metric_name, metric_value, metric_type in metric_values
                 ]
 
-                record_time = time_utils.datetime_to_epoch_milliseconds(
+                record_time = datetime_utils.datetime_to_epoch_milliseconds(
                     step_function_execution.startDate
                 )
 
