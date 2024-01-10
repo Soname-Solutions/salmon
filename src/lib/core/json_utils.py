@@ -22,6 +22,7 @@ def parse_json(json_data: str) -> dict:
             f"Error parsing JSON data '{json_data[:100]}...'", e.doc, e.pos
         )
 
+
 def replace_values_in_json(json_data: json, replacements: dict) -> dict:
     """
     Replaces values in a JSON object based on a dictionary of replacements.
