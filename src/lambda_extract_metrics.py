@@ -8,7 +8,8 @@ from lib.aws.aws_naming import AWSNaming
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
-from lib.metrics_extractor import MetricsExtractorProvider, get_last_update_time
+from lib.metrics_extractor import MetricsExtractorProvider
+from lib.metrics_extractor.metrics_extractor_utils import get_last_update_time
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
