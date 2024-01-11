@@ -6,7 +6,8 @@ import logging
 from lib.core import datetime_utils
 from lib.aws.sqs_manager import SQSQueueSender
 from lib.aws.cloudwatch_manager import CloudWatchEventsPublisher
-from lib.event_mapper.aws_event_mapper import AwsEventMapper
+from lib.event_mapper.event_mapper_provider import EventMapperProvider
+from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
 
 logger = logging.getLogger()
@@ -89,7 +90,8 @@ def lambda_handler(event, context):
         event["account"], event["region"]
     )
 
-    mapper = AwsEventMapper(settings)
+    resource_type = ResourceTypeResolver.resolve(event)
+    mapper = EventMapperProvider.get_event_mapper(resource_type, settings)
     messages = mapper.to_notification_messages(event)
 
     logger.info(f"Notification messages: {messages}")
@@ -97,10 +99,9 @@ def lambda_handler(event, context):
     queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
     send_messages_to_sqs(queue_url, messages)
 
-    resource_name = mapper.to_resource_name(event)
-    service_name = mapper.to_service_name(event)
-    event_status = mapper.to_event_status(event)
-    event_severity = mapper.to_event_severity(event)
+    resource_name = mapper.get_resource_name(event)
+    event_status = mapper.get_event_status(event)
+    event_severity = mapper.get_event_severity(event)
     write_event_to_cloudwatch(
         monitored_env_name,
         resource_name,
