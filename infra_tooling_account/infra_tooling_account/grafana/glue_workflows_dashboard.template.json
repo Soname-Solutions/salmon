@@ -76,8 +76,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 12,
+        "w": 24,
         "x": 0,
         "y": 0
       },
@@ -98,8 +98,8 @@
         {
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
-          "measure": "job_execution",
-          "rawQuery": "SELECT * FROM $__database.$__table LIMIT 10",
+          "measure": "execution",
+          "rawQuery": "SELECT * FROM $__database.$__table",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -112,22 +112,14 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": [
-      {
-        "hide": 2,
-        "name": "query0",
-        "query": "",
-        "skipUrlSync": false,
-        "type": "constant"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "utc",
   "title": "Metrics Dashboard for Glue Workflows",
   "version": 3,
   "weekStart": ""

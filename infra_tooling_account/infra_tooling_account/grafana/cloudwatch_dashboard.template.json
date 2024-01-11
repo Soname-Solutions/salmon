@@ -150,7 +150,7 @@
           "dimensions": {
             "LogGroupName": "<<LOG_GROUP_NAME>>"
           },
-          "expression": "| stats count(*) as cnt by event_status \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by cnt\r\n",
+          "expression": "| stats count(*) as cnt by event_status \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by event_status\r\n",
           "id": "",
           "label": "",
           "logGroups": [
@@ -597,7 +597,7 @@
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "utc",
   "title": "Cloudwatch Logs with Alert Events",
   "version": 5,
   "weekStart": ""
