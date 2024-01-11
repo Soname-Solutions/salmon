@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from lib.aws.timestream_manager import TimestreamTableWriter
+from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
 
 class BaseMetricsExtractor(ABC):
     """
@@ -9,28 +9,41 @@ class BaseMetricsExtractor(ABC):
 
     Attributes:
         aws_service_client: Boto3 AWS Service client
-        entity_name (str): Name of the entity (e.g. Glue job) we are extracting metrics for        
+        resource_name (str): Name of the resource (e.g. Glue job, Lambda Function etc.) we are extracting metrics for        
         monitored_environment_name (str): Name of the monitored environment
         timestream_db_name (str): Name of the Timestream DB (where metrics are written to)
         timestream_metrics_table_name (str): Name of the Timestream table (where metrics are written to)                
     """ 
 
+    RESOURCE_NAME_COLUMN_NAME = 'resource_name'
+    EXECUTION_MEASURE_NAME = 'execution'
 
     def __init__(
-        self, aws_service_client, entity_name, monitored_environment_name, timestream_db_name, timestream_metrics_table_name
+        self, aws_service_client, resource_name, monitored_environment_name, timestream_db_name, timestream_metrics_table_name
     ):
         self.aws_service_client = aws_service_client
-        self.entity_name = entity_name
+        self.resource_name = resource_name
         self.monitored_environment_name = monitored_environment_name
         self.timestream_db_name = timestream_db_name
         self.timestream_metrics_table_name = timestream_metrics_table_name
 
-    @abstractmethod
     def get_last_update_time(self, timestream_query_client) -> datetime:
         """
         Get time of this entity's data latest update (we append data since that time only)
         """
-        pass
+        queryRunner = TimeStreamQueryRunner(
+            timestream_query_client=timestream_query_client
+        )
+
+        # check if table is empty
+        query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
+        count_rec = int(queryRunner.execute_scalar_query(query=query))
+        if count_rec == 0:
+            return None
+
+        query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE {self.RESOURCE_NAME_COLUMN_NAME} = \'{self.resource_name}\''
+        last_date = queryRunner.execute_scalar_query_date_field(query=query)
+        return last_date
 
     @abstractmethod
     def prepare_metrics_data(self, since_time: datetime) -> (list, dict):

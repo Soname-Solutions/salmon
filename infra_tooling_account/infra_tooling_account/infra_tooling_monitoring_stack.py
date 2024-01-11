@@ -319,6 +319,7 @@ class InfraToolingMonitoringStack(Stack):
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
                 "LAMBDA_EXTRACT_METRICS_NAME": extract_metrics_lambda.function_name,
+                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
             },
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
@@ -335,19 +336,19 @@ class InfraToolingMonitoringStack(Stack):
         Parameters:
             timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
         """
-        metric_table_names = {x: f"{x}-metrics" for x in SettingConfigs.RESOURCE_TYPES}
-        services = metric_table_names.keys()
+        metric_table_names = {x: AWSNaming.TimestreamMetricsTable(None,x) for x in SettingConfigs.RESOURCE_TYPES}
+        resource_types = metric_table_names.keys()
 
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
             magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
             memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
         )
 
-        for service in services:
+        for resource_type in resource_types:
             timestream.CfnTable(
                 self,
-                f"MetricsTable{service}",
+                f"MetricsTable{resource_type}",
                 database_name=timestream_database_name,
                 retention_properties=retention_properties_property,
-                table_name=AWSNaming.TimestreamTable(self, metric_table_names[service]),
+                table_name=metric_table_names[resource_type],
             )

@@ -1,5 +1,6 @@
 from datetime import datetime
 import time
+import dateutil
 
 
 def epoch_milliseconds(epoch_seconds: float = None) -> int:
@@ -54,3 +55,22 @@ def iso_time_to_epoch_milliseconds(iso_date: str) -> int:
         # Convert the datetime object to epoch time in seconds
         epoch_time = dt.timestamp()
         return epoch_milliseconds(epoch_time)
+
+
+def str_utc_datetime_to_datetime(datetime_str: str) -> datetime:
+    """
+    Convert a string reprentation of a datetime in UTC format (like "2024-01-09 11:47:45.436000000")
+    into actual datetime (with UTC timezone)
+
+    Parameters:
+    datetime_str (str): The string to be converted.
+
+    Returns:
+    datetime: The converted datetime object.
+    """
+    result_datetime = datetime.strptime(
+        datetime_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f"
+    )
+    utc_tz = dateutil.tz.gettz("UTC")
+    result_datetime = result_datetime.replace(tzinfo=utc_tz)
+    return result_datetime

@@ -2,8 +2,12 @@ import boto3
 
 from datetime import datetime, timedelta
 import dateutil.tz
-from ..core import time_utils
+from ..core import datetime_utils
 
+from pydantic import BaseModel
+from typing import List, Optional
+
+#################################################
 
 class TimestreamTableWriterException(Exception):
     """Exception raised for errors encountered while interacting with TimeStream DB."""
@@ -16,6 +20,40 @@ class TimestreamQueryException(Exception):
 
     pass
 
+#################################################
+# Query Response Pydantic classes
+
+class ScalarType(BaseModel):
+    ScalarValue: Optional[str] 
+
+class Data(BaseModel):
+    Data: List[ScalarType]
+
+class ColumnType(BaseModel):
+    ScalarType: str
+
+class ColumnInfo(BaseModel):
+    Name: str
+    Type: ColumnType
+
+class QueryStatus(BaseModel):
+    ProgressPercentage: float
+    CumulativeBytesScanned: int
+    CumulativeBytesMetered: int
+
+class ResponseMetadata(BaseModel):
+    RequestId: str
+    HTTPStatusCode: int
+    RetryAttempts: int
+
+class QueryResponse(BaseModel):
+    QueryId: str
+    Rows: List[Data]
+    ColumnInfo: List[ColumnInfo]
+    QueryStatus: QueryStatus
+    ResponseMetadata: ResponseMetadata
+
+#################################################
 
 class TimestreamTableWriter:
     """
@@ -248,3 +286,30 @@ class TimeStreamQueryRunner:
         except Exception as e:
             error_message = f"Error converting result to datetime: {e}"
             raise TimestreamQueryException(error_message)
+
+    def execute_query(self, query):
+        """
+        Executes a query and returns the result.
+
+        Args:
+            query (str): The query to be executed.
+
+        Returns:
+            str: The result of the query.
+        """
+        try:
+            response = self.timestream_query_client.query(QueryString=query)
+            result = QueryResponse(**response)
+
+            column_names = [x.Name for x in result.ColumnInfo]
+
+            result_rows = []
+            for row in result.Rows:
+                values = [x.ScalarValue for x in row.Data]
+                data_row = dict(zip(column_names, values))   
+                result_rows.append(data_row)
+
+            return result_rows
+        except Exception as e:
+            error_message = f"Error running query: {e}"
+            raise (TimestreamQueryException(error_message))
