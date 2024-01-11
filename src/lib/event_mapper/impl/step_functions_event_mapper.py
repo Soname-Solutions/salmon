@@ -1,7 +1,7 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
-from ...core.constants import SettingConfigResourceTypes
 from datetime import datetime
+from ...core.constants import EventSeverity
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
@@ -12,14 +12,18 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         arn = event["detail"]["stateMachineArn"]
         return arn.split("stateMachine:")[1]
 
-    def get_service_name(self):
-        return SettingConfigResourceTypes.STEP_FUNCTIONS
+    def get_resource_state(self, event):
+        return event["detail"]["status"]
 
     def get_event_status(self, event):
         return event["detail"]["status"]
 
     def get_event_severity(self, event):  # todo: implement
-        return "Unknown"
+        return (
+            EventSeverity.ERROR
+            if self.get_resource_state(event) in ("FAILED", "TIMED_OUT")
+            else EventSeverity.INFO
+        )
 
     @staticmethod
     def __timestamp_to_datetime(timestamp: int) -> str:
@@ -36,20 +40,10 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         return None
 
     def get_message_body(self, event):
-        message_body = []
-        table = {}
-        rows = []
-        table["table"] = {}
-        table["table"]["rows"] = rows
-        message_body.append(table)
+        message_body, rows = super().create_message_body_with_common_rows(event)
 
-        style = (
-            "error" if event["detail"]["status"] in ["FAILED", "TIMED_OUT"] else None
-        )
+        style = super().get_row_style(event)
 
-        rows.append(super().create_table_row(["AWS Account", event["account"]]))
-        rows.append(super().create_table_row(["AWS Region", event["region"]]))
-        rows.append(super().create_table_row(["Time", event["time"]]))
         rows.append(
             super().create_table_row(
                 ["State Machine Name", self.get_resource_name(event)]
@@ -59,7 +53,7 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             super().create_table_row(["Execution Name", event["detail"]["name"]])
         )
         rows.append(
-            super().create_table_row(["Status", event["detail"]["status"]], style)
+            super().create_table_row(["Status", self.get_resource_state(event)], style)
         )
         rows.append(
             super().create_table_row(

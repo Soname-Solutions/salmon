@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from ...core.constants import NotificationType
+from ...core.constants import NotificationType, EventSeverity
 from ...settings import Settings
+from ..resource_type_resolver import ResourceTypeResolver
 
 
 class EventParsingException(Exception):
@@ -30,13 +31,8 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_service_name(self) -> str:
-        """Returns name of the AWS service the given event belongs to (Glue/Step Functions/Lambda etc.)"""
-        pass
-
-    @abstractmethod
-    def get_event_status(self, event: dict) -> str:
-        """Returns the status of the occurred event
+    def get_event_severity(self, event: dict) -> str:
+        """Returns the severity of the occurred event
 
         Args:
             event (dict): Event object
@@ -44,8 +40,8 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_event_severity(self, event: dict) -> str:
-        """Returns the severity of the occurred event
+    def get_resource_state(self, event: dict) -> str:
+        """Returns the state of the resource according to the event
 
         Args:
             event (dict): Event object
@@ -131,8 +127,29 @@ class GeneralAwsEventMapper(ABC):
         monitored_env_name = self.settings.get_monitored_environment_name(
             event["account"], event["region"]
         )
-        event_message = event["detail-type"]
-        return f"{monitored_env_name}: {event_message}"
+        resource_name = self.get_resource_name(event)
+        resource_state = self.get_resource_state(event)
+        resource_type = ResourceTypeResolver.resolve(event)
+        return f"{monitored_env_name}: {resource_state} - {resource_type} : {resource_name}"
+
+    def create_message_body_with_common_rows(self, event) -> tuple[list, list]:
+        message_body = []
+        table = {}
+        rows = []
+        table["table"] = {}
+        table["table"]["rows"] = rows
+        message_body.append(table)
+
+        rows.append(self.create_table_row(["AWS Account", event["account"]]))
+        rows.append(self.create_table_row(["AWS Region", event["region"]]))
+        rows.append(self.create_table_row(["Time", event["time"]]))
+
+        return message_body, rows
+
+    def get_row_style(self, event) -> str:
+        return (
+            "error" if self.get_event_severity(event) == EventSeverity.ERROR else None
+        )
 
     def create_table_row(self, values: list, style: str = None) -> dict:
         """Returns prepared table row for given values and style
