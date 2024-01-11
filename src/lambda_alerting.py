@@ -20,7 +20,7 @@ cloudwatch_client = boto3.client("logs")
 def write_event_to_cloudwatch(
     monitored_env_name: str,
     resource_name: str,
-    service_name: str,
+    resource_type: str,
     event_status: str,
     event_severity: str,
     event: dict,
@@ -35,7 +35,7 @@ def write_event_to_cloudwatch(
     Args:
         monitored_env_name (str): The name of the monitored environment.
         resource_name (str): The name of the AWS resource.
-        service_name (str): The name of the AWS service.
+        resource_type (str): The type of the AWS resource.
         event_status (str): The status of the event.
         event_severity (str): Severity of the event.
         event (dict): The event dict to be written to the CloudWatch stream.
@@ -56,7 +56,7 @@ def write_event_to_cloudwatch(
     logged_event["event"] = event
     logged_event["monitored_environment"] = monitored_env_name
     logged_event["resource_name"] = resource_name
-    logged_event["service_name"] = service_name
+    logged_event["service_name"] = resource_type
     logged_event["event_status"] = event_status
     logged_event["event_severity"] = event_severity
 
