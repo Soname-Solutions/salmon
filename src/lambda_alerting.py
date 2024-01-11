@@ -100,12 +100,12 @@ def lambda_handler(event, context):
     send_messages_to_sqs(queue_url, messages)
 
     resource_name = mapper.get_resource_name(event)
-    event_status = mapper.get_event_status(event)
+    event_status = mapper.get_resource_state(event)
     event_severity = mapper.get_event_severity(event)
     write_event_to_cloudwatch(
         monitored_env_name,
         resource_name,
-        service_name,
+        resource_type,
         event_status,
         event_severity,
         event,
