@@ -108,17 +108,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "mappings": [
-            {
-              "options": {
-                "FAILED": {
-                  "color": "red",
-                  "index": 0
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -129,33 +119,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "coalesce(event.detail.status, event.detail.state)"
-            },
-            "properties": [
-              {
-                "id": "color"
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "FAILED": {
-                        "color": "red",
-                        "index": 0
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 4,
@@ -186,7 +150,7 @@
           "dimensions": {
             "LogGroupName": "<<LOG_GROUP_NAME>>"
           },
-          "expression": "| stats count(*) as cnt by coalesce(event.detail.status, event.detail.state) \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by cnt\r\n",
+          "expression": "| stats count(*) as cnt by event_status \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by cnt\r\n",
           "id": "",
           "label": "",
           "logGroups": [
@@ -208,8 +172,7 @@
           "sqlExpression": "| stats count(*) by $service_name",
           "statistic": "Average",
           "statsGroups": [
-            "coalesce(event.detail.status",
-            "event.detail.state)"
+            "event_status"
           ]
         }
       ],
@@ -255,17 +218,7 @@
               "mode": "off"
             }
           },
-          "mappings": [
-            {
-              "options": {
-                "FAILED": {
-                  "color": "red",
-                  "index": 0
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -281,54 +234,7 @@
           },
           "unit": "short"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "coalesce(event.detail.status, event.detail.state)"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "mode": "palette-classic"
-                }
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "options": {
-                      "FAILED": {
-                        "color": "red",
-                        "index": 0
-                      },
-                      "RUNNING": {
-                        "color": "orange",
-                        "index": 1
-                      },
-                      "SUCCEEDED": {
-                        "color": "green",
-                        "index": 2
-                      }
-                    },
-                    "type": "value"
-                  }
-                ]
-              },
-              {
-                "id": "custom.axisColorMode",
-                "value": "series"
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "palette-classic"
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 5,
@@ -343,7 +249,7 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
@@ -358,7 +264,7 @@
           "dimensions": {
             "LogGroupName": "$log_group"
           },
-          "expression": "| stats count(*) by @timestamp, coalesce(event.detail.status, event.detail.state)\r\n| filter service_name IN [$service_name]\r\n| filter coalesce(event.detail.status, event.detail.state) IN [$event_severity]\r\n| filter resource_name like /(?i)$search/",
+          "expression": "| stats count(*) as events_cnt by bin(5m)\r\n| filter service_name IN [$service_name]\r\n| filter event_severity IN [$event_severity]\r\n| filter resource_name like /(?i)$search/",
           "id": "",
           "label": "Log events",
           "logGroups": [
@@ -380,9 +286,7 @@
           "sqlExpression": "",
           "statistic": "Average",
           "statsGroups": [
-            "@timestamp",
-            "coalesce(event.detail.status",
-            "event.detail.state)"
+            "bin(5m)"
           ]
         }
       ],
@@ -428,7 +332,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 144
+                "value": 153
               }
             ]
           },
@@ -447,24 +351,12 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "status_or_state"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 145
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "resource_name"
             },
             "properties": [
               {
                 "id": "custom.width",
-                "value": 283
+                "value": 274
               }
             ]
           },
@@ -488,7 +380,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 148
+                "value": 135
               }
             ]
           },
@@ -497,7 +389,24 @@
               "id": "byName",
               "options": "service_name"
             },
-            "properties": []
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 152
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "event_status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 145
+              }
+            ]
           }
         ]
       },
@@ -531,7 +440,7 @@
         {
           "datasource": "Cloudwatch",
           "dimensions": {},
-          "expression": "fields @timestamp, service_name, resource_name, coalesce(event.detail.status, event.detail.state) as status_or_state,event_severity, @message \n| filter service_name IN [$service_name]\n| filter coalesce(event.detail.status, event.detail.state) IN [$event_severity]\n| filter resource_name like /(?i)$search/\n",
+          "expression": "fields @timestamp, service_name, resource_name, event_status,event_severity, @message \n| filter service_name IN [$service_name]\n| filter event_severity IN [$event_severity]\n| filter resource_name like /(?i)$search/\n",
           "id": "",
           "label": "",
           "logGroups": [
@@ -555,7 +464,7 @@
           "statsGroups": []
         }
       ],
-      "title": "All Events",
+      "title": "Events Messages",
       "type": "table"
     }
   ],
@@ -567,8 +476,8 @@
       {
         "current": {
           "selected": false,
-          "text":"<<LOG_GROUP_NAME>>",
-          "value":"<<LOG_GROUP_NAME>>"
+          "text": "<<LOG_GROUP_NAME>>",
+          "value": "<<LOG_GROUP_NAME>>"
         },
         "description": "Cloudwatch Log groups",
         "hide": 0,
@@ -592,17 +501,13 @@
         "allValue": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
         "current": {
           "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "hide": 0,
         "includeAll": true,
         "label": "Service Name",
-        "multi": true,
+        "multi": false,
         "name": "service_name",
         "options": [
           {
@@ -631,7 +536,7 @@
             "value": "\"glue_workflows\""
           }
         ],
-        "query": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"", 
+        "query": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -640,17 +545,13 @@
         "allValue": "\"Unknown\"",
         "current": {
           "selected": true,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
+          "text": "All",
+          "value": "$__all"
         },
         "hide": 0,
         "includeAll": true,
         "label": "Event Severity",
-        "multi": true,
+        "multi": false,
         "name": "event_severity",
         "options": [
           {
@@ -692,12 +593,12 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Cloudwatch Logs with Alert Events",
-  "version": 7,
+  "version": 5,
   "weekStart": ""
 }
