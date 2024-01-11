@@ -99,7 +99,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT * FROM $__database.$__table",
+          "rawQuery": "SELECT * FROM $__database.$__table where $__timeFilter",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
