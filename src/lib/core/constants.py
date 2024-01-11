@@ -8,6 +8,8 @@ class SettingFileNames:
 class SettingConfigResourceTypes:
     GLUE_JOBS = "glue_jobs"
     GLUE_WORKFLOWS = "glue_workflows"
+    GLUE_CRAWLERS = "glue_crawlers"
+    GLUE_DATA_CATALOGS = "glue_catalogs"
     LAMBDA_FUNCTIONS = "lambda_functions"
     STEP_FUNCTIONS = "step_functions"
 
@@ -16,6 +18,8 @@ class SettingConfigs:
     RESOURCE_TYPES = [
         SettingConfigResourceTypes.GLUE_JOBS,
         SettingConfigResourceTypes.GLUE_WORKFLOWS,
+        SettingConfigResourceTypes.GLUE_CRAWLERS,
+        SettingConfigResourceTypes.GLUE_DATA_CATALOGS,
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS,
         SettingConfigResourceTypes.STEP_FUNCTIONS,
     ]
@@ -23,6 +27,8 @@ class SettingConfigs:
     RESOURCE_TYPES_LINKED_AWS_SERVICES = {
         SettingConfigResourceTypes.GLUE_JOBS: "glue",
         SettingConfigResourceTypes.GLUE_WORKFLOWS: "glue",
+        SettingConfigResourceTypes.GLUE_CRAWLERS: "glue",
+        SettingConfigResourceTypes.GLUE_DATA_CATALOGS: "glue",
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
         SettingConfigResourceTypes.STEP_FUNCTIONS: "stepfunctions",
     }
@@ -36,6 +42,11 @@ class TimestreamRetention:
 class NotificationType:
     ALERT = "alert"
     DIGEST = "digest"
+
+
+class EventSeverity:
+    INFO = "info"
+    ERROR = "error"
 
 
 class CDKDeployExclusions:
