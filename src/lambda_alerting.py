@@ -3,7 +3,7 @@ import json
 import boto3
 import logging
 
-from lib.core import time_utils
+from lib.core import datetime_utils
 from lib.aws.sqs_manager import SQSQueueSender
 from lib.aws.cloudwatch_manager import CloudWatchEventsPublisher
 from lib.event_mapper.aws_event_mapper import AwsEventMapper
@@ -59,7 +59,7 @@ def write_event_to_cloudwatch(
     logged_event["event_status"] = event_status
     logged_event["event_severity"] = event_severity
 
-    logged_event_time = time_utils.iso_time_to_epoch_milliseconds(event["time"])
+    logged_event_time = datetime_utils.iso_time_to_epoch_milliseconds(event["time"])
     result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=4))
 
     logger.info("EventJSON has been written successfully")

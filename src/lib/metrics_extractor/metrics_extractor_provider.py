@@ -22,13 +22,13 @@ class MetricsExtractorProvider:
         MetricsExtractorProvider._metrics_extractors[service_name] = metrics_extractor
 
     @staticmethod
-    def get_metrics_extractor(service_name: str, **kwargs) -> BaseMetricsExtractor:
+    def get_metrics_extractor(resource_type: str, **kwargs) -> BaseMetricsExtractor:
         """Get metrics extractor."""
-        extractor = MetricsExtractorProvider._metrics_extractors.get(service_name)
+        extractor = MetricsExtractorProvider._metrics_extractors.get(resource_type)
 
         if not extractor:
             raise ValueError(
-                f"Metrics extractor for service {service_name} is not registered."
+                f"Metrics extractor for resource type {resource_type} is not registered."
             )
 
         return extractor(**kwargs)
