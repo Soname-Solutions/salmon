@@ -90,7 +90,7 @@ class AWSNaming:
     def EC2(cls, stack_obj: object, meaning: str) -> str:
         prefix = "ec2"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
-    
+
     @classmethod
     def Secret(cls, stack_obj: object, meaning: str) -> str:
         prefix = "secret"

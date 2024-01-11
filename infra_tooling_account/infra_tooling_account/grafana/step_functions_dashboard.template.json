@@ -3,14 +3,11 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": "Amazon-Timestream",
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
+        "name": "Metrics Dashboard",
         "type": "dashboard"
       }
     ]
@@ -23,7 +20,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": "Amazon-Timestream-glue_jobs",
+      "datasource": "Amazon-Timestream",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -79,8 +76,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 12,
+        "w": 24,
         "x": 0,
         "y": 0
       },
@@ -99,15 +96,15 @@
       },
       "targets": [
         {
-          "database": "\"timestream-salmon-metrics-events-storage-devay\"",
-          "datasource": "Amazon-Timestream-glue_jobs",
-          "measure": "job_execution",
-          "rawQuery": "SELECT * FROM $__database.$__table LIMIT 10",
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "execution",
+          "rawQuery": "SELECT * FROM $__database.$__table where $__timeFilter",
           "refId": "A",
-          "table": "\"tstable-glue_jobs-metrics\""
+          "table": "<<DATABASE_TABLE>>"
         }
       ],
-      "title": "Glue Jobs",
+      "title": "Step Functions",
       "type": "timeseries"
     }
   ],
@@ -115,23 +112,15 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": [
-      {
-        "hide": 2,
-        "name": "query0",
-        "query": "",
-        "skipUrlSync": false,
-        "type": "constant"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
-  "title": "New dashboard",
+  "timezone": "utc",
+  "title": "Metrics Dashboard for Step Functions",
   "version": 3,
   "weekStart": ""
 }

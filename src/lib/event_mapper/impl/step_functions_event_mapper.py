@@ -15,6 +15,9 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
     def get_service_name(self):
         return SettingConfigResourceTypes.STEP_FUNCTIONS
 
+    def get_event_status(self, event):
+        return event["detail"]["status"]
+
     def get_event_severity(self, event):  # todo: implement
         return "Unknown"
 

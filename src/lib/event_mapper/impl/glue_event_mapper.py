@@ -13,6 +13,9 @@ class GlueEventMapper(GeneralAwsEventMapper):
     def get_service_name(self):
         return SettingConfigResourceTypes.GLUE_JOBS
 
+    def get_event_status(self, event):
+        return event["detail"]["state"]
+
     def get_event_severity(self, event):  # todo: implement
         return "Unknown"
 

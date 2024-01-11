@@ -61,6 +61,18 @@ class AwsEventMapper:
         target_mapper = self.__get_event_mapper(event)
         return target_mapper.get_service_name()
 
+    def to_event_status(self, event: dict) -> str:
+        """Retrieves the status of the event.
+
+        Args:
+            event (dict): Event to analyze.
+
+        Returns:
+            str: AWS service name.
+        """
+        target_mapper = self.__get_event_mapper(event)
+        return target_mapper.get_event_status(event)
+
     def to_event_severity(self, event: dict) -> str:
         """Determines the severity of the event.
 
