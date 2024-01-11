@@ -5,6 +5,10 @@ from logging import Logger
 
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
+class MetricsExtractorException(Exception):
+    """Exception raised for errors encountered while processing metrics extraction."""
+
+    pass
 
 def retrieve_last_update_time_for_all_resources(
     query_runner: TimeStreamQueryRunner, timestream_db_name: str, logger: Logger
@@ -50,8 +54,9 @@ def retrieve_last_update_time_for_all_resources(
                 logger.info(f"No data in table {timestream_table_name}, skipping..")
                 output_dict[resource_type] = {}
             else:
-                logger.info(e)
-                raise (e)
+                logger.error(e)
+                error_message = f"Error getting last update time : {e}"
+                raise MetricsExtractorException(error_message)
 
     return output_dict
 
