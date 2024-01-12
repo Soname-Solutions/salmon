@@ -120,6 +120,12 @@ class GlueManager:
             state in cls.Workflow_States_Success or state in cls.Workflow_States_Failure
         )
 
+    @classmethod
+    def is_crawler_final_state(cls, state: str) -> bool:
+        return (
+            state in cls.Crawlers_States_Success or state in cls.Crawlers_States_Failure
+        )
+
     def _get_all_job_names(self):
         try:
             response = self.glue_client.list_jobs()

@@ -16,7 +16,7 @@ class GlueCrawlerEventMapper(GeneralAwsEventMapper):
 
     def get_event_result(self, event):
         if self.get_resource_state(event) in GlueManager.Crawlers_States_Failure:
-            return EventResult.ERROR
+            return EventResult.FAILURE
         if self.get_resource_state(event) in GlueManager.Crawlers_States_Success:
             return EventResult.SUCCESS
         return EventResult.INFO

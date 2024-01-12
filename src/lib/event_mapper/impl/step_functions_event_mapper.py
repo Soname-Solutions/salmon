@@ -21,7 +21,7 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
 
     def get_event_result(self, event):
         if self.get_resource_state(event) in StepFunctionsManager.STATES_FAILURE:
-            return EventResult.ERROR
+            return EventResult.FAILURE
         if self.get_resource_state(event) == StepFunctionsManager.STATES_SUCCESS:
             return EventResult.SUCCESS
         return EventResult.INFO
