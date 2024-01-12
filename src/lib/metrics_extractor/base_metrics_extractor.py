@@ -36,9 +36,7 @@ class BaseMetricsExtractor(ABC):
         )
 
         # check if table is empty
-        query = f'SELECT count(*) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}"'
-        count_rec = int(queryRunner.execute_scalar_query(query=query))
-        if count_rec == 0:
+        if queryRunner.is_table_empty(self.timestream_db_name, self.timestream_metrics_table_name):            
             return None
 
         query = f'SELECT max(time) FROM "{self.timestream_db_name}"."{self.timestream_metrics_table_name}" WHERE {self.RESOURCE_NAME_COLUMN_NAME} = \'{self.resource_name}\''

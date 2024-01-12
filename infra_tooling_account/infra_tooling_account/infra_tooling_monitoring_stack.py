@@ -208,6 +208,7 @@ class InfraToolingMonitoringStack(Stack):
                     "timestream:WriteRecords",
                     "timestream:Select",
                     "timestream:DescribeTable",
+                    "timestream:ListMeasures",
                 ],
                 effect=iam.Effect.ALLOW,
                 resources=[f"{timestream_database_arn}/table/*"],
