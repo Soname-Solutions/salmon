@@ -1,6 +1,7 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
 from ...core.constants import EventResult
+from ...aws.glue_manager import GlueManager
 
 
 class GlueCrawlerEventMapper(GeneralAwsEventMapper):
@@ -14,9 +15,9 @@ class GlueCrawlerEventMapper(GeneralAwsEventMapper):
         return event["detail"]["state"]
 
     def get_event_result(self, event):
-        if self.get_resource_state(event) == "Failed":
+        if self.get_resource_state(event) in GlueManager.Crawlers_States_Failure:
             return EventResult.ERROR
-        if self.get_resource_state(event) == "Succeeded":
+        if self.get_resource_state(event) in GlueManager.Crawlers_States_Success:
             return EventResult.SUCCESS
         return EventResult.INFO
 

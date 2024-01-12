@@ -2,6 +2,7 @@ from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
 from datetime import datetime
 from ...core.constants import EventResult
+from ...aws.step_functions_manager import StepFunctionsManager
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
@@ -19,9 +20,9 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         return event["detail"]["status"]
 
     def get_event_result(self, event):
-        if self.get_resource_state(event) in ["FAILED", "TIMED_OUT"]:
+        if self.get_resource_state(event) in StepFunctionsManager.STATES_FAILURE:
             return EventResult.ERROR
-        if self.get_resource_state(event) == "SUCCEEDED":
+        if self.get_resource_state(event) == StepFunctionsManager.STATES_SUCCESS:
             return EventResult.SUCCESS
         return EventResult.INFO
 

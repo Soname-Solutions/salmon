@@ -104,6 +104,9 @@ class GlueManager:
     Workflow_States_Success = ["COMPLETED"]
     Workflow_States_Failure = ["STOPPED", "ERROR"]
 
+    Crawlers_States_Success = ["Succeeded"]
+    Crawlers_States_Failure = ["Failed"]
+
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
 
