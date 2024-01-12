@@ -9,6 +9,7 @@ from lib.aws.cloudwatch_manager import CloudWatchEventsPublisher
 from lib.event_mapper.event_mapper_provider import EventMapperProvider
 from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
+from lib.core.constants import EventResult
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -16,13 +17,16 @@ logger.setLevel(logging.INFO)
 sqs_client = boto3.client("sqs")
 cloudwatch_client = boto3.client("logs")
 
+EVENT_RESULTS_ALERTABLE = [EventResult.FAILURE]
+EVENT_RESULTS_MONITORABLE = [EventResult.SUCCESS, EventResult.FAILURE]
+
 
 def write_event_to_cloudwatch(
     monitored_env_name: str,
     resource_name: str,
     resource_type: str,
     event_status: str,
-    event_severity: str,
+    event_result: str,
     event: dict,
 ):
     """
@@ -37,7 +41,7 @@ def write_event_to_cloudwatch(
         resource_name (str): The name of the AWS resource.
         resource_type (str): The type of the AWS resource.
         event_status (str): The status of the event.
-        event_severity (str): Severity of the event.
+        event_result (str): Result of the event.
         event (dict): The event dict to be written to the CloudWatch stream.
 
     Returns:
@@ -58,7 +62,7 @@ def write_event_to_cloudwatch(
     logged_event["resource_name"] = resource_name
     logged_event["resource_type"] = resource_type
     logged_event["event_status"] = event_status
-    logged_event["event_severity"] = event_severity
+    logged_event["event_result"] = event_result
 
     logged_event_time = datetime_utils.iso_time_to_epoch_milliseconds(event["time"])
     result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=4))
@@ -92,24 +96,34 @@ def lambda_handler(event, context):
 
     resource_type = ResourceTypeResolver.resolve(event)
     mapper = EventMapperProvider.get_event_mapper(resource_type, settings)
-    messages = mapper.to_notification_messages(event)
 
-    logger.info(f"Notification messages: {messages}")
-
-    queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
-    send_messages_to_sqs(queue_url, messages)
-
+    event_result = mapper.get_event_result(event)
     resource_name = mapper.get_resource_name(event)
     event_status = mapper.get_resource_state(event)
-    event_severity = mapper.get_event_severity(event)
-    write_event_to_cloudwatch(
-        monitored_env_name,
-        resource_name,
-        resource_type,
-        event_status,
-        event_severity,
-        event,
-    )
+
+    messages = []
+
+    if event_result in EVENT_RESULTS_ALERTABLE:
+        messages = mapper.to_notification_messages(event)
+
+        logger.info(f"Notification messages: {messages}")
+
+        queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
+        send_messages_to_sqs(queue_url, messages)
+    else:
+        logger.info(f"Event result is not alertable: {event_result}")
+
+    if event_result in EVENT_RESULTS_MONITORABLE:
+        write_event_to_cloudwatch(
+            monitored_env_name,
+            resource_name,
+            resource_type,
+            event_status,
+            event_result,
+            event,
+        )
+    else:
+        logger.info(f"Event result is not monitorable: {event_result}")
 
     return {"messages": messages}
 

@@ -44,9 +44,10 @@ class NotificationType:
     DIGEST = "digest"
 
 
-class EventSeverity:
-    INFO = "info"
-    ERROR = "error"
+class EventResult:
+    INFO = "INFO"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
 
 
 class CDKDeployExclusions:

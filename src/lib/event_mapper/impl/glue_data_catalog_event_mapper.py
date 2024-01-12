@@ -1,6 +1,6 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
-from ...core.constants import EventSeverity
+from ...core.constants import EventResult
 
 
 class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
@@ -13,8 +13,8 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
     def get_resource_state(self, event):
         return event["detail"]["state"]
 
-    def get_event_severity(self, event):
-        return EventSeverity.INFO
+    def get_event_result(self, event):
+        return EventResult.INFO
 
     def get_message_body(self, event):
         message_body, rows = super().create_message_body_with_common_rows(event)

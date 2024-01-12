@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ...core.constants import NotificationType, EventSeverity
+from ...core.constants import NotificationType, EventResult
 from ...settings import Settings
 from ..resource_type_resolver import ResourceTypeResolver
 
@@ -31,8 +31,8 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_event_severity(self, event: dict) -> str:
-        """Returns the severity of the occurred event
+    def get_event_result(self, event: dict) -> str:
+        """Returns the result of the occurred event
 
         Args:
             event (dict): Event object
@@ -143,13 +143,12 @@ class GeneralAwsEventMapper(ABC):
         rows.append(self.create_table_row(["AWS Account", event["account"]]))
         rows.append(self.create_table_row(["AWS Region", event["region"]]))
         rows.append(self.create_table_row(["Time", event["time"]]))
+        rows.append(self.create_table_row(["Event Type", event["detail-type"]]))
 
         return message_body, rows
 
     def get_row_style(self, event) -> str:
-        return (
-            "error" if self.get_event_severity(event) == EventSeverity.ERROR else None
-        )
+        return "error" if self.get_event_severity(event) == EventResult.ERROR else None
 
     def create_table_row(self, values: list, style: str = None) -> dict:
         """Returns prepared table row for given values and style

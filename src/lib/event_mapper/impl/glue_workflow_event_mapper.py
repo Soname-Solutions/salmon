@@ -13,7 +13,7 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
     def get_resource_state(self, event):
         return event["detail"]["state"]
 
-    def get_event_severity(self, event):
+    def get_event_result(self, event):
         return "Unknown"
 
     def get_message_body(self, event):

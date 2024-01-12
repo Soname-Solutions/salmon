@@ -1,6 +1,6 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
-from ...core.constants import EventSeverity
+from ...core.constants import EventResult
 
 
 class GlueCrawlerEventMapper(GeneralAwsEventMapper):
@@ -13,12 +13,12 @@ class GlueCrawlerEventMapper(GeneralAwsEventMapper):
     def get_resource_state(self, event):
         return event["detail"]["state"]
 
-    def get_event_severity(self, event):
-        return (
-            EventSeverity.ERROR
-            if self.get_resource_state(event) == "Failed"
-            else EventSeverity.INFO
-        )
+    def get_event_result(self, event):
+        if self.get_resource_state(event) == "Failed":
+            return EventResult.ERROR
+        if self.get_resource_state(event) == "Succeeded":
+            return EventResult.SUCCESS
+        return EventResult.INFO
 
     def get_message_body(self, event):
         message_body, rows = super().create_message_body_with_common_rows(event)

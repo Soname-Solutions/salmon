@@ -1,7 +1,7 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
 from ...settings import Settings
 from datetime import datetime
-from ...core.constants import EventSeverity
+from ...core.constants import EventResult
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
@@ -18,12 +18,12 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
     def get_event_status(self, event):
         return event["detail"]["status"]
 
-    def get_event_severity(self, event):  # todo: implement
-        return (
-            EventSeverity.ERROR
-            if self.get_resource_state(event) in ("FAILED", "TIMED_OUT")
-            else EventSeverity.INFO
-        )
+    def get_event_result(self, event):
+        if self.get_resource_state(event) in ["FAILED", "TIMED_OUT"]:
+            return EventResult.ERROR
+        if self.get_resource_state(event) == "SUCCEEDED":
+            return EventResult.SUCCESS
+        return EventResult.INFO
 
     @staticmethod
     def __timestamp_to_datetime(timestamp: int) -> str:
