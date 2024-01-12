@@ -35,28 +35,54 @@ def retrieve_last_update_time_for_all_resources(
         ]
         }
     """
-    output_dict = {}
-    for resource_type in SettingConfigs.RESOURCE_TYPES:
-        timestream_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
 
-        try:
+    table_parts = []
+    try:
+        for resource_type in SettingConfigs.RESOURCE_TYPES:
+            timestream_table_name = AWSNaming.TimestreamMetricsTable(
+                None, resource_type
+            )
+
             if not (
                 query_runner.is_table_empty(timestream_db_name, timestream_table_name)
             ):
-                query = f'SELECT resource_name, max(time) as last_update_time FROM "{timestream_db_name}"."{timestream_table_name}" GROUP BY resource_name'
-
-                result = query_runner.execute_query(query)
-                output_dict[resource_type] = result
+                table_parts.append(
+                    f"""SELECT \'{resource_type}\' as resource_type, resource_name, max(time) as last_update_time 
+                                         FROM "{timestream_db_name}"."{timestream_table_name}" 
+                                        GROUP BY resource_name
+                                    """
+                )
             else:
                 logger.info(f"No data in table {timestream_table_name}, skipping..")
-                output_dict[resource_type] = {}
 
-        except Exception as e:
-            logger.error(e)
-            error_message = f"Error getting last update time : {e}"
-            raise MetricsExtractorException(error_message)
+        query = f" UNION ALL ".join(table_parts)
+        print(query)
+        result = query_runner.execute_query(query)
 
-    return output_dict
+        # this parts transforms plain resultset, grouping it by resource_type
+        transformed_data = {}
+
+        # Iterating through each item in the input JSON
+        for item in result:
+            resource_type = item["resource_type"]
+
+            # Check if the resource_type already exists in the transformed_data
+            if resource_type not in transformed_data:
+                transformed_data[resource_type] = []
+
+            # Add the relevant fields to the corresponding resource_type
+            transformed_data[resource_type].append(
+                {
+                    "resource_name": item["resource_name"],
+                    "last_update_time": item["last_update_time"],
+                }
+            )
+
+        return transformed_data
+    except Exception as e:
+        logger.error(e)
+        error_message = f"Error getting last update time : {e}"
+        raise MetricsExtractorException(error_message)
 
 
 def get_last_update_time(
