@@ -148,7 +148,7 @@ class GeneralAwsEventMapper(ABC):
         return message_body, rows
 
     def get_row_style(self, event) -> str:
-        return "error" if self.get_event_severity(event) == EventResult.ERROR else None
+        return "error" if self.get_event_result(event) == EventResult.FAILURE else None
 
     def create_table_row(self, values: list, style: str = None) -> dict:
         """Returns prepared table row for given values and style
