@@ -56,7 +56,7 @@ def write_event_to_cloudwatch(
     logged_event["event"] = event
     logged_event["monitored_environment"] = monitored_env_name
     logged_event["resource_name"] = resource_name
-    logged_event["service_name"] = resource_type
+    logged_event["resource_type"] = resource_type
     logged_event["event_status"] = event_status
     logged_event["event_severity"] = event_severity
 
