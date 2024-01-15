@@ -56,7 +56,6 @@ def retrieve_last_update_time_for_all_resources(
                 logger.info(f"No data in table {timestream_table_name}, skipping..")
 
         query = f" UNION ALL ".join(table_parts)
-        print(query)
         result = query_runner.execute_query(query)
 
         # this parts transforms plain resultset, grouping it by resource_type

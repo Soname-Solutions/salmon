@@ -17,7 +17,7 @@ class JobRun(BaseModel):
     JobName: str
     StartedOn: datetime
     LastModifiedOn: datetime
-    CompletedOn: datetime
+    CompletedOn: Optional[datetime]
     JobRunState: str
     ErrorMessage: Optional[str] = None
     PredecessorRuns: list[str] = []
