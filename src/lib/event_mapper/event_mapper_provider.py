@@ -6,7 +6,6 @@ from .impl import (
     GlueDataCatalogEventMapper,
     StepFunctionsEventMapper,
 )
-from ..settings import Settings
 from ..core.constants import SettingConfigResourceTypes as types
 
 
@@ -21,9 +20,7 @@ class EventMapperProvider:
         EventMapperProvider._event_mappers[resource_type] = event_mapper
 
     @staticmethod
-    def get_event_mapper(
-        resource_type: str, settings: Settings
-    ) -> GeneralAwsEventMapper:
+    def get_event_mapper(resource_type: str) -> GeneralAwsEventMapper:
         """Get event mapper."""
         mapper = EventMapperProvider._event_mappers.get(resource_type)
 
@@ -32,7 +29,7 @@ class EventMapperProvider:
                 f"Event Mapper for resource type {resource_type} is not registered."
             )
 
-        return mapper(settings)
+        return mapper()
 
 
 EventMapperProvider.register_event_mapper(types.GLUE_JOBS, GlueJobEventMapper)

@@ -4,9 +4,6 @@ from ...core.constants import EventResult
 
 
 class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
-    def __init__(self, settings: Settings):
-        super().__init__(settings)
-
     def get_resource_name(self, event):
         return event["detail"]["databaseName"]
 

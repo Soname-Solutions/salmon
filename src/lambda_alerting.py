@@ -1,74 +1,21 @@
 import os
-import json
 import boto3
 import logging
 
-from lib.core import datetime_utils
 from lib.aws.sqs_manager import SQSQueueSender
-from lib.aws.cloudwatch_manager import CloudWatchEventsPublisher
 from lib.event_mapper.event_mapper_provider import EventMapperProvider
 from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
 from lib.core.constants import EventResult
+from lib.alerting_service import DeliveryOptionsResolver, CloudWatchAlertWriter
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 sqs_client = boto3.client("sqs")
-cloudwatch_client = boto3.client("logs")
 
 EVENT_RESULTS_ALERTABLE = [EventResult.FAILURE]
 EVENT_RESULTS_MONITORABLE = [EventResult.SUCCESS, EventResult.FAILURE]
-
-
-def write_event_to_cloudwatch(
-    monitored_env_name: str,
-    resource_name: str,
-    resource_type: str,
-    event_status: str,
-    event_result: str,
-    event: dict,
-):
-    """
-    Writes a given list of records to an Amazon CloudWatch logs.
-
-    Retrieves the log group and log stream names from environment variables and uses
-    an instance of CloudWatchEventPublisher to write the provided records to the
-    specified CloudWatch log stream.
-
-    Args:
-        monitored_env_name (str): The name of the monitored environment.
-        resource_name (str): The name of the AWS resource.
-        resource_type (str): The type of the AWS resource.
-        event_status (str): The status of the event.
-        event_result (str): Result of the event.
-        event (dict): The event dict to be written to the CloudWatch stream.
-
-    Returns:
-        None: This function does not return anything but logs the outcome.
-    """
-    log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
-    log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
-
-    publisher = CloudWatchEventsPublisher(
-        log_group_name=log_group_name,
-        log_stream_name=log_stream_name,
-        cloudwatch_client=cloudwatch_client,
-    )
-
-    logged_event = {}
-    logged_event["event"] = event
-    logged_event["monitored_environment"] = monitored_env_name
-    logged_event["resource_name"] = resource_name
-    logged_event["resource_type"] = resource_type
-    logged_event["event_status"] = event_status
-    logged_event["event_result"] = event_result
-
-    logged_event_time = datetime_utils.iso_time_to_epoch_milliseconds(event["time"])
-    result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=4))
-
-    logger.info("EventJSON has been written successfully")
-    logger.info(result)
 
 
 def send_messages_to_sqs(queue_url: str, messages: list[dict]):
@@ -84,6 +31,21 @@ def send_messages_to_sqs(queue_url: str, messages: list[dict]):
     logger.info(f"Results of sending messages to SQS: {results}")
 
 
+def map_to_notification_messages(message: dict, delivery_options: list) -> list:
+    notification_messages = []
+
+    for delivery_option in delivery_options:
+        notification_message = {
+            "delivery_options": delivery_option,
+            "message": message,
+        }
+        notification_messages.append(notification_message)
+
+    logger.info(f"Notification messages: {notification_messages}")
+
+    return notification_messages
+
+
 def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
@@ -95,26 +57,35 @@ def lambda_handler(event, context):
     )
 
     resource_type = ResourceTypeResolver.resolve(event)
-    mapper = EventMapperProvider.get_event_mapper(resource_type, settings)
+    mapper = EventMapperProvider.get_event_mapper(resource_type)
 
     event_result = mapper.get_event_result(event)
     resource_name = mapper.get_resource_name(event)
     event_status = mapper.get_resource_state(event)
 
-    messages = []
+    notification_messages = []
 
     if event_result in EVENT_RESULTS_ALERTABLE:
-        messages = mapper.to_notification_messages(event)
+        message = mapper.to_message(monitored_env_name, event)
+        delivery_options = DeliveryOptionsResolver.get_delivery_options(
+            settings, resource_name
+        )
 
-        logger.info(f"Notification messages: {messages}")
+        notification_messages = map_to_notification_messages(message, delivery_options)
+
+        logger.info(f"Notification messages: {notification_messages}")
 
         queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
-        send_messages_to_sqs(queue_url, messages)
+        send_messages_to_sqs(queue_url, notification_messages)
     else:
         logger.info(f"Event result is not alertable: {event_result}")
 
     if event_result in EVENT_RESULTS_MONITORABLE:
-        write_event_to_cloudwatch(
+        log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
+        log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
+        CloudWatchAlertWriter.write_event_to_cloudwatch(
+            log_group_name,
+            log_stream_name,
             monitored_env_name,
             resource_name,
             resource_type,
@@ -125,7 +96,7 @@ def lambda_handler(event, context):
     else:
         logger.info(f"Event result is not monitorable: {event_result}")
 
-    return {"messages": messages}
+    return {"messages": notification_messages}
 
 
 if __name__ == "__main__":

@@ -5,9 +5,6 @@ from ...aws.glue_manager import GlueManager
 
 
 class GlueJobEventMapper(GeneralAwsEventMapper):
-    def __init__(self, settings: Settings):
-        super().__init__(settings)
-
     def get_resource_name(self, event):
         return event["detail"]["jobName"]
 

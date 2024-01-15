@@ -6,9 +6,6 @@ from ...aws.step_functions_manager import StepFunctionsManager
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
-    def __init__(self, settings: Settings):
-        super().__init__(settings)
-
     def get_resource_name(self, event):
         arn = event["detail"]["stateMachineArn"]
         return arn.split("stateMachine:")[1]
