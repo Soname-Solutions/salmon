@@ -102,13 +102,15 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     # os vars passed when lambda is created
     os.environ[
-        "ALERT_EVENTS_DB_NAME"
-    ] = "timestream-salmon-metrics-events-storage-devvd"
-    os.environ[
         "NOTIFICATION_QUEUE_URL"
     ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devvd"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devvd/settings/"
-    os.environ["ALERT_EVENTS_TABLE_NAME"] = "alert-events"
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
+    ] = "log-group-salmon-alert-events-devvd"
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
+    ] = "log-stream-salmon-alert-events-devvd"
     event = {
         "version": "0",
         "id": "cc90c8c7-57a6-f950-2248-c4c8db98a5ef",
