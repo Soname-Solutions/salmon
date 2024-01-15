@@ -1,69 +1,21 @@
 import os
-import json
 import boto3
 import logging
 
-from lib.core import datetime_utils
 from lib.aws.sqs_manager import SQSQueueSender
-from lib.aws.cloudwatch_manager import CloudWatchEventsPublisher
-from lib.event_mapper.aws_event_mapper import AwsEventMapper
+from lib.event_mapper.event_mapper_provider import EventMapperProvider
+from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
+from lib.core.constants import EventResult
+from lib.alerting_service import DeliveryOptionsResolver, CloudWatchAlertWriter
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 sqs_client = boto3.client("sqs")
-cloudwatch_client = boto3.client("logs")
 
-
-def write_event_to_cloudwatch(
-    monitored_env_name: str,
-    resource_name: str,
-    service_name: str,
-    event_status: str,
-    event_severity: str,
-    event: dict,
-):
-    """
-    Writes a given list of records to an Amazon CloudWatch logs.
-
-    Retrieves the log group and log stream names from environment variables and uses
-    an instance of CloudWatchEventPublisher to write the provided records to the
-    specified CloudWatch log stream.
-
-    Args:
-        monitored_env_name (str): The name of the monitored environment.
-        resource_name (str): The name of the AWS resource.
-        service_name (str): The name of the AWS service.
-        event_status (str): The status of the event.
-        event_severity (str): Severity of the event.
-        event (dict): The event dict to be written to the CloudWatch stream.
-
-    Returns:
-        None: This function does not return anything but logs the outcome.
-    """
-    log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
-    log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
-
-    publisher = CloudWatchEventsPublisher(
-        log_group_name=log_group_name,
-        log_stream_name=log_stream_name,
-        cloudwatch_client=cloudwatch_client,
-    )
-
-    logged_event = {}
-    logged_event["event"] = event
-    logged_event["monitored_environment"] = monitored_env_name
-    logged_event["resource_name"] = resource_name
-    logged_event["service_name"] = service_name
-    logged_event["event_status"] = event_status
-    logged_event["event_severity"] = event_severity
-
-    logged_event_time = datetime_utils.iso_time_to_epoch_milliseconds(event["time"])
-    result = publisher.put_event(logged_event_time, json.dumps(logged_event, indent=4))
-
-    logger.info("EventJSON has been written successfully")
-    logger.info(result)
+EVENT_RESULTS_ALERTABLE = [EventResult.FAILURE]
+EVENT_RESULTS_MONITORABLE = [EventResult.SUCCESS, EventResult.FAILURE]
 
 
 def send_messages_to_sqs(queue_url: str, messages: list[dict]):
@@ -79,6 +31,21 @@ def send_messages_to_sqs(queue_url: str, messages: list[dict]):
     logger.info(f"Results of sending messages to SQS: {results}")
 
 
+def map_to_notification_messages(message: dict, delivery_options: list) -> list:
+    notification_messages = []
+
+    for delivery_option in delivery_options:
+        notification_message = {
+            "delivery_options": delivery_option,
+            "message": message,
+        }
+        notification_messages.append(notification_message)
+
+    logger.info(f"Notification messages: {notification_messages}")
+
+    return notification_messages
+
+
 def lambda_handler(event, context):
     logger.info(f"event = {event}")
 
@@ -89,40 +56,61 @@ def lambda_handler(event, context):
         event["account"], event["region"]
     )
 
-    mapper = AwsEventMapper(settings)
-    messages = mapper.to_notification_messages(event)
+    resource_type = ResourceTypeResolver.resolve(event)
+    mapper = EventMapperProvider.get_event_mapper(resource_type)
 
-    logger.info(f"Notification messages: {messages}")
+    event_result = mapper.get_event_result(event)
+    resource_name = mapper.get_resource_name(event)
+    event_status = mapper.get_resource_state(event)
 
-    queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
-    send_messages_to_sqs(queue_url, messages)
+    notification_messages = []
 
-    resource_name = mapper.to_resource_name(event)
-    service_name = mapper.to_service_name(event)
-    event_status = mapper.to_event_status(event)
-    event_severity = mapper.to_event_severity(event)
-    write_event_to_cloudwatch(
-        monitored_env_name,
-        resource_name,
-        service_name,
-        event_status,
-        event_severity,
-        event,
-    )
+    if event_result in EVENT_RESULTS_ALERTABLE:
+        message = mapper.to_message(monitored_env_name, event)
+        delivery_options = DeliveryOptionsResolver.get_delivery_options(
+            settings, resource_name
+        )
 
-    return {"messages": messages}
+        notification_messages = map_to_notification_messages(message, delivery_options)
+
+        logger.info(f"Notification messages: {notification_messages}")
+
+        queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
+        send_messages_to_sqs(queue_url, notification_messages)
+    else:
+        logger.info(f"Event result is not alertable: {event_result}")
+
+    if event_result in EVENT_RESULTS_MONITORABLE:
+        log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
+        log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
+        CloudWatchAlertWriter.write_event_to_cloudwatch(
+            log_group_name,
+            log_stream_name,
+            monitored_env_name,
+            resource_name,
+            resource_type,
+            event_status,
+            event_result,
+            event,
+        )
+    else:
+        logger.info(f"Event result is not monitorable: {event_result}")
+
+    return {"messages": notification_messages}
 
 
 if __name__ == "__main__":
     # os vars passed when lambda is created
     os.environ[
-        "ALERT_EVENTS_DB_NAME"
-    ] = "timestream-salmon-metrics-events-storage-devvd"
-    os.environ[
         "NOTIFICATION_QUEUE_URL"
     ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devvd"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devvd/settings/"
-    os.environ["ALERT_EVENTS_TABLE_NAME"] = "alert-events"
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
+    ] = "log-group-salmon-alert-events-devvd"
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
+    ] = "log-stream-salmon-alert-events-devvd"
     event = {
         "version": "0",
         "id": "cc90c8c7-57a6-f950-2248-c4c8db98a5ef",

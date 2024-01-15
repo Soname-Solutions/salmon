@@ -19,6 +19,7 @@ import os
 
 from lib.core.constants import CDKDeployExclusions, TimestreamRetention
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.aws_common_resources import AWSCommonResources
 from lib.settings.settings import Settings
 
 
@@ -244,6 +245,15 @@ class InfraToolingCommonStack(Stack):
             )
         )
 
+        current_region = Stack.of(self).region
+        powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            id="lambda-powertools",
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(
+                current_region
+            ),
+        )
+
         notification_lambda_path = os.path.join("../src/")
         notification_lambda = lambda_.Function(
             self,
@@ -258,6 +268,7 @@ class InfraToolingCommonStack(Stack):
             environment={
                 "INTERNAL_ERROR_TOPIC_ARN": internal_error_topic.topic_arn,
             },
+            layers=[powertools_layer],
             timeout=Duration.seconds(60),
             runtime=lambda_.Runtime.PYTHON_3_11,
             role=notification_lambda_role,

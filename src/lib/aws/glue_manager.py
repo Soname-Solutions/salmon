@@ -104,6 +104,9 @@ class GlueManager:
     Workflow_States_Success = ["COMPLETED"]
     Workflow_States_Failure = ["STOPPED", "ERROR"]
 
+    Crawlers_States_Success = ["Succeeded"]
+    Crawlers_States_Failure = ["Failed"]
+
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
 
@@ -115,6 +118,12 @@ class GlueManager:
     def is_workflow_final_state(cls, state: str) -> bool:
         return (
             state in cls.Workflow_States_Success or state in cls.Workflow_States_Failure
+        )
+
+    @classmethod
+    def is_crawler_final_state(cls, state: str) -> bool:
+        return (
+            state in cls.Crawlers_States_Success or state in cls.Crawlers_States_Failure
         )
 
     def _get_all_job_names(self):
