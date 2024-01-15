@@ -55,6 +55,9 @@ def retrieve_last_update_time_for_all_resources(
             else:
                 logger.info(f"No data in table {timestream_table_name}, skipping..")
 
+        if not table_parts: # All metric tables are empty
+            return {}
+
         query = f" UNION ALL ".join(table_parts)
         result = query_runner.execute_query(query)
 
