@@ -11,6 +11,7 @@ def lambda_handler(event, context):
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
 
+    # settings = Settings.from_file_path(settings_s3_path, iam_role_name)
     settings = Settings.from_s3_path(settings_s3_path, iam_role_name)
 
     job_name = event["detail"]["jobName"]
@@ -36,10 +37,16 @@ def lambda_handler(event, context):
     print(json.dumps(settings.processed_settings, indent=4))
 
     # Check processed monitoring groups (should be used only when needed)
-    print(json.dumps(settings.monitoring_groups, indent=4))
+    print(json.dumps(settings.processed_monitoring_groups, indent=4))
 
 
 if __name__ == "__main__":
+    os.environ[
+        "IAMROLE_MONITORED_ACC_EXTRACT_METRICS"
+    ] = "role-salmon-monitored-acc-extract-metrics-devnp"
+    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devnp/settings/"
+    # os.environ["SETTINGS_S3_PATH"] = "../config/settings/"
+
     test_event = """
         {
             "version": "0",
