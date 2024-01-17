@@ -43,8 +43,9 @@ def replace_values_in_json(json_data: json, replacements: dict) -> dict:
         elif isinstance(obj, list):
             for i, item in enumerate(obj):
                 obj[i] = replace_recursive(item)
-        elif isinstance(obj, str) and obj in replacements:
-            obj = replacements[obj]
+        elif isinstance(obj, str):
+            for key, value in replacements.items():
+                obj = obj.replace(key, value)
         return obj
 
     return replace_recursive(json_data)

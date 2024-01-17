@@ -142,16 +142,38 @@ class GlueManager:
         except Exception as e:
             raise GlueManagerException(f"Error getting list of glue workflows : {e}")
 
+    def _get_all_crawler_names(self):
+        try:
+            response = self.glue_client.list_crawlers()
+            return response.get("CrawlerNames")
+
+        except Exception as e:
+            raise GlueManagerException(f"Error getting list of glue crawlers : {e}")
+
+    def _get_all_data_catalog_names(self):
+        try:
+            response = self.glue_client.get_databases()
+            return [res["Name"] for res in response.get("DatabaseList")]
+
+        except Exception as e:
+            raise GlueManagerException(
+                f"Error getting list of glue data catalogs : {e}"
+            )
+
     def get_all_names(self, **kwargs):
         resource_type = kwargs.pop("resource_type", None)
         if (
-            # default behavior to return jobs list
+            # default behavior is to return jobs list
             resource_type is None
             or resource_type == SettingConfigResourceTypes.GLUE_JOBS
         ):
             return self._get_all_job_names()
         elif resource_type == SettingConfigResourceTypes.GLUE_WORKFLOWS:
             return self._get_all_workflow_names()
+        elif resource_type == SettingConfigResourceTypes.GLUE_CRAWLERS:
+            return self._get_all_crawler_names()
+        elif resource_type == SettingConfigResourceTypes.GLUE_DATA_CATALOGS:
+            return self._get_all_data_catalog_names()
         else:
             raise GlueManagerException(f"Unknown glue resource type {resource_type}")
 

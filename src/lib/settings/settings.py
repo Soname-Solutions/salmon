@@ -26,6 +26,8 @@ from lib.core.constants import (
 RESOURCE_TYPES_LINKED_AWS_MANAGERS = {
     SettingConfigResourceTypes.GLUE_JOBS: GlueManager,
     SettingConfigResourceTypes.GLUE_WORKFLOWS: GlueManager,
+    SettingConfigResourceTypes.GLUE_CRAWLERS: GlueManager,
+    SettingConfigResourceTypes.GLUE_DATA_CATALOGS: GlueManager,
     SettingConfigResourceTypes.LAMBDA_FUNCTIONS: LambdaManager,
     SettingConfigResourceTypes.STEP_FUNCTIONS: StepFunctionsManager,
 }
@@ -110,10 +112,9 @@ class Settings:
     @cached_property
     def processed_settings(self):
         # Replace placeholders
-        for key, value in self._replacements.items():
-            placeholder = f"<<{key}>>"
-            self._processed_settings = self._nested_replace_placeholder(
-                self._processed_settings, placeholder, value
+        if self._replacements:
+            self._processed_settings = ju.replace_values_in_json(
+                self._processed_settings, self._replacements
             )
         # Add default metrics_extractor_role_arn
         for m_env in self._processed_settings[SettingFileNames.GENERAL].get(
@@ -168,25 +169,6 @@ class Settings:
         return self.processed_settings[SettingFileNames.RECIPIENTS]
 
     # Processing methods
-    def _nested_replace_placeholder(self, config, placeholder, replacement):
-        """Recursive function to replace placeholder with its value inside any nested structure"""
-        if type(config) == list:
-            return [
-                self._nested_replace_placeholder(item, placeholder, replacement)
-                for item in config
-            ]
-
-        if type(config) == dict:
-            return {
-                key: self._nested_replace_placeholder(value, placeholder, replacement)
-                for key, value in config.items()
-            }
-
-        if type(config) == str:
-            return config.replace(placeholder, replacement)
-        else:
-            return config
-
     def _get_default_metrics_extractor_role_arn(self, account_id: str) -> str:
         return f"arn:aws:iam::{account_id}:role/role-salmon-cross-account-extract-metrics-dev"
 
@@ -258,9 +240,10 @@ class Settings:
         return resource_names
 
     def _replace_wildcards(
-        self, monitoring_group: list, settings_key: str, replacements: dict
+        self, monitoring_group: dict, settings_key: str, replacements: dict
     ):
         """Replace wildcards with real resource names (which exist in monitored account)"""
+        upd_mon_group = []
         for res in monitoring_group.get(settings_key, []):
             res_name = res["name"]
             res_monitored_env_name = res["monitored_environment_name"]
@@ -270,12 +253,13 @@ class Settings:
                     if fnmatch(name, res_name):
                         new_entry = deepcopy(res)
                         new_entry["name"] = name
-                        monitoring_group[settings_key].append(new_entry)
-                # Remove the wildcard entry
-                monitoring_group[settings_key].remove(res)
-            elif res_name not in replacements[res_monitored_env_name]:
-                # Remove resource if it does not exist in the account
-                monitoring_group[settings_key].remove(res)
+                        upd_mon_group.append(new_entry)
+            elif res_name in replacements[res_monitored_env_name]:
+                new_entry = deepcopy(res)
+                upd_mon_group.append(new_entry)
+        if upd_mon_group:
+            monitoring_group.pop(settings_key, None)
+            monitoring_group[settings_key] = upd_mon_group
 
     # Get raw settings by file name
     def get_raw_settings(self, file_name: str) -> dict:

@@ -122,6 +122,8 @@ class InfraMonitoredStack(Stack):
             actions=[
                 "glue:ListJobs",
                 "glue:ListWorkflows",
+                "glue:ListCrawlers",
+                "glue:GetDatabases",
                 "glue:GetJob",
                 "glue:GetJobs",
                 "glue:GetJobRun",
