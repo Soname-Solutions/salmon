@@ -14,15 +14,25 @@ This project can fit your needs if:
 - you have multiple pipelines managed by multiple teams and you'd like to have a setup which sends notification to a specific teams relevant to their pipelines.
 - your pipeline resources might be deployed across multiple AWS accounts and regions.
 
-## High-level solution architecture
+## How SALMON works?
 
-todo:
- High-level component diagram (explain what's tooling and monitored account and how they interact: alerts/metrics extract)
+There is a centralized ("tooling") environment where SALMON collects, stores and processes alerts and execution statistics of your data pipelines (even if they are scattered across multiple AWS accounts and regions).
 
-todo: full architecture -> here
-* [Solution arhictecture](docs/architecture.md)
+For each AWS account and region where your pipelines are deployed, SALMON requires small portion of resources (EventBridge rule to send alerts to centralized environment and minimal permissions IAM Role, so SALMON can collect pipeline metrics).
+
+![High-Level Diagram](docs/images/high-level-diagram.svg "High-Level Diagram")
+
+For more details please refer to [Solution arhictecture description](docs/architecture.md)
 
 ## Monitored services in scope
+
+| AWS Service | Alerts | Metrics |
+|:---|:---:|:---:|
+| AWS Glue Jobs |       - [x]           |        Metrics         |
+| AWS Glue Workflows |       todo:           |        Metrics         |
+| AWS Glue Crawlers |       Alerts           |        Metrics         |
+| AWS Lambda Functions |       Alerts           |        Metrics         |
+| AWS Lambda Functions |       Alerts           |        Metrics         |
 
 todo: add table ( service \\  alerts / metrics collected  )
 
