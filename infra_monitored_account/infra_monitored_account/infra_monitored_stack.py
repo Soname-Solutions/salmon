@@ -161,6 +161,7 @@ class InfraMonitoredStack(Stack):
             actions=[
                 "states:ListStateMachines",
                 "states:ListExecutions",
+                "states:DescribeExecution",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,

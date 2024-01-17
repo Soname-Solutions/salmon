@@ -1,10 +1,11 @@
 import boto3
+import json
 from datetime import datetime
 
 from pydantic import BaseModel
 from typing import Optional
 
-
+################################################################
 class ExecutionData(BaseModel):
     executionArn: str
     stateMachineArn: str
@@ -29,7 +30,20 @@ class ExecutionData(BaseModel):
 class StepFunctionExecutionsData(BaseModel):
     executions: list[ExecutionData]
     nextToken: Optional[str]
+################################################################
+    
+class ExecutionDetails(BaseModel):
+    cause: Optional[str]
+    error: Optional[str]
+    executionArn: str
+    input: str
+    name: str
+    startDate: datetime
+    stateMachineArn: str
+    status: str
+    stopDate: datetime    
 
+################################################################
 
 class StepFunctionsManagerException(Exception):
     """Exception raised for errors encountered while running Stepfunctions client methods."""
@@ -103,3 +117,26 @@ class StepFunctionsManager:
         except Exception as e:
             error_message = f"Error getting step function executions: {e}"
             raise StepFunctionsManagerException(error_message)
+        
+    def get_execution_error(self, step_function_execution_arn:str) -> str:
+        """
+
+        """
+        response = self.sf_client.describe_execution(executionArn=step_function_execution_arn)
+        model = ExecutionDetails(**response)
+
+        if model.status not in StepFunctionsManager.STATES_FAILURE:
+            return None
+        
+        error_message = model.error if model.error else ""
+
+        try:
+            # assuming cause is a stringified JSON
+            cause = json.loads(model.cause)
+        except:
+            # if not - then just add to error_message as a plain text
+            cause = model.cause
+
+        error_message += f" {cause}"
+        return error_message
+
