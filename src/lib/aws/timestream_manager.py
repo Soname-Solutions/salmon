@@ -238,6 +238,27 @@ class TimeStreamQueryRunner:
     def __init__(self, timestream_query_client):
         self.timestream_query_client = timestream_query_client
 
+    def is_table_empty(self, database_name, table_name):
+        """
+        Checks if the specified table is empty.
+
+        Args:
+            database_name (str): The name of the database.
+            table_name (str): The name of the table.
+
+        Returns:
+            bool: True if the table is empty, False otherwise.
+        """
+        try:
+            query = f'SHOW MEASURES FROM "{database_name}"."{table_name}"'
+            response = self.timestream_query_client.query(QueryString=query)
+
+            return response["Rows"] == []
+        except Exception as e:
+            error_message = f"Error checking table is empty: {e}"
+            raise (TimestreamQueryException(error_message))        
+
+
     def execute_scalar_query(self, query):
         """
         Executes a scalar query (result = one row, one column) and returns the result.

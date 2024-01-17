@@ -50,5 +50,8 @@ if __name__ == "__main__":
 
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devam/settings/"
     os.environ["LAMBDA_EXTRACT_METRICS_NAME"] = "lambda-salmon-extract-metrics-devam"
-    
+    os.environ[
+        "TIMESTREAM_METRICS_DB_NAME"
+    ] = "timestream-salmon-metrics-events-storage-devam"    
+
     lambda_handler(None, None)
