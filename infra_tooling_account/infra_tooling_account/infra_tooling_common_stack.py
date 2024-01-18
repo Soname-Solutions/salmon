@@ -17,7 +17,7 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions, TimestreamRetention
+from lib.core.constants import CDKDeployExclusions
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import AWSCommonResources
 from lib.settings.settings import Settings
@@ -139,6 +139,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamKMSKey",
             alias=AWSNaming.KMSKey(self, "timestream"),
             description="Key that protects Timestream data",
+            removal_policy=RemovalPolicy.DESTROY,
         )
         timestream_storage = timestream.CfnDatabase(
             self,
