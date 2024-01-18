@@ -211,8 +211,7 @@ if __name__ == "__main__":
         query_runner, timestream_metrics_db_name, logger
     )
 
-    monitoring_group = "salmonts_glue_all_group"
-    # monitoring_group = "salmonts_2nd_acc_all_glue"
+    monitoring_group = "salmonts_lambdas_stepfunctions"
 
     event = {
         "monitoring_group": monitoring_group,

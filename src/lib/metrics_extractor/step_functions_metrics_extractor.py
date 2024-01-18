@@ -10,15 +10,15 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
     Class is responsible for extracting glue job metrics
     """
 
-    def _extract_metrics_data(self, since_time: datetime) -> list[ExecutionData]:
-        step_functions_man = StepFunctionsManager(self.aws_service_client)
-        step_function_executions = step_functions_man.get_step_function_executions(
+    def _extract_metrics_data(self, since_time: datetime, step_functions_manager: StepFunctionsManager) -> list[ExecutionData]:
+        step_function_executions = step_functions_manager.get_step_function_executions(
             step_function_name=self.resource_name, since_time=since_time
         )
         return step_function_executions
 
     def _data_to_timestream_records(
         self, step_function_executions: list[ExecutionData]
+        , step_functions_manager: StepFunctionsManager
     ) -> list:
         common_dimensions = [
             {"Name": "monitored_environment", "Value": self.monitored_environment_name},
@@ -32,6 +32,11 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
             if StepFunctionsManager.is_final_state(
                 step_function_execution.status
             ):  # exclude writing metrics for executions in progress
+                if step_function_execution.IsFailure:                    
+                    error_message = step_functions_manager.get_execution_error(step_function_execution.executionArn)
+                else:
+                    error_message = None
+
                 dimensions = [
                     {
                         "Name": "step_function_run_id",
@@ -44,6 +49,7 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
                     ("succeeded", int(step_function_execution.IsSuccess), "BIGINT"),
                     ("failed", int(step_function_execution.IsFailure), "BIGINT"),
                     ("duration_sec", step_function_execution.Duration, "DOUBLE"),
+                    ("error_message", error_message, "VARCHAR"),
                 ]
                 measure_values = [
                     {
@@ -71,8 +77,9 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
         return records, common_attributes
 
     def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
-        step_function_executions = self._extract_metrics_data(since_time=since_time)
+        step_functions_man = StepFunctionsManager(self.aws_service_client)
+        step_function_executions = self._extract_metrics_data(since_time=since_time, step_functions_manager=step_functions_man)
         records, common_attributes = self._data_to_timestream_records(
-            step_function_executions
+            step_function_executions, step_functions_manager=step_functions_man
         )
         return records, common_attributes
