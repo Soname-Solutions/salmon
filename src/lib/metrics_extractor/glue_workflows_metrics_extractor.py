@@ -11,7 +11,7 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
     """
 
     def _extract_metrics_data(self, since_time: datetime) -> list[WorkflowRun]:
-        glue_man = GlueManager(self.aws_service_client)
+        glue_man = GlueManager(super().get_aws_service_client())
         workflow_runs = glue_man.get_workflow_runs(
             workflow_name=self.resource_name, since_time=since_time
         )

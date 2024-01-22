@@ -1,8 +1,18 @@
 import boto3
+import time
+from datetime import datetime
+
+from ..core.constants import CloudWatchConfigs
 
 
 class CloudWatchEventsPublisherException(Exception):
     """Exception raised for errors encountered while publishing message to the CloudWatch stream."""
+
+    pass
+
+
+class CloudWatchManagerException(Exception):
+    """Exception raised for errors encountered while running CloudWatch client methods."""
 
     pass
 
@@ -62,3 +72,41 @@ class CloudWatchEventsPublisher:
         except Exception as e:
             error_message = f"Error publishing events to {self.log_group_name} : {self.log_stream_name}: {e}"
             raise CloudWatchEventsPublisherException(error_message)
+
+
+class CloudWatchManager:
+    def __init__(self, cloudwatch_client=None):
+        self.cloudwatch_client = (
+            boto3.client("logs") if cloudwatch_client is None else cloudwatch_client
+        )
+
+    def query_logs(
+        self,
+        log_group_name: str,
+        query_string: str,
+        start_time: datetime,
+        end_time: datetime,
+    ):
+        start_query_response = self.cloudwatch_client.start_query(
+            logGroupName=log_group_name,
+            startTime=int(start_time.timestamp()),
+            endTime=int(end_time.timestamp()),
+            queryString=query_string,
+        )
+        query_id = start_query_response["queryId"]
+
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > CloudWatchConfigs.QUERY_TIMEOUT_SECONDS:
+                error_msg = f"Query timeout: The query {query_string} for {log_group_name} is taking too long to execute."
+                raise CloudWatchManagerException(error_msg)
+
+            response = self.cloudwatch_client.get_query_results(queryId=query_id)
+
+            if response["status"] != "Running":
+                break
+
+            time.sleep(1)
+
+        results = response["results"]
+        return results
