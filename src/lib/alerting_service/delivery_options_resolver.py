@@ -22,19 +22,18 @@ class DeliveryOptionsResolver:
         )
 
         for recipient_setting in recipients_settings:
-            delivery_method = recipient_setting["delivery_method"]
+            delivery_method_name = recipient_setting["delivery_method"]
             recipient = recipient_setting["recipient"]
 
-            if delivery_method not in recipients:
-                recipients[delivery_method] = []
+            if delivery_method_name not in recipients:
+                recipients[delivery_method_name] = []
 
-            recipients[delivery_method].append(recipient)
+            recipients[delivery_method_name].append(recipient)
 
-        for delivery_method, recipients_array in recipients.items():
+        for delivery_method_name, recipients_array in recipients.items():
             delivery_option = {
-                "delivery_method": delivery_method,
+                "delivery_method": settings.get_delivery_method(delivery_method_name),
                 "recipients": recipients_array,
-                "sender_email": settings.get_sender_email(delivery_method),
             }
             delivery_options.append(delivery_option)
 

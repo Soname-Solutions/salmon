@@ -384,12 +384,18 @@ class Settings:
 
         return matched_recipients
 
-    def get_sender_email(self, delivery_method: str) -> str:
-        """Get sender email per delivery method"""
+    def get_delivery_method(self, delivery_method_name: str) -> dict:
+        """Get delivery method by name
+
+        Args:
+            delivery_method_name (str): Name of the delivery method
+
+        Returns:
+            dict: Delivery methoid info
+        """
         for method in self.general.get("delivery_methods", []):
-            if method.get("name") == delivery_method:
-                return method.get("sender_email", None)
-        return None
+            if method.get("name") == delivery_method_name:
+                return method
 
     @staticmethod
     def _read_settings(base_path: str, read_file_func, *file_names):
