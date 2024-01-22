@@ -1,16 +1,7 @@
 from lib.notification_service.formatter_provider import formatters
 from lib.notification_service.sender_provider import senders
 from lib.notification_service.messages import Message
-
-
-# todo: the config will be read from settings config
-sender_config = {
-    "smtp_sender": "my_email@soname.de",
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 465,
-    "smtp_login": "my_email@soname.de",
-    "smtp_password": "my_pass",
-}
+from lib.aws.secret_manager import SecretManager
 
 
 def _get_formatted_message(message_body: list, delivery_method: str) -> str:
@@ -66,12 +57,19 @@ def lambda_handler(event, context):
 
     message = Message(formatted_message, message_subject)
 
+    secret_client = SecretManager(region_name="eu-north-1")
+    smtp_secret = secret_client.get_secret("dev/smtp_server")
+
     sender = senders.get(
         delivery_method,
         message=message,
         ses_sender=delivery_options_info.get("sender_email"),
         recipients=delivery_options_info.get("recipients"),
-        **sender_config,
+        smtp_sender=smtp_secret["SMTP_SENDER"],
+        smtp_server=smtp_secret["SMTP_SERVER"],
+        smtp_port=smtp_secret["SMTP_PORT"],
+        smtp_login=smtp_secret["SMTP_LOGIN"],
+        smtp_password=smtp_secret["SMTP_PASSWORD"],
     )
 
     try:
@@ -86,8 +84,8 @@ if __name__ == "__main__":
     test_event = {
         "delivery_options": {
             "sender_email": "natallia.alkhimovich@soname.de",
-            "recipients": ["natallia.alkhimovich@soname.de", "vasya_pupking@soname.cn"],
-            "delivery_method": "AWS_SES",
+            "recipients": ["natallia.alkhimovich@soname.de"],
+            "delivery_method": "SMTP",
         },
         "message": {
             "message_subject": "Super important Alert",
