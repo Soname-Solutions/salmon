@@ -81,7 +81,8 @@ class LambdaManager:
         function_name: str,
         since_time: datetime,
     ) -> list[LogEntry]:
-        """
+        """Get lambda logs from CloudWatch
+
         Example response from CloudWatch:
             [
                 [
