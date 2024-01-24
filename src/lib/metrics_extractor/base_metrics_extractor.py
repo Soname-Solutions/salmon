@@ -2,7 +2,7 @@ import boto3
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from lib.aws import AWSNaming, StsManager, TimestreamTableWriter, TimeStreamQueryRunner
+from lib.aws import Boto3ClientCreator, TimestreamTableWriter, TimeStreamQueryRunner
 
 
 class BaseMetricsExtractorError(Exception):
@@ -16,7 +16,8 @@ class BaseMetricsExtractor(ABC):
     Base Class which provides unified functionality for extracting metrics
 
     Attributes:
-        aws_service_client: Boto3 AWS Service client
+        boto3_client_creator: client creator (Boto3ClientCreator object).
+        aws_client_name: Boto3 AWS Service client name.
         resource_name (str): Name of the resource (e.g. Glue job, Lambda Function etc.) we are extracting metrics for
         monitored_environment_name (str): Name of the monitored environment
         timestream_db_name (str): Name of the Timestream DB (where metrics are written to)
@@ -29,44 +30,28 @@ class BaseMetricsExtractor(ABC):
 
     def __init__(
         self,
-        account_id,
-        region,
-        iam_role_extract_metrics,
-        aws_client_name,
-        resource_name,
-        monitored_environment_name,
-        timestream_db_name,
-        timestream_metrics_table_name,
+        boto3_client_creator: Boto3ClientCreator,
+        aws_client_name: str,
+        resource_name: str,
+        monitored_environment_name: str,
+        timestream_db_name: str,
+        timestream_metrics_table_name: str,
     ):
-        self.account_id = account_id
-        self.region = region
-        self.iam_role_extract_metrics = iam_role_extract_metrics
+        self.boto3_client_creator = boto3_client_creator
         self.aws_client_name = aws_client_name
         self.resource_name = resource_name
         self.monitored_environment_name = monitored_environment_name
         self.timestream_db_name = timestream_db_name
         self.timestream_metrics_table_name = timestream_metrics_table_name
 
-    def get_aws_service_client(self, aws_client_name=None):
-        sts_client = boto3.client("sts")
-        sts_manager = StsManager(sts_client)
-        extract_metrics_role_arn = AWSNaming.Arn_IAMRole(
-            None, self.account_id, self.iam_role_extract_metrics
+    def get_aws_service_client(self, aws_client_name: str = None):
+        """
+        Returns boto3 client for input aws_client_name if provided,
+        else creates for aws_client_name defined in metrics_extractor object.
+        """
+        return self.boto3_client_creator.get_client(
+            aws_client_name if aws_client_name else self.aws_client_name
         )
-
-        try:
-            client = sts_manager.get_client_via_assumed_role(
-                aws_client_name=aws_client_name
-                if aws_client_name
-                else self.aws_client_name,
-                via_assume_role_arn=extract_metrics_role_arn,
-                region=self.region,
-            )
-            return client
-        except Exception as ex:
-            raise BaseMetricsExtractorError(
-                f"Error while creating boto3 client: {str(ex)}"
-            )
 
     def get_last_update_time(self, timestream_query_client) -> datetime:
         """

@@ -4,8 +4,7 @@ import boto3
 import logging
 from itertools import groupby
 
-from lib.aws.timestream_manager import TimestreamTableWriter
-from lib.aws.aws_naming import AWSNaming
+from lib.aws import AWSNaming, Boto3ClientCreator, TimestreamTableWriter
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
@@ -24,9 +23,7 @@ def process_individual_resource(
     monitored_environment_name: str,
     resource_type: str,
     resource_name: str,
-    account_id: str,
-    region: str,
-    role_name: str,
+    boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
     timestream_writer: TimestreamTableWriter,
     timestream_metrics_db_name: str,
@@ -40,9 +37,7 @@ def process_individual_resource(
     # 1. Create an extractor object for a specific service
     metrics_extractor = MetricsExtractorProvider.get_metrics_extractor(
         resource_type=resource_type,
-        account_id=account_id,
-        region=region,
-        iam_role_extract_metrics=role_name,
+        boto3_client_creator=boto3_client_creator,
         aws_client_name=aws_client_name,
         resource_name=resource_name,
         monitored_environment_name=monitored_environment_name,
@@ -100,11 +95,12 @@ def process_all_resources_by_env_and_type(
         f"Processing resource type: {resource_type}, env: {monitored_environment_name}"
     )
 
-    # 1. Create a client for a specific service
+    # 1. Create a Boto3ClientCreator for a specific service
     aws_client_name = SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[resource_type]
     account_id, region = settings.get_monitored_environment_props(
         monitored_environment_name
     )
+    boto3_client_creator = Boto3ClientCreator(account_id, region, iam_role_name)
 
     # 2. Create a Timestream table writer for a specific service
     metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
@@ -120,10 +116,8 @@ def process_all_resources_by_env_and_type(
             monitored_environment_name=monitored_environment_name,
             resource_type=resource_type,
             resource_name=name,
-            account_id=account_id,
-            region=region,
+            boto3_client_creator=boto3_client_creator,
             aws_client_name=aws_client_name,
-            role_name=iam_role_name,
             timestream_writer=timestream_man,
             timestream_metrics_db_name=timestream_metrics_db_name,
             timestream_metrics_table_name=metrics_table_name,

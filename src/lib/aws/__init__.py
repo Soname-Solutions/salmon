@@ -1,5 +1,6 @@
 from .aws_common_resources import AWSCommonResources
 from .aws_naming import AWSNaming
+from .boto3_client_creator import Boto3ClientCreator, Boto3ClientCreatorException
 from .cloudwatch_manager import (
     CloudWatchEventsPublisher,
     CloudWatchManager,

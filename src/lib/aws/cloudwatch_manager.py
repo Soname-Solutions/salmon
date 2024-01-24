@@ -75,6 +75,8 @@ class CloudWatchEventsPublisher:
 
 
 class CloudWatchManager:
+    """This class Manages interactions with Amazon CloudWatch"""
+
     def __init__(self, cloudwatch_client=None):
         self.cloudwatch_client = (
             boto3.client("logs") if cloudwatch_client is None else cloudwatch_client
