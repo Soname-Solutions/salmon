@@ -66,6 +66,8 @@ class InfraToolingMonitoringStack(Stack):
         (
             extract_metrics_orch_lambda,
             extract_metrics_lambda,
+            monitored_assume_inline_policy,
+            powertools_layer,
         ) = self.create_extract_metrics_lambdas(
             settings_bucket=settings_bucket,
             internal_error_topic=internal_error_topic,
@@ -73,6 +75,30 @@ class InfraToolingMonitoringStack(Stack):
             timestream_database_name=input_timestream_database_name,
             timestream_kms_key_arn=input_timestream_kms_key_arn,
         )
+
+        (
+            digest_report_period_hours,
+            digest_cron_expression,
+        ) = self.settings.get_digest_report_settings()
+
+        digest_lambda = self.create_digest_lambda(
+            settings_bucket=settings_bucket,
+            internal_error_topic=internal_error_topic,
+            timestream_database_arn=input_timestream_database_arn,
+            timestream_database_name=input_timestream_database_name,
+            timestream_kms_key_arn=input_timestream_kms_key_arn,
+            digest_report_period_hours=digest_report_period_hours,
+            monitored_assume_inline_policy=monitored_assume_inline_policy,
+            powertools_layer=powertools_layer,
+        )
+
+        digest_rule = events.Rule(
+            self,
+            "DigestScheduleRule",
+            schedule=events.Schedule.expression(digest_cron_expression),
+            rule_name=AWSNaming.EventBusRule(self, "digest"),
+        )
+        digest_rule.add_target(targets.LambdaFunction(digest_lambda))
 
         # Create table for metrics storage (1 per service)
         self.create_metrics_tables(
@@ -328,7 +354,130 @@ class InfraToolingMonitoringStack(Stack):
             on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
-        return extract_metrics_orch_lambda, extract_metrics_lambda
+        return (
+            extract_metrics_orch_lambda,
+            extract_metrics_lambda,
+            monitored_assume_inline_policy,
+            powertools_layer,
+        )
+
+    def create_digest_lambda(
+        self,
+        settings_bucket: s3.Bucket,
+        internal_error_topic: sns.Topic,
+        timestream_database_arn: str,
+        timestream_database_name: str,
+        timestream_kms_key_arn: str,
+        digest_report_period_hours: int,
+        monitored_assume_inline_policy: iam.Policy,
+        powertools_layer: lambda_.LayerVersion,
+    ) -> lambda_.Function:
+        """
+        Creates AWS Lambda function for preparing and sending Digest to the relevant recepients.
+
+        Parameters:
+            settings_bucket (s3.Bucket): The S3 bucket containing settings.
+            internal_error_topic (sns.Topic): The SNS topic for internal error notifications.
+            timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
+            timestream_database_name (str): The Timestream database name.
+            timestream_kms_key_arn (str): The ARN of Timestream KMS Key.
+            digest_report_period_hours (int): The number of hours the report is generated for.
+            monitored_assume_inline_policy (iam.Policy): Inline policy to be assumed by Lambda.
+            powertools_layer (lambda_.LayerVersion): Lambda layer.
+
+        Returns:
+            tuple: A tuple containing references to the orchestrator and extractor Lambda functions.
+        """
+        digest_lambda_role = iam.Role(
+            self,
+            "DigestLambdaRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            role_name=AWSNaming.IAMRole(self, CDKResourceNames.IAMROLE_DIGEST_LAMBDA),
+        )
+
+        digest_lambda_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "service-role/AWSLambdaBasicExecutionRole"
+            )
+        )
+
+        digest_lambda_role.add_to_policy(
+            # to be able to read settings
+            iam.PolicyStatement(
+                actions=["s3:GetObject"],
+                effect=iam.Effect.ALLOW,
+                resources=[f"{settings_bucket.bucket_arn}/*"],
+            )
+        )
+        digest_lambda_role.add_to_policy(
+            # to be able to throw internal Salmon errors
+            iam.PolicyStatement(
+                actions=["sns:Publish"],
+                effect=iam.Effect.ALLOW,
+                resources=[internal_error_topic.topic_arn],
+            )
+        )
+        digest_lambda_role.add_to_policy(
+            # to be able to select data frpm to Timestream tables
+            iam.PolicyStatement(
+                actions=[
+                    "timestream:Select",
+                    "timestream:DescribeTable",
+                    "timestream:ListMeasures",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=[f"{timestream_database_arn}/table/*"],
+            )
+        )
+        digest_lambda_role.add_to_policy(
+            # to be able to read Timestream DB
+            iam.PolicyStatement(
+                actions=["timestream:DescribeEndpoints"],
+                effect=iam.Effect.ALLOW,
+                resources=["*"],
+            )
+        )
+        digest_lambda_role.add_to_policy(
+            # to be able to read data in Timestream DB
+            iam.PolicyStatement(
+                actions=["kms:Decrypt"],
+                effect=iam.Effect.ALLOW,
+                resources=[timestream_kms_key_arn],
+            )
+        )
+        digest_lambda_role.attach_inline_policy(monitored_assume_inline_policy)
+
+        digest_lambda_path = os.path.join("../src/")
+        digest_lambda = lambda_.Function(
+            self,
+            "salmonDigestLambda",
+            function_name=AWSNaming.LambdaFunction(self, "digest"),
+            code=lambda_.Code.from_asset(
+                digest_lambda_path,
+                exclude=CDKDeployExclusions.LAMBDA_ASSET_EXCLUSIONS,
+                ignore_mode=IgnoreMode.GIT,
+            ),
+            handler="lambda_digest.lambda_handler",
+            timeout=Duration.seconds(900),
+            runtime=lambda_.Runtime.PYTHON_3_11,
+            environment={
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
+                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
+                "DIGEST_REPORT_PERIOD_HOURS": str(digest_report_period_hours),
+                "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": AWSNaming.IAMRole(
+                    self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS
+                ),
+                "NOTIFICATION_LAMBDA_NAME": AWSNaming.LambdaFunction(
+                    self, "notification"
+                ),
+            },
+            role=digest_lambda_role,
+            layers=[powertools_layer],
+            retry_attempts=2,
+            on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
+        )
+
+        return digest_lambda
 
     def create_metrics_tables(self, timestream_database_name):
         """
@@ -337,7 +486,10 @@ class InfraToolingMonitoringStack(Stack):
         Parameters:
             timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
         """
-        metric_table_names = {x: AWSNaming.TimestreamMetricsTable(None,x) for x in SettingConfigs.RESOURCE_TYPES}
+        metric_table_names = {
+            x: AWSNaming.TimestreamMetricsTable(None, x)
+            for x in SettingConfigs.RESOURCE_TYPES
+        }
         resource_types = metric_table_names.keys()
 
         retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(

@@ -4,6 +4,8 @@
         "account_id": "<<tooling_account_id>>",
         "region": "eu-central-1",
         "metrics_collection_interval_min": 5,
+        "digest_report_period_hours" : 24, 
+        "digest_cron_expression": "cron(0 8 * * ? *)",
         "grafana_instance": {
             "grafana_vpc_id": "<<grafana_vpc_id>>",
             "grafana_security_group_id": "<<grafana_security_group_id>>"

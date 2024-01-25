@@ -12,7 +12,7 @@ class Block:
 class Text(Block):
     def get_html(self) -> str:
         """Get HTML for the text."""
-        return f"<div{self.css_class}>{self._text}</div>"
+        return f"<div{self.css_class}>{self._text}</div><br/>"
 
 
 class TableHeaderCell(Block):
@@ -36,7 +36,7 @@ class TableRow(Block):
 class Table(Block):
     def get_html(self) -> str:
         """Get HTML for the table."""
-        return f"<table{self.css_class}>{self._text}</table>"
+        return f"<table{self.css_class}>{self._text}</table><br/>"
 
 
 class TableCaption(Block):

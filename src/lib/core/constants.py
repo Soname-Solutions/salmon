@@ -50,6 +50,14 @@ class EventResult:
     FAILURE = "FAILURE"
 
 
+class DigestSettings:
+    STATUS_OK = "ok"
+    STATUS_WARNING = "warning"
+    STATUS_ERROR = "error"
+    REPORT_PERIOD_HOURS = 24
+    CRON_EXPRESSION = "cron(0 8 * * ? *)"
+
+
 class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]
 
@@ -60,6 +68,7 @@ class CDKResourceNames:
     """
 
     EVENTBUS_ALERTING = "alerting"
+    IAMROLE_DIGEST_LAMBDA = "digest-lambda"
     IAMROLE_EXTRACT_METRICS_LAMBDA = "extract-metrics-lambda"
     IAMROLE_MONITORED_ACC_PUT_EVENTS = "monitored-acc-put-events"
     IAMROLE_MONITORED_ACC_EXTRACT_METRICS = "monitored-acc-extract-metrics"

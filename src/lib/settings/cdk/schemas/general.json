@@ -8,6 +8,8 @@
           "account_id": {"type": "string"},
           "region": {"type": "string"},
           "metrics_collection_interval_min": {"type": "integer"},
+          "digest_report_period_hours": {"type": "integer"},
+          "digest_cron_expression": {"type": "string"},
           "grafana_instance": {
             "type": "object",
             "properties": {
