@@ -11,7 +11,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
     """
 
     def _extract_metrics_data(self, since_time: datetime) -> list[JobRun]:
-        glue_man = GlueManager(self.aws_service_client)
+        glue_man = GlueManager(super().get_aws_service_client())
         job_runs = glue_man.get_job_runs(
             job_name=self.resource_name, since_time=since_time
         )
@@ -35,7 +35,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
                 # Calculate DPU Seconds
                 if job_run.DPUSeconds:
                     # if it's given by Glue explicitly (when auto-scaling is on))
-                    dpu_seconds = job_run.DPUSeconds 
+                    dpu_seconds = job_run.DPUSeconds
                 else:
                     # otherwise, we calculate - allocated capacity * execution time
                     # MaxCapacity is an up-to-date fields (instead of deprecated AllocatedCapacity)

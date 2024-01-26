@@ -34,6 +34,10 @@ class SettingConfigs:
     }
 
 
+class CloudWatchConfigs:
+    QUERY_TIMEOUT_SECONDS = 60
+
+
 class TimestreamRetention:
     MagneticStoreRetentionPeriodInDays = "365"
     MemoryStoreRetentionPeriodInHours = "24"

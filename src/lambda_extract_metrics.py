@@ -4,9 +4,7 @@ import boto3
 import logging
 from itertools import groupby
 
-from lib.aws.sts_manager import StsManager
-from lib.aws.timestream_manager import TimestreamTableWriter
-from lib.aws.aws_naming import AWSNaming
+from lib.aws import AWSNaming, Boto3ClientCreator, TimestreamTableWriter
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
@@ -17,35 +15,16 @@ import json
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-sts_client = boto3.client("sts")
 timestream_client = boto3.client("timestream-write")
 timestream_query_client = boto3.client("timestream-query")
-
-
-def get_service_client(account_id, region, role_name, aws_client_name):
-    sts_manager = StsManager(sts_client)
-    extract_metrics_role_arn = AWSNaming.Arn_IAMRole(None, account_id, role_name)
-
-    try:
-        client = sts_manager.get_client_via_assumed_role(
-            aws_client_name=aws_client_name,
-            via_assume_role_arn=extract_metrics_role_arn,
-            region=region,
-        )
-        logger.info(
-            f"Created {aws_client_name} client, role: {extract_metrics_role_arn}"
-        )
-        return client
-    except Exception as ex:
-        logger.error(f"Error while creating boto3 client: {str(ex)}")
-        raise (ex)
 
 
 def process_individual_resource(
     monitored_environment_name: str,
     resource_type: str,
     resource_name: str,
-    aws_service_client: Any,
+    boto3_client_creator: Boto3ClientCreator,
+    aws_client_name: str,
     timestream_writer: TimestreamTableWriter,
     timestream_metrics_db_name: str,
     timestream_metrics_table_name: str,
@@ -58,7 +37,8 @@ def process_individual_resource(
     # 1. Create an extractor object for a specific service
     metrics_extractor = MetricsExtractorProvider.get_metrics_extractor(
         resource_type=resource_type,
-        aws_service_client=aws_service_client,
+        boto3_client_creator=boto3_client_creator,
+        aws_client_name=aws_client_name,
         resource_name=resource_name,
         monitored_environment_name=monitored_environment_name,
         timestream_db_name=timestream_metrics_db_name,
@@ -111,19 +91,16 @@ def process_all_resources_by_env_and_type(
     timestream_metrics_db_name: str,
     last_update_times: dict,
 ):
-    logger.info(f"Processing resource type: {resource_type}, env: {monitored_environment_name}")
+    logger.info(
+        f"Processing resource type: {resource_type}, env: {monitored_environment_name}"
+    )
 
-    # 1. Create a client for a specific service
+    # 1. Create a Boto3ClientCreator for a specific service
     aws_client_name = SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[resource_type]
     account_id, region = settings.get_monitored_environment_props(
         monitored_environment_name
     )
-    aws_service_client = get_service_client(
-        account_id=account_id,
-        region=region,
-        aws_client_name=aws_client_name,
-        role_name=iam_role_name,
-    )
+    boto3_client_creator = Boto3ClientCreator(account_id, region, iam_role_name)
 
     # 2. Create a Timestream table writer for a specific service
     metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
@@ -139,12 +116,14 @@ def process_all_resources_by_env_and_type(
             monitored_environment_name=monitored_environment_name,
             resource_type=resource_type,
             resource_name=name,
-            aws_service_client=aws_service_client,
+            boto3_client_creator=boto3_client_creator,
+            aws_client_name=aws_client_name,
             timestream_writer=timestream_man,
             timestream_metrics_db_name=timestream_metrics_db_name,
             timestream_metrics_table_name=metrics_table_name,
             last_update_times=last_update_times,
         )
+
 
 def lambda_handler(event, context):
     logger.info(f"Event = {event}")
@@ -159,7 +138,7 @@ def lambda_handler(event, context):
     # getting content of the monitoring group (in pydantic class form)
     settings = Settings.from_s3_path(
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
-    )    
+    )
     content = settings.get_monitoring_group_content(monitoring_group_name)
 
     for attr_name in content:
@@ -211,8 +190,7 @@ if __name__ == "__main__":
         query_runner, timestream_metrics_db_name, logger
     )
 
-    monitoring_group = "salmonts_glue_all_group"
-    # monitoring_group = "salmonts_2nd_acc_all_glue"
+    monitoring_group = "salmonts_lambdas_stepfunctions"
 
     event = {
         "monitoring_group": monitoring_group,

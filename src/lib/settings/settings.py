@@ -357,7 +357,7 @@ class Settings:
         for group in self.processed_monitoring_groups.get("monitoring_groups", []):
             if group["group_name"] == group_name:
                 return group
-        return None
+        return {}
 
     def get_monitoring_groups(self, resources: list[str]) -> list[str]:
         """Get monitoring groups by resources list."""

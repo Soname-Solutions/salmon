@@ -5,3 +5,5 @@ todo:
 
 3. Alerting workflow
 4. Extract metrics workflow
+
+todo: about Grafana is optional

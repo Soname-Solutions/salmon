@@ -153,6 +153,7 @@ class InfraMonitoredStack(Stack):
         lambda_policy_statement = iam.PolicyStatement(
             actions=[
                 "lambda:ListFunctions",
+                "lambda:GetFunction",
                 "logs:GetQueryResults",
                 "logs:StartQuery",
                 "logs:StopQuery",
@@ -172,6 +173,7 @@ class InfraMonitoredStack(Stack):
             actions=[
                 "states:ListStateMachines",
                 "states:ListExecutions",
+                "states:DescribeExecution",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,
