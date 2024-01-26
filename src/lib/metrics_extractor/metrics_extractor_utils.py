@@ -111,14 +111,24 @@ def get_last_update_time(
     return None
 
 
-def get_job_run_url(resource_type, region_name, account_id, resource_name, run_id):
+def get_job_run_url(
+    resource_type, region_name, resource_name, account_id=None, run_id=None
+):
     """Returns the link to the particular resource run."""
     job_run_url = ""
+
     if resource_type == types.GLUE_JOBS:
         job_run_url = f"https://{region_name}.console.aws.amazon.com/gluestudio/home?region={region_name}#/job/{resource_name}/run/{run_id}"
+
     elif resource_type == types.STEP_FUNCTIONS:
         job_run_url = (
             f"https://{region_name}.console.aws.amazon.com/states/home?region={region_name}#/v2/executions/details/"
             f"arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}"
+        )
+
+    elif resource_type == types.LAMBDA_FUNCTIONS:
+        job_run_url = (
+            f"https://{region_name}.console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F"
+            f"{resource_name}/log-events/"
         )
     return job_run_url

@@ -2,10 +2,10 @@ import os
 import logging
 from datetime import datetime, timedelta, timezone
 import boto3
-import json
 
 from lib.core.constants import SettingConfigs, NotificationType
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.sqs_manager import SQSQueueSender
 from lib.settings.settings import Settings
 from lib.digest_service import (
     DigestDataAggregator,
@@ -17,6 +17,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 lambda_client = boto3.client("lambda")
+sqs_client = boto3.client("sqs")
 
 
 def extend_resources_config(settings: Settings, configs: dict) -> list:
@@ -115,8 +116,9 @@ def append_digest_data(
 def distribute_digest_report(
     recipients_groups: list,
     digest_data: list,
-    report_period_hours: int,
-    notification_lambda_name: str,
+    digest_start_time: datetime,
+    digest_end_time: datetime,
+    notification_queue_url: str,
 ):
     logger.info("Distributing the digest report to the relevant recipients")
 
@@ -129,30 +131,26 @@ def distribute_digest_report(
         ]
 
         if recipients_group_data:
-            # prepare the event
+            # prepare the digest message
             message_builder = DigestMessageBuilder(recipients_group_data)
-            message_body = message_builder.generate_message_body(report_period_hours)
-            event_body = {
+            message_body = message_builder.generate_message_body(
+                digest_start_time, digest_end_time
+            )
+            message = {
                 "delivery_options": {
                     "recipients": recipients_group["recipients"],
                     "delivery_method": recipients_group["delivery_method"],
                 },
                 "message": {
-                    "message_subject": f"Digest Report {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d %I:%M %p')}",
+                    "message_subject": f"Digest Report {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')}",
                     "message_body": message_body,
                 },
             }
-            event = {"Records": [{"body": json.dumps(event_body, indent=4)}]}
+            sender = SQSQueueSender(notification_queue_url, sqs_client)
+            results = sender.send_messages([message])
 
-            # invoke the notification lambda
-            lambda_client.invoke(
-                FunctionName=notification_lambda_name,
-                InvocationType="Event",
-                Payload=json.dumps(event),
-            )
             logger.info(
-                f"The notification lambda {notification_lambda_name} has been invoked "
-                f"for the recipient group: {recipients_group['recipients']}"
+                f"Results of sending messages to SQS: {results} for the recipient group: {recipients_group['recipients']}"
             )
 
 
@@ -160,11 +158,11 @@ def lambda_handler(event, context):
     # it is triggered based on the cron schedule set in the config
     logger.info(f"event = {event}")
 
-    timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
-    report_period_hours = int(os.environ["DIGEST_REPORT_PERIOD_HOURS"])
-    notification_lambda_name = os.environ["NOTIFICATION_LAMBDA_NAME"]
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
+    notification_queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
+    timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    report_period_hours = int(os.environ["DIGEST_REPORT_PERIOD_HOURS"])
     settings = Settings.from_s3_path(
         base_path=settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
@@ -172,6 +170,7 @@ def lambda_handler(event, context):
     digest_start_time = datetime.now(tz=timezone.utc) - timedelta(
         hours=report_period_hours
     )
+    digest_end_time = datetime.now(tz=timezone.utc)
 
     # prepare digest data
     digest_data = []
@@ -181,17 +180,14 @@ def lambda_handler(event, context):
     }
     for resource_type in SettingConfigs.RESOURCE_TYPES:
         # ceate an digest extractor for a specific resource type
-        if resource_type in [
-            "glue_jobs",
-            "step_functions",
-        ]:  # temp filter, to be removed
+        if resource_type in ["glue_jobs"]:  # temp filter, to be removed
             digest_extractor = DigestDataExtractorProvider.get_digest_provider(
                 resource_type=resource_type,
                 timestream_db_name=timestream_metrics_db_name,
                 timestream_table_name=metric_table_names[resource_type],
             )
             logger.info(f"Created digest extractor of type {type(digest_extractor)}")
-            query = digest_extractor.get_query(digest_start_time)
+            query = digest_extractor.get_query(digest_start_time, digest_end_time)
             extracted_runs = digest_extractor.extract_runs(query)
 
             # aggregate runs per monitoring_group and resource_type
@@ -218,8 +214,9 @@ def lambda_handler(event, context):
     distribute_digest_report(
         recipients_groups=recipients_groups,
         digest_data=digest_data,
-        report_period_hours=report_period_hours,
-        notification_lambda_name=notification_lambda_name,
+        digest_start_time=digest_start_time,
+        digest_end_time=digest_end_time,
+        notification_queue_url=notification_queue_url,
     )
 
 
@@ -235,7 +232,9 @@ if __name__ == "__main__":
     ] = "timestream-salmon-metrics-events-storage-devay"
     os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devay/settings/"
     os.environ["DIGEST_REPORT_PERIOD_HOURS"] = "24"
-    os.environ["NOTIFICATION_LAMBDA_NAME"] = "lambda-salmon-notification-devay"
+    os.environ[
+        "NOTIFICATION_QUEUE_URL"
+    ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devay"
 
     event = {}
     lambda_handler(event, None)

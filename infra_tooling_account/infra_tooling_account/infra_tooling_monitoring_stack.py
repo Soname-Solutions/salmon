@@ -76,6 +76,16 @@ class InfraToolingMonitoringStack(Stack):
             timestream_kms_key_arn=input_timestream_kms_key_arn,
         )
 
+        # ntification Queue Import
+        input_notification_queue_arn = Fn.import_value(
+            AWSNaming.CfnOutput(self, "notification-queue-arn")
+        )
+        notification_queue = sqs.Queue.from_queue_arn(
+            self,
+            "salmonNotificationQueue",
+            queue_arn=input_notification_queue_arn,
+        )
+
         (
             digest_report_period_hours,
             digest_cron_expression,
@@ -87,6 +97,7 @@ class InfraToolingMonitoringStack(Stack):
             timestream_database_arn=input_timestream_database_arn,
             timestream_database_name=input_timestream_database_name,
             timestream_kms_key_arn=input_timestream_kms_key_arn,
+            notification_queue=notification_queue,
             digest_report_period_hours=digest_report_period_hours,
             monitored_assume_inline_policy=monitored_assume_inline_policy,
             powertools_layer=powertools_layer,
@@ -368,6 +379,7 @@ class InfraToolingMonitoringStack(Stack):
         timestream_database_arn: str,
         timestream_database_name: str,
         timestream_kms_key_arn: str,
+        notification_queue: sqs.Queue,
         digest_report_period_hours: int,
         monitored_assume_inline_policy: iam.Policy,
         powertools_layer: lambda_.LayerVersion,
@@ -381,12 +393,13 @@ class InfraToolingMonitoringStack(Stack):
             timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
             timestream_database_name (str): The Timestream database name.
             timestream_kms_key_arn (str): The ARN of Timestream KMS Key.
+            notification_queue (sqs.Queue): SQS queue for digest messages.
             digest_report_period_hours (int): The number of hours the report is generated for.
             monitored_assume_inline_policy (iam.Policy): Inline policy to be assumed by Lambda.
             powertools_layer (lambda_.LayerVersion): Lambda layer.
 
         Returns:
-            tuple: A tuple containing references to the orchestrator and extractor Lambda functions.
+            tuple: A tuple containing references to the Digest Lambda function.
         """
         digest_lambda_role = iam.Role(
             self,
@@ -418,7 +431,7 @@ class InfraToolingMonitoringStack(Stack):
             )
         )
         digest_lambda_role.add_to_policy(
-            # to be able to select data frpm to Timestream tables
+            # to be able to select data from Timestream tables
             iam.PolicyStatement(
                 actions=[
                     "timestream:Select",
@@ -445,6 +458,39 @@ class InfraToolingMonitoringStack(Stack):
                 resources=[timestream_kms_key_arn],
             )
         )
+        digest_lambda_role.add_to_policy(
+            # to be able to send the messages to SQS Queue
+            iam.PolicyStatement(
+                actions=["sqs:SendMessage"],
+                effect=iam.Effect.ALLOW,
+                resources=[notification_queue.queue_arn],
+            )
+        )
+        digest_lambda_role.add_to_policy(
+            # to be able to publish messages to SNS topic
+            iam.PolicyStatement(
+                actions=["sns:Publish"],
+                effect=iam.Effect.ALLOW,
+                resources=[internal_error_topic.topic_arn],
+            )
+        )
+        # digest_lambda_role.add_to_policy(
+        #     # to be able to publish messages to SNS topic
+        #     iam.PolicyStatement(
+        #         actions=["sts:AssumeRole"],
+        #         effect=iam.Effect.ALLOW,
+        #         resources=["arn:aws:iam::025590872641:role/role-salmon-monitored-acc-extract-metrics-devay"],
+        #     )
+        # )
+        # digest_lambda_role.add_to_policy(
+        #     # to be able to publish messages to SNS topic
+        #     iam.PolicyStatement(
+        #         actions=["sts:AssumeRole"],
+        #         effect=iam.Effect.ALLOW,
+        #         resources=["arn:aws:iam::405389362913:role/role-salmon-monitored-acc-extract-metrics-devay"],
+        #     )
+        # )
+
         digest_lambda_role.attach_inline_policy(monitored_assume_inline_policy)
 
         digest_lambda_path = os.path.join("../src/")
@@ -462,14 +508,12 @@ class InfraToolingMonitoringStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
-                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
-                "DIGEST_REPORT_PERIOD_HOURS": str(digest_report_period_hours),
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": AWSNaming.IAMRole(
                     self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS
                 ),
-                "NOTIFICATION_LAMBDA_NAME": AWSNaming.LambdaFunction(
-                    self, "notification"
-                ),
+                "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
+                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
+                "DIGEST_REPORT_PERIOD_HOURS": str(digest_report_period_hours),
             },
             role=digest_lambda_role,
             layers=[powertools_layer],

@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 class DigestMessageBuilder:
     def __init__(self, digest_data: dict):
         self.digest_data = digest_data
@@ -55,13 +58,16 @@ class DigestMessageBuilder:
             }
         }
 
-    def generate_message_body(self, report_period_hours: int) -> list:
+    def generate_message_body(
+        self, digest_start_time: datetime, digest_end_time: datetime
+    ) -> list:
         """Generates message body for the digest report."""
         self.message_body.append({"text": "Digest Summary", "style": "header"})
         self.message_body.append(
             {
                 "text": (
-                    f"This report has been generated for the last {report_period_hours} hours."
+                    f"This report has been generated for the period from {digest_start_time.strftime('%B %d, %Y %I:%M %p')} "
+                    f"to {digest_end_time.strftime('%B %d, %Y %I:%M %p')}."
                 ),
                 "style": "h11",
             }

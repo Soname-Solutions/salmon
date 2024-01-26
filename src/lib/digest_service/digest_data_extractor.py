@@ -25,7 +25,7 @@ class BaseDigestDataExtractor(ABC):
         self.timestream_table_name = timestream_table_name
 
     @abstractmethod
-    def get_query(self, start_time):
+    def get_query(self, start_time, end_time):
         pass
 
     def extract_runs(self, query):
@@ -61,12 +61,12 @@ class GlueJobsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Jobs runs.
     """
 
-    def get_query(self, start_time):
+    def get_query(self, start_time, end_time):
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
             f""" case when failed > 0 then job_run_id else '' end as job_run_id, execution, failed, succeeded, execution_time_sec, """
-            f""" case when error_message is null then 'Error' else error_message end as error_message """
-            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND now()  """
+            f""" case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}'  """
         )
         print(query)
 
@@ -78,12 +78,12 @@ class GlueWorkflowsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Workflows runs.
     """
 
-    def get_query(self, start_time):
+    def get_query(self, start_time, end_time):
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
             f""" case when failed > 0 then workflow_run_id else '' end as job_run_id, execution, actions_failed as failed, """
-            f""" actions_succeeded as succeeded, null as execution_time_sec, error_message """
-            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND now() """
+            f""" actions_succeeded as succeeded, null as execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
         )
         return query
 
@@ -93,8 +93,14 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Crawlers runs.
     """
 
-    def get_query(self, start_time):
-        query = ()  # to be implemented
+    def get_query(self, start_time, end_time):
+        # columns to be re-checked
+        query = (
+            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
+            f""" case when failed > 0 then crawler_run_id else '' end as job_run_id, execution, failed, """
+            f""" succeeded, execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
+        )
         return query
 
 
@@ -103,8 +109,14 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Data Catalogs runs.
     """
 
-    def get_query(self, start_time):
-        query = ()  # to be implemented
+    def get_query(self, start_time, end_time):
+        # columns to be re-checked
+        query = (
+            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
+            f""" case when failed > 0 then catalog_run_id else '' end as job_run_id, execution, failed, """
+            f""" succeeded, execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
+        )
         return query
 
 
@@ -113,12 +125,12 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Step Functions runs.
     """
 
-    def get_query(self, start_time):
+    def get_query(self, start_time, end_time):
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
             f""" case when failed > 0 then step_function_run_id else '' end as job_run_id, execution, failed, """
-            f""" succeeded, duration_sec as execution_time_sec, 'Error' as error_message """
-            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND now() """
+            f""" succeeded, duration_sec as execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
         )
         return query
 
@@ -128,6 +140,21 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Lambda Funstions runs.
     """
 
-    def get_query(self, start_time):
-        query = ()  # to be implemented
+    def get_query(self, start_time, end_time):
+        query = (
+            f""" SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, execution, failed,  """
+            f"""     succeeded, execution_time_sec, error_message  """
+            f""" FROM (  """
+            f""" SELECT  monitored_environment, resource_name, sum(execution) as execution, 0 as failed,   """
+            f"""         sum(execution) as succeeded, round(max(duration_ms)/60, 2) as execution_time_sec, error_message  """
+            f""" FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
+            f""" AND measure_name = 'execution'  """
+            f""" GROUP BY monitored_environment, resource_name,  error_message  """
+            f""" UNION ALL  """
+            f""" SELECT  monitored_environment, resource_name, count(measure_name) as execution, count(measure_name) as failed,   """
+            f"""         0 as  succeeded, round(max(duration_ms)/60, 2) as execution_time_sec, error_message   """
+            f""" FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}'  """
+            f""" AND measure_name = 'error'  """
+            f""" GROUP BY monitored_environment, resource_name,  error_message) t;  """
+        )
         return query
