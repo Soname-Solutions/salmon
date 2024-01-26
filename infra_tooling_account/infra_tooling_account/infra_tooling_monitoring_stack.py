@@ -474,22 +474,6 @@ class InfraToolingMonitoringStack(Stack):
                 resources=[internal_error_topic.topic_arn],
             )
         )
-        # digest_lambda_role.add_to_policy(
-        #     # to be able to publish messages to SNS topic
-        #     iam.PolicyStatement(
-        #         actions=["sts:AssumeRole"],
-        #         effect=iam.Effect.ALLOW,
-        #         resources=["arn:aws:iam::025590872641:role/role-salmon-monitored-acc-extract-metrics-devay"],
-        #     )
-        # )
-        # digest_lambda_role.add_to_policy(
-        #     # to be able to publish messages to SNS topic
-        #     iam.PolicyStatement(
-        #         actions=["sts:AssumeRole"],
-        #         effect=iam.Effect.ALLOW,
-        #         resources=["arn:aws:iam::405389362913:role/role-salmon-monitored-acc-extract-metrics-devay"],
-        #     )
-        # )
 
         digest_lambda_role.attach_inline_policy(monitored_assume_inline_policy)
 
