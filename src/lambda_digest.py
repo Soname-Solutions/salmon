@@ -234,7 +234,7 @@ if __name__ == "__main__":
     os.environ["DIGEST_REPORT_PERIOD_HOURS"] = "24"
     os.environ[
         "NOTIFICATION_QUEUE_URL"
-    ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devay"
+    ] = "https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-devay"
 
     event = {}
     lambda_handler(event, None)
