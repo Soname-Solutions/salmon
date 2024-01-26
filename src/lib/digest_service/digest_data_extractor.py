@@ -68,8 +68,6 @@ class GlueJobsDigestDataExtractor(BaseDigestDataExtractor):
             f""" case when failed > 0 then error_message else '' end as error_message """
             f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}'  """
         )
-        print(query)
-
         return query
 
 

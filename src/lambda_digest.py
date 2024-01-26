@@ -180,27 +180,26 @@ def lambda_handler(event, context):
     }
     for resource_type in SettingConfigs.RESOURCE_TYPES:
         # ceate an digest extractor for a specific resource type
-        if resource_type in ["glue_jobs"]:  # temp filter, to be removed
-            digest_extractor = DigestDataExtractorProvider.get_digest_provider(
-                resource_type=resource_type,
-                timestream_db_name=timestream_metrics_db_name,
-                timestream_table_name=metric_table_names[resource_type],
-            )
-            logger.info(f"Created digest extractor of type {type(digest_extractor)}")
-            query = digest_extractor.get_query(digest_start_time, digest_end_time)
-            extracted_runs = digest_extractor.extract_runs(query)
+        digest_extractor = DigestDataExtractorProvider.get_digest_provider(
+            resource_type=resource_type,
+            timestream_db_name=timestream_metrics_db_name,
+            timestream_table_name=metric_table_names[resource_type],
+        )
+        logger.info(f"Created digest extractor of type {type(digest_extractor)}")
+        query = digest_extractor.get_query(digest_start_time, digest_end_time)
+        extracted_runs = digest_extractor.extract_runs(query)
 
-            # aggregate runs per monitoring_group and resource_type
-            monitoring_groups = settings.get_monitoring_groups_by_resource_type(
-                resource_type=resource_type
-            )
-            append_digest_data(
-                digest_data=digest_data,
-                monitoring_groups=monitoring_groups,
-                resource_type=resource_type,
-                settings=settings,
-                extracted_runs=extracted_runs,
-            )
+        # aggregate runs per monitoring_group and resource_type
+        monitoring_groups = settings.get_monitoring_groups_by_resource_type(
+            resource_type=resource_type
+        )
+        append_digest_data(
+            digest_data=digest_data,
+            monitoring_groups=monitoring_groups,
+            resource_type=resource_type,
+            settings=settings,
+            extracted_runs=extracted_runs,
+        )
     # sort data by monitoring group name
     digest_data = sorted(digest_data, key=lambda x: next(iter(x.keys())))
 

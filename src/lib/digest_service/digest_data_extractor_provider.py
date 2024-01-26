@@ -1,7 +1,11 @@
 from lib.digest_service import (
     BaseDigestDataExtractor,
     GlueJobsDigestDataExtractor,
+    GlueWorkflowsDigestDataExtractor,
+    GlueCrawlersDigestDataExtractor,
+    GlueDataCatalogsDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
+    LambdaFunctionsDigestDataExtractor,
 )
 
 from lib.core.constants import SettingConfigResourceTypes as types
@@ -37,5 +41,19 @@ DigestDataExtractorProvider.register_digest_provider(
     service_name=types.GLUE_JOBS, digest_extractor=GlueJobsDigestDataExtractor
 )
 DigestDataExtractorProvider.register_digest_provider(
+    service_name=types.GLUE_WORKFLOWS, digest_extractor=GlueWorkflowsDigestDataExtractor
+)
+DigestDataExtractorProvider.register_digest_provider(
+    service_name=types.GLUE_CRAWLERS, digest_extractor=GlueCrawlersDigestDataExtractor
+)
+DigestDataExtractorProvider.register_digest_provider(
+    service_name=types.GLUE_DATA_CATALOGS,
+    digest_extractor=GlueDataCatalogsDigestDataExtractor,
+)
+DigestDataExtractorProvider.register_digest_provider(
     service_name=types.STEP_FUNCTIONS, digest_extractor=StepFunctionsDigestDataExtractor
+)
+DigestDataExtractorProvider.register_digest_provider(
+    service_name=types.LAMBDA_FUNCTIONS,
+    digest_extractor=LambdaFunctionsDigestDataExtractor,
 )
