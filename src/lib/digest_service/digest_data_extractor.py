@@ -79,8 +79,8 @@ class GlueWorkflowsDigestDataExtractor(BaseDigestDataExtractor):
     def get_query(self, start_time, end_time):
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
-            f""" case when failed > 0 then workflow_run_id else '' end as job_run_id, execution, actions_failed as failed, """
-            f""" actions_succeeded as succeeded, null as execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f""" case when failed > 0 then workflow_run_id else '' end as job_run_id, execution, failed, """
+            f""" succeeded, execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
             f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
         )
         return query
@@ -153,6 +153,6 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
             f"""         0 as  succeeded, round(max(duration_ms)/60, 2) as execution_time_sec, error_message   """
             f""" FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}'  """
             f""" AND measure_name = 'error'  """
-            f""" GROUP BY monitored_environment, resource_name,  error_message) t;  """
+            f""" GROUP BY monitored_environment, resource_name,  error_message) t  """
         )
         return query
