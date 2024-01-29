@@ -4,7 +4,7 @@ from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 
 class GlueCatalogsMetricExtractor(BaseMetricsExtractor):
     """
-    Class is responsible for extracting glue job metrics
+    Class is responsible for extracting glue catalogs metrics
     """
 
     def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
