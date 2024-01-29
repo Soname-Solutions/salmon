@@ -167,10 +167,8 @@ def lambda_handler(event, context):
         base_path=settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
 
-    digest_start_time = datetime.now(tz=timezone.utc) - timedelta(
-        hours=report_period_hours
-    )
     digest_end_time = datetime.now(tz=timezone.utc)
+    digest_start_time = digest_end_time - timedelta(hours=report_period_hours)
 
     # prepare digest data
     digest_data = []

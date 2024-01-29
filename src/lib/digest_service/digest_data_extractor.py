@@ -1,6 +1,7 @@
 import boto3
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from lib.aws.timestream_manager import TimeStreamQueryRunner
 
@@ -19,16 +20,18 @@ class BaseDigestDataExtractor(ABC):
 
     """
 
-    def __init__(self, resource_type, timestream_db_name, timestream_table_name):
+    def __init__(
+        self, resource_type: str, timestream_db_name: str, timestream_table_name: str
+    ):
         self.resource_type = resource_type
         self.timestream_db_name = timestream_db_name
         self.timestream_table_name = timestream_table_name
 
     @abstractmethod
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime):
         pass
 
-    def extract_runs(self, query):
+    def extract_runs(self, query: str) -> dict:
         timestream_query_client = boto3.client("timestream-query")
         query_runner = TimeStreamQueryRunner(
             timestream_query_client=timestream_query_client
@@ -61,7 +64,7 @@ class GlueJobsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Jobs runs.
     """
 
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
             f""" case when failed > 0 then job_run_id else '' end as job_run_id, execution, failed, succeeded, execution_time_sec, """
@@ -76,7 +79,7 @@ class GlueWorkflowsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Workflows runs.
     """
 
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
             f""" case when failed > 0 then workflow_run_id else '' end as job_run_id, execution, failed, """
@@ -91,7 +94,7 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Crawlers runs.
     """
 
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         # columns to be re-checked
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
@@ -107,7 +110,7 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Glue Data Catalogs runs.
     """
 
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         # columns to be re-checked
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
@@ -123,7 +126,7 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Step Functions runs.
     """
 
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         query = (
             f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
             f""" case when failed > 0 then step_function_run_id else '' end as job_run_id, execution, failed, """
@@ -138,7 +141,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     Class is responsible for preparing the query for extracting Lambda Funstions runs.
     """
 
-    def get_query(self, start_time, end_time):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         query = (
             f""" SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, execution, failed,  """
             f"""     succeeded, execution_time_sec, error_message  """

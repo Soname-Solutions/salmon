@@ -80,14 +80,13 @@ def lambda_handler(event, context):
         if message_body is None:
             raise KeyError("Message body is not set.")
 
-        formatted_message = _get_formatted_message(
-            message_body, delivery_method.get("delivery_method_type")
-        )
+        delivery_method_type = delivery_method.get("delivery_method_type")
+        formatted_message = _get_formatted_message(message_body, delivery_method_type)
 
         message = Message(formatted_message, message_subject)
 
         sender = senders.get(
-            delivery_method=delivery_method.get("delivery_method_type"),
+            delivery_method=delivery_method_type,
             message=message,
             ses_sender=delivery_method.get("sender_email"),
             recipients=delivery_options_info.get("recipients"),

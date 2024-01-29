@@ -466,14 +466,6 @@ class InfraToolingMonitoringStack(Stack):
                 resources=[notification_queue.queue_arn],
             )
         )
-        digest_lambda_role.add_to_policy(
-            # to be able to publish messages to SNS topic
-            iam.PolicyStatement(
-                actions=["sns:Publish"],
-                effect=iam.Effect.ALLOW,
-                resources=[internal_error_topic.topic_arn],
-            )
-        )
 
         digest_lambda_role.attach_inline_policy(monitored_assume_inline_policy)
 
