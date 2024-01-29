@@ -122,8 +122,12 @@ class DigestDataAggregator:
 
         # add a warning if the run hasn't met SLA
         sla_seconds = resource_config["sla_seconds"]
-        execution_time_sec = float(resource_run["execution_time_sec"])
-        if sla_seconds != 0 and execution_time_sec > sla_seconds:
+        execution_time_sec = resource_run["execution_time_sec"]
+        if (
+            execution_time_sec is not None
+            and sla_seconds != 0
+            and float(execution_time_sec) > sla_seconds
+        ):
             resource_values["Warnings"] += 1
 
     def get_aggregated_runs(

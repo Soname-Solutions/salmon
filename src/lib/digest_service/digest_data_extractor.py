@@ -95,13 +95,8 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        # columns to be re-checked
-        query = (
-            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
-            f""" case when failed > 0 then crawler_run_id else '' end as job_run_id, execution, failed, """
-            f""" succeeded, execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
-            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
-        )
+        print("Calling a method which hasn't been implemented yet")
+        query = ""
         return query
 
 
@@ -111,13 +106,8 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        # columns to be re-checked
-        query = (
-            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
-            f""" case when failed > 0 then catalog_run_id else '' end as job_run_id, execution, failed, """
-            f""" succeeded, execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
-            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
-        )
+        print("Calling a method which hasn't been implemented yet")
+        query = ""
         return query
 
 
@@ -143,8 +133,8 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
         query = (
-            f""" SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, execution, failed,  """
-            f"""     succeeded, execution_time_sec, error_message  """
+            f""" SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name,  '' as job_run_id,  """
+            f"""    execution, failed, succeeded, execution_time_sec, error_message  """
             f""" FROM (  """
             f""" SELECT  monitored_environment, resource_name, sum(execution) as execution, 0 as failed,   """
             f"""         sum(execution) as succeeded, round(max(duration_ms)/60, 2) as execution_time_sec, error_message  """
