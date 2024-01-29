@@ -22,9 +22,9 @@ logger.setLevel(logging.INFO)
 sns_client = boto3.client("sns")
 
 
-def _get_formatted_message(message_body: list, delivery_method: str) -> str:
+def _get_formatted_message(message_body: list, delivery_method_type: str) -> str:
     formatted_message_objects = []
-    formatter = formatters.get(delivery_method)
+    formatter = formatters.get(delivery_method_type)
 
     for message_object in message_body:
         try:
@@ -67,6 +67,7 @@ def lambda_handler(event, context):
         message_info = notification_message.get("message")
 
         delivery_method = delivery_options_info.get("delivery_method")
+        delivery_method_type = delivery_method.get("delivery_method_type")
 
         if delivery_method is None:
             raise KeyError("Delivery method is not set.")
@@ -80,14 +81,14 @@ def lambda_handler(event, context):
         if message_body is None:
             raise KeyError("Message body is not set.")
 
-        formatted_message = _get_formatted_message(message_body, delivery_method)
+        formatted_message = _get_formatted_message(message_body, delivery_method_type)
 
         message = Message(formatted_message, message_subject)
 
         sender = senders.get(
-            delivery_method,
+            delivery_method_type,
             message=message,
-            ses_sender=delivery_options_info.get("sender_email"),
+            ses_sender=delivery_method.get("sender_email"),
             recipients=delivery_options_info.get("recipients"),
             **sender_config,
         )
