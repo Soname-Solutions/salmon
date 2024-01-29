@@ -439,15 +439,15 @@ class Settings:
 
         return recipients_and_monitoring_groups
 
-    def get_sender_email(self, delivery_method: str) -> str:
-        """Get sender email per delivery method"""
-        for method in self.general.get("delivery_methods", []):
-            if method.get("name") == delivery_method:
-                return method.get("sender_email", None)
-        return None
+    def get_delivery_method(self, delivery_method_name: str) -> dict:
+        """Get delivery method by name
 
-    def get_delivery_method_options(self, delivery_method_name: str) -> dict:
-        """Get delivery method options by method name"""
+        Args:
+            delivery_method_name (str): Name of the delivery method
+
+        Returns:
+            dict: Delivery method info
+        """
         for method in self.general.get("delivery_methods", []):
             if method.get("name") == delivery_method_name:
                 return method
