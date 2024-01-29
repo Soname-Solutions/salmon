@@ -43,10 +43,10 @@ MetricsExtractorProvider.register_metrics_extractor(
     types.GLUE_WORKFLOWS, GlueWorkflowsMetricExtractor
 )
 MetricsExtractorProvider.register_metrics_extractor(
-    types.GLUE_JOBS, GlueCatalogsMetricExtractor
+    types.GLUE_DATA_CATALOGS, GlueCatalogsMetricExtractor
 )
 MetricsExtractorProvider.register_metrics_extractor(
-    types.GLUE_WORKFLOWS, GlueCrawlersMetricExtractor
+    types.GLUE_CRAWLERS, GlueCrawlersMetricExtractor
 )
 MetricsExtractorProvider.register_metrics_extractor(
     types.LAMBDA_FUNCTIONS, LambdaFunctionsMetricExtractor
