@@ -56,7 +56,7 @@ def group_recipients(recipients: list, settings: Settings) -> list:
         if key not in grouped_recipients:
             grouped_recipients[key] = {
                 "recipients": [],
-                "delivery_method": settings.get_delivery_method_options(
+                "delivery_method": settings.get_delivery_method(
                     recipient["delivery_method"]
                 ),
                 "monitoring_groups": recipient["monitoring_groups"],
