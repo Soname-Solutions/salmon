@@ -3,26 +3,18 @@ import json
 
 from lib.core import json_utils as ju
 from lib.core.constants import NotificationType
-from lib.settings.cdk.settings_validator import validate
 from lib.settings import Settings
-
-
-def test_settings_validation():
-    """Test settings_validator.validate function"""
-    test_settings_dir = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(test_settings_dir, "../config/sample_settings/")
-    settings = Settings.from_file_path(config_path)
-    validate(settings)
-    print("Settings validation passed")
 
 
 def lambda_handler(event, context):
     """Test read from s3 and all the methods required for both CDK and lambdas"""
-    settings_s3_bucket_name = os.environ.get("settings_s3_bucket_name")
-    settings = Settings.from_s3_path(f"s3://{settings_s3_bucket_name}/settings/")
+    settings_s3_path = os.environ["SETTINGS_S3_PATH"]
+    iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
 
-    event_data = ju.parse_json(event)
-    job_name = event_data["detail"]["jobName"]
+    # settings = Settings.from_file_path(settings_s3_path, iam_role_name)
+    settings = Settings.from_s3_path(settings_s3_path, iam_role_name)
+
+    job_name = event["detail"]["jobName"]
 
     # CDK methods
     print(f"Monitored account_ids: {settings.get_monitored_account_ids()}")
@@ -44,8 +36,17 @@ def lambda_handler(event, context):
     # Check processed settings
     print(json.dumps(settings.processed_settings, indent=4))
 
+    # Check processed monitoring groups (should be used only when needed)
+    print(json.dumps(settings.processed_monitoring_groups, indent=4))
+
 
 if __name__ == "__main__":
+    os.environ[
+        "IAMROLE_MONITORED_ACC_EXTRACT_METRICS"
+    ] = "role-salmon-monitored-acc-extract-metrics-devnp"
+    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devnp/settings/"
+    # os.environ["SETTINGS_S3_PATH"] = "../config/settings/"
+
     test_event = """
         {
             "version": "0",
@@ -57,7 +58,7 @@ if __name__ == "__main__":
             "region": "us-east-1",
             "resources": [],
             "detail": {
-                "jobName": "ds-source1-historical-data-load",
+                "jobName": "glue-salmonts-sparkjob-two-dev2",
                 "severity": "INFO",
                 "state": "SUCCEEDED",
                 "jobRunId": "jr_abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
@@ -67,5 +68,4 @@ if __name__ == "__main__":
         """
     context = ""
 
-    test_settings_validation()
-    lambda_handler(test_event, context)
+    lambda_handler(ju.parse_json(test_event), context)

@@ -1,14 +1,59 @@
 import boto3
 
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
+import dateutil.tz
+from ..core import datetime_utils
 
+from pydantic import BaseModel
+from typing import List, Optional
+
+#################################################
 
 class TimestreamTableWriterException(Exception):
     """Exception raised for errors encountered while interacting with TimeStream DB."""
 
     pass
 
+
+class TimestreamQueryException(Exception):
+    """Exception raised for errors encountered while interacting with TimeStream DB."""
+
+    pass
+
+#################################################
+# Query Response Pydantic classes
+
+class ScalarType(BaseModel):
+    ScalarValue: Optional[str] 
+
+class Data(BaseModel):
+    Data: List[ScalarType]
+
+class ColumnType(BaseModel):
+    ScalarType: str
+
+class ColumnInfo(BaseModel):
+    Name: str
+    Type: ColumnType
+
+class QueryStatus(BaseModel):
+    ProgressPercentage: float
+    CumulativeBytesScanned: int
+    CumulativeBytesMetered: int
+
+class ResponseMetadata(BaseModel):
+    RequestId: str
+    HTTPStatusCode: int
+    RetryAttempts: int
+
+class QueryResponse(BaseModel):
+    QueryId: str
+    Rows: List[Data]
+    ColumnInfo: List[ColumnInfo]
+    QueryStatus: QueryStatus
+    ResponseMetadata: ResponseMetadata
+
+#################################################
 
 class TimestreamTableWriter:
     """
@@ -60,53 +105,12 @@ class TimestreamTableWriter:
 
         Returns:
             None
-        """        
+        """
         print("RejectedRecords: ", err)
         for rr in err.response["RejectedRecords"]:
             print("Rejected Index " + str(rr["RecordIndex"]) + ": " + rr["Reason"])
             if "ExistingVersion" in rr:
                 print("Rejected record existing version: ", rr["ExistingVersion"])
-
-    @staticmethod
-    def epoch_milliseconds_str(epoch_seconds: float = None) -> str:
-        """
-        Converts epoch time in seconds to a string representation in milliseconds.
-
-        If no argument is provided, the current time is used. 
-
-        Args:
-            epoch_seconds (float, optional): The epoch time in seconds. If None,
-                                             the current time is used. Defaults to None.
-
-        Returns:
-            str: The epoch time in milliseconds as a string.
-        """        
-        tmp = epoch_seconds if epoch_seconds is not None else time.time()
-        return str(int(round(tmp * 1000)))
-
-    @staticmethod
-    def iso_time_to_epoch_milliseconds(iso_date: str) -> str:
-        """
-        Convert an ISO 8601 formatted date string to the number of milliseconds since the Unix epoch.
-        If the input is None, the current time in milliseconds since the Unix epoch is returned.
-
-        Parameters:
-        iso_date (str): An ISO 8601 formatted date string (e.g., "2023-11-21T21:39:09Z").
-                        If None, the current time is used.
-
-        Returns:
-        str: The number of milliseconds since the Unix epoch as a string.
-        """
-
-        # If the input is None, use the current time
-        if iso_date is None:
-            return TimestreamTableWriter.epoch_milliseconds_str()
-        else:
-            # Convert the ISO date string to a datetime object
-            dt = datetime.fromisoformat(iso_date.rstrip("Z"))
-            # Convert the datetime object to epoch time in seconds
-            epoch_time = dt.timestamp()
-            return TimestreamTableWriter.epoch_milliseconds_str(epoch_time)
 
     def _write_batch(self, records, common_attributes={}):
         """
@@ -170,7 +174,7 @@ class TimestreamTableWriter:
 
         Returns:
             dict: A dictionary containing the properties of the table.
-        """        
+        """
         try:
             result = self.timestream_write_client.describe_table(
                 DatabaseName=self.db_name, TableName=self.table_name
@@ -188,7 +192,7 @@ class TimestreamTableWriter:
 
         Returns:
             int: The retention period of the Memory Store in hours.
-        """        
+        """
         table_props = self._get_table_props()
 
         try:
@@ -222,3 +226,111 @@ class TimestreamTableWriter:
         except Exception as err:
             error_message = f"Error getting MagneticStoreRetentionPeriodInDays for {self.db_name}.{self.table_name}: {err}."
             raise (TimestreamTableWriterException(error_message))
+
+    def get_earliest_writeable_time_for_table(self):
+        utc_tz = dateutil.tz.gettz("UTC")
+        return datetime.now(tz=utc_tz) - timedelta(
+            hours=self.get_MemoryStoreRetentionPeriodInHours()
+        )
+
+
+class TimeStreamQueryRunner:
+    def __init__(self, timestream_query_client):
+        self.timestream_query_client = timestream_query_client
+
+    def is_table_empty(self, database_name, table_name):
+        """
+        Checks if the specified table is empty.
+
+        Args:
+            database_name (str): The name of the database.
+            table_name (str): The name of the table.
+
+        Returns:
+            bool: True if the table is empty, False otherwise.
+        """
+        try:
+            query = f'SHOW MEASURES FROM "{database_name}"."{table_name}"'
+            response = self.timestream_query_client.query(QueryString=query)
+
+            return response["Rows"] == []
+        except Exception as e:
+            error_message = f"Error checking table is empty: {e}"
+            raise (TimestreamQueryException(error_message))        
+
+
+    def execute_scalar_query(self, query):
+        """
+        Executes a scalar query (result = one row, one column) and returns the result.
+
+        Args:
+            query (str): The query to be executed.
+
+        Returns:
+            str: The result of the query.
+        """
+        try:
+            response = self.timestream_query_client.query(QueryString=query)
+            first_record_data = response["Rows"][0]["Data"]
+            first_field_data = first_record_data[0]
+            if "ScalarValue" in first_field_data:
+                return first_field_data["ScalarValue"]
+            else:
+                return None
+        except Exception as e:
+            error_message = f"Error running query: {e}"
+            raise (TimestreamQueryException(error_message))
+
+    def execute_scalar_query_date_field(self, query):
+        """
+        Executes a scalar query specifically for date results field (result = one row, one column)
+        and returns the result as a datetime object.
+
+        Args:
+            query (str): The query to be executed.
+
+        Returns:
+            datetime: The result of the query as a datetime object.
+        """
+        result_str = self.execute_scalar_query(query)
+
+        if result_str is None:
+            return None
+
+        try:
+            result_datetime = datetime.strptime(
+                result_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f"
+            )
+            utc_tz = dateutil.tz.gettz("UTC")
+            result_datetime = result_datetime.replace(tzinfo=utc_tz)
+            return result_datetime
+        except Exception as e:
+            error_message = f"Error converting result to datetime: {e}"
+            raise TimestreamQueryException(error_message)
+
+    def execute_query(self, query):
+        """
+        Executes a query and returns the result.
+
+        Args:
+            query (str): The query to be executed.
+
+        Returns:
+            str: The result of the query.
+        """
+        try:
+            response = self.timestream_query_client.query(QueryString=query)
+            result = QueryResponse(**response)
+
+            column_names = [x.Name for x in result.ColumnInfo]
+
+            result_rows = []
+            for row in result.Rows:
+                values = [x.ScalarValue for x in row.Data]
+                data_row = dict(zip(column_names, values))   
+                result_rows.append(data_row)
+
+            return result_rows
+        except Exception as e:
+            error_message = f"Error running query: {e}"
+            raise (TimestreamQueryException(error_message))

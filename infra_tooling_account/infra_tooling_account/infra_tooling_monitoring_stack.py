@@ -6,9 +6,11 @@ from aws_cdk import (
     aws_events as events,
     aws_events_targets as targets,
     aws_lambda as lambda_,
+    aws_lambda_destinations as lambda_destiantions,
     aws_iam as iam,
     aws_sns as sns,
     aws_sqs as sqs,
+    aws_timestream as timestream,
     Duration,
 )
 from constructs import Construct
@@ -16,7 +18,9 @@ import os
 
 from lib.core.constants import CDKDeployExclusions, CDKResourceNames
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.aws_common_resources import AWSCommonResources
 from lib.settings.settings import Settings
+from lib.core.constants import CDKResourceNames, TimestreamRetention, SettingConfigs
 
 
 class InfraToolingMonitoringStack(Stack):
@@ -55,6 +59,8 @@ class InfraToolingMonitoringStack(Stack):
             settings_bucket,
             internal_error_topic,
             input_timestream_database_arn,
+            input_timestream_database_name,
+            input_timestream_kms_key_arn,
         ) = self.get_common_stack_references()
 
         (
@@ -64,6 +70,13 @@ class InfraToolingMonitoringStack(Stack):
             settings_bucket=settings_bucket,
             internal_error_topic=internal_error_topic,
             timestream_database_arn=input_timestream_database_arn,
+            timestream_database_name=input_timestream_database_name,
+            timestream_kms_key_arn=input_timestream_kms_key_arn,
+        )
+
+        # Create table for metrics storage (1 per service)
+        self.create_metrics_tables(
+            timestream_database_name=input_timestream_database_name
         )
 
         metrics_collection_interval_min = (
@@ -96,6 +109,14 @@ class InfraToolingMonitoringStack(Stack):
             AWSNaming.CfnOutput(self, "metrics-events-storage-arn")
         )
 
+        input_timestream_database_name = Fn.import_value(
+            AWSNaming.CfnOutput(self, "metrics-events-db-name")
+        )
+
+        input_timestream_kms_key_arn = Fn.import_value(
+            AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn")
+        )
+
         input_internal_error_topic_arn = Fn.import_value(
             AWSNaming.CfnOutput(self, "internal-error-topic-arn")
         )
@@ -114,10 +135,21 @@ class InfraToolingMonitoringStack(Stack):
             topic_arn=input_internal_error_topic_arn,
         )
 
-        return settings_bucket, internal_error_topic, input_timestream_database_arn
+        return (
+            settings_bucket,
+            internal_error_topic,
+            input_timestream_database_arn,
+            input_timestream_database_name,
+            input_timestream_kms_key_arn,
+        )
 
     def create_extract_metrics_lambdas(
-        self, settings_bucket, internal_error_topic, timestream_database_arn
+        self,
+        settings_bucket,
+        internal_error_topic,
+        timestream_database_arn,
+        timestream_database_name,
+        timestream_kms_key_arn,
     ):
         """
         Creates two AWS Lambda functions for extracting metrics. One function orchestrates the process,
@@ -158,7 +190,7 @@ class InfraToolingMonitoringStack(Stack):
             iam.PolicyStatement(
                 actions=["s3:GetObject"],
                 effect=iam.Effect.ALLOW,
-                resources=[settings_bucket.bucket_arn],
+                resources=[f"{settings_bucket.bucket_arn}/*"],
             )
         )
         tooling_acc_inline_policy.add_statements(
@@ -172,9 +204,36 @@ class InfraToolingMonitoringStack(Stack):
         tooling_acc_inline_policy.add_statements(
             # to be able to write extracted metrics to Timestream DB
             iam.PolicyStatement(
-                actions=["timestream:*"],
+                actions=[
+                    "timestream:WriteRecords",
+                    "timestream:Select",
+                    "timestream:DescribeTable",
+                    "timestream:ListMeasures",
+                ],
                 effect=iam.Effect.ALLOW,
-                resources=[timestream_database_arn],
+                resources=[f"{timestream_database_arn}/table/*"],
+            )
+        )
+        tooling_acc_inline_policy.add_statements(
+            # to be able to write extracted metrics to Timestream DB
+            iam.PolicyStatement(
+                actions=["timestream:DescribeEndpoints"],
+                effect=iam.Effect.ALLOW,
+                resources=["*"],
+            )
+        )
+        tooling_acc_inline_policy.add_statements(
+            # to be able to write extracted metrics to Timestream DB
+            iam.PolicyStatement(
+                actions=[
+                    "kms:Encrypt",
+                    "kms:Decrypt",
+                    "kms:ReEncrypt*",
+                    "kms:GenerateDataKey*",
+                    "kms:DescribeKey",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=[timestream_kms_key_arn],
             )
         )
 
@@ -202,6 +261,15 @@ class InfraToolingMonitoringStack(Stack):
                 )
             )
 
+        current_region = Stack.of(self).region
+        powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            id="lambda-powertools",
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(
+                current_region
+            ),
+        )
+
         extract_metrics_lambda_path = os.path.join("../src/")
         extract_metrics_lambda = lambda_.Function(
             self,
@@ -216,12 +284,23 @@ class InfraToolingMonitoringStack(Stack):
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
+                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
             },
             role=extract_metrics_lambda_role,
+            layers=[powertools_layer],
             retry_attempts=2,
-            dead_letter_topic=internal_error_topic,
+            on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
+        )
+
+        tooling_acc_inline_policy.add_statements(
+            # to be able to read settings
+            iam.PolicyStatement(
+                actions=["lambda:InvokeFunction"],
+                effect=iam.Effect.ALLOW,
+                resources=[extract_metrics_lambda.function_arn],
+            )
         )
 
         extract_metrics_orch_lambda_path = os.path.join("../src/")
@@ -238,12 +317,39 @@ class InfraToolingMonitoringStack(Stack):
             timeout=Duration.seconds(900),
             runtime=lambda_.Runtime.PYTHON_3_11,
             environment={
-                "SETTINGS_S3_BUCKET_NAME": settings_bucket.bucket_name,
+                "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
+                "LAMBDA_EXTRACT_METRICS_NAME": extract_metrics_lambda.function_name,
+                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
             },
             role=extract_metrics_lambda_role,
+            layers=[powertools_layer],
             retry_attempts=2,
-            dead_letter_topic=internal_error_topic,
+            on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
         return extract_metrics_orch_lambda, extract_metrics_lambda
+
+    def create_metrics_tables(self, timestream_database_name):
+        """
+        Creates Timestream tables for storing metrics for each service.
+
+        Parameters:
+            timestream_database_arn (str): The ARN of the Timestream database for storing metrics.
+        """
+        metric_table_names = {x: AWSNaming.TimestreamMetricsTable(None,x) for x in SettingConfigs.RESOURCE_TYPES}
+        resource_types = metric_table_names.keys()
+
+        retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
+            magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
+            memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
+        )
+
+        for resource_type in resource_types:
+            timestream.CfnTable(
+                self,
+                f"MetricsTable{resource_type}",
+                database_name=timestream_database_name,
+                retention_properties=retention_properties_property,
+                table_name=metric_table_names[resource_type],
+            )

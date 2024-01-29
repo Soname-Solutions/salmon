@@ -17,8 +17,9 @@ from aws_cdk import (
 from constructs import Construct
 import os
 
-from lib.core.constants import CDKDeployExclusions, TimestreamRetention
+from lib.core.constants import CDKDeployExclusions
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.aws_common_resources import AWSCommonResources
 from lib.settings.settings import Settings
 
 
@@ -57,13 +58,7 @@ class InfraToolingCommonStack(Stack):
 
         settings_bucket = self.create_settings_bucket()
 
-        timestream_storage = self.create_timestream_db()
-
-        timestream_table_alert_events = self.create_timestream_tables(
-            timestream_storage
-        )
-
-        timestream_table_alert_events.add_dependency(timestream_storage)
+        timestream_storage, kms_key = self.create_timestream_db()
 
         # Internal Error SNS topic
         internal_error_topic = sns.Topic(
@@ -109,12 +104,12 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "metrics-events-db-name"),
         )
 
-        output_timestream_alerts_table_name = CfnOutput(
+        output_timestream_kms_key = CfnOutput(
             self,
-            "salmonTimestreamAlertsTableName",
-            value=timestream_table_alert_events.table_name,
-            description="Table Name for Alert Events storage",
-            export_name=AWSNaming.CfnOutput(self, "alert-events-table-name"),
+            "salmonTimestreamKmsKey",
+            value=kms_key.key_arn,
+            description="Arn of KMS Key for Timestream DB",
+            export_name=AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn"),
         )
 
         output_notification_queue_arn = CfnOutput(
@@ -133,7 +128,7 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
-    def create_timestream_db(self) -> timestream.CfnDatabase:
+    def create_timestream_db(self) -> (timestream.CfnDatabase, kms.Key):
         """Creates Timestream database for events and metrics
 
         Returns:
@@ -144,6 +139,7 @@ class InfraToolingCommonStack(Stack):
             "salmonTimestreamKMSKey",
             alias=AWSNaming.KMSKey(self, "timestream"),
             description="Key that protects Timestream data",
+            removal_policy=RemovalPolicy.DESTROY,
         )
         timestream_storage = timestream.CfnDatabase(
             self,
@@ -152,34 +148,7 @@ class InfraToolingCommonStack(Stack):
             kms_key_id=timestream_kms_key.key_id,
         )
 
-        return timestream_storage
-
-    def create_timestream_tables(
-        self, timestream_storage: timestream.CfnDatabase
-    ) -> timestream.CfnTable:
-        """Creates necessary tables in Timestream DB
-
-        Args:
-            timestream_storage (timestream.CfnDatabase): Timestream database
-
-        Returns:
-            timestream.CfnTable: Alert Events table
-        """
-        # this part throws a warning, but applies correctly
-        # waiting for the CDK fix: https://github.com/aws-cloudformation/cloudformation-coverage-roadmap/issues/1514
-        retention_properties_property = timestream.CfnTable.RetentionPropertiesProperty(
-            magnetic_store_retention_period_in_days=TimestreamRetention.MagneticStoreRetentionPeriodInDays,
-            memory_store_retention_period_in_hours=TimestreamRetention.MemoryStoreRetentionPeriodInHours,
-        )
-        alert_events_table = timestream.CfnTable(
-            self,
-            "AlertEventsTable",
-            database_name=timestream_storage.database_name,
-            retention_properties=retention_properties_property,
-            table_name=AWSNaming.TimestreamTable(self, "alert-events"),
-        )
-
-        return alert_events_table
+        return timestream_storage, timestream_kms_key
 
     def create_settings_bucket(self) -> s3.Bucket:
         """Creates Settings files storage and uploads files from the local directory to it
@@ -267,6 +236,25 @@ class InfraToolingCommonStack(Stack):
             )
         )
 
+        notification_lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "sns:Publish",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=[internal_error_topic.topic_arn],
+            )
+        )
+
+        current_region = Stack.of(self).region
+        powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            id="lambda-powertools",
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(
+                current_region
+            ),
+        )
+
         notification_lambda_path = os.path.join("../src/")
         notification_lambda = lambda_.Function(
             self,
@@ -278,11 +266,15 @@ class InfraToolingCommonStack(Stack):
                 ignore_mode=IgnoreMode.GIT,
             ),
             handler="lambda_notification.lambda_handler",
+            environment={
+                "INTERNAL_ERROR_TOPIC_ARN": internal_error_topic.topic_arn,
+            },
+            layers=[powertools_layer],
             timeout=Duration.seconds(60),
             runtime=lambda_.Runtime.PYTHON_3_11,
             role=notification_lambda_role,
             retry_attempts=2,
-            dead_letter_topic=internal_error_topic,
+            # no destinations configuration because destinations do not support SQS lambda event source
         )
 
         notification_lambda.add_event_source(
