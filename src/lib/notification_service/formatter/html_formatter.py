@@ -3,23 +3,6 @@ from .blocks import Text, Table, TableCell, TableRow, TableHeaderCell, TableCapt
 
 
 class HtmlFormatter(Formatter):
-    @property
-    def _css_style(self):
-        return """
-            body {}
-            table, th, td { border: 1px solid black; margin: 2px; }       
-            table { border-collapse: collapse; }
-            th { background-color: lightgray; }
-            tr:nth-child(odd) {background: #EEE}
-            tr:nth-child(even) {background: #FFF}
-            th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), 
-            td:nth-last-child(3) { text-align: left; }       
-            td {  padding-right: 10px; padding-left: 10px; }  
-            .ok { background-color: lightgreen; }
-            .error { background-color: #FFCCCB; }
-            .warning { background-color: lightblue; }
-            """
-
     @staticmethod
     def _get_formatted_table_row(row: list, is_header: bool = False) -> str:
         cells = row.get("values")
@@ -66,4 +49,18 @@ class HtmlFormatter(Formatter):
 
     @staticmethod
     def get_complete_html(body_content: str) -> str:
-        return f"<html><head><style>{HtmlFormatter._css_style}</style></head><body>{body_content}</body></html>"
+        _css_style = """
+            body {}
+            table, th, td { border: 1px solid black; margin: 2px; }       
+            table { border-collapse: collapse; }
+            th { background-color: lightgray; }
+            tr:nth-child(odd) {background: #EEE}
+            tr:nth-child(even) {background: #FFF}
+            th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), 
+            td:nth-last-child(3) { text-align: left; }       
+            td {  padding-right: 10px; padding-left: 10px; }  
+            .ok { background-color: lightgreen; }
+            .error { background-color: #FFCCCB; }
+            .warning { background-color: lightblue; }"""
+
+        return f"<html><head><style>{_css_style}</style></head><body>{body_content}</body></html>"
