@@ -18,13 +18,13 @@ class Text(Block):
 class TableHeaderCell(Block):
     def get_html(self) -> str:
         """Get HTML for the table header cell."""
-        return f"<th>{self._text}</th>"
+        return f"<th{self.css_class}>{self._text}</th>"
 
 
 class TableCell(Block):
     def get_html(self) -> str:
         """Get HTML for the table cell."""
-        return f"<td>{self._text}</td>"
+        return f"<td{self.css_class}>{self._text}</td>"
 
 
 class TableRow(Block):
@@ -42,4 +42,4 @@ class Table(Block):
 class TableCaption(Block):
     def get_html(self) -> str:
         """Get HTML for the caption."""
-        return f"<caption>{self._text}</caption>"
+        return f"<caption{self.css_class}>{self._text}</caption>"

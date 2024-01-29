@@ -2,20 +2,13 @@ from lib.aws.sns_manager import SnsTopicPublisher
 from lib.notification_service.formatter_provider import formatters
 from lib.notification_service.sender_provider import senders
 from lib.notification_service.messages import Message
+from lib.aws.secret_manager import SecretManager
 
 import logging
 import json
 import boto3
 import os
 
-# todo: the config will be read from settings config
-sender_config = {
-    "smtp_sender": "my_email@soname.de",
-    "smtp_server": "smtp.gmail.com",
-    "smtp_port": 465,
-    "smtp_login": "my_email@soname.de",
-    "smtp_password": "my_pass",
-}
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -85,12 +78,20 @@ def lambda_handler(event, context):
 
         message = Message(formatted_message, message_subject)
 
+        secret_client = SecretManager()
+        smtp_secret_name = delivery_options_info.get("smtp_secret_name")
+        smtp_secret = secret_client.get_secret(smtp_secret_name)
+
         sender = senders.get(
             delivery_method=delivery_method_type,
             message=message,
             ses_sender=delivery_method.get("sender_email"),
             recipients=delivery_options_info.get("recipients"),
-            **sender_config,
+            smtp_sender=smtp_secret["SMTP_SENDER"],
+            smtp_server=smtp_secret["SMTP_SERVER"],
+            smtp_port=smtp_secret["SMTP_PORT"],
+            smtp_login=smtp_secret["SMTP_LOGIN"],
+            smtp_password=smtp_secret["SMTP_PASSWORD"],
         )
 
         sender.pre_process()
