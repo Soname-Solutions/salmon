@@ -13,14 +13,14 @@ class SecretManagerClientException(Exception):
 class SecretManager:
     """Manages interactions with AWS Secrets Manager."""
 
-    def __init__(self, region_name: str, secret_client=None) -> None:
+    def __init__(self, secret_client=None) -> None:
         """Initiate class SecretManager.
 
         Args:
             secret_client: Boto3 SES client for AWS interactions.
         """
         self._secret_client = (
-            boto3.client(service_name="secretsmanager", region_name=region_name)
+            boto3.client(service_name="secretsmanager")
             if secret_client is None
             else secret_client
         )

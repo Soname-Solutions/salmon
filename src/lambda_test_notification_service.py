@@ -57,7 +57,7 @@ def lambda_handler(event, context):
 
     message = Message(formatted_message, message_subject)
 
-    secret_client = SecretManager(region_name="eu-north-1")
+    secret_client = SecretManager()
     smtp_secret_name = delivery_options_info.get("smtp_secret_name")
     smtp_secret = secret_client.get_secret(smtp_secret_name)
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             "sender_email": "natallia.alkhimovich@soname.de",
             "recipients": ["natallia.alkhimovich@soname.de"],
             "delivery_method": "SMTP",
-            "smtp_secret_name": "dev/smtp_server",
+            "smtp_secret_name": "dev/smtp",
         },
         "message": {
             "message_subject": "Super important Alert",
