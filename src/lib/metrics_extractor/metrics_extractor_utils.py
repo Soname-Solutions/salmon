@@ -4,6 +4,7 @@ from lib.aws.aws_naming import AWSNaming
 from logging import Logger
 
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
+from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class MetricsExtractorException(Exception):
@@ -55,7 +56,7 @@ def retrieve_last_update_time_for_all_resources(
             else:
                 logger.info(f"No data in table {timestream_table_name}, skipping..")
 
-        if not table_parts: # All metric tables are empty
+        if not table_parts:  # All metric tables are empty
             return {}
 
         query = f" UNION ALL ".join(table_parts)
@@ -108,3 +109,28 @@ def get_last_update_time(
             return datettime_utc
 
     return None
+
+
+def get_job_run_url(
+    resource_type: str,
+    region_name: str,
+    resource_name: str,
+    account_id: str = None,
+    run_id: str = None,
+) -> str:
+    """Returns the link to the particular resource run."""
+    job_run_url = ""
+
+    if resource_type == types.GLUE_JOBS:
+        job_run_url = f"https://{region_name}.console.aws.amazon.com/gluestudio/home?region={region_name}#/job/{resource_name}/run/{run_id}"
+    elif resource_type == types.STEP_FUNCTIONS:
+        job_run_url = (
+            f"https://{region_name}.console.aws.amazon.com/states/home?region={region_name}#/v2/executions/details/"
+            f"arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}"
+        )
+    elif resource_type == types.LAMBDA_FUNCTIONS:
+        job_run_url = (
+            f"https://{region_name}.console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F"
+            f"{resource_name}/log-events/"
+        )
+    return job_run_url

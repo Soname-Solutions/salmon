@@ -72,8 +72,12 @@ class LambdaManager:
             raise LambdaManagerException(error_message)
 
     def get_log_group(self, lambda_function_name: str) -> str:
-        response = self.lambda_client.get_function(FunctionName=lambda_function_name)
-        return response["Configuration"]["LoggingConfig"]["LogGroup"]
+        response = self.lambda_client.get_function(FunctionName=lambda_function_name)[
+            "Configuration"
+        ]
+        return response.get("LoggingConfig", {}).get(
+            "LogGroup", f"/aws/lambda/{lambda_function_name}"
+        )
 
     def get_lambda_logs(
         self,

@@ -20,6 +20,7 @@ from lib.core.constants import (
     SettingFileNames,
     NotificationType,
     GrafanaDefaultSettings,
+    DigestSettings,
 )
 
 # Used for settings only
@@ -135,6 +136,15 @@ class Settings:
                         res["sla_seconds"] = 0
                     if "minimum_number_of_runs" not in res:
                         res["minimum_number_of_runs"] = 0
+
+        # Add default settings for the digest report
+        self._processed_settings[SettingFileNames.GENERAL][
+            "tooling_environment"
+        ].setdefault("digest_report_period_hours", DigestSettings.REPORT_PERIOD_HOURS)
+        self._processed_settings[SettingFileNames.GENERAL][
+            "tooling_environment"
+        ].setdefault("digest_cron_expression", DigestSettings.CRON_EXPRESSION)
+
         # Add Grafana default settings
         grafana_instance_settings = self._processed_settings[SettingFileNames.GENERAL][
             "tooling_environment"
@@ -284,6 +294,16 @@ class Settings:
             "metrics_collection_interval_min"
         ]
 
+    def get_digest_report_settings(self) -> (int, str):
+        """Get digest report settings"""
+        digest_report_period_hours = self.general["tooling_environment"].get(
+            "digest_report_period_hours"
+        )
+        digest_cron_expression = self.general["tooling_environment"].get(
+            "digest_cron_expression"
+        )
+        return digest_report_period_hours, digest_cron_expression
+
     def get_grafana_settings(self) -> tuple[str, str, str, str, str]:
         """Get grafana settings"""
         grafana_settings = self.general["tooling_environment"].get("grafana_instance")
@@ -357,6 +377,15 @@ class Settings:
 
         return list(matched_groups)
 
+    def get_monitoring_groups_by_resource_type(self, resource_type: str) -> list[str]:
+        """Get monitoring groups related to particular resource type."""
+        matched_groups = {
+            group["group_name"]
+            for group in self.monitoring_groups.get("monitoring_groups", [])
+            if resource_type in group
+        }
+        return list(matched_groups)
+
     def get_recipients(
         self, monitoring_groups: list[str], notification_type: NotificationType
     ) -> list[dict]:
@@ -384,6 +413,32 @@ class Settings:
 
         return matched_recipients
 
+    def get_recipients_and_groups_by_notification_type(
+        self, notification_type: NotificationType
+    ) -> list[dict]:
+        """Get all recipients and their monitoring groups by the notification type."""
+        recipients_and_monitoring_groups = [
+            {
+                "recipient": recipient["recipient"],
+                "delivery_method": recipient["delivery_method"],
+                "monitoring_groups": [
+                    subscription.get("monitoring_group")
+                    for subscription in recipient.get("subscriptions", [])
+                    if (
+                        notification_type == NotificationType.ALERT
+                        and subscription.get("alerts")
+                    )
+                    or (
+                        notification_type == NotificationType.DIGEST
+                        and subscription.get("digest")
+                    )
+                ],
+            }
+            for recipient in self.recipients.get("recipients", [])
+        ]
+
+        return recipients_and_monitoring_groups
+
     def get_delivery_method(self, delivery_method_name: str) -> dict:
         """Get delivery method by name
 
@@ -391,11 +446,12 @@ class Settings:
             delivery_method_name (str): Name of the delivery method
 
         Returns:
-            dict: Delivery methoid info
+            dict: Delivery method info
         """
         for method in self.general.get("delivery_methods", []):
             if method.get("name") == delivery_method_name:
                 return method
+        return {}
 
     @staticmethod
     def _read_settings(base_path: str, read_file_func, *file_names):

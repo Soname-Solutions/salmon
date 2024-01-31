@@ -96,15 +96,23 @@ class InfraMonitoredStack(Stack):
 
     def create_metrics_extract_iam_role(self):
         """
-        Creates an IAM Role allowing Tooling Account's MetricsExtractor Lambda get required data from Monitored account
+        Creates an IAM Role allowing Tooling Account's MetricsExtractor and Digest Lambdas
+        get required data from Monitored account.
         """
         # todo: do we need multiple arns (lambdas)?
         # todo: how to get tooling extract lambda role -> through AWSNaming?
         tooling_extract_lambda_role_name = AWSNaming.IAMRole(
             self, CDKResourceNames.IAMROLE_EXTRACT_METRICS_LAMBDA
         )
-        principal_arn = AWSNaming.Arn_IAMRole(
+        tooling_digest_lambda_role_name = AWSNaming.IAMRole(
+            self, CDKResourceNames.IAMROLE_DIGEST_LAMBDA
+        )
+        extract_metrics_principal_arn = AWSNaming.Arn_IAMRole(
             self, self.tooling_account_id, tooling_extract_lambda_role_name
+        )
+
+        digest_lambda_principal_arn = AWSNaming.Arn_IAMRole(
+            self, self.tooling_account_id, tooling_digest_lambda_role_name
         )
 
         # todo rename
@@ -114,7 +122,10 @@ class InfraMonitoredStack(Stack):
             role_name=AWSNaming.IAMRole(
                 self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS
             ),
-            assumed_by=iam.ArnPrincipal(principal_arn),
+            assumed_by=iam.CompositePrincipal(
+                iam.ArnPrincipal(extract_metrics_principal_arn),
+                iam.ArnPrincipal(digest_lambda_principal_arn),
+            ),
         )
 
         # Glue Policy

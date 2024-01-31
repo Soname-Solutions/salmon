@@ -61,6 +61,7 @@ class HtmlFormatter(Formatter):
             td {  padding-right: 10px; padding-left: 10px; }  
             .ok { background-color: lightgreen; }
             .error { background-color: #FFCCCB; }
-            .warning { background-color: lightblue; }"""
-
+            .warning { background-color: lightblue; }          
+            .header {font-size: 19px; font-weight: bold; padding: 20px 10px;}
+            """
         return f"<html><head><style>{_css_style}</style></head><body>{body_content}</body></html>"

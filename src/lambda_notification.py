@@ -83,7 +83,7 @@ def lambda_handler(event, context):
         smtp_secret = secret_client.get_secret(smtp_secret_name)
 
         sender = senders.get(
-            delivery_method_type,
+            delivery_method=delivery_method_type,
             message=message,
             ses_sender=delivery_method.get("sender_email"),
             recipients=delivery_options_info.get("recipients"),
