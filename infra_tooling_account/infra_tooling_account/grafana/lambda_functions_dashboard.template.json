@@ -99,7 +99,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT * FROM $__database.$__table where $__timeFilter",
+          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter ",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -112,7 +112,60 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Measure name",
+        "multi": true,
+        "name": "measure",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "execution",
+            "value": "execution"
+          },
+          {
+            "selected": false,
+            "text": "duration_ms",
+            "value": "duration_ms"
+          },
+          {
+            "selected": false,
+            "text": "max_memory_used_mb",
+            "value": "max_memory_used_mb"
+          },
+          {
+            "selected": false,
+            "text": "billed_duration_ms",
+            "value": "billed_duration_ms"
+          },
+          {
+            "selected": false,
+            "text": "memory_size_mb",
+            "value": "memory_size_mb"
+          }
+        ],
+        "query": "execution,duration_ms,max_memory_used_mb,billed_duration_ms,memory_size_mb",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",

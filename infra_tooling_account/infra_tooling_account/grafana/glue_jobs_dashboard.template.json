@@ -99,7 +99,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT * FROM $__database.$__table where $__timeFilter",
+          "rawQuery": "SELECT  time, ${measure:csv} FROM $__database.$__table where $__timeFilter ",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -112,7 +112,60 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Measure name",
+        "multi": true,
+        "name": "measure",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "execution",
+            "value": "execution"
+          },
+          {
+            "selected": false,
+            "text": "dpu_seconds",
+            "value": "dpu_seconds"
+          },
+          {
+            "selected": false,
+            "text": "execution_time_sec",
+            "value": "execution_time_sec"
+          },
+          {
+            "selected": false,
+            "text": "failed",
+            "value": "failed"
+          },
+          {
+            "selected": false,
+            "text": "succeeded",
+            "value": "succeeded"
+          }
+        ],
+        "query": "execution,dpu_seconds,execution_time_sec,failed,succeeded",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",

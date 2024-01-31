@@ -99,7 +99,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT * FROM $__database.$__table where $__timeFilter",
+          "rawQuery": "SELECT  time, ${measure:csv} FROM $__database.$__table where $__timeFilter ",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -112,7 +112,85 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Measure name",
+        "multi": true,
+        "name": "measure",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "execution",
+            "value": "execution"
+          },
+          {
+            "selected": false,
+            "text": "actions_failed",
+            "value": "actions_failed"
+          },
+          {
+            "selected": false,
+            "text": "actions_stopped",
+            "value": "actions_stopped"
+          },
+          {
+            "selected": false,
+            "text": "actions_timeouted",
+            "value": "actions_timeouted"
+          },
+          {
+            "selected": false,
+            "text": "actions_total",
+            "value": "actions_total"
+          },
+          {
+            "selected": false,
+            "text": "actions_succeeded",
+            "value": "actions_succeeded"
+          },
+          {
+            "selected": false,
+            "text": "actions_errored",
+            "value": "actions_errored"
+          },
+          {
+            "selected": false,
+            "text": "execution_time_sec",
+            "value": "execution_time_sec"
+          },
+          {
+            "selected": false,
+            "text": "failed",
+            "value": "failed"
+          },
+          {
+            "selected": false,
+            "text": "succeeded",
+            "value": "succeeded"
+          }
+        ],
+        "query": "execution,actions_failed,actions_stopped,actions_timeouted,actions_total,actions_succeeded,actions_errored,execution_time_sec,failed,succeeded",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",

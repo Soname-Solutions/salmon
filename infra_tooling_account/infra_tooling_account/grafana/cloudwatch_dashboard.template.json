@@ -73,7 +73,7 @@
           "dimensions": {
             "LogGroupName": "<<LOG_GROUP_NAME>>"
           },
-          "expression": "| stats count(*) \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n",
+          "expression": "| stats count(*) \r\n| filter service_name IN [${service_name:doublequote}]\r\n| filter resource_name like /(?i)$search/\r\n",
           "id": "",
           "label": "",
           "logGroups": [
@@ -150,7 +150,7 @@
           "dimensions": {
             "LogGroupName": "<<LOG_GROUP_NAME>>"
           },
-          "expression": "| stats count(*) as cnt by event_status \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by event_status\r\n",
+          "expression": "| stats count(*) as cnt by event_status \r\n| filter service_name IN [${service_name:doublequote}]\r\n| filter resource_name like /(?i)$search/\r\n| sort by event_status\r\n",
           "id": "",
           "label": "",
           "logGroups": [
@@ -264,7 +264,7 @@
           "dimensions": {
             "LogGroupName": "$log_group"
           },
-          "expression": "| stats count(*) as events_cnt by bin(5m)\r\n| filter service_name IN [$service_name]\r\n| filter event_severity IN [$event_severity]\r\n| filter resource_name like /(?i)$search/",
+          "expression": "| stats count(*) as events_cnt by bin(5m)\r\n| filter service_name IN [${service_name:doublequote}]\r\n| filter event.detail.severity IN [${event_severity:doublequote}]\r\n| filter resource_name like /(?i)$search/",
           "id": "",
           "label": "Log events",
           "logGroups": [
@@ -407,6 +407,18 @@
                 "value": 145
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "event.detail.severity"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 182
+              }
+            ]
           }
         ]
       },
@@ -440,7 +452,7 @@
         {
           "datasource": "Cloudwatch",
           "dimensions": {},
-          "expression": "fields @timestamp, service_name, resource_name, event_status,event_severity, @message \n| filter service_name IN [$service_name]\n| filter event_severity IN [$event_severity]\n| filter resource_name like /(?i)$search/\n",
+          "expression": "fields @timestamp, service_name, resource_name, event_status,event.detail.severity as event_severity, @message \n| filter service_name IN [${service_name:doublequote}]\n| filter event.detail.severity IN [${event_severity:doublequote}]\n| filter resource_name like /(?i)$search/\n",
           "id": "",
           "label": "",
           "logGroups": [
@@ -498,16 +510,20 @@
         "type": "custom"
       },
       {
-        "allValue": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
+        "allValue": "",
         "current": {
           "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "hide": 0,
         "includeAll": true,
         "label": "Service Name",
-        "multi": false,
+        "multi": true,
         "name": "service_name",
         "options": [
           {
@@ -517,41 +533,55 @@
           },
           {
             "selected": false,
-            "text": "\"step_functions\"",
-            "value": "\"step_functions\""
+            "text": "glue_jobs",
+            "value": "glue_jobs"
           },
           {
             "selected": false,
-            "text": "\"glue_jobs\"",
-            "value": "\"glue_jobs\""
+            "text": "glue_workflows",
+            "value": "glue_workflows"
           },
           {
             "selected": false,
-            "text": "\"lambda_functions\"",
-            "value": "\"lambda_functions\""
+            "text": "glue_crawlers",
+            "value": "glue_crawlers"
           },
           {
             "selected": false,
-            "text": "\"glue_workflows\"",
-            "value": "\"glue_workflows\""
+            "text": "glue_catalogs",
+            "value": "glue_catalogs"
+          },
+          {
+            "selected": false,
+            "text": "lambda_functions",
+            "value": "lambda_functions"
+          },
+          {
+            "selected": false,
+            "text": "step_functions",
+            "value": "step_functions"
           }
         ],
-        "query": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
+        "query": "glue_jobs,glue_workflows,glue_crawlers,glue_catalogs,lambda_functions,step_functions",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
       },
       {
-        "allValue": "\"Unknown\"",
+        "allValue": "",
         "current": {
           "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "hide": 0,
         "includeAll": true,
         "label": "Event Severity",
-        "multi": false,
+        "multi": true,
         "name": "event_severity",
         "options": [
           {
@@ -561,11 +591,21 @@
           },
           {
             "selected": false,
-            "text": "\"Unknown\"",
-            "value": "\"Unknown\""
+            "text": "INFO",
+            "value": "INFO"
+          },
+          {
+            "selected": false,
+            "text": "ERROR",
+            "value": "ERROR"
+          },
+          {
+            "selected": false,
+            "text": "Unknown",
+            "value": "Unknown"
           }
         ],
-        "query": "\"Unknown\"",
+        "query": "INFO,ERROR,Unknown",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -593,7 +633,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-12h",
     "to": "now"
   },
   "timepicker": {},
