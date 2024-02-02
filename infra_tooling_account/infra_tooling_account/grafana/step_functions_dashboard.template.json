@@ -141,13 +141,8 @@
           },
           {
             "selected": false,
-            "text": "dpu_seconds",
-            "value": "dpu_seconds"
-          },
-          {
-            "selected": false,
-            "text": "execution_time_sec",
-            "value": "execution_time_sec"
+            "text": "duration_sec",
+            "value": "duration_sec"
           },
           {
             "selected": false,
@@ -160,7 +155,7 @@
             "value": "succeeded"
           }
         ],
-        "query": "execution,dpu_seconds,execution_time_sec,failed,succeeded",
+        "query": "execution,duration_sec,failed,succeeded",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -168,7 +163,7 @@
     ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
