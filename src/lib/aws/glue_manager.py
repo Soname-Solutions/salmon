@@ -16,7 +16,7 @@ class JobRun(BaseModel):
     # TriggerName: str
     JobName: str
     StartedOn: datetime
-    LastModifiedOn: datetime
+    LastModifiedOn: Optional[datetime]
     CompletedOn: Optional[datetime]
     JobRunState: str
     ErrorMessage: Optional[str] = None
