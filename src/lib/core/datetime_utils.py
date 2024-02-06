@@ -1,7 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import time
-import dateutil
-
 
 def epoch_milliseconds(epoch_seconds: float = None) -> int:
     """
@@ -68,9 +66,12 @@ def str_utc_datetime_to_datetime(datetime_str: str) -> datetime:
     Returns:
     datetime: The converted datetime object.
     """
+    datetime_str = datetime_str.rstrip("0")
+    if datetime_str.endswith("."):
+        datetime_str = datetime_str + "000000"
+
     result_datetime = datetime.strptime(
-        datetime_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f"
-    )
-    utc_tz = dateutil.tz.gettz("UTC")
-    result_datetime = result_datetime.replace(tzinfo=utc_tz)
+        datetime_str, "%Y-%m-%d %H:%M:%S.%f"
+    )    
+    result_datetime = result_datetime.replace(tzinfo=timezone.utc)
     return result_datetime

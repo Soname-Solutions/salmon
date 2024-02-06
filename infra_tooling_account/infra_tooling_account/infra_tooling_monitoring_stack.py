@@ -327,7 +327,7 @@ class InfraToolingMonitoringStack(Stack):
             },
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
-            retry_attempts=2,
+            retry_attempts=0,
             on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
@@ -361,7 +361,7 @@ class InfraToolingMonitoringStack(Stack):
             },
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
-            retry_attempts=2,
+            retry_attempts=0,
             on_failure=lambda_destiantions.SnsDestination(internal_error_topic),
         )
 
