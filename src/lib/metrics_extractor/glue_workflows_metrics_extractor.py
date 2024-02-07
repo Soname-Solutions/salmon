@@ -94,7 +94,9 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
 
     def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         self.workflow_runs = self._extract_metrics_data(since_time=since_time)
-        records, common_attributes = self._data_to_timestream_records(self.workflow_runs)
+        records, common_attributes = self._data_to_timestream_records(
+            self.workflow_runs
+        )
         return records, common_attributes
 
     ###########################################################################################
@@ -102,14 +104,16 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
         self,
         workflowRun: WorkflowRun,
         event_bus_name: str,
-        workflow_aws_region: str, # region and account where workflow is deployed    
-        workflow_aws_account: str,
+        workflow_aws_account: str,  # region and account where workflow is deployed
+        workflow_aws_region: str,
     ) -> dict:
-        '''
+        """
         Generates json in a form which can be sent to EventBus
-        '''       
+        """
 
-        event_result = EventResult.SUCCESS if workflowRun.IsSuccess else EventResult.FAILURE
+        event_result = (
+            EventResult.SUCCESS if workflowRun.IsSuccess else EventResult.FAILURE
+        )
         message = f"Workflow run execution status: {event_result.lower()}"
 
         event = {
@@ -117,34 +121,45 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
             "Source": "salmon.glue_workflow",
             "Resources": [],
             "DetailType": "Glue Workflow State Change",
-            "Detail": json.dumps({
-                "workflowName": workflowRun.Name,
-                "state" : workflowRun.Status,
-                "event_result": event_result,
-                "workflowRunId": workflowRun.WorkflowRunId,
-                "message": message,
-                "worklflow_account": workflow_aws_account,
-                "worklflow_region": workflow_aws_region,
-            }),
+            "Detail": json.dumps(
+                {
+                    "workflowName": workflowRun.Name,
+                    "state": workflowRun.Status,
+                    "event_result": event_result,
+                    "workflowRunId": workflowRun.WorkflowRunId,
+                    "message": message,
+                    "origin_account": workflow_aws_account,
+                    "origin_region": workflow_aws_region,
+                }
+            ),
             "EventBusName": event_bus_name,
         }
 
         return event
 
-    def send_alerts(self, event_bus_name: str, workflow_aws_account: str, workflow_aws_region: str):
-        '''
+    def send_alerts(
+        self, event_bus_name: str, workflow_aws_account: str, workflow_aws_region: str
+    ):
+        """
         Sends events to EventBridge bus
 
         event_bus_name - target event_bus for the message
         workflow_aws_account, workflow_aws_region - where workflow is deployed (so alerting service can recognize monitored_environment_name)
-        
-        '''        
+
+        """
         if self.workflow_runs:
             events = []
             for workflow_run in self.workflow_runs:
-                events.append(self.generate_event(workflow_run, event_bus_name, workflow_aws_account, workflow_aws_region))
+                events.append(
+                    self.generate_event(
+                        workflowRun=workflow_run,
+                        event_bus_name=event_bus_name,
+                        workflow_aws_account=workflow_aws_account,
+                        workflow_aws_region=workflow_aws_region,
+                    )
+                )
 
             if events:
-                events_manager = EventsManager()        
-                print(f"GlueWF extractor: Sending {len(events)} events to EventBridge")        
+                events_manager = EventsManager()
+                print(f"GlueWF extractor: Sending {len(events)} events to EventBridge")
                 events_manager.put_events(events=events)
