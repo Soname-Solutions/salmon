@@ -70,11 +70,15 @@ class WorkflowRun(BaseModel):
 
     @property
     def IsSuccess(self) -> bool:
-        return self.Status in GlueManager.Workflow_States_Success
+        return (self.Status in GlueManager.Workflow_States_Success) and (
+            # Glue Workflow can have status "completed" even if some actions have failed, which is misleading
+            # adding this check
+            self.Statistics.TotalActions == self.Statistics.SucceededActions
+        )
 
     @property
     def IsFailure(self) -> bool:
-        return self.Status in GlueManager.Workflow_States_Failure
+        return not(self.IsSuccess)
 
     @property
     def Duration(self) -> float:
