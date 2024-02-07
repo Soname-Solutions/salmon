@@ -6,6 +6,7 @@ from lib.core.constants import EventResult
 
 from lib.aws.glue_manager import GlueManager, WorkflowRun
 from lib.core import datetime_utils
+from lib.aws.events_manager import EventsManager
 
 
 class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
@@ -144,5 +145,6 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
                 events.append(self.generate_event(workflow_run, event_bus_name, workflow_aws_account, workflow_aws_region))
 
             if events:
-                eventbridge_client = boto3.client("events")
-                response = eventbridge_client.put_events(Entries=events)
+                events_manager = EventsManager()        
+                print(f"GlueWF extractor: Sending {len(events)} events to EventBridge")        
+                events_manager.put_events(events=events)

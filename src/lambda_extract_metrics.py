@@ -84,7 +84,7 @@ def process_individual_resource(
     logger.info(f"Written {len(records)} records to timestream")
 
     # for resource types where alerts are processed inside Salmon (not by default EventBridge functionality)
-    if resource_type in [types.GLUE_WORKFLOWS]:
+    if hasattr(metrics_extractor, 'send_alerts'):
         logger.info(f"Sending alerts to event bus {alerts_event_bus_name}")
         account_id, region = (
             boto3_client_creator.account_id,
