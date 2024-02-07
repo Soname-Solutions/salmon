@@ -38,7 +38,20 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Execution time, hours"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 14,
@@ -60,7 +73,7 @@
           "values": false
         },
         "text": {
-          "titleSize": 20,
+          "titleSize": 18,
           "valueSize": 40
         },
         "textMode": "value_and_name",
@@ -72,7 +85,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT   sum(execution) as \"Total runs\", sum(failed) as \"Failed\",sum(succeeded) as \"Succeeded\"  ,round(sum(execution_time_sec/60), 2) as \"Execution time,min\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(failed) as \"Failed\", sum(succeeded) as \"Succeeded\", sum(execution_time_sec)/3600 as \"Execution time, hours\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -272,7 +285,7 @@
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 0,
+        "sort": 1,
         "type": "query"
       },
       {
@@ -297,7 +310,7 @@
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 0,
+        "sort": 1,
         "type": "query"
       }
     ]

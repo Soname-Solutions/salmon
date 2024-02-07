@@ -38,7 +38,32 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Billed Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 14,
@@ -60,7 +85,7 @@
           "values": false
         },
         "text": {
-          "titleSize": 20,
+          "titleSize": 18,
           "valueSize": 40
         },
         "textMode": "value_and_name",
@@ -72,7 +97,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT   sum(execution) as \"Total runs\",  round(sum(duration_ms/60), 2) as \"Duration,sec\" ,round(sum(billed_duration_ms/60), 2) as \"Billed duration,sec\", round(sum(memory_size_mb/3600), 2) as \"Memory size,mb\", round(sum(max_memory_used_mb/3600), 2) as \"Max Memory used,mb\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(duration_ms)/1000 as \"Duration, sec\", sum(billed_duration_ms)/1000 as \"Billed Duration, sec\", sum(memory_size_mb)/1000 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -247,7 +272,7 @@
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 0,
+        "sort": 1,
         "type": "query"
       },
       {
@@ -272,7 +297,7 @@
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
-        "sort": 0,
+        "sort": 1,
         "type": "query"
       }
     ]
