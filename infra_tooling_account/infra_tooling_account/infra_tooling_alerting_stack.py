@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Fn,
+    CfnOutput,
     IgnoreMode,
     aws_s3 as s3,
     aws_events as events,
@@ -90,6 +91,14 @@ class InfraToolingAlertingStack(Stack):
 
         alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
+        output_alerting_bus_name = CfnOutput(
+            self,
+            "salmonAlertingEventBusArn",
+            value=alerting_bus.event_bus_arn,
+            description="Arn of alerting Event Bus",
+            export_name=AWSNaming.CfnOutput(self, "alerting-bus-arn"),
+        )        
+
         log_group_name, log_stream_name = self.create_alert_events_log_stream()
 
         alerting_lambda = self.create_alerting_lambda(
@@ -138,7 +147,11 @@ class InfraToolingAlertingStack(Stack):
             "salmonAlertingLambdaEventRule",
             rule_name=AWSNaming.EventBusRule(self, "alerting-lambda"),
             event_bus=alerting_bus,
-            event_pattern=events.EventPattern(source=events.Match.prefix("aws")),
+            event_pattern=events.EventPattern(
+                source=events.Match.any_of(
+                    events.Match.prefix("aws"), events.Match.prefix("salmon")
+                )
+            ),
         )
 
         return alerting_bus, alerting_lambda_event_rule

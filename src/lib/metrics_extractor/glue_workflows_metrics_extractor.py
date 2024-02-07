@@ -1,5 +1,8 @@
+import json
+import boto3
 from datetime import datetime
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
+from lib.core.constants import EventResult
 
 from lib.aws.glue_manager import GlueManager, WorkflowRun
 from lib.core import datetime_utils
@@ -89,6 +92,57 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
         return records, common_attributes
 
     def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
-        workflow_runs = self._extract_metrics_data(since_time=since_time)
-        records, common_attributes = self._data_to_timestream_records(workflow_runs)
+        self.workflow_runs = self._extract_metrics_data(since_time=since_time)
+        records, common_attributes = self._data_to_timestream_records(self.workflow_runs)
         return records, common_attributes
+
+    ###########################################################################################
+    def generate_event(
+        self,
+        workflowRun: WorkflowRun,
+        event_bus_name: str,
+        workflow_aws_region: str, # region and account where workflow is deployed    
+        workflow_aws_account: str,
+    ) -> dict:
+        '''
+        Generates json in a form which can be sent to EventBus
+        '''       
+
+        event_result = EventResult.SUCCESS if workflowRun.IsSuccess else EventResult.FAILURE
+        message = f"Workflow run execution status: {event_result.lower()}"
+
+        event = {
+            "Time": workflowRun.CompletedOn,
+            "Source": "salmon.glue_workflow",
+            "Resources": [],
+            "DetailType": "Glue Workflow State Change",
+            "Detail": json.dumps({
+                "workflowName": workflowRun.Name,
+                "state" : workflowRun.Status,
+                "event_result": event_result,
+                "workflowRunId": workflowRun.WorkflowRunId,
+                "message": message,
+                "worklflow_account": workflow_aws_account,
+                "worklflow_region": workflow_aws_region,
+            }),
+            "EventBusName": event_bus_name,
+        }
+
+        return event
+
+    def send_alerts(self, event_bus_name: str, workflow_aws_account: str, workflow_aws_region: str):
+        '''
+        Sends events to EventBridge bus
+
+        event_bus_name - target event_bus for the message
+        workflow_aws_account, workflow_aws_region - where workflow is deployed (so alerting service can recognize monitored_environment_name)
+        
+        '''        
+        if self.workflow_runs:
+            events = []
+            for workflow_run in self.workflow_runs:
+                events.append(self.generate_event(workflow_run, event_bus_name, workflow_aws_account, workflow_aws_region))
+
+            if events:
+                eventbridge_client = boto3.client("events")
+                response = eventbridge_client.put_events(Entries=events)

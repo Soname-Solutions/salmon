@@ -10,6 +10,7 @@ from lib.core.constants import SettingConfigs
 
 from lib.metrics_extractor import MetricsExtractorProvider
 from lib.metrics_extractor.metrics_extractor_utils import get_last_update_time
+from lib.core.constants import SettingConfigResourceTypes as types
 import json
 
 logger = logging.getLogger()
@@ -29,6 +30,7 @@ def process_individual_resource(
     timestream_metrics_db_name: str,
     timestream_metrics_table_name: str,
     last_update_times: dict,
+    alerts_event_bus_name: str,
 ):
     logger.info(
         f"Processing: {resource_type}: [{resource_name}] at env:{monitored_environment_name}"
@@ -81,6 +83,16 @@ def process_individual_resource(
     )
     logger.info(f"Written {len(records)} records to timestream")
 
+    # for resource types where alerts are processed inside Salmon (not by default EventBridge functionality)
+    if resource_type in [types.GLUE_WORKFLOWS]:
+        logger.info(f"Sending alerts to event bus {alerts_event_bus_name}")
+        account_id, region = (
+            boto3_client_creator.account_id,
+            boto3_client_creator.region,
+        )
+        metrics_extractor.send_alerts(alerts_event_bus_name, account_id, region)
+        logger.info(f"Alerts have been sent successfully")
+
 
 def process_all_resources_by_env_and_type(
     monitored_environment_name: str,
@@ -90,6 +102,7 @@ def process_all_resources_by_env_and_type(
     iam_role_name: str,
     timestream_metrics_db_name: str,
     last_update_times: dict,
+    alerts_event_bus_name: str,
 ):
     logger.info(
         f"Processing resource type: {resource_type}, env: {monitored_environment_name}"
@@ -122,6 +135,7 @@ def process_all_resources_by_env_and_type(
             timestream_metrics_db_name=timestream_metrics_db_name,
             timestream_metrics_table_name=metrics_table_name,
             last_update_times=last_update_times,
+            alerts_event_bus_name=alerts_event_bus_name,
         )
 
 
@@ -132,6 +146,7 @@ def lambda_handler(event, context):
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
     timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    alerts_event_bus_name = os.environ["ALERTS_EVENT_BUS_NAME"]
     monitoring_group_name = event.get("monitoring_group")
     last_update_times = event.get("last_update_times")
 
@@ -139,7 +154,7 @@ def lambda_handler(event, context):
     settings = Settings.from_s3_path(
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
-    content = settings.get_monitoring_group_content(monitoring_group_name)
+    content = settings.get_monitoring_group_content(monitoring_group_name)    
 
     for attr_name in content:
         attr_value = content[attr_name]
@@ -165,6 +180,7 @@ def lambda_handler(event, context):
                     iam_role_name=iam_role_name,
                     timestream_metrics_db_name=timestream_metrics_db_name,
                     last_update_times=last_update_times,
+                    alerts_event_bus_name=alerts_event_bus_name,
                 )
 
 
@@ -175,10 +191,12 @@ if __name__ == "__main__":
     timestream_metrics_db_name = "timestream-salmon-metrics-events-storage-devam"
     iam_role = "role-salmon-monitored-acc-extract-metrics-devam"
     s3_path = "s3://s3-salmon-settings-devam/settings/"
+    alerts_event_bus_name = "eventbus-salmon-alerting-devam"
 
     os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"] = iam_role
     os.environ["TIMESTREAM_METRICS_DB_NAME"] = timestream_metrics_db_name
     os.environ["SETTINGS_S3_PATH"] = s3_path
+    os.environ["ALERTS_EVENT_BUS_NAME"] = alerts_event_bus_name
 
     # adding last_update_times
     from lib.aws.timestream_manager import TimeStreamQueryRunner
@@ -190,7 +208,7 @@ if __name__ == "__main__":
         query_runner, timestream_metrics_db_name, logger
     )
 
-    monitoring_group = "salmonts_lambdas_stepfunctions"
+    monitoring_group = "mg_glue_wf_dev"
 
     event = {
         "monitoring_group": monitoring_group,
