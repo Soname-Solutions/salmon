@@ -6,19 +6,20 @@ from ...aws.step_functions_manager import StepFunctionsManager
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
-    def get_resource_name(self, event):
-        arn = event["detail"]["stateMachineArn"]
+    def get_resource_name(self):
+        arn = self.event["detail"]["stateMachineArn"]
         return arn.split("stateMachine:")[1]
 
-    def get_resource_state(self, event):
-        return event["detail"]["status"]
+    def get_resource_state(self):
+        return self.event["detail"]["status"]
 
-    def get_event_result(self, event):
-        if self.get_resource_state(event) in StepFunctionsManager.STATES_FAILURE:
+    def get_event_result(self):
+        if self.get_resource_state() in StepFunctionsManager.STATES_FAILURE:
             return EventResult.FAILURE
-        if self.get_resource_state(event) in StepFunctionsManager.STATES_SUCCESS:
+        elif self.get_resource_state() in StepFunctionsManager.STATES_SUCCESS:
             return EventResult.SUCCESS
-        return EventResult.INFO
+        else:
+            return EventResult.INFO
 
     @staticmethod
     def __timestamp_to_datetime(timestamp: int) -> str:
@@ -34,33 +35,33 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             return datetime.fromtimestamp(timestamp / 1e3).isoformat()
         return None
 
-    def get_message_body(self, event):
-        message_body, rows = super().create_message_body_with_common_rows(event)
+    def get_message_body(self):
+        message_body, rows = super().create_message_body_with_common_rows()
 
-        style = super().get_row_style(event)
+        style = super().get_row_style()
 
         rows.append(
             super().create_table_row(
-                ["State Machine Name", self.get_resource_name(event)]
+                ["State Machine Name", self.get_resource_name()]
             )
         )
         rows.append(
-            super().create_table_row(["Execution Name", event["detail"]["name"]])
+            super().create_table_row(["Execution Name", self.event["detail"]["name"]])
         )
         rows.append(
-            super().create_table_row(["Status", self.get_resource_state(event)], style)
+            super().create_table_row(["Status", self.get_resource_state()], style)
         )
         rows.append(
             super().create_table_row(
                 [
                     "Start Date",
-                    self.__timestamp_to_datetime(event["detail"]["startDate"]),
+                    self.__timestamp_to_datetime(self.event["detail"]["startDate"]),
                 ]
             )
         )
         rows.append(
             super().create_table_row(
-                ["Stop Date", self.__timestamp_to_datetime(event["detail"]["stopDate"])]
+                ["Stop Date", self.__timestamp_to_datetime(self.event["detail"]["stopDate"])]
             )
         )
 

@@ -4,26 +4,26 @@ from ...core.constants import EventResult
 
 
 class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
-    def get_resource_name(self, event):
-        return event["detail"]["databaseName"]
+    def get_resource_name(self):
+        return self.event["detail"]["databaseName"]
 
-    def get_resource_state(self, event):
-        return event["detail"]["state"]
+    def get_resource_state(self):
+        return self.event["detail"]["state"]
 
-    def get_event_result(self, event):
+    def get_event_result(self):
         return EventResult.INFO
 
-    def get_message_body(self, event):
-        message_body, rows = super().create_message_body_with_common_rows(event)
+    def get_message_body(self):
+        message_body, rows = super().create_message_body_with_common_rows()
 
-        style = super().get_row_style(event)
+        style = super().get_row_style()
 
         rows.append(
-            super().create_table_row(["Database Name", event["detail"]["databaseName"]])
+            super().create_table_row(["Database Name", self.event["detail"]["databaseName"]])
         )
         rows.append(
             super().create_table_row(
-                ["Type of Change", event["detail"]["typeOfChange"]]
+                ["Type of Change", self.event["detail"]["typeOfChange"]]
             )
         )
 

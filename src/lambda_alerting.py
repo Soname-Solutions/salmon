@@ -55,14 +55,14 @@ def lambda_handler(event, context):
     resource_type = ResourceTypeResolver.resolve(event)
     mapper = EventMapperProvider.get_event_mapper(resource_type, event=event, settings=settings)
 
-    event_result = mapper.get_event_result(event)
-    resource_name = mapper.get_resource_name(event)
-    event_status = mapper.get_resource_state(event)
+    event_result = mapper.get_event_result()
+    resource_name = mapper.get_resource_name()
+    event_status = mapper.get_resource_state()
 
     notification_messages = []
 
     if event_result in EVENT_RESULTS_ALERTABLE:
-        message = mapper.to_message(event)
+        message = mapper.to_message()
         delivery_options = DeliveryOptionsResolver.get_delivery_options(
             settings, resource_name
         )
@@ -104,6 +104,7 @@ if __name__ == "__main__":
     from datetime import datetime, timezone, timedelta
     current_time = datetime.now(timezone.utc) - timedelta(minutes=5)
     time_str = current_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    version_str = current_time.strftime("%Y%m%d%H%M%S")
 
     os.environ[
         "NOTIFICATION_QUEUE_URL"
@@ -128,7 +129,7 @@ if __name__ == "__main__":
     }
 
     glue_event = {
-        "version": "0",
+        "version": version_str,
         "id": "abcdef00-1234-5678-9abc-def012345678",
         "detail-type": "Glue Job State Change",
         "source": "aws.glue",
@@ -146,7 +147,7 @@ if __name__ == "__main__":
     }
 
     step_functions_event = {
-        "version": "4",
+        "version": version_str,
         "id": "315c1398-40ff-a850-213b-158f73e60175",
         "detail-type": "Step Functions Execution Status Change",
         "source": "aws.states",
@@ -169,7 +170,7 @@ if __name__ == "__main__":
     }
 
     glue_workflow_event = {
-        "version": "3",
+        "version": version_str,
         "id": "1c338584-7eb1-34e1-9f7d-f803fcb4ac22",
         "detail-type": "Glue Workflow State Change",
         "source": "salmon.glue_workflow",
