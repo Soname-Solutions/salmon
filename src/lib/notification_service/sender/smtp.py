@@ -15,7 +15,7 @@ class SmtpSender(Sender):
     def __init__(
         self,
         message: Message,
-        sender: str,
+        sender_email: str,
         recipients: List[str],
         server: str,
         port: int,
@@ -24,7 +24,7 @@ class SmtpSender(Sender):
     ) -> None:
         """Initiate class EmailSender."""
         super().__init__(message)
-        self._sender = sender
+        self._sender_email = sender_email
         self._recipients = recipients
         self._server = server
         self._port = port
@@ -39,7 +39,7 @@ class SmtpSender(Sender):
         message_body = MIMEMultipart("alternative")
 
         message["Subject"] = self._message.header
-        message["From"] = self._sender
+        message["From"] = self._sender_email
         message["To"] = ",".join(self._recipients)
 
         # Encode the text and HTML content and set the character encoding. This step is
@@ -72,7 +72,9 @@ class SmtpSender(Sender):
             try:
                 server.login(self._login, self._password)
                 server.sendmail(
-                    self._sender, self._recipients, self._get_message().as_string()
+                    self._sender_email,
+                    self._recipients,
+                    self._get_message().as_string(),
                 )
             except SMTPResponseException as ex:
                 raise SmtpSenderException(
@@ -83,7 +85,7 @@ class SmtpSender(Sender):
 
 def create_smtp_sender(
     message: Message,
-    smtp_sender: str,
+    sender_email: str,
     recipients: List[str],
     smtp_server: str,
     smtp_port: int,
@@ -94,7 +96,7 @@ def create_smtp_sender(
     """Create an SmtpSender instance."""
     return SmtpSender(
         message,
-        smtp_sender,
+        sender_email,
         recipients,
         smtp_server,
         smtp_port,

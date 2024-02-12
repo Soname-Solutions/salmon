@@ -7,14 +7,16 @@ class SenderProvider:
     def __init__(self):
         self._senders = {}
 
-    def register_sender(self, delivery_method, sender):
-        self._senders[delivery_method] = sender
+    def register_sender(self, delivery_method_type, sender):
+        self._senders[delivery_method_type] = sender
 
-    def get(self, delivery_method, **kwargs):
-        sender = self._senders.get(delivery_method)
+    def get(self, delivery_method_type, **kwargs):
+        sender = self._senders.get(delivery_method_type)
 
         if not sender:
-            raise ValueError(f"Delivery method {delivery_method} is not supported.")
+            raise ValueError(
+                f"Delivery method {delivery_method_type} is not supported."
+            )
 
         return sender(**kwargs)
 

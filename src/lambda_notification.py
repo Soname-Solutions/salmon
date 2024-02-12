@@ -78,21 +78,27 @@ def lambda_handler(event, context):
 
         message = Message(formatted_message, message_subject)
 
-        secret_client = SecretManager()
-        smtp_secret_name = delivery_options_info.get("smtp_secret_name")
-        smtp_secret = secret_client.get_secret(smtp_secret_name)
-
-        sender = senders.get(
-            delivery_method=delivery_method_type,
-            message=message,
-            ses_sender=delivery_method.get("sender_email"),
-            recipients=delivery_options_info.get("recipients"),
-            smtp_sender=smtp_secret["SMTP_SENDER"],
-            smtp_server=smtp_secret["SMTP_SERVER"],
-            smtp_port=smtp_secret["SMTP_PORT"],
-            smtp_login=smtp_secret["SMTP_LOGIN"],
-            smtp_password=smtp_secret["SMTP_PASSWORD"],
-        )
+        if delivery_method_type == "SMTP":
+            secret_client = SecretManager()
+            smtp_secret_name = delivery_options_info.get("credentials_secret_name")
+            smtp_secret = json.loads(secret_client.get_secret(smtp_secret_name))
+            sender = senders.get(
+                delivery_method_type=delivery_method_type,
+                message=message,
+                sender_email=delivery_method.get("sender_email"),
+                recipients=delivery_options_info.get("recipients"),
+                smtp_server=smtp_secret["SMTP_SERVER"],
+                smtp_port=smtp_secret["SMTP_PORT"],
+                smtp_login=smtp_secret["SMTP_LOGIN"],
+                smtp_password=smtp_secret["SMTP_PASSWORD"],
+            )
+        else:
+            sender = senders.get(
+                delivery_method_type=delivery_method_type,
+                message=message,
+                sender_email=delivery_method.get("sender_email"),
+                recipients=delivery_options_info.get("recipients"),
+            )
 
         sender.pre_process()
 
