@@ -24,7 +24,6 @@ class GeneralAwsEventMapper(ABC):
         settings: Settings
     ):
         self.event = event
-        self.settings = settings
         self.monitored_env_name = settings.get_monitored_environment_name(event["account"], event["region"])
 
     @abstractmethod

@@ -1,7 +1,7 @@
 # Import the necessary libraries
 import pytest
 from datetime import datetime, timezone
-from src.lib.core.datetime_utils import str_utc_datetime_to_datetime  
+from lib.core.datetime_utils import str_utc_datetime_to_datetime  
 
 # Test cases for the str_utc_datetime_to_datetime function
 # @pytest.mark.parametrize("input_datetime_str, expected_datetime", [
