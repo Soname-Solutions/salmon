@@ -52,12 +52,8 @@ def lambda_handler(event, context):
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     settings = Settings.from_s3_path(settings_s3_path)
 
-    monitored_env_name = settings.get_monitored_environment_name(
-        event["account"], event["region"]
-    )
-
     resource_type = ResourceTypeResolver.resolve(event)
-    mapper = EventMapperProvider.get_event_mapper(resource_type)
+    mapper = EventMapperProvider.get_event_mapper(resource_type, event=event, settings=settings)
 
     event_result = mapper.get_event_result(event)
     resource_name = mapper.get_resource_name(event)
@@ -66,7 +62,7 @@ def lambda_handler(event, context):
     notification_messages = []
 
     if event_result in EVENT_RESULTS_ALERTABLE:
-        message = mapper.to_message(monitored_env_name, event)
+        message = mapper.to_message(event)
         delivery_options = DeliveryOptionsResolver.get_delivery_options(
             settings, resource_name
         )
@@ -86,7 +82,7 @@ def lambda_handler(event, context):
         CloudWatchAlertWriter.write_event_to_cloudwatch(
             log_group_name,
             log_stream_name,
-            monitored_env_name,
+            mapper.monitored_env_name,
             resource_name,
             resource_type,
             event_status,
@@ -100,17 +96,25 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    # os vars passed when lambda is created
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)  # so we see logged messages in console when debugging    
+    
+    stage_name = "devam"
+    
+    from datetime import datetime, timezone, timedelta
+    current_time = datetime.now(timezone.utc) - timedelta(minutes=5)
+    time_str = current_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     os.environ[
         "NOTIFICATION_QUEUE_URL"
-    ] = "https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-devvd"
-    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devvd/settings/"
+    ] = f"https://sqs.eu-central-1.amazonaws.com/405389362913/queue-salmon-notification-{stage_name}"
+    os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
     os.environ[
         "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
-    ] = "log-group-salmon-alert-events-devvd"
+    ] = f"log-group-salmon-alert-events-{stage_name}"
     os.environ[
         "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
-    ] = "log-stream-salmon-alert-events-devvd"
+    ] = f"log-stream-salmon-alert-events-{stage_name}"
     event = {
         "version": "0",
         "id": "cc90c8c7-57a6-f950-2248-c4c8db98a5ef",
@@ -129,7 +133,7 @@ if __name__ == "__main__":
         "detail-type": "Glue Job State Change",
         "source": "aws.glue",
         "account": "405389362913",
-        "time": "2023-11-28T18:57:21Z",
+        "time": time_str,
         "region": "eu-central-1",
         "resources": [],
         "detail": {
@@ -142,12 +146,12 @@ if __name__ == "__main__":
     }
 
     step_functions_event = {
-        "version": "0",
+        "version": "4",
         "id": "315c1398-40ff-a850-213b-158f73e60175",
         "detail-type": "Step Functions Execution Status Change",
         "source": "aws.states",
         "account": "405389362913",
-        "time": "2023-11-28T19:42:21Z",
+        "time": time_str,
         "region": "eu-central-1",
         "resources": [
             "arn:aws:states:us-east-1:123456789012:execution:state-machine-name:execution-name"
@@ -164,5 +168,26 @@ if __name__ == "__main__":
         },
     }
 
+    glue_workflow_event = {
+        "version": "3",
+        "id": "1c338584-7eb1-34e1-9f7d-f803fcb4ac22",
+        "detail-type": "Glue Workflow State Change",
+        "source": "salmon.glue_workflow",
+        "account": "405389362913",
+        "time": time_str,
+        "region": "eu-central-1",
+        "resources": [],
+        "detail": {
+            "workflowName": "glue-salmonts-workflow-dev",
+            "state": "COMPLETED",
+            "event_result": "FAILURE",
+            "workflowRunId": "wr_75b9bcd0d7753776161d4ca1c4badd1924b445961ccdb89ae5ab86e920e6bc87",
+            "message": "Test Workflow run execution status: failure",
+            "origin_account": "025590872641",
+            "origin_region": "eu-central-1"
+        }
+    }
+
     context = None
-    lambda_handler(step_functions_event, context)
+    response = lambda_handler(step_functions_event, context)
+    print(response)

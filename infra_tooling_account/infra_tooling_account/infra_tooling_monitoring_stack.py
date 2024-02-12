@@ -61,6 +61,7 @@ class InfraToolingMonitoringStack(Stack):
             input_timestream_database_arn,
             input_timestream_database_name,
             input_timestream_kms_key_arn,
+            input_alerting_bus_arn,
         ) = self.get_common_stack_references()
 
         (
@@ -74,6 +75,7 @@ class InfraToolingMonitoringStack(Stack):
             timestream_database_arn=input_timestream_database_arn,
             timestream_database_name=input_timestream_database_name,
             timestream_kms_key_arn=input_timestream_kms_key_arn,
+            alerting_bus_arn=input_alerting_bus_arn,
         )
 
         # ntification Queue Import
@@ -158,6 +160,10 @@ class InfraToolingMonitoringStack(Stack):
             AWSNaming.CfnOutput(self, "internal-error-topic-arn")
         )
 
+        input_alerting_bus_arn = Fn.import_value(
+            AWSNaming.CfnOutput(self, "alerting-bus-arn")
+        )
+
         # Settings S3 Bucket Import
         settings_bucket = s3.Bucket.from_bucket_arn(
             self,
@@ -178,6 +184,7 @@ class InfraToolingMonitoringStack(Stack):
             input_timestream_database_arn,
             input_timestream_database_name,
             input_timestream_kms_key_arn,
+            input_alerting_bus_arn,
         )
 
     def create_extract_metrics_lambdas(
@@ -187,6 +194,7 @@ class InfraToolingMonitoringStack(Stack):
         timestream_database_arn,
         timestream_database_name,
         timestream_kms_key_arn,
+        alerting_bus_arn,
     ):
         """
         Creates two AWS Lambda functions for extracting metrics. One function orchestrates the process,
@@ -200,6 +208,11 @@ class InfraToolingMonitoringStack(Stack):
         Returns:
             tuple: A tuple containing references to the orchestrator and extractor Lambda functions.
         """
+
+        alerting_bus: events.EventBus = events.EventBus.from_event_bus_arn(
+            self, "salmonAlertingEventBus", event_bus_arn=alerting_bus_arn
+        )
+
         extract_metrics_lambda_role = iam.Role(
             self,
             "ExtractMetricsLambdaRole",
@@ -274,6 +287,17 @@ class InfraToolingMonitoringStack(Stack):
             )
         )
 
+        tooling_acc_inline_policy.add_statements(
+            # to be send events for those services, which are not in EventBridge yet
+            iam.PolicyStatement(
+                actions=[
+                    "events:PutEvents"
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=[alerting_bus_arn],
+            )
+        )        
+
         monitored_assume_inline_policy = iam.Policy(
             self,
             "MonitoredAccAssumePermissions",
@@ -324,6 +348,7 @@ class InfraToolingMonitoringStack(Stack):
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
                 "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
+                "ALERTS_EVENT_BUS_NAME": alerting_bus.event_bus_name,
             },
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],

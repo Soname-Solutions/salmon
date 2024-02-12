@@ -5,11 +5,12 @@ class ResourceTypeResolver:
     _source_detail_type_map = {
         "aws.glue": {
             "Job": types.GLUE_JOBS,
-            "Workflow": types.GLUE_WORKFLOWS,
+            # "Workflow": types.GLUE_WORKFLOWS, # AWS doesn't send EventBridge event yet
             "Data Catalog": types.GLUE_DATA_CATALOGS,
             "Crawler": types.GLUE_CRAWLERS,
         },
         "aws.states": {"Execution": types.STEP_FUNCTIONS},
+        "salmon.glue_workflow": {"Glue Workflow State Change": types.GLUE_WORKFLOWS}, # custom processing
     }
 
     @staticmethod
