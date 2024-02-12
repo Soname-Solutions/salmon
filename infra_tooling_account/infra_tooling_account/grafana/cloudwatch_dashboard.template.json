@@ -73,8 +73,7 @@
           "dimensions": {
             "LogGroupName": "<<LOG_GROUP_NAME>>"
           },
-          "expression": "| stats count(*) \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n",
-          "id": "",
+          "expression": "| stats count(*) \r\n| filter resource_type IN [${resource_type:doublequote}]\r\n| filter resource_name like /(?i)$resource_name/\r\n| filter event_status like /(?i)$event_status/",          "id": "",
           "label": "",
           "logGroups": [
             {
@@ -108,6 +107,7 @@
           "color": {
             "mode": "thresholds"
           },
+          "displayName": "${__field.labels}",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -150,8 +150,7 @@
           "dimensions": {
             "LogGroupName": "<<LOG_GROUP_NAME>>"
           },
-          "expression": "| stats count(*) as cnt by event_status \r\n| filter service_name IN [$service_name]\r\n| filter resource_name like /(?i)$search/\r\n| sort by event_status\r\n",
-          "id": "",
+          "expression": "| stats count(*) as cnt by event_result\r\n| filter resource_type IN [${resource_type:doublequote}]\r\n| filter resource_name like /(?i)$resource_name/\r\n| filter event_status like /(?i)$event_status/\r\n| sort by event_result\r\n",
           "label": "",
           "logGroups": [
             {
@@ -172,11 +171,11 @@
           "sqlExpression": "| stats count(*) by $service_name",
           "statistic": "Average",
           "statsGroups": [
-            "event_status"
+            "event_result"
           ]
         }
       ],
-      "title": "Events by Statuses",
+      "title": "Event Result Distribution",
       "type": "bargauge"
     },
     {
@@ -264,8 +263,7 @@
           "dimensions": {
             "LogGroupName": "$log_group"
           },
-          "expression": "| stats count(*) as events_cnt by bin(5m)\r\n| filter service_name IN [$service_name]\r\n| filter event_severity IN [$event_severity]\r\n| filter resource_name like /(?i)$search/",
-          "id": "",
+          "expression": "| stats count(*) as events_cnt by bin(5m)\r\n| filter resource_type IN [${resource_type:doublequote}]\r\n| filter event_result IN [${event_result:doublequote}]\r\n| filter event_status like /(?i)$event_status/\r\n| filter resource_name like /(?i)$resource_name/",
           "label": "Log events",
           "logGroups": [
             {
@@ -327,18 +325,6 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "service_name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 153
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Time"
             },
             "properties": [
@@ -375,36 +361,36 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "event_severity"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 135
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "service_name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 152
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "event_status"
             },
             "properties": [
               {
                 "id": "custom.width",
                 "value": 145
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "resource_type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 157
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "event_result"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 133
               }
             ]
           }
@@ -440,8 +426,7 @@
         {
           "datasource": "Cloudwatch",
           "dimensions": {},
-          "expression": "fields @timestamp, service_name, resource_name, event_status,event_severity, @message \n| filter service_name IN [$service_name]\n| filter event_severity IN [$event_severity]\n| filter resource_name like /(?i)$search/\n",
-          "id": "",
+          "expression": "fields @timestamp, resource_type, resource_name, event_status, event_result, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
           "label": "",
           "logGroups": [
             {
@@ -475,7 +460,7 @@
     "list": [
       {
         "current": {
-          "selected": false,
+          "selected": true,
           "text": "<<LOG_GROUP_NAME>>",
           "value": "<<LOG_GROUP_NAME>>"
         },
@@ -498,17 +483,21 @@
         "type": "custom"
       },
       {
-        "allValue": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
+        "allValue": "",
         "current": {
           "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "hide": 0,
         "includeAll": true,
-        "label": "Service Name",
-        "multi": false,
-        "name": "service_name",
+        "label": "Resource Type",
+        "multi": true,
+        "name": "resource_type",
         "options": [
           {
             "selected": true,
@@ -517,42 +506,55 @@
           },
           {
             "selected": false,
-            "text": "\"step_functions\"",
-            "value": "\"step_functions\""
+            "text": "glue_jobs",
+            "value": "glue_jobs"
           },
           {
             "selected": false,
-            "text": "\"glue_jobs\"",
-            "value": "\"glue_jobs\""
+            "text": "glue_workflows",
+            "value": "glue_workflows"
           },
           {
             "selected": false,
-            "text": "\"lambda_functions\"",
-            "value": "\"lambda_functions\""
+            "text": "glue_crawlers",
+            "value": "glue_crawlers"
           },
           {
             "selected": false,
-            "text": "\"glue_workflows\"",
-            "value": "\"glue_workflows\""
+            "text": "glue_catalogs",
+            "value": "glue_catalogs"
+          },
+          {
+            "selected": false,
+            "text": "lambda_functions",
+            "value": "lambda_functions"
+          },
+          {
+            "selected": false,
+            "text": "step_functions",
+            "value": "step_functions"
           }
         ],
-        "query": "\"step_functions\", \"glue_jobs\", \"lambda_functions\" ,\"glue_workflows\"",
+        "query": "glue_jobs,glue_workflows,glue_crawlers,glue_catalogs,lambda_functions,step_functions",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
       },
-      {
-        "allValue": "\"Unknown\"",
+      {					   
         "current": {
           "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "hide": 0,
         "includeAll": true,
-        "label": "Event Severity",
-        "multi": false,
-        "name": "event_severity",
+        "label": "Event Result",
+        "multi": true,
+        "name": "event_result",
         "options": [
           {
             "selected": true,
@@ -561,11 +563,21 @@
           },
           {
             "selected": false,
-            "text": "\"Unknown\"",
-            "value": "\"Unknown\""
+            "text": "INFO",
+            "value": "INFO"
+          },
+          {
+            "selected": false,
+            "text": "SUCCESS",
+            "value": "SUCCESS"
+          },
+          {
+            "selected": false,
+            "text": "FAILURE",
+            "value": "FAILURE"
           }
         ],
-        "query": "\"Unknown\"",
+        "query": "INFO,SUCCESS,FAILURE",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -577,8 +589,28 @@
           "value": ""
         },
         "hide": 0,
+        "label": "Event Status",
+        "name": "event_status",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "hide": 0,
         "label": "Resource Name",
-        "name": "search",
+        "name": "resource_name",
         "options": [
           {
             "selected": true,
@@ -593,7 +625,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},

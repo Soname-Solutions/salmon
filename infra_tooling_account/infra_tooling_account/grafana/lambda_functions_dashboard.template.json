@@ -24,6 +24,91 @@
       "fieldConfig": {
         "defaults": {
           "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "no data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Billed Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 40
+        },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "execution",
+          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(duration_ms)/1000 as \"Duration, sec\", sum(billed_duration_ms)/1000 as \"Billed Duration, sec\", sum(memory_size_mb)/1000 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
             "mode": "palette-classic"
           },
           "custom": {
@@ -76,9 +161,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
+        "h": 14,
+        "w": 21,
+        "x": 3,
         "y": 0
       },
       "id": 1,
@@ -99,7 +184,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT * FROM $__database.$__table where $__timeFilter",
+          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter ",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -112,10 +197,113 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Measure name",
+        "multi": true,
+        "name": "measure",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "execution",
+            "value": "execution"
+          },
+          {
+            "selected": false,
+            "text": "duration_ms",
+            "value": "duration_ms"
+          },
+          {
+            "selected": false,
+            "text": "max_memory_used_mb",
+            "value": "max_memory_used_mb"
+          },
+          {
+            "selected": false,
+            "text": "billed_duration_ms",
+            "value": "billed_duration_ms"
+          },
+          {
+            "selected": false,
+            "text": "memory_size_mb",
+            "value": "memory_size_mb"
+          }
+        ],
+        "query": "execution,duration_ms,max_memory_used_mb,billed_duration_ms,memory_size_mb",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Amazon-Timestream",
+        "definition": "SELECT distinct monitored_environment FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Monitored Environment ",
+        "multi": true,
+        "name": "monitored_env",
+        "options": [],
+        "query": "SELECT distinct monitored_environment FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Amazon-Timestream",
+        "definition": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Resource Name",
+        "multi": true,
+        "name": "resource_name",
+        "options": [],
+        "query": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
   },
   "time": {
-    "from": "now-6h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
