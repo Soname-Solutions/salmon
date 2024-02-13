@@ -12,9 +12,9 @@ class GlueJobEventMapper(GeneralAwsEventMapper):
         return self.event["detail"]["state"]
 
     def get_event_result(self):
-        if self.get_resource_state(self.event) in GlueManager.Job_States_Failure:
+        if self.get_resource_state() in GlueManager.Job_States_Failure:
             return EventResult.FAILURE
-        elif self.get_resource_state(self.event) in GlueManager.Job_States_Success:
+        elif self.get_resource_state() in GlueManager.Job_States_Success:
             return EventResult.SUCCESS
         else:
             return EventResult.INFO
