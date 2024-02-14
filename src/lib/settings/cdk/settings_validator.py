@@ -6,6 +6,7 @@ import lib.core.file_manager as fm
 import lib.core.json_utils as ju
 from lib.core.constants import SettingFileNames, SettingConfigs
 from lib.settings import Settings
+import boto3
 
 validator_dir = os.path.dirname(os.path.abspath(__file__))
 SCHEMA_FILES_PATH = os.path.join(validator_dir, "schemas")
@@ -161,6 +162,31 @@ def validate_existing_names(
         if not_existing_names
         else ("", True)
     ]
+
+
+def validate_cdk_env_variables(
+    env_name: str,
+    cdk_env_variables: set[str],
+    config_values: set[str],
+):
+    """
+    Validates that the region and account ID in the configuration file (general.json)
+    are aligned with the current region and account ID determined by the AWS CDK.
+
+    Args:
+        env_name (str): The name of the environment.
+        cdk_env_variables set[str]: The account and region determined by the AWS CDK.
+        config_values set[str]: The set of account and region pairs from the configuration file.
+
+    Returns:
+        bool: True if the account and region are aligned, False otherwise.
+    """
+    if not cdk_env_variables.issubset(config_values):
+        raise SettingsValidatorException(
+            f"Error: The account and region {config_values} set for the {env_name} in the general.json configuration file "
+            f"are not aligned with the current account and region {cdk_env_variables} determined by the AWS CDK."
+        )
+    return True
 
 
 # Methods for validation rules (work with raw settings)

@@ -14,8 +14,22 @@ from lib.settings.cdk import settings_validator
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+ENV_NAME = "monitored_environment"
+
 settings = Settings.from_file_path("../config/settings")
 settings_validator.validate(settings)
+
+current_account = os.getenv("CDK_DEFAULT_ACCOUNT")
+current_region = os.getenv("CDK_DEFAULT_REGION")
+logging.info(
+    f"Target AWS account: {current_account} and AWS Region: {current_region} determined by the AWS CDK"
+)
+
+settings_validator.validate_cdk_env_variables(
+    env_name=ENV_NAME,
+    cdk_env_variables={(current_account, current_region)},
+    config_values=settings.get_monitored_account_region_pairs(),
+)
 
 app = cdk.App()
 

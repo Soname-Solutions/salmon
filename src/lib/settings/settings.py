@@ -67,16 +67,21 @@ class Settings:
         recipients: Retrieves the processed recipients settings.
         ---
         get_monitored_account_ids: Get monitored account IDs.
+        get_monitored_account_region_pairs: Get monitored account IDs and Regions.
         get_metrics_collection_interval_min: Get metrics collection interval.
         get_tooling_account_props: Returns account_id and region of the tooling environment.
+        get_digest_report_settings: Returns Digest report period (hours) and cron schedule.
+        get_grafana_settings: Returns Grafana related settings.
         get_monitored_environment_name: Get monitored environment name by account ID and region.
         ---
         get_monitored_environment_props: Get monitored environment properties (account_id and region) by environment name.
         list_monitoring_groups: List monitoring groups.
         get_monitoring_group_content: Get monitoring group content.
         get_monitoring_groups: Get monitoring groups by resources list.
+        get_monitoring_groups_by_resource_type: Get monitoring groups by resource type.
         get_recipients: Get recipients by monitoring groups.
-        get_sender_email: Get sender email per delivery method.
+        get_recipients_and_groups_by_notification_type: Get recepients and their monitoring groups by notification type.
+        get_delivery_method: Get delivery method by name.
         ---
         from_file_path: Create an instance of Settings from local file paths.
         from_s3_path: Create an instance of Settings from S3 bucket paths.
@@ -288,13 +293,22 @@ class Settings:
             ]
         )
 
+    def get_monitored_account_region_pairs(self) -> set[str]:
+        """Get monitored account IDs and Regions"""
+        monitored_environments = self.general.get("monitored_environments", [])
+        monitored_account_region_pairs = {
+            (m_env["account_id"], m_env["region"]) for m_env in monitored_environments
+        }
+
+        return monitored_account_region_pairs
+
     def get_metrics_collection_interval_min(self) -> int:
         """Get metrics_collection_interval_min"""
         return self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"][
             "metrics_collection_interval_min"
         ]
 
-    def get_digest_report_settings(self) -> (int, str):
+    def get_digest_report_settings(self) -> tuple[int, str]:
         """Get digest report settings"""
         digest_report_period_hours = self.general["tooling_environment"].get(
             "digest_report_period_hours"
