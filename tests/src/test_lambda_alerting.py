@@ -52,10 +52,11 @@ def event_dyn_props_init(aws_props_init):
      # Generates dynamic properties for events
     (account_id, region) = aws_props_init
     current_time = datetime.now() - timedelta(minutes=1)
+    epoch_time = int(current_time.timestamp())
     time_str = current_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     version_str = current_time.strftime("%Y%m%d%H%M%S")
 
-    return (account_id, region, time_str, version_str)    
+    return (account_id, region, time_str, epoch_time, version_str)    
 
 ################################################################################################################################
 
@@ -63,7 +64,7 @@ def event_dyn_props_init(aws_props_init):
 
 # Utility function to generate a Glue Job event with dynamic properties.
 def get_glue_job_event(event_dyn_props, state, message):
-    (account_id, region, time_str, version_str) = event_dyn_props
+    (account_id, region, time_str, _, version_str) = event_dyn_props
 
     return {
         "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
@@ -125,7 +126,7 @@ def test_glue_job3(os_vars_init, event_dyn_props_init):
     
 # Utility function to generate a Glue Workflow event with dynamic properties.
 def get_glue_workflow_event(event_dyn_props, event_result):
-    (account_id, region, time_str, version_str) = event_dyn_props
+    (account_id, region, time_str, _, version_str) = event_dyn_props
 
     glue_workflow_event = {
         "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
@@ -178,7 +179,7 @@ def test_glue_workflow2(os_vars_init, event_dyn_props_init):
 
 # Utility function to generate a Glue Job event with dynamic properties.
 def get_step_function_event(event_dyn_props, status, error_message = ""):
-    (account_id, region, time_str, version_str) = event_dyn_props
+    (account_id, region, time_str, epoch_time, version_str) = event_dyn_props
 
     return {
         "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
@@ -196,8 +197,8 @@ def get_step_function_event(event_dyn_props, status, error_message = ""):
             "stateMachineArn": "arn:aws:states:{region}:{account_id}:stateMachine:stepfunction-salmonts-sample-dev2",
             "name": "6e60909a-42df-9468-42a1-bb3771b35ee2_8b8ae2c0-69a4-c760-1fb4-9698b049289c",
             "status": status, #"SUCCEEDED"/"FAILED"
-            "startDate": 1707853601983, #todo get from event_dyn_props
-            "stopDate": 1707853602913,
+            "startDate": epoch_time, 
+            "stopDate": (epoch_time+5),
             "input": "not relevant",
             "output": "not relevant",
             "stateMachineVersionArn": "null",
@@ -261,7 +262,7 @@ def test_step_function3(os_vars_init, event_dyn_props_init):
 
 # Utility function to generate a Glue Job event with dynamic properties.
 def get_glue_crawler_event(event_dyn_props, state, message):
-    (account_id, region, time_str, version_str) = event_dyn_props
+    (account_id, region, time_str, _, version_str) = event_dyn_props
 
     return {
         "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
