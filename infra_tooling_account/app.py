@@ -4,8 +4,6 @@ import sys
 import logging
 
 import aws_cdk as cdk
-from aws_cdk import Aws
-import boto3
 
 sys.path.append("../src")
 from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
