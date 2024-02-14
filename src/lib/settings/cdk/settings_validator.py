@@ -6,7 +6,6 @@ import lib.core.file_manager as fm
 import lib.core.json_utils as ju
 from lib.core.constants import SettingFileNames, SettingConfigs
 from lib.settings import Settings
-import boto3
 
 validator_dir = os.path.dirname(os.path.abspath(__file__))
 SCHEMA_FILES_PATH = os.path.join(validator_dir, "schemas")
