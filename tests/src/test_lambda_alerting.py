@@ -22,6 +22,7 @@ from lib.settings import Settings
 
 ################################################################################################################################
 
+
 @pytest.fixture(scope="session")
 def aws_props_init():
     # Inits AWS acc id and region (from local settings -> tooling env)
@@ -47,27 +48,30 @@ def os_vars_init(stage_name, aws_props_init):
         f"log-stream-salmon-alert-events-{stage_name}"
     )
 
+
 @pytest.fixture(scope="session")
 def event_dyn_props_init(aws_props_init):
-     # Generates dynamic properties for events
+    # Generates dynamic properties for events
     (account_id, region) = aws_props_init
     current_time = datetime.now() - timedelta(minutes=1)
     epoch_time = int(current_time.timestamp())
     time_str = current_time.strftime("%Y-%m-%dT%H:%M:%SZ")
     version_str = current_time.strftime("%Y%m%d%H%M%S")
 
-    return (account_id, region, time_str, epoch_time, version_str)    
+    return (account_id, region, time_str, epoch_time, version_str)
+
 
 ################################################################################################################################
 
-# GLUE JOB tests 
+# GLUE JOB tests
+
 
 # Utility function to generate a Glue Job event with dynamic properties.
 def get_glue_job_event(event_dyn_props, state, message):
     (account_id, region, time_str, _, version_str) = event_dyn_props
 
     return {
-        "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
+        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
         "id": "abcdef00-1234-5678-9abc-def012345678",
         "detail-type": "Glue Job State Change",
         "source": "aws.glue",
@@ -78,14 +82,15 @@ def get_glue_job_event(event_dyn_props, state, message):
         "detail": {
             "jobName": "glue-salmonts-pyjob-1-dev",
             "severity": "INFO",
-            "state": state, #"SUCCEEDED"/"FAILED",
+            "state": state,  # "SUCCEEDED"/"FAILED",
             "jobRunId": "jr_abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
-            "message": message, #"Job run succeeded", etc,
+            "message": message,  # "Job run succeeded", etc,
         },
     }
 
+
 def test_glue_job1(os_vars_init, event_dyn_props_init):
-    
+
     event = get_glue_job_event(event_dyn_props_init, "FAILED", "Job run failed")
 
     result = lambda_handler(event, {})
@@ -94,10 +99,11 @@ def test_glue_job1(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_JOBS
-    ), "Event should be monitorable"
+    ), "Resouce type is incorrect"
+
 
 def test_glue_job2(os_vars_init, event_dyn_props_init):
-    
+
     event = get_glue_job_event(event_dyn_props_init, "SUCCEEDED", "Job run succeeded")
 
     result = lambda_handler(event, {})
@@ -106,10 +112,11 @@ def test_glue_job2(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_JOBS
-    ), "Event should be monitorable"    
+    ), "Resouce type is incorrect"
+
 
 def test_glue_job3(os_vars_init, event_dyn_props_init):
-    
+
     event = get_glue_job_event(event_dyn_props_init, "RUNNING", "Job is running")
 
     result = lambda_handler(event, {})
@@ -118,18 +125,20 @@ def test_glue_job3(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == False, "Event shouldn't be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_JOBS
-    ), "Event should be monitorable"      
+    ), "Resouce type is incorrect"
+
 
 ################################################################################################################################
 
-# GLUE WORKFLOW tests 
-    
+# GLUE WORKFLOW tests
+
+
 # Utility function to generate a Glue Workflow event with dynamic properties.
 def get_glue_workflow_event(event_dyn_props, event_result):
     (account_id, region, time_str, _, version_str) = event_dyn_props
 
     glue_workflow_event = {
-        "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
+        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
         "id": "1c338584-7eb1-34e1-9f7d-f803fcb4ac22",
         "detail-type": "Glue Workflow State Change",
         "source": "salmon.glue_workflow",
@@ -139,18 +148,19 @@ def get_glue_workflow_event(event_dyn_props, event_result):
         "resources": [],
         "detail": {
             "workflowName": "glue-salmonts-workflow-dev",
-            "state": "COMPLETED", # boto3 declares 'RUNNING'|'COMPLETED'|'STOPPING'|'STOPPED'|'ERROR', but we see no 'ERROR' state
-            "event_result": event_result, # "SUCCESS" / "FAILURE",
+            "state": "COMPLETED",  # boto3 declares 'RUNNING'|'COMPLETED'|'STOPPING'|'STOPPED'|'ERROR', but we see no 'ERROR' state
+            "event_result": event_result,  # "SUCCESS" / "FAILURE",
             "workflowRunId": "wr_75b9bcd0d7753776161d4ca1c4badd1924b445961ccdb89ae5ab86e920e6bc87",
             "message": f"Test Workflow run execution status: {event_result.lower()}",
             "origin_account": account_id,
             "origin_region": region,
         },
-    }   
-    return glue_workflow_event 
+    }
+    return glue_workflow_event
+
 
 def test_glue_workflow1(os_vars_init, event_dyn_props_init):
-    
+
     event = get_glue_workflow_event(event_dyn_props_init, "FAILURE")
 
     result = lambda_handler(event, {})
@@ -159,10 +169,11 @@ def test_glue_workflow1(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_WORKFLOWS
-    ), "Event should be monitorable"
+    ), "Resouce type is incorrect"
+
 
 def test_glue_workflow2(os_vars_init, event_dyn_props_init):
-    
+
     event = get_glue_workflow_event(event_dyn_props_init, "SUCCESS")
 
     result = lambda_handler(event, {})
@@ -171,18 +182,20 @@ def test_glue_workflow2(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_WORKFLOWS
-    ), "Event should be monitorable"    
+    ), "Resouce type is incorrect"
+
 
 ################################################################################################################################
 
-# STEP FUNCTIONS tests 
+# STEP FUNCTIONS tests
+
 
 # Utility function to generate a Glue Job event with dynamic properties.
-def get_step_function_event(event_dyn_props, status, error_message = ""):
+def get_step_function_event(event_dyn_props, status, error_message=""):
     (account_id, region, time_str, epoch_time, version_str) = event_dyn_props
 
     return {
-        "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
+        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
         "id": "614f23b5-d4ee-f0fb-1dcd-60b39fb1df23",
         "detail-type": "Step Functions Execution Status Change",
         "source": "aws.states",
@@ -196,9 +209,9 @@ def get_step_function_event(event_dyn_props, status, error_message = ""):
             "executionArn": "arn:aws:states:{region}:{account_id}:execution:stepfunction-salmonts-sample-dev2:6e60909a-42df-9468-42a1-bb3771b35ee2_8b8ae2c0-69a4-c760-1fb4-9698b049289c",
             "stateMachineArn": "arn:aws:states:{region}:{account_id}:stateMachine:stepfunction-salmonts-sample-dev2",
             "name": "6e60909a-42df-9468-42a1-bb3771b35ee2_8b8ae2c0-69a4-c760-1fb4-9698b049289c",
-            "status": status, #"SUCCEEDED"/"FAILED"
-            "startDate": epoch_time, 
-            "stopDate": (epoch_time+5),
+            "status": status,  # "SUCCEEDED"/"FAILED"
+            "startDate": epoch_time,
+            "stopDate": (epoch_time + 5),
             "input": "not relevant",
             "output": "not relevant",
             "stateMachineVersionArn": "null",
@@ -207,20 +220,16 @@ def get_step_function_event(event_dyn_props, status, error_message = ""):
             "redriveDate": "null",
             "redriveStatus": "NOT_REDRIVABLE",
             "redriveStatusReason": "not relevant",
-            "inputDetails": {
-                "included": "true"
-            },
-            "outputDetails": {
-                "included": "true"
-            },
+            "inputDetails": {"included": "true"},
+            "outputDetails": {"included": "true"},
             "error": error_message,
-            "cause": "null"
-        }
+            "cause": "null",
+        },
     }
 
 
 def test_step_function1(os_vars_init, event_dyn_props_init):
-    
+
     event = get_step_function_event(event_dyn_props_init, "FAILED", "Exception occured")
 
     result = lambda_handler(event, {})
@@ -229,10 +238,11 @@ def test_step_function1(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.STEP_FUNCTIONS
-    ), "Event should be monitorable"    
+    ), "Resouce type is incorrect"
+
 
 def test_step_function2(os_vars_init, event_dyn_props_init):
-    
+
     event = get_step_function_event(event_dyn_props_init, "SUCCEEDED")
 
     result = lambda_handler(event, {})
@@ -241,10 +251,11 @@ def test_step_function2(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.STEP_FUNCTIONS
-    ), "Event should be monitorable"        
+    ), "Resouce type is incorrect"
+
 
 def test_step_function3(os_vars_init, event_dyn_props_init):
-    
+
     event = get_step_function_event(event_dyn_props_init, "RUNNING")
 
     result = lambda_handler(event, {})
@@ -253,19 +264,20 @@ def test_step_function3(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == False, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.STEP_FUNCTIONS
-    ), "Event should be monitorable"            
+    ), "Resouce type is incorrect"
 
 
 ################################################################################################################################
 
-# GLUE Crawler tests 
+# GLUE Crawler tests
+
 
 # Utility function to generate a Glue Job event with dynamic properties.
 def get_glue_crawler_event(event_dyn_props, state, message):
     (account_id, region, time_str, _, version_str) = event_dyn_props
 
     return {
-        "version": version_str, # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
+        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
         "id": "7b14260c-421e-96e3-2c9b-e10682344fb5",
         "detail-type": "Glue Crawler State Change",
         "source": "aws.glue",
@@ -278,21 +290,22 @@ def get_glue_crawler_event(event_dyn_props, state, message):
             "warningMessage": "N/A",
             "partitionsUpdated": "0",
             "tablesUpdated": "0",
-            "message": message, #"Crawler Succeeded", "Crawler Failed"
+            "message": message,  # "Crawler Succeeded", "Crawler Failed"
             "partitionsDeleted": "0",
             "accountId": "405389362913",
             "runningTime (sec)": "62",
             "tablesDeleted": "0",
             "crawlerName": "glue-salmonts-crawler-dev",
             "completionDate": "2024-02-13T20:03:39Z",
-            "state": state, #"Succeeded", "Failed"
+            "state": state,  # "Succeeded", "Failed"
             "partitionsCreated": "0",
-            "cloudWatchLogLink": "not relevant"
-        }
+            "cloudWatchLogLink": "not relevant",
+        },
     }
 
+
 def test_glue_crawler1(os_vars_init, event_dyn_props_init):
-    
+
     event = get_glue_crawler_event(event_dyn_props_init, "Failed", "Crawler Failed")
 
     result = lambda_handler(event, {})
@@ -301,11 +314,14 @@ def test_glue_crawler1(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_CRAWLERS
-    ), "Event should be monitorable"  
+    ), "Resouce type is incorrect"
+
 
 def test_glue_crawler2(os_vars_init, event_dyn_props_init):
-    
-    event = get_glue_crawler_event(event_dyn_props_init, "Succeeded", "Crawler Succeeded")
+
+    event = get_glue_crawler_event(
+        event_dyn_props_init, "Succeeded", "Crawler Succeeded"
+    )
 
     result = lambda_handler(event, {})
 
@@ -313,13 +329,13 @@ def test_glue_crawler2(os_vars_init, event_dyn_props_init):
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_CRAWLERS
-    ), "Event should be monitorable"  
+    ), "Resouce type is incorrect"
+
 
 ################################################################################################################################
 
-# GLUE Data Catalog tests 
-    
+# GLUE Data Catalog tests
+
 # TODO: add tests for Data Catalog events
 # Decide on which events are alertable (e.g. drop database / table)
 # Also align with the tasks (bug - alerting lambda fails when operation is not on DB level, but on table level, for example)
-
