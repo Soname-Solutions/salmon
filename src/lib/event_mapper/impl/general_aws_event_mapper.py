@@ -27,7 +27,7 @@ class GeneralAwsEventMapper(ABC):
         self.monitored_env_name = settings.get_monitored_environment_name(event["account"], event["region"])
 
     @abstractmethod
-    def get_resource_name(self, event: dict) -> str:
+    def get_resource_name(self) -> str:
         """Returns name of the AWS resource the given event belongs to (job/stateMachine/function etc.)
 
         Args:
@@ -36,7 +36,7 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_event_result(self, event: dict) -> str:
+    def get_event_result(self) -> str:
         """Returns the result of the occurred event
 
         Args:
@@ -45,7 +45,7 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_resource_state(self, event: dict) -> str:
+    def get_resource_state(self) -> str:
         """Returns the state of the resource according to the event
 
         Args:
@@ -54,7 +54,7 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_message_body(self, event: dict) -> list[dict]:
+    def get_message_body(self) -> list[dict]:
         """Returns composed message body for the given AWS event
 
         Args:
@@ -62,7 +62,7 @@ class GeneralAwsEventMapper(ABC):
         """
         pass
 
-    def __get_message_subject(self, event: dict) -> str:
+    def __get_message_subject(self) -> str:
         """Return message subject based on the event
 
         Args:
@@ -71,12 +71,12 @@ class GeneralAwsEventMapper(ABC):
         Returns:
             str: Message subject
         """
-        resource_name = self.get_resource_name(event)
-        resource_state = self.get_resource_state(event)
-        resource_type = ResourceTypeResolver.resolve(event)        
+        resource_name = self.get_resource_name()
+        resource_state = self.get_resource_state()
+        resource_type = ResourceTypeResolver.resolve(self.event)        
         return f"{self.monitored_env_name}: {resource_state} - {resource_type} : {resource_name}"
 
-    def create_message_body_with_common_rows(self, event) -> tuple[list, list]:
+    def create_message_body_with_common_rows(self) -> tuple[list, list]:
         message_body = []
         table = {}
         rows = []
@@ -85,15 +85,15 @@ class GeneralAwsEventMapper(ABC):
         message_body.append(table)
 
         # todo: when completing task for event -> self.event, also override this method for glue workflows
-        rows.append(self.create_table_row(["AWS Account", event["account"]]))
-        rows.append(self.create_table_row(["AWS Region", event["region"]]))
-        rows.append(self.create_table_row(["Time", event["time"]]))
-        rows.append(self.create_table_row(["Event Type", event["detail-type"]]))
+        rows.append(self.create_table_row(["AWS Account", self.event["account"]]))
+        rows.append(self.create_table_row(["AWS Region", self.event["region"]]))
+        rows.append(self.create_table_row(["Time", self.event["time"]]))
+        rows.append(self.create_table_row(["Event Type", self.event["detail-type"]]))
 
         return message_body, rows
 
-    def get_row_style(self, event) -> str:
-        return "error" if self.get_event_result(event) == EventResult.FAILURE else None
+    def get_row_style(self) -> str:
+        return "error" if self.get_event_result() == EventResult.FAILURE else None
 
     def create_table_row(self, values: list, style: str = None) -> dict:
         """Returns prepared table row for given values and style
@@ -110,7 +110,7 @@ class GeneralAwsEventMapper(ABC):
             row["style"] = style
         return row
 
-    def to_message(self, event: dict) -> dict:
+    def to_message(self) -> dict:
         """Maps AWS event object to a message object structure
 
         Args:
@@ -120,8 +120,8 @@ class GeneralAwsEventMapper(ABC):
             dict: Message to be sent as a notification
         """
         message = {
-            "message_subject": self.__get_message_subject(event),
-            "message_body": self.get_message_body(event),
+            "message_subject": self.__get_message_subject(),
+            "message_body": self.get_message_body(),
         }
 
         return message
