@@ -97,7 +97,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(duration_ms)/1000 as \"Duration, sec\", sum(billed_duration_ms)/1000 as \"Billed Duration, sec\", sum(memory_size_mb)/1000 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(duration_ms)/1000 as \"Duration, sec\", sum(billed_duration_ms)/1000 as \"Billed Duration, sec\", sum(memory_size_mb)/1024 as \"Total Memory size, GB\", sum(MB_milliseconds)/(1024*1000) as \"GB-seconds\", max(max_memory_used_mb) as \"Max Memory used, MB\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
