@@ -19,17 +19,28 @@ class GlueCrawlerEventMapper(GeneralAwsEventMapper):
         else:
             return EventResult.INFO
 
+    def get_execution_info_url(self):
+        # return self.event["detail"]["cloudWatchLogLink"]
+        return (
+            f"https://{self.event['region']}.console.aws.amazon.com/glue/home?region={self.event['region']}"
+            f"#/v2/data-catalog/crawlers/view/{self.get_resource_name()}"
+        )
+
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
 
         style = super().get_row_style()
 
         rows.append(
-            super().create_table_row(["Crawler Name", self.event["detail"]["crawlerName"]])
+            super().create_table_row(
+                ["Crawler Name", self.event["detail"]["crawlerName"]]
+            )
         )
         rows.append(
             super().create_table_row(["State", self.get_resource_state()], style)
         )
-        rows.append(super().create_table_row(["Message", self.event["detail"]["message"]]))
+        rows.append(
+            super().create_table_row(["Message", self.event["detail"]["message"]])
+        )
 
         return message_body

@@ -21,6 +21,12 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         else:
             return EventResult.INFO
 
+    def get_execution_info_url(self):
+        return (
+            f"https://{self.event['region']}.console.aws.amazon.com/states/home?region={self.event['region']}#/v2/executions/details/"
+            f"arn:aws:states:{self.event['region']}:{self.event['account']}:execution:{self.get_resource_name()}:{self.event['detail']['name']}"
+        )
+
     @staticmethod
     def __timestamp_to_datetime(timestamp: int) -> str:
         """Formats integer datetime from the event to the ISO formatted datetime string
@@ -41,9 +47,7 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         style = super().get_row_style()
 
         rows.append(
-            super().create_table_row(
-                ["State Machine Name", self.get_resource_name()]
-            )
+            super().create_table_row(["State Machine Name", self.get_resource_name()])
         )
         rows.append(
             super().create_table_row(["Execution Name", self.event["detail"]["name"]])
@@ -61,7 +65,10 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         )
         rows.append(
             super().create_table_row(
-                ["Stop Date", self.__timestamp_to_datetime(self.event["detail"]["stopDate"])]
+                [
+                    "Stop Date",
+                    self.__timestamp_to_datetime(self.event["detail"]["stopDate"]),
+                ]
             )
         )
 

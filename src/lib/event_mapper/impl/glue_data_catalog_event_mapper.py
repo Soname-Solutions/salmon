@@ -13,13 +13,21 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
     def get_event_result(self):
         return EventResult.INFO
 
+    def get_execution_info_url(self):
+        return (
+            f"https://{self.event['region']}.console.aws.amazon.com/glue/home?region={self.event['region']}"
+            f"#/v2/data-catalog/databases/view/{self.get_resource_name()}"
+        )
+
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
 
         style = super().get_row_style()
 
         rows.append(
-            super().create_table_row(["Database Name", self.event["detail"]["databaseName"]])
+            super().create_table_row(
+                ["Database Name", self.event["detail"]["databaseName"]]
+            )
         )
         rows.append(
             super().create_table_row(

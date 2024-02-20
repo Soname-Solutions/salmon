@@ -19,16 +19,28 @@ class GlueJobEventMapper(GeneralAwsEventMapper):
         else:
             return EventResult.INFO
 
+    def get_execution_info_url(self):
+        return (
+            f"https://{self.event['region']}.console.aws.amazon.com/gluestudio/home?region={self.event['region']}#/job"
+            f"/{self.get_resource_name()}/run/{self.event['detail']['jobRunId']}"
+        )
+
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
 
         style = super().get_row_style()
 
-        rows.append(super().create_table_row(["Job Name", self.event["detail"]["jobName"]]))
+        rows.append(
+            super().create_table_row(["Job Name", self.event["detail"]["jobName"]])
+        )
         rows.append(
             super().create_table_row(["State", self.get_resource_state()], style)
         )
-        rows.append(super().create_table_row(["JobRunID", self.event["detail"]["jobRunId"]]))
-        rows.append(super().create_table_row(["Message", self.event["detail"]["message"]]))
+        rows.append(
+            super().create_table_row(["JobRunID", self.event["detail"]["jobRunId"]])
+        )
+        rows.append(
+            super().create_table_row(["Message", self.event["detail"]["message"]])
+        )
 
         return message_body

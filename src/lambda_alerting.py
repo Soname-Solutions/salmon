@@ -60,6 +60,7 @@ def lambda_handler(event, context):
     event_result = mapper.get_event_result()
     resource_name = mapper.get_resource_name()
     event_status = mapper.get_resource_state()
+    execution_info_url = mapper.get_execution_info_url()
 
     notification_messages = []
 
@@ -92,6 +93,7 @@ def lambda_handler(event, context):
             event_status,
             event_result,
             event,
+            execution_info_url,
         )
     else:
         logger.info(f"Event result is not monitorable: {event_result}")

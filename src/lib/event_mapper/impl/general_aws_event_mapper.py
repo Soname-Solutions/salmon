@@ -18,13 +18,11 @@ class GeneralAwsEventMapper(ABC):
         to_notification_messages(dict): maps AWS event object to a list of notification message objects
     """
 
-    def __init__(
-        self,
-        event: dict,
-        settings: Settings
-    ):
+    def __init__(self, event: dict, settings: Settings):
         self.event = event
-        self.monitored_env_name = settings.get_monitored_environment_name(event["account"], event["region"])
+        self.monitored_env_name = settings.get_monitored_environment_name(
+            event["account"], event["region"]
+        )
 
     @abstractmethod
     def get_resource_name(self) -> str:
@@ -38,6 +36,15 @@ class GeneralAwsEventMapper(ABC):
     @abstractmethod
     def get_event_result(self) -> str:
         """Returns the result of the occurred event
+
+        Args:
+            event (dict): Event object
+        """
+        pass
+
+    @abstractmethod
+    def get_execution_info_url(self) -> str:
+        """Returns the url of the occurred event
 
         Args:
             event (dict): Event object
@@ -73,7 +80,7 @@ class GeneralAwsEventMapper(ABC):
         """
         resource_name = self.get_resource_name()
         resource_state = self.get_resource_state()
-        resource_type = ResourceTypeResolver.resolve(self.event)        
+        resource_type = ResourceTypeResolver.resolve(self.event)
         return f"{self.monitored_env_name}: {resource_state} - {resource_type} : {resource_name}"
 
     def create_message_body_with_common_rows(self) -> tuple[list, list]:
