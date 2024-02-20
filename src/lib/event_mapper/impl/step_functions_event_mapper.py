@@ -1,4 +1,5 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
+from .general_aws_event_mapper import ExecutionInfoUrlMixin
 from ...settings import Settings
 from datetime import datetime
 from ...core.constants import EventResult
@@ -21,10 +22,13 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
         else:
             return EventResult.INFO
 
-    def get_execution_info_url(self):
-        return (
-            f"https://{self.event['region']}.console.aws.amazon.com/states/home?region={self.event['region']}#/v2/executions/details/"
-            f"arn:aws:states:{self.event['region']}:{self.event['account']}:execution:{self.get_resource_name()}:{self.event['detail']['name']}"
+    def get_execution_info_url(self, resource_type: str, resource_name: str):
+        return ExecutionInfoUrlMixin.get_execution_info_url(
+            resource_type=resource_type,
+            region_name=self.event["region"],
+            resource_name=resource_name,
+            account_id=self.event["account"],
+            run_id=self.event["detail"]["name"],
         )
 
     @staticmethod

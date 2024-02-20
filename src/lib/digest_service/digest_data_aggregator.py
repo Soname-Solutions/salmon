@@ -1,6 +1,6 @@
 from collections import defaultdict
 from lib.core.constants import DigestSettings
-from lib.metrics_extractor import get_job_run_url
+from lib.event_mapper.impl import ExecutionInfoUrlMixin
 
 
 class DigestDataAggregator:
@@ -79,11 +79,11 @@ class DigestDataAggregator:
         resource_values: dict,
     ) -> list:
         if int(resource_run["failed"]) > 0:
-            job_run_url = get_job_run_url(
+            job_run_url = ExecutionInfoUrlMixin.get_execution_info_url(
                 resource_type=resource_type,
                 region_name=resource_config["region_name"],
-                account_id=resource_config["account_id"],
                 resource_name=resource_run["resource_name"],
+                account_id=resource_config["account_id"],
                 run_id=resource_run["job_run_id"],
             )
             # construct error comment based on the job run URL and error message

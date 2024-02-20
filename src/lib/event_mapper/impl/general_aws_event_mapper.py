@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from ...core.constants import EventResult
 from ..resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
+from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class EventParsingException(Exception):
@@ -43,11 +44,13 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_execution_info_url(self) -> str:
+    def get_execution_info_url(self, resource_type: str, resource_name: str) -> str:
         """Returns the url of the occurred event
 
         Args:
             event (dict): Event object
+            resource_type (str): Resource type
+            resource_name (str): Resource name
         """
         pass
 
@@ -132,3 +135,24 @@ class GeneralAwsEventMapper(ABC):
         }
 
         return message
+
+
+class ExecutionInfoUrlMixin:
+    @staticmethod
+    def get_execution_info_url(
+        resource_type: str,
+        region_name: str,
+        resource_name: str,
+        account_id: str = None,
+        run_id: str = None,
+    ) -> str:
+        """Returns the link to the particular resource run."""
+        url_mapping = {
+            types.GLUE_JOBS: f"https://{region_name}.console.aws.amazon.com/gluestudio/home?region={region_name}#/job/{resource_name}/run/{run_id}",
+            types.STEP_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/states/home?region={region_name}#/v2/executions/details/arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}",
+            types.LAMBDA_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{resource_name}/log-events/",
+            types.GLUE_CRAWLERS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/crawlers/view/{resource_name}",
+            types.GLUE_DATA_CATALOGS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{resource_name}",
+            types.GLUE_WORKFLOWS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/etl-configuration/workflows/view/{resource_name}?activeViewTab=id-tab-history",
+        }
+        return url_mapping.get(resource_type, "")

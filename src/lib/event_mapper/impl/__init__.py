@@ -5,3 +5,4 @@ from .glue_data_catalog_event_mapper import GlueDataCatalogEventMapper
 from .glue_crawler_event_mapper import GlueCrawlerEventMapper
 from .step_functions_event_mapper import StepFunctionsEventMapper
 from .general_aws_event_mapper import EventParsingException
+from .general_aws_event_mapper import ExecutionInfoUrlMixin

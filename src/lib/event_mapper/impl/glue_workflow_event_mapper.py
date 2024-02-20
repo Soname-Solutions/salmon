@@ -1,4 +1,5 @@
 from .general_aws_event_mapper import GeneralAwsEventMapper
+from .general_aws_event_mapper import ExecutionInfoUrlMixin
 from ...settings import Settings
 
 from ...core.constants import EventResult
@@ -24,10 +25,11 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
     def get_event_result(self):
         return self.event["detail"]["event_result"]
 
-    def get_execution_info_url(self):
-        return (
-            f"https://{self.event['region']}.console.aws.amazon.com/glue/home?region={self.event['region']}"
-            f"#/v2/etl-configuration/workflows/view/{self.get_resource_name()}?activeViewTab=id-tab-history"
+    def get_execution_info_url(self, resource_type: str, resource_name: str):
+        return ExecutionInfoUrlMixin.get_execution_info_url(
+            resource_type=resource_type,
+            region_name=self.event["region"],
+            resource_name=resource_name,
         )
 
     def get_message_body(self):
