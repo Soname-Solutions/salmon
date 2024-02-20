@@ -18,11 +18,11 @@ class DigestDataExtractorProvider:
 
     @staticmethod
     def register_digest_provider(
-        service_name: str,
+        resource_type: str,
         digest_extractor: BaseDigestDataExtractor,
     ):
         """Register metrics extractor."""
-        DigestDataExtractorProvider._digest_extractors[service_name] = digest_extractor
+        DigestDataExtractorProvider._digest_extractors[resource_type] = digest_extractor
 
     @staticmethod
     def get_digest_provider(resource_type: str, **kwargs) -> BaseDigestDataExtractor:
@@ -38,22 +38,24 @@ class DigestDataExtractorProvider:
 
 
 DigestDataExtractorProvider.register_digest_provider(
-    service_name=types.GLUE_JOBS, digest_extractor=GlueJobsDigestDataExtractor
+    resource_type=types.GLUE_JOBS, digest_extractor=GlueJobsDigestDataExtractor
 )
 DigestDataExtractorProvider.register_digest_provider(
-    service_name=types.GLUE_WORKFLOWS, digest_extractor=GlueWorkflowsDigestDataExtractor
+    resource_type=types.GLUE_WORKFLOWS,
+    digest_extractor=GlueWorkflowsDigestDataExtractor,
 )
 DigestDataExtractorProvider.register_digest_provider(
-    service_name=types.GLUE_CRAWLERS, digest_extractor=GlueCrawlersDigestDataExtractor
+    resource_type=types.GLUE_CRAWLERS, digest_extractor=GlueCrawlersDigestDataExtractor
 )
 DigestDataExtractorProvider.register_digest_provider(
-    service_name=types.GLUE_DATA_CATALOGS,
+    resource_type=types.GLUE_DATA_CATALOGS,
     digest_extractor=GlueDataCatalogsDigestDataExtractor,
 )
 DigestDataExtractorProvider.register_digest_provider(
-    service_name=types.STEP_FUNCTIONS, digest_extractor=StepFunctionsDigestDataExtractor
+    resource_type=types.STEP_FUNCTIONS,
+    digest_extractor=StepFunctionsDigestDataExtractor,
 )
 DigestDataExtractorProvider.register_digest_provider(
-    service_name=types.LAMBDA_FUNCTIONS,
+    resource_type=types.LAMBDA_FUNCTIONS,
     digest_extractor=LambdaFunctionsDigestDataExtractor,
 )

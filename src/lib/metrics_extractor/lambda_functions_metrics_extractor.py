@@ -46,17 +46,11 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             ]
 
             if lambda_log.IsReportEvent:
-                MB_milliseconds = (
-                    lambda_log.MemorySize * lambda_log.BilledDuration
-                    if lambda_log.MemorySize and lambda_log.BilledDuration
-                    else None
-                )
                 metric_values = [
                     ("execution", 1, "BIGINT"),
                     ("duration_ms", lambda_log.Duration, "DOUBLE"),
                     ("billed_duration_ms", lambda_log.BilledDuration, "DOUBLE"),
                     ("memory_size_mb", lambda_log.MemorySize, "DOUBLE"),
-                    ("MB_milliseconds", MB_milliseconds, "DOUBLE"),
                     ("max_memory_used_mb", lambda_log.MaxMemoryUsed, "DOUBLE"),
                 ]
             else:
@@ -93,7 +87,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(self, since_time: datetime) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         lambda_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(lambda_runs)
         return records, common_attributes

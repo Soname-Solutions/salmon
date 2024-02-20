@@ -18,10 +18,10 @@ class MetricsExtractorProvider:
 
     @staticmethod
     def register_metrics_extractor(
-        service_name: str, metrics_extractor: BaseMetricsExtractor
+        resource_type: str, metrics_extractor: BaseMetricsExtractor
     ):
         """Register metrics extractor."""
-        MetricsExtractorProvider._metrics_extractors[service_name] = metrics_extractor
+        MetricsExtractorProvider._metrics_extractors[resource_type] = metrics_extractor
 
     @staticmethod
     def get_metrics_extractor(resource_type: str, **kwargs) -> BaseMetricsExtractor:
