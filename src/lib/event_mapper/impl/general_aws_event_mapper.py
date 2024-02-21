@@ -139,7 +139,7 @@ class GeneralAwsEventMapper(ABC):
 
 class ExecutionInfoUrlMixin:
     @staticmethod
-    def get_execution_info_url(
+    def get_url(
         resource_type: str,
         region_name: str,
         resource_name: str,

@@ -331,6 +331,9 @@
               {
                 "id": "custom.width",
                 "value": 174
+              },
+              {
+                "id": "links"
               }
             ]
           },
@@ -343,6 +346,13 @@
               {
                 "id": "custom.width",
                 "value": 274
+              },
+              {
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Resource Name"
               }
             ]
           },
@@ -355,6 +365,10 @@
               {
                 "id": "custom.inspect",
                 "value": true
+              },
+              {
+                "id": "displayName",
+                "value": "Event Details"
               }
             ]
           },
@@ -367,6 +381,13 @@
               {
                 "id": "custom.width",
                 "value": 145
+              },
+              {
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Event Status"
               }
             ]
           },
@@ -379,6 +400,13 @@
               {
                 "id": "custom.width",
                 "value": 157
+              },
+              {
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Resource Type"
               }
             ]
           },
@@ -390,7 +418,60 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 133
+                "value": 114
+              },
+              {
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Event Result"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "execution_info_url"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Link",
+                    "url": "${__value.raw}"
+                  }
+                ]
+              },
+              {
+                "id": "displayName",
+                "value": "Execution URL"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Execution URL"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 427
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event Status"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 134
               }
             ]
           }
@@ -426,7 +507,7 @@
         {
           "datasource": "Cloudwatch",
           "dimensions": {},
-          "expression": "fields @timestamp, resource_type, resource_name, event_status, event_result, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
+          "expression": "fields @timestamp, execution_info_url, resource_type, resource_name, event_status, event_result, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
           "label": "",
           "logGroups": [
             {

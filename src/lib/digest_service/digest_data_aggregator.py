@@ -79,7 +79,7 @@ class DigestDataAggregator:
         resource_values: dict,
     ) -> list:
         if int(resource_run["failed"]) > 0:
-            job_run_url = ExecutionInfoUrlMixin.get_execution_info_url(
+            job_run_url = ExecutionInfoUrlMixin.get_url(
                 resource_type=resource_type,
                 region_name=resource_config["region_name"],
                 resource_name=resource_run["resource_name"],
