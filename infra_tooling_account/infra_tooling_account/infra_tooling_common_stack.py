@@ -130,7 +130,7 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
-    def create_timestream_db(self) -> (timestream.CfnDatabase, kms.Key):
+    def create_timestream_db(self) -> tuple[timestream.CfnDatabase, kms.Key]:
         """Creates Timestream database for events and metrics
 
         Returns:
