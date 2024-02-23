@@ -72,6 +72,8 @@ class InfraToolingCommonStack(Stack):
         notification_queue = sqs.Queue(
             self,
             "salmonNotificationQueue",
+            content_based_deduplication=True,
+            fifo=True,
             queue_name=AWSNaming.SQSQueue(self, "notification"),
             visibility_timeout=Duration.seconds(60),
         )
