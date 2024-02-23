@@ -71,7 +71,7 @@ class InfraToolingCommonStack(Stack):
         # TODO: confirm visibility timeout
         notification_queue = sqs.Queue(
             self,
-            "salmonNotificationQueue",
+            "salmonNotificationFIFOQueue",
             content_based_deduplication=True,
             fifo=True,
             queue_name=AWSNaming.SQSQueue(self, "notification"),
@@ -118,7 +118,7 @@ class InfraToolingCommonStack(Stack):
             self,
             "salmonNotificationQueueArn",
             value=notification_queue.queue_arn,
-            description="The ARN of the Notification SQS Queue",
+            description="The ARN of the Notification FIFO SQS Queue",
             export_name=AWSNaming.CfnOutput(self, "notification-queue-arn"),
         )
 
@@ -185,7 +185,7 @@ class InfraToolingCommonStack(Stack):
 
         Args:
             internal_error_topic (sns.Topic): SNS Topic for DLQ alerts
-            notification_queue (sqs.Queue): SQS queue as the input for notification lambda
+            notification_queue (sqs.Queue): FIFO SQS queue as the input for notification lambda
 
         Returns:
             lambda_.Function: Notification Lambda
