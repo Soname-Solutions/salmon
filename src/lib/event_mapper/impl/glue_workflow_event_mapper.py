@@ -30,6 +30,7 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
             resource_type=resource_type,
             region_name=self.event["detail"]["origin_region"],
             resource_name=resource_name,
+            run_id=self.event["detail"]["workflowRunId"],
         )
 
     def get_message_body(self):

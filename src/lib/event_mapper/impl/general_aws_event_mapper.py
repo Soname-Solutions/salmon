@@ -153,6 +153,6 @@ class ExecutionInfoUrlMixin:
             types.LAMBDA_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{resource_name}/log-events/",
             types.GLUE_CRAWLERS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/crawlers/view/{resource_name}",
             types.GLUE_DATA_CATALOGS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{resource_name}",
-            types.GLUE_WORKFLOWS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/etl-configuration/workflows/view/{resource_name}?activeViewTab=id-tab-history",
+            types.GLUE_WORKFLOWS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/etl-configuration/workflows/run/{resource_name}?runId={run_id}",
         }
         return url_mapping.get(resource_type, "")
