@@ -9,5 +9,4 @@ from .metrics_extractor_provider import MetricsExtractorProvider
 from .metrics_extractor_utils import (
     retrieve_last_update_time_for_all_resources,
     get_last_update_time,
-    get_job_run_url,
 )
