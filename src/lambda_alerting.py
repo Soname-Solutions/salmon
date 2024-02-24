@@ -6,7 +6,7 @@ from lib.aws.sqs_manager import SQSQueueSender
 from lib.event_mapper.event_mapper_provider import EventMapperProvider
 from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
-from lib.core.constants import EventResult
+from lib.core.constants import EventResult, NotificationType
 from lib.alerting_service import DeliveryOptionsResolver, CloudWatchAlertWriter
 
 logger = logging.getLogger()
@@ -18,14 +18,16 @@ EVENT_RESULTS_ALERTABLE = [EventResult.FAILURE]
 EVENT_RESULTS_MONITORABLE = [EventResult.SUCCESS, EventResult.FAILURE]
 
 
-def send_messages_to_sqs(queue_url: str, messages: list[dict]):
+def send_messages_to_sqs(queue_url: str, message_group_id: str, messages: list[dict]):
     """Sends messages array to the given SQS queue
 
     Args:
         queue_url (str): SQS queue URL
+        message_group_id (str): The tag that specifies that
+            a message belongs to a specific message group
         messages (list[dict]): list of message objects
     """
-    sender = SQSQueueSender(queue_url, sqs_client)
+    sender = SQSQueueSender(queue_url, message_group_id, sqs_client)
     results = sender.send_messages(messages)
 
     logger.info(f"Results of sending messages to SQS: {results}")
@@ -75,7 +77,12 @@ def lambda_handler(event, context):
         logger.info(f"Notification messages: {notification_messages}")
 
         queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
-        send_messages_to_sqs(queue_url, notification_messages)
+        send_messages_to_sqs(
+            queue_url=queue_url,
+            message_group_id=NotificationType.ALERT,
+            messages=notification_messages,
+        )
+
     else:
         logger.info(f"Event result is not alertable: {event_result}")
 
