@@ -28,7 +28,7 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
     def get_execution_info_url(self, resource_type: str, resource_name: str):
         return ExecutionInfoUrlMixin.get_url(
             resource_type=resource_type,
-            region_name=self.event["region"],
+            region_name=self.event["detail"]["origin_region"],
             resource_name=resource_name,
         )
 
