@@ -136,13 +136,14 @@ def distribute_digest_report(
             message_body = message_builder.generate_message_body(
                 digest_start_time, digest_end_time
             )
+            message_subject = f"Digest Report {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')}"
             message = {
                 "delivery_options": {
                     "recipients": recipients_group["recipients"],
                     "delivery_method": recipients_group["delivery_method"],
                 },
                 "message": {
-                    "message_subject": f"Digest Report {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')}",
+                    "message_subject": message_subject,
                     "message_body": message_body,
                 },
             }
@@ -150,7 +151,7 @@ def distribute_digest_report(
             # send the messages to FIFO queue
             sender = SQSQueueSender(
                 queue_url=notification_queue_url,
-                message_group_id=NotificationType.DIGEST,
+                message_group_id=recipients_group,
                 sqs_client=sqs_client,
             )
             results = sender.send_messages(messages=[message])
