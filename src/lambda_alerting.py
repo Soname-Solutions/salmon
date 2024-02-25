@@ -6,7 +6,7 @@ from lib.aws.sqs_manager import SQSQueueSender
 from lib.event_mapper.event_mapper_provider import EventMapperProvider
 from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
-from lib.core.constants import EventResult, NotificationType
+from lib.core.constants import EventResult
 from lib.alerting_service import DeliveryOptionsResolver, CloudWatchAlertWriter
 
 logger = logging.getLogger()
@@ -79,7 +79,7 @@ def lambda_handler(event, context):
         queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
         send_messages_to_sqs(
             queue_url=queue_url,
-            message_group_id=NotificationType.ALERT,
+            message_group_id=resource_name,
             messages=notification_messages,
         )
 
