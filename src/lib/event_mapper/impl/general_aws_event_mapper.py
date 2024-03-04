@@ -3,7 +3,6 @@ from ...core.constants import EventResult
 from ..resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
 from lib.core.constants import SettingConfigResourceTypes as types
-from lib.aws.lambda_manager import LambdaManager
 
 
 class EventParsingException(Exception):
