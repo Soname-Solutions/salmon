@@ -20,9 +20,9 @@ class GlueJobEventMapper(GeneralAwsEventMapper):
         else:
             return EventResult.INFO
 
-    def get_execution_info_url(self, resource_type: str, resource_name: str):
+    def get_execution_info_url(self, resource_name: str):
         return ExecutionInfoUrlMixin.get_url(
-            resource_type=resource_type,
+            resource_type=self.resource_type,
             region_name=self.event["region"],
             resource_name=resource_name,
             run_id=self.event["detail"]["jobRunId"],

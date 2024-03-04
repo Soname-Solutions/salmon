@@ -91,7 +91,7 @@
           "queryMode": "Logs",
           "refId": "A",
           "region": "default",
-          "sqlExpression": "| stats count(*) by $service_name",
+          "sqlExpression": "| stats count(*) by $resource_type",
           "statistic": "Average",
           "statsGroups": []
         }
@@ -168,7 +168,7 @@
           "queryMode": "Logs",
           "refId": "A",
           "region": "default",
-          "sqlExpression": "| stats count(*) by $service_name",
+          "sqlExpression": "| stats count(*) by $resource_type",
           "statistic": "Average",
           "statsGroups": [
             "event_result"
@@ -447,14 +447,14 @@
               },
               {
                 "id": "displayName",
-                "value": "Execution URL"
+                "value": "Link to Execution in AWS Console"
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Execution URL"
+              "options": "Link to Execution in AWS Console"
             },
             "properties": [
               {

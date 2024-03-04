@@ -29,7 +29,7 @@ class EventMapperProvider:
                 f"Event Mapper for resource type {resource_type} is not registered."
             )
 
-        return mapper(**kwargs)
+        return mapper(resource_type, **kwargs)
 
 
 EventMapperProvider.register_event_mapper(types.GLUE_JOBS, GlueJobEventMapper)

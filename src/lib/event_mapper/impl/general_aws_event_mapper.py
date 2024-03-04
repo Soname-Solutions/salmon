@@ -3,6 +3,7 @@ from ...core.constants import EventResult
 from ..resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
 from lib.core.constants import SettingConfigResourceTypes as types
+from lib.aws.lambda_manager import LambdaManager
 
 
 class EventParsingException(Exception):
@@ -19,7 +20,8 @@ class GeneralAwsEventMapper(ABC):
         to_notification_messages(dict): maps AWS event object to a list of notification message objects
     """
 
-    def __init__(self, event: dict, settings: Settings):
+    def __init__(self, resource_type: str, event: dict, settings: Settings):
+        self.resource_type = resource_type
         self.event = event
         self.monitored_env_name = settings.get_monitored_environment_name(
             event["account"], event["region"]
@@ -44,12 +46,11 @@ class GeneralAwsEventMapper(ABC):
         pass
 
     @abstractmethod
-    def get_execution_info_url(self, resource_type: str, resource_name: str) -> str:
+    def get_execution_info_url(self, resource_name: str) -> str:
         """Returns the url of the occurred event
 
         Args:
             event (dict): Event object
-            resource_type (str): Resource type
             resource_name (str): Resource name
         """
         pass
