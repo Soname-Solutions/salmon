@@ -54,7 +54,7 @@ def lambda_handler(event, context):
 
     resource_type = ResourceTypeResolver.resolve(event)
     mapper = EventMapperProvider.get_event_mapper(
-        resource_type, event=event, settings=settings
+        resource_type=resource_type, event=event, settings=settings
     )
 
     event_result = mapper.get_event_result()
