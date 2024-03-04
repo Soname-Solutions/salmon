@@ -49,6 +49,15 @@ class SmtpSender(Sender):
         return message
 
     @staticmethod
+    def _get_smtp_credential_property(smtp_secret, property_name):
+        smtp_property = smtp_secret.get(property_name)
+        if not smtp_property:
+            raise KeyError(
+                f"SMTP property {property_name} is not defined in the secret."
+            )
+        return smtp_property
+
+    @staticmethod
     def _get_file_mime_object(file: File) -> MIMEBase:
         """Get MIME-object of a file to attach."""
         mime_type, mime_subtype = file.mime_type.split("/")[:2]
@@ -66,10 +75,10 @@ class SmtpSender(Sender):
             raise KeyError("Credentials Secret Name is not set.")
 
         smtp_secret = json.loads(self._secret_client.get_secret(smtp_secret_name))
-        smtp_server = smtp_secret["SMTP_SERVER"]
-        port = smtp_secret["SMTP_PORT"]
-        login = smtp_secret["SMTP_LOGIN"]
-        password = smtp_secret["SMTP_PASSWORD"]
+        smtp_server = self._get_smtp_credential_property(smtp_secret, "SMTP_SERVER")
+        port = self._get_smtp_credential_property(smtp_secret, "SMTP_PORT")
+        login = self._get_smtp_credential_property(smtp_secret, "SMTP_LOGIN")
+        password = self._get_smtp_credential_property(smtp_secret, "SMTP_PASSWORD")
 
         with SMTP_SSL(smtp_server, port, context=context) as server:
             try:
