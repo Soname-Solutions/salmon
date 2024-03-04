@@ -60,7 +60,7 @@ def lambda_handler(event, context):
     event_result = mapper.get_event_result()
     resource_name = mapper.get_resource_name()
     event_status = mapper.get_resource_state()
-    execution_info_url = mapper.get_execution_info_url(resource_type, resource_name)
+    execution_info_url = mapper.get_execution_info_url(resource_name)
 
     notification_messages = []
 
