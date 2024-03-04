@@ -51,7 +51,7 @@ class SmtpSender(Sender):
     @staticmethod
     def _get_smtp_credential_property(smtp_secret, property_name):
         smtp_property = smtp_secret.get(property_name)
-        if not smtp_property:
+        if smtp_property is None:
             raise KeyError(
                 f"SMTP property {property_name} is not defined in the secret."
             )
