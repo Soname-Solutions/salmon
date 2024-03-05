@@ -306,7 +306,18 @@
             "filterable": true,
             "inspect": false
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "pattern": "^https:\\/\\/.*",
+                "result": {
+                  "index": 0,
+                  "text": "Link"
+                }
+              },
+              "type": "regex"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -447,14 +458,14 @@
               },
               {
                 "id": "displayName",
-                "value": "Link to Execution in AWS Console"
+                "value": "Execution URL"
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Link to Execution in AWS Console"
+              "options": "Execution URL"
             },
             "properties": [
               {
@@ -472,6 +483,30 @@
               {
                 "id": "custom.width",
                 "value": 134
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Resource Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Execution URL"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 131
               }
             ]
           }
@@ -507,7 +542,7 @@
         {
           "datasource": "Cloudwatch",
           "dimensions": {},
-          "expression": "fields @timestamp, execution_info_url, resource_type, resource_name, event_status, event_result, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
+          "expression": "fields @timestamp, resource_type, resource_name, event_status, event_result, execution_info_url, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
           "label": "",
           "logGroups": [
             {
