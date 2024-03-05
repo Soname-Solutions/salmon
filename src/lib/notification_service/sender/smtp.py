@@ -3,33 +3,26 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP_SSL, SMTPResponseException
+import json
 import ssl
 
 from typing import List
 from .sender import Sender
 from ..exceptions import SmtpSenderException
 from ..messages.message import Message, File
+from ...aws.secret_manager import SecretManager
 
 
 class SmtpSender(Sender):
     def __init__(
         self,
+        delivery_method: dict,
         message: Message,
-        sender: str,
         recipients: List[str],
-        server: str,
-        port: int,
-        login: str,
-        password: str,
     ) -> None:
         """Initiate class EmailSender."""
-        super().__init__(message)
-        self._sender = sender
-        self._recipients = recipients
-        self._server = server
-        self._port = port
-        self._login = login
-        self._password = password
+        super().__init__(delivery_method, message, recipients)
+        self._secret_client = SecretManager()
 
     def _get_message(self) -> BaseEmailMessage:
         """Get message to send."""
@@ -39,7 +32,7 @@ class SmtpSender(Sender):
         message_body = MIMEMultipart("alternative")
 
         message["Subject"] = self._message.header
-        message["From"] = self._sender
+        message["From"] = self._delivery_method.get("sender_email")
         message["To"] = ",".join(self._recipients)
 
         # Encode the text and HTML content and set the character encoding. This step is
@@ -56,6 +49,15 @@ class SmtpSender(Sender):
         return message
 
     @staticmethod
+    def _get_smtp_credential_property(smtp_secret, property_name):
+        smtp_property = smtp_secret.get(property_name)
+        if smtp_property is None:
+            raise KeyError(
+                f"SMTP property {property_name} is not defined in the secret."
+            )
+        return smtp_property
+
+    @staticmethod
     def _get_file_mime_object(file: File) -> MIMEBase:
         """Get MIME-object of a file to attach."""
         mime_type, mime_subtype = file.mime_type.split("/")[:2]
@@ -67,12 +69,24 @@ class SmtpSender(Sender):
     def send(self) -> None:
         """Send a message via SMTP."""
         context = ssl.create_default_context()
+        smtp_secret_name = self._delivery_method.get("credentials_secret_name")
 
-        with SMTP_SSL(self._server, self._port, context=context) as server:
+        if smtp_secret_name is None:
+            raise KeyError("Credentials Secret Name is not set.")
+
+        smtp_secret = json.loads(self._secret_client.get_secret(smtp_secret_name))
+        smtp_server = self._get_smtp_credential_property(smtp_secret, "SMTP_SERVER")
+        port = self._get_smtp_credential_property(smtp_secret, "SMTP_PORT")
+        login = self._get_smtp_credential_property(smtp_secret, "SMTP_LOGIN")
+        password = self._get_smtp_credential_property(smtp_secret, "SMTP_PASSWORD")
+
+        with SMTP_SSL(smtp_server, port, context=context) as server:
             try:
-                server.login(self._login, self._password)
+                server.login(login, password)
                 server.sendmail(
-                    self._sender, self._recipients, self._get_message().as_string()
+                    self._delivery_method.get("sender_email"),
+                    self._recipients,
+                    self._get_message().as_string(),
                 )
             except SMTPResponseException as ex:
                 raise SmtpSenderException(
@@ -82,22 +96,13 @@ class SmtpSender(Sender):
 
 
 def create_smtp_sender(
+    delivery_method: dict,
     message: Message,
-    smtp_sender: str,
     recipients: List[str],
-    smtp_server: str,
-    smtp_port: int,
-    smtp_login: str,
-    smtp_password: str,
-    **_ignored,
 ):
     """Create an SmtpSender instance."""
     return SmtpSender(
+        delivery_method,
         message,
-        smtp_sender,
         recipients,
-        smtp_server,
-        smtp_port,
-        smtp_login,
-        smtp_password,
     )

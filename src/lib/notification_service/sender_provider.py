@@ -1,4 +1,6 @@
 from .sender import create_aws_ses_sender, create_smtp_sender
+from .messages import Message
+from typing import List
 
 
 class SenderProvider:
@@ -7,16 +9,19 @@ class SenderProvider:
     def __init__(self):
         self._senders = {}
 
-    def register_sender(self, delivery_method, sender):
-        self._senders[delivery_method] = sender
+    def register_sender(self, delivery_method_type, sender):
+        self._senders[delivery_method_type] = sender
 
-    def get(self, delivery_method, **kwargs):
-        sender = self._senders.get(delivery_method)
+    def get(self, delivery_method: dict, message: Message, recipients: List[str]):
+        delivery_method_type = delivery_method.get("delivery_method_type")
+        sender = self._senders.get(delivery_method_type)
 
         if not sender:
-            raise ValueError(f"Delivery method {delivery_method} is not supported.")
+            raise ValueError(
+                f"Delivery method {delivery_method_type} is not supported."
+            )
 
-        return sender(**kwargs)
+        return sender(delivery_method, message, recipients)
 
 
 senders = SenderProvider()

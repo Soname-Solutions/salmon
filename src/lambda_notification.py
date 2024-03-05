@@ -2,7 +2,6 @@ from lib.aws.sns_manager import SnsTopicPublisher
 from lib.notification_service.formatter_provider import formatters
 from lib.notification_service.sender_provider import senders
 from lib.notification_service.messages import Message
-from lib.aws.secret_manager import SecretManager
 
 import logging
 import json
@@ -78,20 +77,10 @@ def lambda_handler(event, context):
 
         message = Message(formatted_message, message_subject)
 
-        secret_client = SecretManager()
-        smtp_secret_name = delivery_options_info.get("smtp_secret_name")
-        smtp_secret = secret_client.get_secret(smtp_secret_name)
-
         sender = senders.get(
-            delivery_method=delivery_method_type,
+            delivery_method=delivery_method,
             message=message,
-            ses_sender=delivery_method.get("sender_email"),
             recipients=delivery_options_info.get("recipients"),
-            smtp_sender=smtp_secret["SMTP_SENDER"],
-            smtp_server=smtp_secret["SMTP_SERVER"],
-            smtp_port=smtp_secret["SMTP_PORT"],
-            smtp_login=smtp_secret["SMTP_LOGIN"],
-            smtp_password=smtp_secret["SMTP_PASSWORD"],
         )
 
         sender.pre_process()

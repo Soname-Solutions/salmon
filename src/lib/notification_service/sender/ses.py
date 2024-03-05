@@ -17,18 +17,19 @@ from ...aws import AwsSesManager, AwsSesRawEmailSenderException
 class AwsSesSender(Sender):
     """Class to send a message by AWS SES."""
 
-    def __init__(self, message: Message, sender: str, recipients: List[str]) -> None:
+    def __init__(
+        self, delivery_method: dict, message: Message, recipients: List[str]
+    ) -> None:
         """Initiate class AwsSesSender.
 
         Args:
+            delivery_method (dict): Delivery method information
             message (Message): Message to send
-            sender (str): Email from
+            sender_email (str): Email from
             recipients (List[str]): Emails to
         """
-        super().__init__(message)
+        super().__init__(delivery_method, message, recipients)
         self._ses_manager = AwsSesManager()
-        self._sender = sender
-        self._recipients = recipients
         self.verified_recipients = []
 
     @property
@@ -49,7 +50,7 @@ class AwsSesSender(Sender):
         message_body = MIMEMultipart("alternative")
 
         message["Subject"] = self._message.subject
-        message["From"] = self._sender
+        message["From"] = self._delivery_method.get("sender_email")
         message["To"] = ",".join(self.verified_recipients)
 
         # Encode the text and HTML content and set the character encoding. This step is
@@ -111,7 +112,7 @@ class AwsSesSender(Sender):
 
 
 def create_aws_ses_sender(
-    message: Message, ses_sender: str, recipients: List[str], **_ignored
+    delivery_method: dict, message: Message, recipients: List[str]
 ):
     """Create an AwsSesSender instance."""
-    return AwsSesSender(message, ses_sender, recipients)
+    return AwsSesSender(delivery_method, message, recipients)
