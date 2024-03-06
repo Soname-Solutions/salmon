@@ -16,8 +16,8 @@ class SQSQueueSender:
 
     Attributes:
         queue_url (str): The url of the SQS queue.
-        message_group_id (str): The tag that specifies that
-            a message belongs to a specific message group
+        message_group_id (str): The tag that specifies that a message belongs to
+            a specific message group. The max length is 128 characters.
         sqs_client: The Boto3 SQS client. If not provided,
             a new client instance is created.
 
@@ -31,13 +31,13 @@ class SQSQueueSender:
 
         Args:
             queue_url (str): The url of the SQS queue.
-            message_group_id (str): The tag that specifies that
-                a message belongs to a specific message group
+            message_group_id (str): The tag that specifies that a message belongs to
+                a specific message group. The max length is 128 characters.
             sqs_client: The Boto3 SQS client. If not provided,
                 a new client instance is created.
         """
         self.queue_url = queue_url
-        self.message_group_id = message_group_id
+        self.message_group_id = message_group_id[:128]
         self.sqs_client = boto3.client("sqs") if sqs_client is None else sqs_client
 
     def send_messages(self, messages: list[dict]):
