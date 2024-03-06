@@ -47,7 +47,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
 
             if lambda_log.IsReportEvent:
                 GB_seconds = (
-                    (lambda_log.MemorySize / 1000) * (lambda_log.BilledDuration / 1024)
+                    (lambda_log.MemorySize / 1024) * (lambda_log.BilledDuration / 1000)
                     if lambda_log.MemorySize and lambda_log.BilledDuration
                     else None
                 )
