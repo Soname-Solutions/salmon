@@ -91,7 +91,7 @@
           "queryMode": "Logs",
           "refId": "A",
           "region": "default",
-          "sqlExpression": "| stats count(*) by $service_name",
+          "sqlExpression": "| stats count(*) by $resource_type",
           "statistic": "Average",
           "statsGroups": []
         }
@@ -168,7 +168,7 @@
           "queryMode": "Logs",
           "refId": "A",
           "region": "default",
-          "sqlExpression": "| stats count(*) by $service_name",
+          "sqlExpression": "| stats count(*) by $resource_type",
           "statistic": "Average",
           "statsGroups": [
             "event_result"
@@ -306,7 +306,18 @@
             "filterable": true,
             "inspect": false
           },
-          "mappings": [],
+          "mappings": [
+            {
+              "options": {
+                "pattern": "^https:\\/\\/.*",
+                "result": {
+                  "index": 0,
+                  "text": "Link to AWS Console"
+                }
+              },
+              "type": "regex"
+            }
+          ],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -329,8 +340,7 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 174
+                "id": "links"
               }
             ]
           },
@@ -341,8 +351,11 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 274
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Resource Name"
               }
             ]
           },
@@ -355,6 +368,10 @@
               {
                 "id": "custom.inspect",
                 "value": true
+              },
+              {
+                "id": "displayName",
+                "value": "Event Details"
               }
             ]
           },
@@ -365,8 +382,11 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 145
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Event Status"
               }
             ]
           },
@@ -377,8 +397,11 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 157
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Resource Type"
               }
             ]
           },
@@ -389,8 +412,33 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 133
+                "id": "links"
+              },
+              {
+                "id": "displayName",
+                "value": "Event Result"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "execution_info_url"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "targetBlank": true,
+                    "title": "Link",
+                    "url": "${__value.raw}"
+                  }
+                ]
+              },
+              {
+                "id": "displayName",
+                "value": "Execution Info"
               }
             ]
           }
@@ -426,7 +474,7 @@
         {
           "datasource": "Cloudwatch",
           "dimensions": {},
-          "expression": "fields @timestamp, resource_type, resource_name, event_status, event_result, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
+          "expression": "fields @timestamp, resource_type, resource_name, event_status, event_result, execution_info_url, @message \n| filter resource_type IN [${resource_type:doublequote}]\n| filter event_result IN [${event_result:doublequote}]\n| filter event_status like /(?i)$event_status/\n| filter resource_name like /(?i)$resource_name/",
           "label": "",
           "logGroups": [
             {
@@ -540,7 +588,7 @@
         "skipUrlSync": false,
         "type": "custom"
       },
-      {					   
+      {
         "current": {
           "selected": true,
           "text": [

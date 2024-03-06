@@ -19,6 +19,7 @@ class CloudWatchAlertWriter:
         event_status: str,
         event_result: str,
         event: dict,
+        execution_info_url: str,
     ):
         """
         Writes a given list of records to an Amazon CloudWatch logs.
@@ -35,6 +36,7 @@ class CloudWatchAlertWriter:
             event_status (str): The status of the event.
             event_result (str): Result of the event.
             event (dict): The event dict to be written to the CloudWatch stream.
+            execution_info_url (str): The link to the particular resource run.
 
         Returns:
             None: This function does not return anything but logs the outcome.
@@ -52,6 +54,7 @@ class CloudWatchAlertWriter:
         logged_event["resource_type"] = resource_type
         logged_event["event_status"] = event_status
         logged_event["event_result"] = event_result
+        logged_event["execution_info_url"] = execution_info_url
 
         logged_event_time = datetime_utils.iso_time_to_epoch_milliseconds(event["time"])
         result = publisher.put_event(

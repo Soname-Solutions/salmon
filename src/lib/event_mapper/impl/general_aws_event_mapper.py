@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from ...core.constants import EventResult
 from ..resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
+from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class EventParsingException(Exception):
@@ -18,13 +19,12 @@ class GeneralAwsEventMapper(ABC):
         to_notification_messages(dict): maps AWS event object to a list of notification message objects
     """
 
-    def __init__(
-        self,
-        event: dict,
-        settings: Settings
-    ):
+    def __init__(self, resource_type: str, event: dict, settings: Settings):
+        self.resource_type = resource_type
         self.event = event
-        self.monitored_env_name = settings.get_monitored_environment_name(event["account"], event["region"])
+        self.monitored_env_name = settings.get_monitored_environment_name(
+            event["account"], event["region"]
+        )
 
     @abstractmethod
     def get_resource_name(self) -> str:
@@ -41,6 +41,16 @@ class GeneralAwsEventMapper(ABC):
 
         Args:
             event (dict): Event object
+        """
+        pass
+
+    @abstractmethod
+    def get_execution_info_url(self, resource_name: str) -> str:
+        """Returns the url of the occurred event
+
+        Args:
+            event (dict): Event object
+            resource_name (str): Resource name
         """
         pass
 
@@ -73,7 +83,7 @@ class GeneralAwsEventMapper(ABC):
         """
         resource_name = self.get_resource_name()
         resource_state = self.get_resource_state()
-        resource_type = ResourceTypeResolver.resolve(self.event)        
+        resource_type = ResourceTypeResolver.resolve(self.event)
         return f"{self.monitored_env_name}: {resource_state} - {resource_type} : {resource_name}"
 
     def create_message_body_with_common_rows(self) -> tuple[list, list]:
@@ -125,3 +135,24 @@ class GeneralAwsEventMapper(ABC):
         }
 
         return message
+
+
+class ExecutionInfoUrlMixin:
+    @staticmethod
+    def get_url(
+        resource_type: str,
+        region_name: str,
+        resource_name: str,
+        account_id: str = None,
+        run_id: str = None,
+    ) -> str:
+        """Returns the link to the particular resource run."""
+        url_mapping = {
+            types.GLUE_JOBS: f"https://{region_name}.console.aws.amazon.com/gluestudio/home?region={region_name}#/job/{resource_name}/run/{run_id}",
+            types.STEP_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/states/home?region={region_name}#/v2/executions/details/arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}",
+            types.LAMBDA_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{resource_name}/log-events/",
+            types.GLUE_CRAWLERS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/crawlers/view/{resource_name}",
+            types.GLUE_DATA_CATALOGS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{resource_name}",
+            types.GLUE_WORKFLOWS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/etl-configuration/workflows/run/{resource_name}?runId={run_id}",
+        }
+        return url_mapping.get(resource_type, "")
