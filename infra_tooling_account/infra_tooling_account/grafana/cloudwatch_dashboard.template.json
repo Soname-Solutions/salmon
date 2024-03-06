@@ -312,7 +312,7 @@
                 "pattern": "^https:\\/\\/.*",
                 "result": {
                   "index": 0,
-                  "text": "Link"
+                  "text": "Link to AWS Console"
                 }
               },
               "type": "regex"
@@ -340,10 +340,6 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 174
-              },
-              {
                 "id": "links"
               }
             ]
@@ -354,10 +350,6 @@
               "options": "resource_name"
             },
             "properties": [
-              {
-                "id": "custom.width",
-                "value": 274
-              },
               {
                 "id": "links"
               },
@@ -390,10 +382,6 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 145
-              },
-              {
                 "id": "links"
               },
               {
@@ -409,10 +397,6 @@
             },
             "properties": [
               {
-                "id": "custom.width",
-                "value": 157
-              },
-              {
                 "id": "links"
               },
               {
@@ -427,10 +411,6 @@
               "options": "event_result"
             },
             "properties": [
-              {
-                "id": "custom.width",
-                "value": 114
-              },
               {
                 "id": "links"
               },
@@ -458,57 +438,9 @@
               },
               {
                 "id": "displayName",
-                "value": "Execution URL"
+                "value": "Execution Info"
               }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Execution URL"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 427
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Event Status"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 134
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Resource Type"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 148
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Execution URL"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 131
-              }
-            ]
+            ]          
           }
         ]
       },
@@ -656,7 +588,7 @@
         "skipUrlSync": false,
         "type": "custom"
       },
-      {					   
+      {
         "current": {
           "selected": true,
           "text": [
