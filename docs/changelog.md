@@ -7,11 +7,12 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
+* **Unit Tests:** Improved tests coverage. ([13aa12b](https://github.com/Soname-Solutions/salmon/commit/13aa12bbe7bf8af70f880863e3bfb8ad19349399))
 * **Lambda:** Added Digest Lambda. Required for distributing daily Digest. ([c1b70a6](https://github.com/Soname-Solutions/salmon/commit/c1b70a66da2b8f845665ae1b76bd426334240d5e))
 * **Stack:** Introduced Grafana stack. This enables launching Grafana instances with default provisioning dashboards based on Timestream tables and Cloudwatch log groups. ([b64a94c](https://github.com/Soname-Solutions/salmon/commit/b64a94c0cf97a8f44d8e6d110882cca2a1b7970e))
 * **Cloudwatch:** Added functionality to publish alerting events to Cloudwatch log groups. ([b9f4535](https://github.com/Soname-Solutions/salmon/commit/b9f45358082c586af22cd494b6adf3867675251d))
 * **Lambda:** Added orchestration and extract metrics Lambdas. These are necessary for extracting metric information (data since the last update) for all resources and saving this data to Timestream database. ([fb17509](https://github.com/Soname-Solutions/salmon/commit/fb1750996059cff7e1935dde6fa32360696f1215))
-* **Event Mappers and Alerting:** Added functionality for event mappers and alerting. Designed to map AWS events to notification messages. ([b153add](https://github.com/Soname-Solutions/salmon/commit/b153add530ab52b9a9006ca416033311168ca72a))
+* **Event Mappers:** Added functionality for event mappers. Designed to map AWS events to notification messages. ([b153add](https://github.com/Soname-Solutions/salmon/commit/b153add530ab52b9a9006ca416033311168ca72a))
 * **AWS Naming Convention:** Included a naming convention for AWS resources to be created. ([6b2a45d](https://github.com/Soname-Solutions/salmon/commit/6b2a45d4402658a412cadacb43f0dca7dd3f4cd2))
 * **Lambda:** Added Alerting Lambda. Necessary for notifying on failed events. ([0a12c7d](https://github.com/Soname-Solutions/salmon/commit/0a12c7dc4786c8724ced3c0d8c01d397b44efd8f))
 * **Lambda:** Added Notification Lambda. Required for sending messages via provided delivery method. ([08d4d37](https://github.com/Soname-Solutions/salmon/commit/08d4d37db0f0e7ad8562767117289289849d499c))
