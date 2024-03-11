@@ -42,7 +42,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Duration, sec"
+              "options": "Total Duration, sec"
             },
             "properties": [
               {
@@ -54,7 +54,19 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Billed Duration, sec"
+              "options": "Total Billed Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total GB-seconds"
             },
             "properties": [
               {
@@ -67,7 +79,7 @@
       },
       "gridPos": {
         "h": 14,
-        "w": 3,
+        "w": 4,
         "x": 0,
         "y": 0
       },
@@ -97,7 +109,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(duration_ms)/1000 as \"Duration, sec\", sum(billed_duration_ms)/1000 as \"Billed Duration, sec\", sum(memory_size_mb)/1000 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(duration_ms)/1000 as \"Total Duration, sec\", sum(billed_duration_ms)/1000 as \"Total Billed Duration, sec\", sum(memory_size_mb)/1024 as \"Total Memory size, GB\", sum(GB_seconds) as \"Total GB-seconds\", max(max_memory_used_mb) as \"Max Memory used, MB\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -162,8 +174,8 @@
       },
       "gridPos": {
         "h": 14,
-        "w": 21,
-        "x": 3,
+        "w": 20,
+        "x": 4,
         "y": 0
       },
       "id": 1,
