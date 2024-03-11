@@ -122,7 +122,7 @@ def distribute_digest_report(
 ):
     logger.info("Distributing the digest report to the relevant recipients")
 
-    for recipients_group in recipients_groups:
+    for i, recipients_group in enumerate(recipients_groups):
         # get relevant digest data
         recipients_group_data = [
             item
@@ -136,18 +136,25 @@ def distribute_digest_report(
             message_body = message_builder.generate_message_body(
                 digest_start_time, digest_end_time
             )
+            message_subject = f"Digest Report {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')}"
             message = {
                 "delivery_options": {
                     "recipients": recipients_group["recipients"],
                     "delivery_method": recipients_group["delivery_method"],
                 },
                 "message": {
-                    "message_subject": f"Digest Report {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')}",
+                    "message_subject": message_subject,
                     "message_body": message_body,
                 },
             }
-            sender = SQSQueueSender(notification_queue_url, sqs_client)
-            results = sender.send_messages([message])
+
+            # send the messages to FIFO queue
+            sender = SQSQueueSender(
+                queue_url=notification_queue_url,
+                message_group_id=f"digest_group_{i}",
+                sqs_client=sqs_client,
+            )
+            results = sender.send_messages(messages=[message])
 
             logger.info(
                 f"Results of sending messages to SQS: {results} for the recipient group: {recipients_group['recipients']}"
@@ -223,15 +230,15 @@ if __name__ == "__main__":
 
     os.environ[
         "IAMROLE_MONITORED_ACC_EXTRACT_METRICS"
-    ] = "role-salmon-monitored-acc-extract-metrics-devay"
+    ] = "role-salmon-monitored-acc-extract-metrics-{stage_name}"
     os.environ[
         "TIMESTREAM_METRICS_DB_NAME"
-    ] = "timestream-salmon-metrics-events-storage-devay"
-    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devay/settings/"
+    ] = "timestream-salmon-metrics-events-storage-{stage_name}"
+    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-{stage_name}/settings/"
     os.environ["DIGEST_REPORT_PERIOD_HOURS"] = "24"
     os.environ[
         "NOTIFICATION_QUEUE_URL"
-    ] = "https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-devay"
+    ] = "https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
 
     event = {}
     lambda_handler(event, None)

@@ -67,11 +67,13 @@ class InfraToolingCommonStack(Stack):
             topic_name=AWSNaming.SNSTopic(self, "internal-error"),
         )
 
-        # Notification SQS Queue
+        # Notification FIFO SQS Queue
         # TODO: confirm visibility timeout
         notification_queue = sqs.Queue(
             self,
             "salmonNotificationQueue",
+            content_based_deduplication=True,
+            fifo=True,
             queue_name=AWSNaming.SQSQueue(self, "notification"),
             visibility_timeout=Duration.seconds(60),
         )
@@ -128,7 +130,7 @@ class InfraToolingCommonStack(Stack):
             export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
-    def create_timestream_db(self) -> (timestream.CfnDatabase, kms.Key):
+    def create_timestream_db(self) -> tuple[timestream.CfnDatabase, kms.Key]:
         """Creates Timestream database for events and metrics
 
         Returns:

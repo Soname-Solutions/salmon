@@ -67,7 +67,8 @@ class AWSNaming:
     @classmethod
     def SQSQueue(cls, stack_obj: object, meaning: str) -> str:
         prefix = "queue"
-        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+        ending = ".fifo" # FIFO queue names must end in '.fifo'
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning) + ending
 
     @classmethod
     def TimestreamDB(cls, stack_obj: object, meaning: str) -> str:
@@ -79,13 +80,13 @@ class AWSNaming:
         prefix = "tstable"
         outp = f"{prefix}-{meaning}"  # Table lives inside DB, so we identify project and stage names by DB
         return outp
-    
+
     @classmethod
     def TimestreamMetricsTable(cls, stack_obj: object, resource_type: str) -> str:
-        ### 
+        ###
         meaning = f"{resource_type}-metrics"
         return AWSNaming.TimestreamTable(stack_obj, meaning)
-        
+
     @classmethod
     def EC2(cls, stack_obj: object, meaning: str) -> str:
         prefix = "ec2"
