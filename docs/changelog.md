@@ -28,7 +28,7 @@ All notable changes to this project will be documented in this file.
      - SMTP
 
 ### Digest
-* Designed to prepare and ditribute daily Digest.
+* Designed to prepare and distribute daily Digest.
 * Implemented for the following resource types:
      - Glue Jobs
      - Glue Workflows
