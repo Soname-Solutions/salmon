@@ -15,14 +15,14 @@ This section covers cross-cut platform components.
 
 **Settings Service**
 
-Settings Service is a Python library which provides an interface for all solution's components to interact with SALMON's configuration.
+Settings Service is a Python library which provides an interface for all solution's components to interact with SALMON's configuration.  
 E.g. getting list and content of monitoring group, checking which recipients should be notified about a specific Glue Job failure etc.
 
 For more information on Settings - please refer to [Configuration Guide](docs/configuration.md).
 
 **Notification Service**
 
-Notification Service is responsible for sending messages to recipients (where they are e-mails, Slack channels etc.).
+Notification Service is responsible for sending messages to recipients (where they are e-mails, Slack channels etc.).  
 Components, such as Alerting Lambda and Digest lambda prepare messages and send those to SQS queue alongside with
 recipients information.  
 Notification Lambda polls SQS and for each message received converts it to either HTML or markdown (depending on recipient's delivery method) and
@@ -34,7 +34,7 @@ This is an AWS Timestream database (serverless) where the following artifacts ar
 - Data pipeline metrics, stored in one table per each service. Typically, you see one row containing all metrics for a certain execution (e.g. Glue Job run)
 - Alert events.
 
-You can query this data via AWS Console or connecting to Timestream DB in any other way:
+You can query this data via AWS Console or connecting to Timestream DB in any other way:  
 <img src="images/metrics-query.png" width="600px">
 
 
@@ -58,21 +58,23 @@ Processed events are not only delivered to recipients (e.g. in a form of e-mail)
 
 ### Tooling Environment - Monitoring Functionality
 
-todo:
-todo: about Grafana is optional
+Functionality covered by this part of solution:
+- Extracting metrics data from Monitored Environments and storing those into Timestream DB (implemented as a set of Lambda functions)
+- Preparing and sending a *daily digest e-mail* (Digest Lambda via Notification Service).  
+- (optional) Grafana Dashboards for Execution Metrics and Alerting events. Grafana (if you switch it on in configuration) is deployed inside an EC2 instance (as a cost-effective way).
+
+*Digest e-mail* is a summary of execution statistics over last 24 hours for resources which recipient is subscribed for:  
+<img src="images/digest-email.png" width="600px">
 
 ### Tooling Environment - Internal Errors Handling
 
-todo:
+This group of resources are responsible for notifying SALMON's administrators in an unlikely event of internal component's failure.  
+It comprises SNS Topic where all internal errors are sent to. Administrators should subscribe to this.  
+All SALMON's lambda functions in case of failure send failure information to SNS.
 
-### Monitoring Environment(s)
+### Monitored Environment(s)
 
-todo:
-
-## Alerting workflow
-
-todo:
-
-## Extract metrics workflow
-
-todo:
+Deployed for each AWS account and region where you data pipeline resources to monitor.
+Monitored environment resources include:
+- EventBridge rule to send relevant AWS events into centralized EventBus in Tooling Environment.
+- IAM Role with minimal permitting Extract Metrics Lambdas to get the information required.
