@@ -29,7 +29,15 @@ class EventsManager:
             (in each events field EventBusName defines the target eventbus)
         """
         try:
-            self._events_client.put_events(Entries=events)
+            # split the events list into chunks of 10 (as this is maximum number of events to put)
+            def chunks(lst, n):
+                """Yield successive n-sized chunks from lst."""
+                for i in range(0, len(lst), n):
+                    yield lst[i:i + n]
+            
+            # Split the events into chunks of 10
+            for chunk in chunks(events, 10):
+                self._events_client.put_events(Entries=chunk)
         except ClientError as e:
             raise EventsManagerClientException(
                 f"Error during putting events to AWS EventBridge: {str(e)}."

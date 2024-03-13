@@ -106,7 +106,9 @@ class GlueManager:
     Job_States_Failure = ["FAILED", "ERROR", "TIMEOUT", "STOPPED"]
 
     Workflow_States_Success = ["COMPLETED"]
-    Workflow_States_Failure = ["STOPPED", "ERROR"]
+    Workflow_States_Failure = ["STOPPED", "ERROR", "FAILURE"] 
+    # FAILURE is an artificial State introduced in Salmon, so we can override "false positive" state COMPLETED even
+    # when there was a failure in underlying Glue Job
 
     Crawlers_States_Success = ["Succeeded"]
     Crawlers_States_Failure = ["Failed"]
