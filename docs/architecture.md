@@ -46,13 +46,13 @@ Default metrics retention period (1 year) can be changed in configuration file.
 ### Tooling Environment - Alerting Functionality
 
 This set of components for handling and parsing events coming from Monitored environments, defining relevant recipients for the event and, finally, delivering notifications via Notification Service.  
-When event is parsed, it's also formatted, so you don't just get plain JSON from EventBridge event, but readable message.
+When event is parsed, it's also formatted, so you don't just get plain JSON from EventBridge event, but a readable message.
 
-Events are not limited to failures (e.g. Glue Job failure), but SALMON also processes successful execution (so, for example, you can get information when you Step Function completed successfully).
+Events are not limited to failures (e.g. Glue Job failure), but SALMON also handles successful executions (so, for example, you can get information when you Step Function completed successfully).
 
 Components:
-- Custom EventBridge EventBus, which is the destination for all notification from monitored environments
-- Alerting Lambda (a destination for aforementioned EventBus) which encapsulates all event processing
+- Custom EventBridge EventBus, which is the a destination for all notifications from monitored environments.
+- Alerting Lambda (a destination for aforementioned EventBus) which encapsulates all event processing.
 
 Processed events are not only delivered to recipients (e.g. in a form of e-mail), but also stored in Timestream database.
 
@@ -63,13 +63,11 @@ Functionality covered by this part of solution:
 - Preparing and sending a *daily digest e-mail* (Digest Lambda via Notification Service).  
 - (optional) Grafana Dashboards for Execution Metrics and Alerting events. Grafana (if you switch it on in configuration) is deployed inside an EC2 instance (as a cost-effective way).
 
-*Digest e-mail* is a summary of execution statistics over last 24 hours for resources which recipient is subscribed for:  
-<img src="images/digest-email.png" width="600px">
 
 ### Tooling Environment - Internal Errors Handling
 
 This group of resources are responsible for notifying SALMON's administrators in an unlikely event of internal component's failure.  
-It comprises SNS Topic where all internal errors are sent to. Administrators should subscribe to this.  
+It comprises SNS Topic where all internal errors are sent to which administrators should subscribe to.
 All SALMON's lambda functions in case of failure send failure information to SNS.
 
 ### Monitored Environment(s)
