@@ -15,7 +15,18 @@ It can suit the need of a small team (you don't have to spend time developing yo
 - **Team-Specific Notifications**: Operating with multiple teams or domains? Configure SALMON to logically group pipelines and resource, so it can send notifications to relevant recipients only.
 - **Statistics at Your Fingertips**: Gather detailed execution stats and access them through user-friendly dashboards.
 - **Cross-Account and Region Support**: Monitor pipelines across various AWS accounts and regions in one central place.
-  
+
+Digest e-mail is a summary of execution statistics over last 24 hours for resources which recipient is subscribed for: \
+![alt text](image-2.png)
+
+Here is a sample of the Alerting email: \
+![alt text](image-3.png)
+
+Here is a sample of the dashboard based on the CloudWatch log group with Alerting events:
+![alt text](image.png)
+
+Here is a sample of the dashboard based on the Timestream table with Glue Jobs Metrics:
+![alt text](image-1.png)
 
 ## How SALMON works?
 
