@@ -64,4 +64,4 @@ Looking to contribute to SALMON? We’d love your help in making this project ev
 ## Other useful links
 
 * [FAQ & Troubleshooting](docs/faq.md)
-* [Version history](docs/changes.txt)
+* [Version history](docs/changelog.md)
