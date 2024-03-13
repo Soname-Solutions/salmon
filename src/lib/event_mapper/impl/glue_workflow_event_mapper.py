@@ -20,7 +20,10 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
         return self.event["detail"]["workflowName"]
 
     def get_resource_state(self):
-        return self.event["detail"]["state"]
+        if self.event["detail"]["event_result"] in GlueManager.Workflow_States_Failure:
+            return "FAILED"
+        else:
+            return self.event["detail"]["state"]
 
     def get_event_result(self):
         return self.event["detail"]["event_result"]
@@ -41,4 +44,14 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
                 ["Workflow Name", self.event["detail"]["workflowName"]]
             )
         )
+
+        link_url = self.get_execution_info_url(self.get_resource_name())
+        run_id=self.event["detail"]["workflowRunId"]
+        rows.append(
+            super().create_table_row(
+                ["Workflow Run ID", f"<a href='{link_url}'>{run_id}</a>"]
+            )
+        )
+
+
         return message_body
