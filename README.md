@@ -17,16 +17,16 @@ It can suit the need of a small team (you don't have to spend time developing yo
 - **Cross-Account and Region Support**: Monitor pipelines across various AWS accounts and regions in one central place.
 
 Digest e-mail is a summary of execution statistics over last 24 hours for resources which recipient is subscribed for: \
-![alt text](image-2.png)
+![Daily Digest](/docs/images/digest-email.png "Daily Digest sample")
 
-Here is a sample of the Alerting email: \
-![alt text](image-3.png)
+Alerting e-mail is an instant notification for pipeline failures: \
+![Alerts](/docs/images/alerting-email.png "Alerting email sample")
 
-Here is a sample of the dashboard based on the CloudWatch log group with Alerting events:
-![alt text](image.png)
+Grafana dashboard based on the CloudWatch log group with Alerting events:
+![CloudWatch Dashboard](/docs/images/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
 
-Here is a sample of the dashboard based on the Timestream table with Glue Jobs Metrics:
-![alt text](image-1.png)
+Garafana dashboard based on the Timestream table with Glue Jobs Metrics:
+![Timestream Dashboard](/docs/images/digest-email.png "Timestream Dashboard sample")
 
 ## How SALMON works?
 
