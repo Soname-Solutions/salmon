@@ -208,7 +208,7 @@ if __name__ == "__main__":
         query_runner, timestream_metrics_db_name, logger
     )
 
-    monitoring_group = "mg_glue_wf_dev"
+    monitoring_group = "salmonts_workflows_sparkjobs"
 
     event = {
         "monitoring_group": monitoring_group,

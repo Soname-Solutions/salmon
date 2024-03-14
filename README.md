@@ -44,10 +44,10 @@ For more details please refer to [Solution arhictecture description](docs/archit
 | AWS Service | Alerts | Metrics |
 |:---|:---:|:---:|
 | AWS Glue Jobs | Immediately on Failure | Job Executions stats <br/> (Duration, State, DPU-Hours consumed, etc.) |
-| AWS Glue Workflows | With small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
+| AWS Glue Workflows | With a small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
 | AWS Glue Crawlers | Immediately on Failure | In next versions... |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |
-| AWS Lambda Functions | With small delay <br/> (as a part of metrics collection process) | todo: Re-write once completed |
+| AWS Lambda Functions | In next versions...<br/> With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
 
 ## How to start
 
@@ -70,4 +70,4 @@ Looking to contribute to SALMON? We’d love your help in making this project ev
 ## Other useful links
 
 * [FAQ & Troubleshooting](docs/faq.md)
-* [Version history](docs/changes.txt)
+* [Version history](docs/changelog.md)
