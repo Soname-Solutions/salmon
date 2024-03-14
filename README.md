@@ -10,10 +10,17 @@ It can suit the need of a small team (you don't have to spend time developing yo
 ## SALMON Key Features
 
 - **Immediate Alerts**: Get instant notifications for pipeline failures, like a glitch in your Glue Job.
+    - ![Alerts](/docs/images/alerting-email.png "Alerting email sample")
+
 - **SLA Monitoring**: Track execution times, like Step Function durations, and spot when it exceeds the predefined threshold.
 - **Daily Digests**: Receive a comprehensive daily email summarizing your pipeline's health – perfect for a quick status check.
+    - ![Daily Digest](/docs/images/digest-email.png "Daily Digest sample")
+
 - **Team-Specific Notifications**: Operating with multiple teams or domains? Configure SALMON to logically group pipelines and resource, so it can send notifications to relevant recipients only.
 - **Statistics at Your Fingertips**: Gather detailed execution stats and access them through user-friendly dashboards.
+    - ![CloudWatch Dashboard](/docs/images/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
+    - ![Timestream Dashboard](/docs/images/timestream-dashboard.png "Timestream Dashboard sample")
+    
 - **Cross-Account and Region Support**: Monitor pipelines across various AWS accounts and regions in one central place.
 
 Digest e-mail is a summary of execution statistics over last 24 hours for resources which recipient is subscribed for: \
@@ -26,7 +33,7 @@ Grafana dashboard based on the CloudWatch log group with Alerting events:
 ![CloudWatch Dashboard](/docs/images/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
 
 Garafana dashboard based on the Timestream table with Glue Jobs Metrics:
-![Timestream Dashboard](/docs/images/digest-email.png "Timestream Dashboard sample")
+![Timestream Dashboard](/docs/images/timestream-dashboard.png "Timestream Dashboard sample")
 
 ## How SALMON works?
 
