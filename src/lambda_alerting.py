@@ -110,4 +110,5 @@ def lambda_handler(event, context):
         "event_is_alertable": event_is_alertable,
         "event_is_monitorable": event_is_monitorable,
         "resource_type": resource_type,
+        "execution_info_url": execution_info_url
     }
