@@ -36,11 +36,35 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
         )
 
     def get_execution_info_url(self, resource_name: str):
-        return ExecutionInfoUrlMixin.get_url(
-            resource_type=self.resource_type,
-            region_name=self.event["region"],
-            resource_name=resource_name,
-        )
+        # Sample Details:
+        # "detail": {
+        #     "databaseName": "testdb1",  # this field is always present
+        #     "changedPartitions": [],
+        #     "typeOfChange": "UpdateTable", or "CreateTable" or "CreateDatabase"
+        #     "tableName": "tbl1", <- cases a) Db-level -> field is not present, b) this field is present 
+        #     "changedTables": ["tbl1"], <- sometimes this field is present instead of "tableName"
+        # },
+        try:
+            type_of_change = self.event["detail"].get("typeOfChange","")
+            region_name=self.event["region"]
+            database_name = self.event["detail"]["databaseName"]
+
+            if "Table" in type_of_change:
+                table_name = self.event["detail"].get("tableName")
+                if table_name is None:
+                    table_name = self.event["detail"].get("changedTables")[0]
+
+                return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/tables/view/{table_name}?database={database_name}",
+            else:
+                return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{database_name}"
+        except Exception as e:
+            raise GlueDataCatalogEventMapperException(
+                f"Error getting execution info URL: {e}"
+            )            
+
+
+        
+
 
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
