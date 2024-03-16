@@ -17,7 +17,7 @@ class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
         )
 
     def get_resource_name(self):
-        return self.event["detail"]["lambdaName"]
+        return self.event["detail"]["name"]
 
     def get_resource_state(self):
         return self.event["detail"]["state"]

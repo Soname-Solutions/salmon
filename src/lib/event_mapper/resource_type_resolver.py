@@ -13,8 +13,8 @@ class ResourceTypeResolver:
         "salmon.glue_workflow": {
             "Glue Workflow State Change": types.GLUE_WORKFLOWS
         },  # custom processing
-        "salmon.lambda_functions": {
-            "Lambda Functions Execution Status Change": types.LAMBDA_FUNCTIONS
+        "salmon.lambda": {
+            "Lambda Function Execution State Change": types.LAMBDA_FUNCTIONS
         },  # custom processing
     }
 

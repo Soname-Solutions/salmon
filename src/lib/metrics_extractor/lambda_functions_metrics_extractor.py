@@ -121,7 +121,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             "Time": lambdaLogEntry.timestamp,
             "Source": "salmon.lambda",
             "Resources": [],
-            "DetailType": f"Lambda Function Invocation Result - {event_result.capitalize()}",
+            "DetailType": f"Lambda Function Execution State Change",
             "Detail": json.dumps(
                 {
                     "name": lambdaLogEntry.name,
@@ -150,7 +150,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             for lambda_run in self.lambda_runs:
                 events.append(
                     self.generate_event(
-                        lambdaRun=lambda_run,
+                        lambdaLogEntry=lambda_run,
                         event_bus_name=event_bus_name,
                         lambda_aws_account=lambda_aws_account,
                         lambda_aws_region=lambda_aws_region,

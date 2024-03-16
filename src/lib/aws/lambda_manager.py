@@ -121,6 +121,7 @@ class LambdaManager:
             lambda_function_log_data = []
             for log_entry_data in lambda_logs:
                 log_entry = LogEntry(
+                    name=function_name,
                     timestamp=str_utc_datetime_to_datetime(log_entry_data[0]["value"]),
                     message=log_entry_data[1]["value"],
                     requestId=log_entry_data[2]["value"]
