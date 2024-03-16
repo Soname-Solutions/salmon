@@ -11,6 +11,7 @@ from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
 ###########################################################
 class LogEntry(BaseModel):
+    name: str
     timestamp: datetime
     message: str
     requestId: Optional[str]

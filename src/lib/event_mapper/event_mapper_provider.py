@@ -5,6 +5,7 @@ from .impl import (
     GlueCrawlerEventMapper,
     GlueDataCatalogEventMapper,
     StepFunctionsEventMapper,
+    LambdaFunctionsEventMapper,
 )
 from ..core.constants import SettingConfigResourceTypes as types
 
@@ -40,4 +41,7 @@ EventMapperProvider.register_event_mapper(
 )
 EventMapperProvider.register_event_mapper(
     types.STEP_FUNCTIONS, StepFunctionsEventMapper
+)
+EventMapperProvider.register_event_mapper(
+    types.LAMBDA_FUNCTIONS, LambdaFunctionsEventMapper
 )

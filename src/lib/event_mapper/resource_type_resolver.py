@@ -10,7 +10,12 @@ class ResourceTypeResolver:
             "Crawler": types.GLUE_CRAWLERS,
         },
         "aws.states": {"Execution": types.STEP_FUNCTIONS},
-        "salmon.glue_workflow": {"Glue Workflow State Change": types.GLUE_WORKFLOWS}, # custom processing
+        "salmon.glue_workflow": {
+            "Glue Workflow State Change": types.GLUE_WORKFLOWS
+        },  # custom processing
+        "salmon.lambda_functions": {
+            "Lambda Functions Execution Status Change": types.LAMBDA_FUNCTIONS
+        },  # custom processing
     }
 
     @staticmethod

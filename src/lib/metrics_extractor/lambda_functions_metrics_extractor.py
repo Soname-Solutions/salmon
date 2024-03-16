@@ -10,8 +10,10 @@ from lib.aws import (
     TimestreamTableWriter,
     TimeStreamQueryRunner,
 )
-from lib.core.constants import SettingConfigs
+from lib.aws.lambda_manager import LambdaManager, LogEntry
+from lib.core.constants import SettingConfigs, EventResult
 from lib.core.datetime_utils import datetime_to_epoch_milliseconds
+from lib.aws.events_manager import EventsManager
 
 
 class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
@@ -94,6 +96,68 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         return records, common_attributes
 
     def prepare_metrics_data(self, since_time: datetime) -> tuple[list, dict]:
-        lambda_runs = self._extract_metrics_data(since_time=since_time)
-        records, common_attributes = self._data_to_timestream_records(lambda_runs)
+        self.lambda_runs = self._extract_metrics_data(since_time=since_time)
+        records, common_attributes = self._data_to_timestream_records(self.lambda_runs)
         return records, common_attributes
+
+    ###########################################################################################
+    def generate_event(
+        self,
+        lambdaLogEntry: LogEntry,
+        event_bus_name: str,
+        lambda_aws_account: str,  # region and account where lambda is deployed
+        lambda_aws_region: str,
+    ) -> dict:
+        """
+        Generates json in a form which can be sent to EventBus
+        """
+
+        event_result = (
+            EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.SUCCESS
+        )
+        event_state = "FAILED" if lambdaLogEntry.IsErrorEvent else "SUCCEEDED"
+
+        event = {
+            "Time": lambdaLogEntry.timestamp,
+            "Source": "salmon.lambda",
+            "Resources": [],
+            "DetailType": f"Lambda Function Invocation Result - {event_result.capitalize()}",
+            "Detail": json.dumps(
+                {
+                    "name": lambdaLogEntry.name,
+                    "state": event_state,
+                    "event_result": event_result,
+                    "message": lambdaLogEntry.message,
+                    "origin_account": lambda_aws_account,
+                    "origin_region": lambda_aws_region,
+                }
+            ),
+            "EventBusName": event_bus_name,
+        }
+
+        return event
+
+    def send_alerts(
+        self, event_bus_name: str, lambda_aws_account: str, lambda_aws_region: str
+    ):
+        """
+        Sends events to EventBridge bus
+        event_bus_name - target event_bus for the message
+        lambda_aws_account, lambda_aws_region - where Lambda is deployed (so alerting service can recognize monitored_environment_name)
+        """
+        if self.lambda_runs:
+            events = []
+            for lambda_run in self.lambda_runs:
+                events.append(
+                    self.generate_event(
+                        lambdaRun=lambda_run,
+                        event_bus_name=event_bus_name,
+                        lambda_aws_account=lambda_aws_account,
+                        lambda_aws_region=lambda_aws_region,
+                    )
+                )
+
+            if events:
+                events_manager = EventsManager()
+                print(f"Lambda extractor: Sending {len(events)} events to EventBridge")
+                events_manager.put_events(events=events)
