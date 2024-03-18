@@ -3,8 +3,10 @@ import os
 from datetime import datetime, timezone, timedelta
 
 from lambda_alerting import lambda_handler
-from lib.core.constants import SettingConfigResourceTypes as resource_types
+from lib.core.constants import SettingConfigResourceTypes as resource_types, EventResult
 from lib.settings import Settings
+from lib.event_mapper.impl.general_aws_event_mapper import ExecutionInfoUrlMixin
+from lib.aws.lambda_manager import LambdaManager
 
 # uncomment this to see lambda's logging output
 # import logging
@@ -37,16 +39,16 @@ def aws_props_init():
 def os_vars_init(stage_name, aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
-    os.environ["NOTIFICATION_QUEUE_URL"] = (
-        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}"
-    )
+    os.environ[
+        "NOTIFICATION_QUEUE_URL"
+    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"] = (
-        f"log-group-salmon-alert-events-{stage_name}"
-    )
-    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"] = (
-        f"log-stream-salmon-alert-events-{stage_name}"
-    )
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
+    ] = f"log-group-salmon-alert-events-{stage_name}"
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
+    ] = f"log-stream-salmon-alert-events-{stage_name}"
 
 
 @pytest.fixture(scope="session")
@@ -90,7 +92,6 @@ def get_glue_job_event(event_dyn_props, state, message):
 
 
 def test_glue_job1(os_vars_init, event_dyn_props_init):
-
     event = get_glue_job_event(event_dyn_props_init, "FAILED", "Job run failed")
 
     result = lambda_handler(event, {})
@@ -103,7 +104,6 @@ def test_glue_job1(os_vars_init, event_dyn_props_init):
 
 
 def test_glue_job2(os_vars_init, event_dyn_props_init):
-
     event = get_glue_job_event(event_dyn_props_init, "SUCCEEDED", "Job run succeeded")
 
     result = lambda_handler(event, {})
@@ -116,7 +116,6 @@ def test_glue_job2(os_vars_init, event_dyn_props_init):
 
 
 def test_glue_job3(os_vars_init, event_dyn_props_init):
-
     event = get_glue_job_event(event_dyn_props_init, "RUNNING", "Job is running")
 
     result = lambda_handler(event, {})
@@ -160,7 +159,6 @@ def get_glue_workflow_event(event_dyn_props, event_result):
 
 
 def test_glue_workflow1(os_vars_init, event_dyn_props_init):
-
     event = get_glue_workflow_event(event_dyn_props_init, "FAILURE")
 
     result = lambda_handler(event, {})
@@ -173,7 +171,6 @@ def test_glue_workflow1(os_vars_init, event_dyn_props_init):
 
 
 def test_glue_workflow2(os_vars_init, event_dyn_props_init):
-
     event = get_glue_workflow_event(event_dyn_props_init, "SUCCESS")
 
     result = lambda_handler(event, {})
@@ -229,7 +226,6 @@ def get_step_function_event(event_dyn_props, status, error_message=""):
 
 
 def test_step_function1(os_vars_init, event_dyn_props_init):
-
     event = get_step_function_event(event_dyn_props_init, "FAILED", "Exception occured")
 
     result = lambda_handler(event, {})
@@ -242,7 +238,6 @@ def test_step_function1(os_vars_init, event_dyn_props_init):
 
 
 def test_step_function2(os_vars_init, event_dyn_props_init):
-
     event = get_step_function_event(event_dyn_props_init, "SUCCEEDED")
 
     result = lambda_handler(event, {})
@@ -255,7 +250,6 @@ def test_step_function2(os_vars_init, event_dyn_props_init):
 
 
 def test_step_function3(os_vars_init, event_dyn_props_init):
-
     event = get_step_function_event(event_dyn_props_init, "RUNNING")
 
     result = lambda_handler(event, {})
@@ -305,7 +299,6 @@ def get_glue_crawler_event(event_dyn_props, state, message):
 
 
 def test_glue_crawler1(os_vars_init, event_dyn_props_init):
-
     event = get_glue_crawler_event(event_dyn_props_init, "Failed", "Crawler Failed")
 
     result = lambda_handler(event, {})
@@ -318,7 +311,6 @@ def test_glue_crawler1(os_vars_init, event_dyn_props_init):
 
 
 def test_glue_crawler2(os_vars_init, event_dyn_props_init):
-
     event = get_glue_crawler_event(
         event_dyn_props_init, "Succeeded", "Crawler Succeeded"
     )
@@ -330,6 +322,115 @@ def test_glue_crawler2(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_CRAWLERS
     ), "Resouce type is incorrect"
+
+
+################################################################################################################################
+
+# LAMBDA FUNCTIONS tests
+
+
+# Utility function to generate a Lambda Function event with dynamic properties.
+def get_lambda_function_event(
+    event_dyn_props, resource_name, status, event_result, message=""
+):
+    (account_id, region, time_str, epoch_time, version_str) = event_dyn_props
+
+    return {
+        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
+        "id": "c12129fe-97b6-fec0-a586-5624051b63eb",
+        "detail-type": "Lambda Function Execution State Change",
+        "source": "salmon.lambda",
+        "account": account_id,
+        "time": time_str,
+        "region": region,
+        "resources": [],
+        "detail": {
+            "lambdaName": resource_name,
+            "state": status,  # "SUCCEEDED"/"FAILED"
+            "event_result": event_result,  # "SUCCESS" / "FAILURE",
+            "message": message,
+            "origin_account": account_id,
+            "origin_region": region,
+        },
+    }
+
+
+def test_lambda_function_failed(os_vars_init, event_dyn_props_init):
+    event = get_lambda_function_event(
+        event_dyn_props=event_dyn_props_init,
+        resource_name="lambda-salmonts-sample1-dev",
+        status=LambdaManager.LAMBDA_FAILURE_STATE,
+        event_result=EventResult.FAILURE,
+        message="[ERROR] Exception: intentional failure - lambda-sample1",
+    )
+
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == True, "Event should raise alert"
+    assert result["event_is_monitorable"] == True, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
+    ), "Resouce type is incorrect"
+
+    assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
+        resource_type=resource_types.LAMBDA_FUNCTIONS,
+        region_name=event["region"],
+        resource_name=event["detail"]["lambdaName"],
+    ), "URL is incorrect"
+
+    assert (
+        LambdaManager.MESSAGE_PART_ERROR in event["detail"]["message"]
+    ), "[ERROR] should be a part of the message"
+
+
+def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
+    event = get_lambda_function_event(
+        event_dyn_props=event_dyn_props_init,
+        resource_name="lambda-salmonts-sample2-dev",
+        status=LambdaManager.LAMBDA_SUCCESS_STATE,
+        event_result=EventResult.SUCCESS,
+        message="REPORT RequestId: c12129fe-97b6-fec0-a586-5624051b63eb ",
+    )
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == False, "Event should raise alert"
+    assert result["event_is_monitorable"] == True, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
+    ), "Resouce type is incorrect"
+
+    assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
+        resource_type=resource_types.LAMBDA_FUNCTIONS,
+        region_name=event["region"],
+        resource_name=event["detail"]["lambdaName"],
+    ), "URL is incorrect"
+
+    assert (
+        LambdaManager.MESSAGE_PART_REPORT in event["detail"]["message"]
+    ), "REPORT RequestId: should be a part of the message"
+
+
+def test_lambda_function_running(os_vars_init, event_dyn_props_init):
+    event = get_lambda_function_event(
+        event_dyn_props=event_dyn_props_init,
+        resource_name="lambda-salmonts-sample3-dev",
+        status="RUNNING",
+        event_result=EventResult.INFO,
+    )
+
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == False, "Event should raise alert"
+    assert result["event_is_monitorable"] == False, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
+    ), "Resouce type is incorrect"
+
+    assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
+        resource_type=resource_types.LAMBDA_FUNCTIONS,
+        region_name=event["region"],
+        resource_name=event["detail"]["lambdaName"],
+    ), "URL is incorrect"
 
 
 ################################################################################################################################
