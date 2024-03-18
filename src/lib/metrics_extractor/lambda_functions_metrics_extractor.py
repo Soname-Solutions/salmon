@@ -115,7 +115,11 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         event_result = (
             EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.SUCCESS
         )
-        event_state = "FAILED" if lambdaLogEntry.IsErrorEvent else "SUCCEEDED"
+        event_state = (
+            LambdaManager.LAMBDA_FAILURE_STATE
+            if lambdaLogEntry.IsErrorEvent
+            else LambdaManager.LAMBDA_SUCCESS_STATE
+        )
 
         event = {
             "Time": lambdaLogEntry.timestamp,
@@ -124,7 +128,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             "DetailType": f"Lambda Function Execution State Change",
             "Detail": json.dumps(
                 {
-                    "name": lambdaLogEntry.name,
+                    "lambdaName": lambdaLogEntry.name,
                     "state": event_state,
                     "event_result": event_result,
                     "message": lambdaLogEntry.message,

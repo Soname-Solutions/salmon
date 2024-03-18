@@ -11,7 +11,7 @@ from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
 ###########################################################
 class LogEntry(BaseModel):
-    name: str
+    lambdaName: str
     timestamp: datetime
     message: str
     requestId: Optional[str]
@@ -57,6 +57,8 @@ class LambdaManagerException(Exception):
 class LambdaManager:
     MESSAGE_PART_REPORT = "REPORT RequestId:"
     MESSAGE_PART_ERROR = "[ERROR]"
+    LAMBDA_SUCCESS_STATE = "SUCCEEDED"
+    LAMBDA_FAILURE_STATE = "FAILED"
 
     def __init__(self, lambda_client=None):
         self.lambda_client = (
@@ -121,7 +123,7 @@ class LambdaManager:
             lambda_function_log_data = []
             for log_entry_data in lambda_logs:
                 log_entry = LogEntry(
-                    name=function_name,
+                    lambdaName=function_name,
                     timestamp=str_utc_datetime_to_datetime(log_entry_data[0]["value"]),
                     message=log_entry_data[1]["value"],
                     requestId=log_entry_data[2]["value"]

@@ -17,7 +17,7 @@ class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
         )
 
     def get_resource_name(self):
-        return self.event["detail"]["name"]
+        return self.event["detail"]["lambdaName"]
 
     def get_resource_state(self):
         return self.event["detail"]["state"]
@@ -35,20 +35,29 @@ class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
 
+        style = super().get_row_style()
+
         rows.append(
             super().create_table_row(
-                ["Lambda Function Name", self.event["detail"]["name"]]
+                ["Function Name", self.event["detail"]["lambdaName"]]
             )
+        )
+        rows.append(
+            super().create_table_row(["State", self.get_resource_state()], style)
         )
 
         link_url = self.get_execution_info_url(self.get_resource_name())
         rows.append(
             super().create_table_row(
                 [
-                    "Link to Lambda Function Log Group",
-                    f"<a href='{link_url}'>{self.event['detail']['message'][:50]}</a>",
+                    "Log Events",
+                    f"<a href='{link_url}'>Link to AWS CloudWatch Log Group</a>",
                 ]
             )
+        )
+
+        rows.append(
+            super().create_table_row(["Message", self.event["detail"]["message"]])
         )
 
         return message_body
