@@ -113,6 +113,8 @@ class GlueManager:
     Crawlers_States_Success = ["Succeeded"]
     Crawlers_States_Failure = ["Failed"]
 
+    Catalog_State_Success = "SUCCESS"
+
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
 
