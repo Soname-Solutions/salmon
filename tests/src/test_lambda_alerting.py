@@ -486,7 +486,7 @@ def test_lambda_function_failed(os_vars_init, event_dyn_props_init):
 
     assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
         resource_type=resource_types.LAMBDA_FUNCTIONS,
-        region_name=event["region"],
+        region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
 
@@ -513,7 +513,7 @@ def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
 
     assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
         resource_type=resource_types.LAMBDA_FUNCTIONS,
-        region_name=event["region"],
+        region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
 
@@ -540,6 +540,6 @@ def test_lambda_function_running(os_vars_init, event_dyn_props_init):
 
     assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
         resource_type=resource_types.LAMBDA_FUNCTIONS,
-        region_name=event["region"],
+        region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
