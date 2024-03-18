@@ -39,9 +39,9 @@ def aws_props_init():
 def os_vars_init(stage_name, aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
-    os.environ[
-        "NOTIFICATION_QUEUE_URL"
-    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    os.environ["NOTIFICATION_QUEUE_URL"] = (
+        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    )
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
     os.environ[
         "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
@@ -325,118 +325,108 @@ def test_glue_crawler2(os_vars_init, event_dyn_props_init):
 
 
 ################################################################################################################################
-
-# LAMBDA FUNCTIONS tests
-
-
-# Utility function to generate a Lambda Function event with dynamic properties.
-def get_lambda_function_event(
-    event_dyn_props, resource_name, status, event_result, message=""
-):
-    (account_id, region, time_str, epoch_time, version_str) = event_dyn_props
+# GLUE Data Catalog Database tests
+    
+# Utility function to generate a Glue Catalog (Database) event with dynamic properties.
+def get_glue_catalog_database_event(event_dyn_props):
+    (account_id, region, time_str, _, version_str) = event_dyn_props
 
     return {
-        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
-        "id": "c12129fe-97b6-fec0-a586-5624051b63eb",
-        "detail-type": "Lambda Function Execution State Change",
-        "source": "salmon.lambda",
+        "version": version_str,
+        "id": "0131f87d-808a-2c56-ab53-108eaddc3a62",
+        "detail-type": "Glue Data Catalog Database State Change",
+        "source": "aws.glue",
         "account": account_id,
         "time": time_str,
         "region": region,
-        "resources": [],
+        "resources": [f"arn:aws:glue:{region}:{account_id}:database/testdb1"],
         "detail": {
-            "lambdaName": resource_name,
-            "state": status,  # "SUCCEEDED"/"FAILED"
-            "event_result": event_result,  # "SUCCESS" / "FAILURE",
-            "message": message,
-            "origin_account": account_id,
-            "origin_region": region,
+            "databaseName": "testdb1",
+            "typeOfChange": "CreateDatabase",
+            "changedTables": [],
         },
     }
 
+def test_glue_catalog_database1(os_vars_init, event_dyn_props_init):
 
-def test_lambda_function_failed(os_vars_init, event_dyn_props_init):
-    event = get_lambda_function_event(
-        event_dyn_props=event_dyn_props_init,
-        resource_name="lambda-salmonts-sample1-dev",
-        status=LambdaManager.LAMBDA_FAILURE_STATE,
-        event_result=EventResult.FAILURE,
-        message="[ERROR] Exception: intentional failure - lambda-sample1",
-    )
+    event = get_glue_catalog_database_event(event_dyn_props_init)
 
     result = lambda_handler(event, {})
 
-    assert result["event_is_alertable"] == True, "Event should raise alert"
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
-        result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
+        result["resource_type"] == resource_types.GLUE_DATA_CATALOGS
     ), "Resouce type is incorrect"
-
-    assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
-        resource_type=resource_types.LAMBDA_FUNCTIONS,
-        region_name=event["region"],
-        resource_name=event["detail"]["lambdaName"],
-    ), "URL is incorrect"
-
-    assert (
-        LambdaManager.MESSAGE_PART_ERROR in event["detail"]["message"]
-    ), "[ERROR] should be a part of the message"
-
-
-def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
-    event = get_lambda_function_event(
-        event_dyn_props=event_dyn_props_init,
-        resource_name="lambda-salmonts-sample2-dev",
-        status=LambdaManager.LAMBDA_SUCCESS_STATE,
-        event_result=EventResult.SUCCESS,
-        message="REPORT RequestId: c12129fe-97b6-fec0-a586-5624051b63eb ",
-    )
-    result = lambda_handler(event, {})
-
-    assert result["event_is_alertable"] == False, "Event should raise alert"
-    assert result["event_is_monitorable"] == True, "Event should be logged"
-    assert (
-        result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
-    ), "Resouce type is incorrect"
-
-    assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
-        resource_type=resource_types.LAMBDA_FUNCTIONS,
-        region_name=event["region"],
-        resource_name=event["detail"]["lambdaName"],
-    ), "URL is incorrect"
-
-    assert (
-        LambdaManager.MESSAGE_PART_REPORT in event["detail"]["message"]
-    ), "REPORT RequestId: should be a part of the message"
-
-
-def test_lambda_function_running(os_vars_init, event_dyn_props_init):
-    event = get_lambda_function_event(
-        event_dyn_props=event_dyn_props_init,
-        resource_name="lambda-salmonts-sample3-dev",
-        status="RUNNING",
-        event_result=EventResult.INFO,
-    )
-
-    result = lambda_handler(event, {})
-
-    assert result["event_is_alertable"] == False, "Event should raise alert"
-    assert result["event_is_monitorable"] == False, "Event should be logged"
-    assert (
-        result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
-    ), "Resouce type is incorrect"
-
-    assert result["execution_info_url"] == ExecutionInfoUrlMixin.get_url(
-        resource_type=resource_types.LAMBDA_FUNCTIONS,
-        region_name=event["region"],
-        resource_name=event["detail"]["lambdaName"],
-    ), "URL is incorrect"
-
 
 ################################################################################################################################
+# GLUE Data Catalog Table-level operation tests
+    
+# Utility function to generate a Glue Catalog (Table-level) event with dynamic properties.
+def get_glue_catalog_table_event(event_dyn_props):
+    (account_id, region, time_str, _, version_str) = event_dyn_props
 
-# GLUE Data Catalog tests
+    return {
+        "version": version_str,
+        "id": "a91319ff-082e-f3ff-4f74-521c9685c0d4",
+        "detail-type": "Glue Data Catalog Database State Change",
+        "source": "aws.glue",
+        "account": account_id,
+        "time": time_str,
+        "region": region,
+        "resources": [f"arn:aws:glue:{region}:{account_id}:table/testdb1/tbl1"],
+        "detail": {
+            "databaseName": "testdb1",
+            "typeOfChange": "CreateTable",
+            "changedTables": ["tbl1"],
+        },
+    }
 
-# TODO: add tests for Data Catalog events
-# Decide on which events are alertable (e.g. drop database / table)
-# Also align with the tasks (bug - alerting lambda fails when operation is not on DB level, but on table level, for example)
+def test_glue_catalog_table1(os_vars_init, event_dyn_props_init):
+
+    event = get_glue_catalog_table_event(event_dyn_props_init)
+
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
+    assert result["event_is_monitorable"] == True, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.GLUE_DATA_CATALOGS
+    ), "Resouce type is incorrect"    
+
+################################################################################################################################
+# GLUE Data Catalog Column-level operation tests
+    
+# Utility function to generate a Glue Catalog (Column-level) event with dynamic properties.
+def get_glue_catalog_column_event(event_dyn_props):
+    (account_id, region, time_str, _, version_str) = event_dyn_props
+
+
+    return {
+        "version": version_str,
+        "id": "330e4f27-c83c-59f3-247d-2c3e4f8a598c",
+        "detail-type": "Glue Data Catalog Table State Change",
+        "source": "aws.glue",
+        "account": account_id,
+        "time": time_str,
+        "region": region,
+        "resources": [f"arn:aws:glue:{region}:{account_id}:table/testdb1/tbl1"],
+        "detail": {
+            "databaseName": "testdb1",
+            "changedPartitions": [],
+            "typeOfChange": "UpdateTable",
+            "tableName": "tbl1",
+        },
+    }    
+
+def test_glue_catalog_column1(os_vars_init, event_dyn_props_init):
+
+    event = get_glue_catalog_column_event(event_dyn_props_init)
+
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
+    assert result["event_is_monitorable"] == True, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.GLUE_DATA_CATALOGS
+    ), "Resouce type is incorrect"    
