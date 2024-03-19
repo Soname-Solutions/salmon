@@ -43,10 +43,10 @@ class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
             )
         )
 
-        # Get resource state and include in the Alert if available
-        resource_state = self.get_resource_state()
-        if resource_state:
-            rows.append(super().create_table_row(["State", resource_state], style))
+        # Get resource state
+        rows.append(
+            super().create_table_row(["State", self.get_resource_state()], style)
+        )
 
         # Get link URL for log events
         link_url = self.get_execution_info_url(self.get_resource_name())
