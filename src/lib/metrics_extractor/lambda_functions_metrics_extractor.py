@@ -113,12 +113,10 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         """
 
         event_result = (
-            EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.SUCCESS
+            EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.INFO
         )
         event_state = (
-            LambdaManager.LAMBDA_FAILURE_STATE
-            if lambdaLogEntry.IsErrorEvent
-            else LambdaManager.LAMBDA_SUCCESS_STATE
+            LambdaManager.LAMBDA_FAILURE_STATE if lambdaLogEntry.IsErrorEvent else None
         )
 
         event = {
@@ -128,12 +126,13 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             "DetailType": f"Lambda Function Execution State Change",
             "Detail": json.dumps(
                 {
-                    "lambdaName": lambdaLogEntry.name,
+                    "lambdaName": lambdaLogEntry.lambdaName,
                     "state": event_state,
                     "event_result": event_result,
                     "message": lambdaLogEntry.message,
                     "origin_account": lambda_aws_account,
                     "origin_region": lambda_aws_region,
+                    "request_id": lambdaLogEntry.requestId,
                 }
             ),
             "EventBusName": event_bus_name,

@@ -463,6 +463,7 @@ def get_lambda_function_event(
             "message": message,
             "origin_account": account_id,
             "origin_region": region,
+            "request_id": "c12129fe-97b6-fec0-a586-5624051b63eb",
         },
     }
 
@@ -501,11 +502,10 @@ def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
         resource_name="lambda-salmonts-sample2-dev",
         status=LambdaManager.LAMBDA_SUCCESS_STATE,
         event_result=EventResult.SUCCESS,
-        message="REPORT RequestId: c12129fe-97b6-fec0-a586-5624051b63eb ",
     )
     result = lambda_handler(event, {})
 
-    assert result["event_is_alertable"] == False, "Event should raise alert"
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
@@ -516,10 +516,6 @@ def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
-
-    assert (
-        LambdaManager.MESSAGE_PART_REPORT in event["detail"]["message"]
-    ), "REPORT RequestId: should be a part of the message"
 
 
 def test_lambda_function_running(os_vars_init, event_dyn_props_init):
@@ -532,8 +528,8 @@ def test_lambda_function_running(os_vars_init, event_dyn_props_init):
 
     result = lambda_handler(event, {})
 
-    assert result["event_is_alertable"] == False, "Event should raise alert"
-    assert result["event_is_monitorable"] == False, "Event should be logged"
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
+    assert result["event_is_monitorable"] == False, "Event shouldn't be logged"
     assert (
         result["resource_type"] == resource_types.LAMBDA_FUNCTIONS
     ), "Resouce type is incorrect"

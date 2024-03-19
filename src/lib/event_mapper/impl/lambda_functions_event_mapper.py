@@ -42,10 +42,13 @@ class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
                 ["Function Name", self.event["detail"]["lambdaName"]]
             )
         )
-        rows.append(
-            super().create_table_row(["State", self.get_resource_state()], style)
-        )
 
+        # Get resource state and include in the Alert if available
+        resource_state = self.get_resource_state()
+        if resource_state:
+            rows.append(super().create_table_row(["State", resource_state], style))
+
+        # Get link URL for log events
         link_url = self.get_execution_info_url(self.get_resource_name())
         rows.append(
             super().create_table_row(
@@ -56,8 +59,14 @@ class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
             )
         )
 
+        # Get Lambda Message
         rows.append(
             super().create_table_row(["Message", self.event["detail"]["message"]])
         )
+
+        # Get Lambda Request ID and include in the Alert if available
+        request_id = self.event["detail"]["request_id"]
+        if request_id:
+            rows.append(super().create_table_row(["Request ID", request_id]))
 
         return message_body
