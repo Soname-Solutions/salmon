@@ -113,7 +113,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         """
 
         event_result = (
-            EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.INFO
+            EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.SUCCESS
         )
         event_state = (
             LambdaManager.LAMBDA_FAILURE_STATE
