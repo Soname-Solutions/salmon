@@ -458,8 +458,8 @@ def get_lambda_function_event(
         "resources": [],
         "detail": {
             "lambdaName": resource_name,
-            "state": status,  # "SUCCEEDED"/"FAILED"
-            "event_result": event_result,  # "SUCCESS" / "FAILURE",
+            "state": status,  # "COMPLETED" / "FAILED"
+            "event_result": event_result,  # "INFO" / "FAILURE",
             "message": message,
             "origin_account": account_id,
             "origin_region": region,
@@ -518,11 +518,11 @@ def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
     ), "URL is incorrect"
 
 
-def test_lambda_function_running(os_vars_init, event_dyn_props_init):
+def test_lambda_function_completed(os_vars_init, event_dyn_props_init):
     event = get_lambda_function_event(
         event_dyn_props=event_dyn_props_init,
         resource_name="lambda-salmonts-sample3-dev",
-        status="RUNNING",
+        status="COMPLETED",
         event_result=EventResult.INFO,
     )
 
