@@ -1,40 +1,66 @@
 # SALMON Deployment Guide
 
-This article describes the deployment instruction for SALMON project.
+This article describes the installation and deployment for SALMON project.
+
+![Deployment Workflow](/docs/images/deployment-workflow.svg "Deployment Workflow")
 
 ## Prerequisites
 
-### Local Env Setup
+### Local Environment Setup
 
-- AWS CLIv2 with configured profiles for your target AWS Accounts 
-- Python environment with installed packages from (/infra_monitored_account/requirements.txt) and (/infra_tooling_account/requirements.txt)
+Make sure the following pieces of software are installed in your system:
 - NodeJS
-- CDK Toolkit
+- AWS CDK Toolkit. You can refer to [AWS Guide](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) for installation.
+- AWS CLIv2. It's also recommended AWS CLI profiles for AWS accounts where you tooling and monitored environments reside.
+- Python environment with installed packages from (/infra_monitored_account/requirements.txt) and (/infra_tooling_account/requirements.txt)
 
 ### AWS Accounts Setup
 
-- CDK Bootstrapping: for all monitored accounts and for the tooling account - refer to [AWS Documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
-- (Optional) Create a custom IAM role to execute CDK deploments with (TODO: provide example?)
+#### CDK Bootstrap
 
-### Email Delivery
+Your Salmon installation will have one centralized (tooling) environment and, potentially, multiple monitored environments in different AWS accounts and regions (for more details on terminology - see [Key Concepts](/docs/key_concepts.md)).
 
-- If you are using AWS SES for email notifications - make sure email addresses you specify in recipients.json are verified in SES
-- If you are using an SMTP server, you need to have a Secret in AWS Secrets Manager:
-    - Secret name: your choice, the name should be referenced in general.json
-    - Secret value: JSON of the following structure:
-    {
-        "SMTP_HOST": <your_smtp_server_host>,
-        "SMTP_PORT": <your_smtp_server_port>,
-        "SMTP_LOGIN": <your_smtp_server_username>,
-        "SMTP_PASSWORD": <your_smtp_server_password>
-    }
+Make sure CDK resources are created for each relevant AWS Account and region. For more information - refer to refer to [CDK Bootstrapping - AWS Documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html).
+
+#### Setting Up Notifications Delivery
+
+Salmon can send notifications or messages (e.g. on Glue Job failure or Daily EMail digest).
+Primary delivery method for current version is AWS SES (while there are plans to add more options such as SMTP, Slack and MS Teams channel notifications).
+
+For AWS SES make sure:
+- E-mail address you intend use as "From" in Salmon notifications is added to AWS SES and verified.  
+  "From" e-mail is configured in general.json - [see "Settings" documentation](/docs/configuration.md).
+- All recipients email address (from recipients.json) should also be verified in AWS SES identity.
+
+It's a good practice (although not required) to create a separate e-mail address to feature as Salmon notifications sender (
+e.g. salmon-notifications@your-company.com).  
+Among other benefits, it'll make it easier to set up message filters in your email client.  
+
+All e-mails should be added into AWS SES into account/region where tooling environment resides.
+
+![AWS SES Configuration](/docs/images/ses-identities.png "AWS SES Configuration")
+
+### Preparing SALMON settings
+
+You need to prepare configuration files for the solution and place them under /config/ folder.  
+
+For more details on Configuration - see [Documentation](/docs/configuration.md).
+
+You can also refer to sample settings files in /config/sample_settings/.  
+
+### CDK Deploy: Tooling Environment
+
+
+### CDK Deploy: Monitoring Environments
+
+
+
+# Old Content - check what to re-use
 
 ### Configuration Files
 
-You need to prepare configuration files for the solution and place them under /config/ folder.
-
 - You can refer to examples in /config/sample_settings/
-- Or you can refer to [Configuration Documentation](./configuration.md)
+
 
 ## Tooling Environment Setup
 
