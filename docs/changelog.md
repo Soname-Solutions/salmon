@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
      - Glue Jobs
      - Glue Workflows
      - Step Functions
+     - Lambda Functions
 
 * Notifications 
      * Designed to be notified on failed events via provided delivery method. Implemented for AWS SES delivery method type.
