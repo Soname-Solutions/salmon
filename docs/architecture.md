@@ -61,7 +61,7 @@ Processed events are not only delivered to recipients (e.g. in a form of e-mail)
 Functionality covered by this part of solution:
 - Extracting metrics data from Monitored Environments and storing those into Timestream DB (implemented as a set of Lambda functions)
 - Preparing and sending a *daily digest e-mail* (Digest Lambda via Notification Service).  
-- (optional) Grafana Dashboards for Execution Metrics and Alerting events. Grafana (if you switch it on in configuration) is deployed inside an EC2 instance (as a cost-effective way).
+- (optional) Grafana Dashboards for Execution Metrics and Alerting events. Grafana (if you switch it on in configuration) is deployed inside an EC2 instance from an AMI Image "Bitnami package for Grafana" (as a cost-effective way).
 
 
 ### Tooling Environment - Internal Errors Handling
