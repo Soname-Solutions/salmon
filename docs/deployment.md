@@ -40,7 +40,7 @@ All emails should be added to AWS SES in the account/region where the tooling en
 
 ![AWS SES Configuration](/docs/images/ses-identities.png "AWS SES Configuration")
 
-### Preparing SALMON settings
+## Preparing SALMON settings
 
 You need to prepare configuration files for the solution and place them in the **/config/** folder.  
 
@@ -48,7 +48,7 @@ For more details on Configuration, see [Documentation](/docs/configuration.md).
 
 You can also refer to sample settings files in **/config/sample_settings/**.  
 
-### CDK Deploy: Tooling Environment
+## CDK Deploy: Tooling Environment
 
 Once all prerequisites are met and the configuration is ready, it's time to deploy all artifacts to AWS.
 Deployment starts with the Tooling Environment:
@@ -70,7 +70,7 @@ What happens during *`cdk deploy`* of tooling environment:
 
 *Note: If you choose to use optional Grafana component, make sure you to have a VPC with a public subnet and a security group prepared. The security group should allow access to port 3000 from any IP address.*
 
-### CDK Deploy: Monitoring Environments
+## CDK Deploy: Monitoring Environments
 
 For each monitored environment you plan to control, you'll need to deploy resources into the respective AWS account and region with the following steps:
 - browse into **infra_monitored_account** folder
