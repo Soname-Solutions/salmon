@@ -50,38 +50,36 @@ You can also refer to sample settings files in /config/sample_settings/.
 
 ### CDK Deploy: Tooling Environment
 
+When all prerequisites are met and configuration is ready, it's time to deploy all artifacts into AWS.
+Deployment starts with Tooling Environment:
 
-### CDK Deploy: Monitoring Environments
-
-
-
-# Old Content - check what to re-use
-
-### Configuration Files
-
-- You can refer to examples in /config/sample_settings/
-
-
-## Tooling Environment Setup
-
-- It can be either a separate AWS Account or one of the monitored AWS Accounts.
-- Optional Grafana toolset can be included into deployment via Configuration parameters. See [Configuration Documentation](./configuration.md)
-- stage-name parameter needs to be defined for deployment as an identifier of deployment stage (usually dev/test/qa/uat/prod, but can be any string identifier)
-
-Assuming that your target AWS profile is the default one set, execute the following from /infra_tooling_account/ :
-
+- browse into **infra_tooling_account** folder
+- run the following command
 ```cdk deploy --all --context stage-name=<your_stage_name>```
 
 Optionally you can add an AWS profile identifier via --profile command argument.
 
-## Monitored Environment Setup
+*stage-name is a parameter which identifies the deployment stage (usually dev/test/qa/uat/prod, but can be any string identifier of your choice)*
 
-- Monitored Environment is any combination of AWS Account and Region which needs to be monitored.
-- Even if one of AWS Account and Region has Tooling stack configured, it still needs Monitored Environment deployment if you need to monitor services residing within this Account and Region
-- stage-name parameter needs to be defined for deployment as an identifier of deployment stage (usually dev/test/qa/uat/prod, but can be any string identifier)
+What happens during *cdk deploy* of tooling environment:
+- Config files are validated (e.g. if delivery methods referred in recipients.json are aligned with those defined in general.json)
+- Config files are copied to S3 bucket (where all Salmon components will read configuration from).
+- AWS resources are created. For resources list, please refer to [Architecture document](/docs/architecture.md).
 
-Assuming that your target AWS profile is the default one set, execute the following from /infra_monitored_account/ :
+*Note: If you change the settings (e.g. add a new recipient), you will need to run aforementioned "cdk deploy" command to validate new config files and fetch them onto S3.*
 
-```cdk deploy --all --context stage-name=<your_stage_name>```
+*Note: If you choose to use optional Grafana component, you'll need to have VPC and security group prepared.
+TODO: VPC and sec group requirements
+*
+
+### CDK Deploy: Monitoring Environments
+
+For each monitored environment you plan to control, you'll need to deploy resources into respective AWS account and region with the following steps:
+- browse into **infra_monitored_account** folder
+- make sure you are using AWS credentials which have sufficient access to target AWS account
+- run the command
+```cdk deploy --context stage-name=<your_stage_name>```
+
+*Note: you should use the same stage-name as you chose for the tooling environment*
 
 Optionally you can add an AWS profile identifier via --profile command argument.

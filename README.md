@@ -1,5 +1,15 @@
 # Soname ALerts and MONitoring (SALMON)
 
+- [Soname ALerts and MONitoring (SALMON)](#soname-alerts-and-monitoring-salmon)
+  - [What is this project for?](#what-is-this-project-for)
+  - [SALMON Key Features](#salmon-key-features)
+  - [How SALMON works?](#how-salmon-works)
+  - [Monitored services in scope](#monitored-services-in-scope)
+  - [How to start](#how-to-start)
+  - [Contributing](#contributing)
+  - [Other useful links](#other-useful-links)
+
+
 ## What is this project for?
 
 We develop SALMON to be your go-to solution for monitoring AWS-based data pipelines.  
