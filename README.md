@@ -60,7 +60,7 @@ For more details please refer to [Solution arhictecture description](docs/archit
 | AWS Glue Workflows | With a small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
 | AWS Glue Crawlers | Immediately on Failure | In next versions... |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |
-| AWS Lambda Functions | In next versions...<br/> With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
+| AWS Lambda Functions | With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
 
 ## How to start
 
