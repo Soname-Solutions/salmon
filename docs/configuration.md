@@ -39,7 +39,7 @@ The project utilizes the following configuration files:
 | `general.json`           | Contains general settings for the tooling environment, monitored environments, and delivery methods. |
 | `monitoring_groups.json` | Defines all resources to be monitored, grouped logically. |
 | `recipients.json`        | Specifies recipients for alerts and daily digest reports, along with their subscriptions to monitoring groups. |
-| `replacements.json`      | [Optional] Contains a replacements list for placeholders in other setting JSON files. |
+| `replacements.json`      | [Optional] Contains a replacements list for placeholders in other configuration files. |
 
 #### Quick Start <a name="quick-start"></a>
 
@@ -102,7 +102,7 @@ The `general.json` configuration file sets up the tooling environment, monitored
 
     > Here, `<<env>>` acts as a placeholder that represents the environment name. This allows you to specify a generic name for the tooling account while keeping the option to customize it based on the environment. To define the actual values for placeholders, you can use the replacements.json file (refer to [Configure Replacements for Placeholders](#configure-replacements-for-placeholders)). This file serves as a mapping between placeholders and their corresponding values.
 - `account_id`, `region` - AWS region and account ID for the Tooling environment.
-- `metrics_collection_interval_min` - an interval (in minutes) for extracting metrics from monitored environments.
+- `metrics_collection_interval_min` - an interval (in minutes) for extracting metrics from Monitored environments.
 - `digest_report_period_hours` - how many recent hours should be covered in the Daily Digest report. Default value: `24` hours.
 - `digest_cron_expression` - the cron schedule to trigger the Daily Digest report. Default value: `cron(0 8 * * ? *)`, every day at 8am UTC.
 
@@ -177,14 +177,14 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 **Monitoring Groups Configuration**: 
 - `group_name` - the name of your monitoring group.
 
-- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate section should be created. Supported resource types: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**. \
-Inside each section, list the resources to be monitored along with their properties: 
+- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate section should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**. \
+Within each section, list the resources of the corresponding resource type along with their properties:
 
     - `name` - specify the resource name to be monitored.
 
         >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`.
 
-    - `monitored_environment_name` - the name of the monitored environment (should match to one of the monitored environment names defined in the **general.json** file, **monitored_environments** section, **name** field).
+    - `monitored_environment_name` - the name of the Monitored environment (should match to one of the monitored environment names defined in the **general.json** file, **monitored_environments** section, **name** field).
     - (optional) `sla_seconds` - the Service Level Agreement (SLA) in seconds for the resource. If the execution time exceeds the SLA set, such resource run will be marked with the Warning status and and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
     - (optional) `minimum_number_of_runs` - the minimum number of runs expected for the resource. If there have been less resource runs than expected, such run will be marked with the Warning status and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
 
