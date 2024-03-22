@@ -8,7 +8,7 @@
     2. [Provide General Settings](#provide-general-settings)
     3. [Configure Monitoring Groups](#configure-monitoring-groups)
     4. [Specify Recipients and Subscriptions ](#specify-recipients-and-subscriptions)
-    5. [[Optional] Provide Replacements for Rlaceholders](#provide-replacements-for-placeholders)
+    5. [[Optional] Provide Replacements for Placeholders](#provide-replacements-for-placeholders)
 
 
 ## Quick Start <a name="quick-start"></a>
@@ -101,15 +101,15 @@ The  `general.json` configuration file sets up the tooling environment, monitore
 **Tooling Environment Configuration**:
 - `name` - the name of your Tolling environment where SALMON monitoring and alerting infrastructure will be located.
 
-    > Here, `<<env>>` acts as a placeholder that represents the environment name. This allows you to specify a generic name for the tooling account while keeping the option to customize it based on the environment. To define the actual values for placeholders, you can use the replacements.json file (refer to [Provide Replacements for Rlaceholders](#provide-replacements-for-placeholders)). This file serves as a mapping between placeholders and their corresponding values.
+    > Here, `<<env>>` acts as a placeholder that represents the environment name. This allows you to specify a generic name for the tooling account while keeping the option to customize it based on the environment. To define the actual values for placeholders, you can use the replacements.json file (refer to [Provide Replacements for Placeholders](#provide-replacements-for-placeholders)). This file serves as a mapping between placeholders and their corresponding values.
 - `account_id`, `region` - AWS region and account ID for the Tolling environment.
 - `metrics_collection_interval_min` - an interval (in minutes) for extracting metrics from monitored environments.
 - `digest_report_period_hours` - how many recent hours should be covered in the Daily Digest report. Default value: `24` hours.
-- `digest_cron_expression` - the cron schedule to trigger the daily digest report. Default value: `cron(0 8 * * ? *)`, every day at 8am UTC.
+- `digest_cron_expression` - the cron schedule to trigger the Daily Digest report. Default value: `cron(0 8 * * ? *)`, every day at 8am UTC.
 
 **[Optional] Grafana Configuration**: 
 
-If the `grafana_instance` section exists, the Grafana stack will be deployed. Otherwhise, it will be skipped.
+If the `grafana_instance` section exists, the Grafana stack will be deployed. Otherwise, it will be skipped.
 - `grafana_vpc_id` - the Amazon VPC ID where the Grafana instance will be deployed. At least 1 public subnet required.
 - `grafana_security_group_id` - the security group ID that will be associated with the Grafana instance. Inbound access to Grafana’s default HTTP port: 3000 required. 
 
@@ -127,14 +127,14 @@ To skip the Grafana stack, remove the following `grafana_instance` nested config
 ```
 
 **Monitored Environments Configuration**:
-- `name` - the name of your Monitored environment. Refered in the monitoring_groups.json.
+- `name` - the name of your Monitored environment. Referred in the monitoring_groups.json.
 - `account_id`, `region` - AWS region and account ID of the account to be monitored.
 - (optional) `metrics_extractor_role_arn` - IAM Role ARN to be able to extract metrics for the resources running in another AWS account. Default value: `arn:aws:iam::{account_id}:role/role-salmon-cross-account-extract-metrics-dev`. 
 
 You can specify multiple monitored environments.
  
 **Delivery Methods Configuration**:
-- `name` - the name of your delivery method. Refered in the recipients.json.
+- `name` - the name of your delivery method. Referred in the recipients.json.
 - `delivery_method_type` - the delivery method type (AWS_SES).
 
     >  SMTP, Slack and MS Teams channel will be introduced soon (refer to our [Changelog](changelog.md)).
@@ -178,7 +178,7 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 }
 ```
 **Monitoring Groups Configuration**: 
-- `group_name` - the name of your monitoring pipeline. Refered in recipients.json.
+- `group_name` - the name of your monitoring pipeline. Referred in recipients.json.
 - the element `glue_jobs` should be adjusted in accordance with the monitoring resource type. Supported values: glue_jobs, step_functions, lambda_functions, glue_workflows, glue_catalogs, glue_crawlers. 
 - `name` - specify the resource name to be monitored.
 
@@ -218,7 +218,7 @@ The `recipients.json` file specifies recipients for alerts and digests, along wi
 - `alerts` - indicate whether the recipient would like to receive notifications on failed runs (true/false).
 - `digest` - indicate whether the recipient would like to receive Daily Digest (true/false).
 
-### 5. [Optional] Provide Replacements for Rlaceholders <a name="provide-replacements-for-placeholders"></a> 
+### 5. [Optional] Provide Replacements for Placeholders <a name="provide-replacements-for-placeholders"></a> 
 The `replacements.json` file provides replacements list for placeholders in other configuration JSON files. Placeholders inside general and other settings should be in double curly brackets (e.g. `<<value>>`). For example, the value for `<<env>>` is defined as `dev`. This means that during the deployment, wherever the `<<env>>` placeholder is used, it will be replaced with `dev`. \
 This allows us to to define the generic configurations that can be easily customized for different environments (DEV, UAT, PROD) or scenarios. 
 
