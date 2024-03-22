@@ -1,61 +1,83 @@
 # SALMON Deployment Guide
 
-This article describes the deployment instruction for SALMON project.
+This article describes the installation and deployment for SALMON project.
+
+![Deployment Workflow](/docs/images/deployment-workflow.svg "Deployment Workflow")
 
 ## Prerequisites
 
-### Local Env Setup
+### Local Environment Setup
 
-- AWS CLIv2 with configured profiles for your target AWS Accounts 
-- Python environment with installed packages from (/infra_monitored_account/requirements.txt) and (/infra_tooling_account/requirements.txt)
+Make sure the following software is installed on your system:
 - NodeJS
-- CDK Toolkit
+- AWS CDK Toolkit. You can refer to [AWS Guide](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) for installation.
+- AWS CLIv2. It's also recommended to set up AWS CLI profiles for AWS accounts where you tooling and monitored environments reside.
+- Python environment with installed packages from (/infra_monitored_account/requirements.txt) and (/infra_tooling_account/requirements.txt)
 
 ### AWS Accounts Setup
 
-- CDK Bootstrapping: for all monitored accounts and for the tooling account - refer to [AWS Documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html)
-- (Optional) Create a custom IAM role to execute CDK deploments with (TODO: provide example?)
+#### CDK Bootstrap
 
-### Email Delivery
+Your Salmon installation will include one centralized (tooling) environment and, potentially, multiple monitored environments across different AWS accounts and regions (for more details on terminology, see [Key Concepts](/docs/key_concepts.md)).
 
-- If you are using AWS SES for email notifications - make sure email addresses you specify in recipients.json are verified in SES
-- If you are using an SMTP server, you need to have a Secret in AWS Secrets Manager:
-    - Secret name: your choice, the name should be referenced in general.json
-    - Secret value: JSON of the following structure:
-    {
-        "SMTP_HOST": <your_smtp_server_host>,
-        "SMTP_PORT": <your_smtp_server_port>,
-        "SMTP_LOGIN": <your_smtp_server_username>,
-        "SMTP_PASSWORD": <your_smtp_server_password>
-    }
+Make sure AWS CDK bootstrap resources are created for each relevant AWS Account and region. For more information - refer to refer to [CDK Bootstrapping - AWS Documentation](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html).
 
-### Configuration Files
+#### Setting Up Notifications Delivery
 
-You need to prepare configuration files for the solution and place them under /config/ folder.
+Salmon can send notifications or messages (e.g. on Glue Job failure or Daily EMail digest).
+The primary delivery method for the current version is AWS SES (with plans to add more options such as SMTP, Slack and MS Teams channel notifications).
 
-- You can refer to examples in /config/sample_settings/
-- Or you can refer to [Configuration Documentation](./configuration.md)
+For AWS SES make sure:
+- The email address you intend use as "From" in SALMON notifications is added to AWS SES and verified.  
+  "From" e-mail is configured in **'general.json'** - [see "Settings" documentation](/docs/configuration.md).
+- All recipient email addresses (from **'recipients.json'**) are also verified in AWS SES identity.
 
-## Tooling Environment Setup
+It's a good practice (although not required) to create a separate email address to feature as Salmon notifications sender (
+e.g. salmon-notifications@your-company.com).  
+Among other benefits, this makes it easier to set up message filters in your email client.  
 
-- It can be either a separate AWS Account or one of the monitored AWS Accounts.
-- Optional Grafana toolset can be included into deployment via Configuration parameters. See [Configuration Documentation](./configuration.md)
-- stage-name parameter needs to be defined for deployment as an identifier of deployment stage (usually dev/test/qa/uat/prod, but can be any string identifier)
+All emails should be added to AWS SES in the account/region where the tooling environment resides.
 
-Assuming that your target AWS profile is the default one set, execute the following from /infra_tooling_account/ :
+![AWS SES Configuration](/docs/images/ses-identities.png "AWS SES Configuration")
 
+## Preparing SALMON settings
+
+You need to prepare configuration files for the solution and place them in the **/config/** folder.  
+
+For more details on Configuration, see [Documentation](/docs/configuration.md).
+
+You can also refer to sample settings files in **/config/sample_settings/**.  
+
+## CDK Deploy: Tooling Environment
+
+Once all prerequisites are met and the configuration is ready, it's time to deploy all artifacts to AWS.
+Deployment starts with the Tooling Environment:
+
+- browse into **infra_tooling_account** folder
+- run the following command  
 ```cdk deploy --all --context stage-name=<your_stage_name>```
 
-Optionally you can add an AWS profile identifier via --profile command argument.
+Optionally, you can add an AWS profile identifier via the '--profile' command argument.
 
-## Monitored Environment Setup
+*`stage-name` is a parameter which identifies the deployment stage (usually dev/test/qa/uat/prod, but can be any string identifier of your choice).*
 
-- Monitored Environment is any combination of AWS Account and Region which needs to be monitored.
-- Even if one of AWS Account and Region has Tooling stack configured, it still needs Monitored Environment deployment if you need to monitor services residing within this Account and Region
-- stage-name parameter needs to be defined for deployment as an identifier of deployment stage (usually dev/test/qa/uat/prod, but can be any string identifier)
+What happens during *`cdk deploy`* of tooling environment:
+- Configuration files are validated (e.g. if delivery methods referred to in *recipients.json* are aligned with those defined in *general.json*)
+- Configuration files are copied to S3 bucket (where all SALMON components will read the configuration from).
+- AWS resources are created. For a list of resources, please refer to [Architecture document](/docs/architecture.md).
 
-Assuming that your target AWS profile is the default one set, execute the following from /infra_monitored_account/ :
+*Note: If you change the settings (e.g. add a new recipient), you will need to run the aforementioned "cdk deploy" command to validate new config files and upload them onto S3.*
 
-```cdk deploy --all --context stage-name=<your_stage_name>```
+*Note: If you choose to use optional Grafana component, make sure you to have a VPC with a public subnet and a security group prepared. The security group should allow access to port 3000 from any IP address.*
 
-Optionally you can add an AWS profile identifier via --profile command argument.
+## CDK Deploy: Monitoring Environments
+
+For each monitored environment you plan to control, you'll need to deploy resources into the respective AWS account and region with the following steps:
+- browse into **infra_monitored_account** folder
+- make sure you are using AWS credentials which have sufficient access to target AWS account
+- execute the command  
+```cdk deploy --context stage-name=<your_stage_name>```
+
+*Note: use the same `stage-name` as chosen for the tooling environment*
+
+Optionally, you can add an AWS profile identifier via --profile command argument.
