@@ -58,7 +58,9 @@ def generate_timestream_dashboard_model(
         with open(dashboard_path) as json_file:
             json_data = json.load(json_file)
     except FileNotFoundError:
-        logger.warning(f"Dashboard file for {resource_type} not found: {dashboard_path}. Skipping.")
+        logger.warning(
+            f"Dashboard file for {resource_type} not found: {dashboard_path}. Skipping."
+        )
         return None
 
     replacements = {
@@ -120,11 +122,14 @@ def generate_dashboards_config(resource_types: list) -> dict:
     dashboards_sections = []
     for resource_type in resource_types:
         dashboard_path = os.path.join(
-        "infra_tooling_account", "grafana", f"{resource_type}_dashboard.template.json"
+            "infra_tooling_account",
+            "grafana",
+            f"{resource_type}_dashboard.template.json",
         )
         if os.path.exists(dashboard_path):
             dashboard_section = {
                 "name": f"{resource_type}_dashboard",
+                "folder": "Default SALMON Dashboards",
                 "type": "file",
                 "allowUiUpdates": True,
                 "updateIntervalSeconds": 30,
@@ -134,6 +139,7 @@ def generate_dashboards_config(resource_types: list) -> dict:
 
     cw_dashboard_section = {
         "name": "cw_dashboard",
+        "folder": "Default SALMON Dashboards",
         "type": "file",
         "allowUiUpdates": True,
         "updateIntervalSeconds": 30,
