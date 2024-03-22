@@ -1,17 +1,17 @@
 # SALMON Configuration
 
-* [Quick Start](#quick-start)
+* [Overview](#overview)
     * [Configuration Structure](#conf-structure)
-    * [Deployment Process](#deployment-process)
+    * [Quick Start](#quick-start)
 * [Configuration Steps](#configuration-steps)
-    1. [[Optional] Copy Configuration Samples](#copy-configuration-samples)
-    2. [Provide General Settings](#provide-general-settings)
+    1. [Create Configuration Files](#create-configuration-files)
+    2. [Configure General Settings](#configure-general-settings)
     3. [Configure Monitoring Groups](#configure-monitoring-groups)
-    4. [Specify Recipients and Subscriptions ](#specify-recipients-and-subscriptions)
-    5. [[Optional] Provide Replacements for Placeholders](#provide-replacements-for-placeholders)
+    4. [Configure Recipients and Subscriptions ](#configure-recipients-and-subscriptions)
+    5. [[Optional] Configure Replacements for Placeholders](#configure-replacements-for-placeholders)
 
 
-## Quick Start <a name="quick-start"></a>
+## Overview <a name="overview"></a>
 This guide provides instructions on how to configure the SALMON project to suit your monitoring and alerting needs. 
 
 #### Configuration Structure: <a name="conf-structure"></a>
@@ -41,13 +41,13 @@ The project utilizes the following configuration files:
 | `recipients.json`        | Specifies recipients for alerts and daily digest reports, along with their subscriptions to monitoring groups. |
 | `replacements.json`      | [Optional] Contains a replacements list for placeholders in other setting JSON files. |
 
-#### Deployment Process <a name="deployment-process"></a>
+#### Quick Start <a name="quick-start"></a>
 
 Before the deployment:
 * **Prepare Configuration Files**: Sample configurations serving as templates are located at the `/config/sample_settings` directory. Copy these templates to the `/config/settings` directory if necessary and fill in the required values as per your requirements (refer to [Configuration Steps](#configuration-steps)).
 
 The configuration files from the `/config/settings` directory are deployed as a part of the AWS CDK deployment process:
-* Configuration files validated and automatically uploaded to the AWS S3 bucket `s3-salmon-settings-<<stage-name>>`.
+* Configuration files are validated and automatically uploaded to the AWS S3 bucket `s3-salmon-settings-<<stage-name>>`.
 * The CDK project references these settings from the S3 bucket during runtime, utilizing the configurations to set up the necessary infrastructure.
 > **NOTE:**
 > If any modifications are made to the configuration files locally, you would need to redeploy the stacks in order to apply the changes to the S3 bucket (refer to [Deployment and installation](deployment.md) for more details).
@@ -56,15 +56,14 @@ The configuration files from the `/config/settings` directory are deployed as a 
 
 Follow these steps to configure the project according to your requirements:
 
-### 1. [Optional] Copy Configuration Samples <a name="copy-configuration-samples"></a>
-- Navigate to the `/config/sample_settings` directory.
-- Copy the sample configuration files (general.json, monitoring_groups.json, recipients.json, and replacements.json if needed) to the `/config/settings` directory.
+### 1. Create Configuration Files <a name="create-configuration-files"></a>
+The initial step is to create the necessary configuration files: **general.json**, **monitoring_groups.json**, **recipients.json**, and **replacements.json** (if required) within the `/config/settings` directory. For a quick start, you can utilize the sample configuration files provided in the `/config/sample_settings` directory.
 
 > **NOTE:**
 > Always ensure that the settings you utilize are up-to-date.
 
-### 2. Provide General Settings  <a name="provide-general-settings"></a>
-The  `general.json` configuration file sets up the tooling environment, monitored environments, and delivery methods. 
+### 2. Configure General Settings  <a name="configure-general-settings"></a>
+The `general.json` configuration file sets up the tooling environment, monitored environments, and delivery methods. 
 ```
 {
     "tooling_environment": {
@@ -99,10 +98,10 @@ The  `general.json` configuration file sets up the tooling environment, monitore
 }
 ```     
 **Tooling Environment Configuration**:
-- `name` - the name of your Tolling environment where SALMON monitoring and alerting infrastructure will be located.
+- `name` - the name of your Tooling environment where SALMON monitoring and alerting infrastructure will be located.
 
-    > Here, `<<env>>` acts as a placeholder that represents the environment name. This allows you to specify a generic name for the tooling account while keeping the option to customize it based on the environment. To define the actual values for placeholders, you can use the replacements.json file (refer to [Provide Replacements for Placeholders](#provide-replacements-for-placeholders)). This file serves as a mapping between placeholders and their corresponding values.
-- `account_id`, `region` - AWS region and account ID for the Tolling environment.
+    > Here, `<<env>>` acts as a placeholder that represents the environment name. This allows you to specify a generic name for the tooling account while keeping the option to customize it based on the environment. To define the actual values for placeholders, you can use the replacements.json file (refer to [Configure Replacements for Placeholders](#configure-replacements-for-placeholders)). This file serves as a mapping between placeholders and their corresponding values.
+- `account_id`, `region` - AWS region and account ID for the Tooling environment.
 - `metrics_collection_interval_min` - an interval (in minutes) for extracting metrics from monitored environments.
 - `digest_report_period_hours` - how many recent hours should be covered in the Daily Digest report. Default value: `24` hours.
 - `digest_cron_expression` - the cron schedule to trigger the Daily Digest report. Default value: `cron(0 8 * * ? *)`, every day at 8am UTC.
@@ -112,13 +111,11 @@ The  `general.json` configuration file sets up the tooling environment, monitore
 If the `grafana_instance` section exists, the Grafana stack will be deployed. Otherwise, it will be skipped.
 - `grafana_vpc_id` - the Amazon VPC ID where the Grafana instance will be deployed. At least 1 public subnet required.
 - `grafana_security_group_id` - the security group ID that will be associated with the Grafana instance. Inbound access to Grafana’s default HTTP port: 3000 required. 
+- (optional) `grafana_key_pair_name`: the name of the key pair to be associated with the Grafana instance. If not provided, a new key pair will be created during the stack deployment.
+- (optional) `grafana_bitnami_image`: the Bitnami Grafana image from AWS Marketplace. Default value: `bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami`.
+- (optional) `grafana_instance_type`: the EC2 instance type for the Grafana instance. Default value: `t3.micro`.
 
-Additionally, several optional configurations are available to customize the Grafana deployment: 
-- `grafana_key_pair_name`: add this parameter and specify the name of the key pair to be associated with the Grafana instance. If not provided, a new key pair will be created during the stack deployment.
-- `grafana_bitnami_image`: add this parameter and specify the Bitnami Grafana image from AWS Marketplace. Default value: `bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami`.
-- `grafana_instance_type`: add this parameter and specify the EC2 instance type for the Grafana instance. Default value: `t3.micro`.
-
-To skip the Grafana stack, remove the following `grafana_instance` nested configuration from the general settings:
+To skip the Grafana stack, remove the following `grafana_instance` nested configuration from the `general.json`:
 ```
         "grafana_instance": {
             "grafana_vpc_id": "<<grafana_vpc_id>>",
@@ -127,26 +124,26 @@ To skip the Grafana stack, remove the following `grafana_instance` nested config
 ```
 
 **Monitored Environments Configuration**:
-- `name` - the name of your Monitored environment. Referred in the monitoring_groups.json.
+- `name` - the name of your Monitored environment.
 - `account_id`, `region` - AWS region and account ID of the account to be monitored.
 - (optional) `metrics_extractor_role_arn` - IAM Role ARN to be able to extract metrics for the resources running in another AWS account. Default value: `arn:aws:iam::{account_id}:role/role-salmon-cross-account-extract-metrics-dev`. 
 
 You can specify multiple monitored environments.
  
 **Delivery Methods Configuration**:
-- `name` - the name of your delivery method. Referred in the recipients.json.
-- `delivery_method_type` - the delivery method type (AWS_SES).
+- `name` - the name of your delivery method.
+- `delivery_method_type` - the delivery method type (AWS_SES, SMTP).
 
-    >  SMTP, Slack and MS Teams channel will be introduced soon (refer to our [Changelog](changelog.md)).
+    >  The primary delivery method for the current version is AWS SES (with plans to add more options such as SMTP, Slack and MS Teams channel notifications).
 
 Based on the delivery method type, additional parameters are required:
-* AWS_SES
+* AWS_SES:
     - `sender_email` - the sender email for notifications and digests. Must be verified in AWS SES.
 
 You can specify multiple delivery methods (even for the same delivery type, no restrictions).
 
 ### 3. Configure Monitoring Groups  <a name="configure-monitoring-groups"></a>
-The `monitoring_groups.json` configuration file lists all resources to be monitored, grouped logically. For example, all Glue Jobs and Lambda functions can be related to Data Ingestion Pipeline. Inside each group we list group elements with their properties (such as name, sla_seconds, minimum_number_of_runs).
+The `monitoring_groups.json` configuration file lists all resources to be monitored, grouped logically. For example, all Glue Jobs and Lambda functions can be related to Data Ingestion Pipeline.
 ```
 {
     "monitoring_groups": [
@@ -178,17 +175,20 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 }
 ```
 **Monitoring Groups Configuration**: 
-- `group_name` - the name of your monitoring pipeline. Referred in recipients.json.
-- the element `glue_jobs` should be adjusted in accordance with the monitoring resource type. Supported values: glue_jobs, step_functions, lambda_functions, glue_workflows, glue_catalogs, glue_crawlers. 
-- `name` - specify the resource name to be monitored.
+- `group_name` - the name of your monitoring group.
 
-    > If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`.
+- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate section should be created. Supported resource types: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**. \
+Inside each section, list the resources to be monitored along with their properties: 
 
-- `monitored_environment_name` - the name of your monitored environment (should match to one of the monitored environment names defined in the general.json).
-- (optional) `sla_seconds` - the SLA for the resource execution time. If the execution time exceeds the SLA set, such resource run will be marked with the Warning status and and an additional comment will be shown in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
-- (optional) `minimum_number_of_runs` - the least number of runs expected. In this case if there have been less resource runs than expected, such run will be marked with the Warning status and an additional comment will be shown in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
+    - `name` - specify the resource name to be monitored.
 
-### 4. Specify Recipients and Subscriptions  <a name="specify-recipients-and-subscriptions"></a> 
+        >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`.
+
+    - `monitored_environment_name` - the name of the monitored environment (should match to one of the monitored environment names defined in the **general.json** file, **monitored_environments** section, **name** field).
+    - (optional) `sla_seconds` - the Service Level Agreement (SLA) in seconds for the resource. If the execution time exceeds the SLA set, such resource run will be marked with the Warning status and and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
+    - (optional) `minimum_number_of_runs` - the minimum number of runs expected for the resource. If there have been less resource runs than expected, such run will be marked with the Warning status and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
+
+### 4. Configure Recipients and Subscriptions  <a name="configure-recipients-and-subscriptions"></a> 
 The `recipients.json` file specifies recipients for alerts and digests, along with their subscriptions to the monitoring groups.
 ```
 {
@@ -213,14 +213,14 @@ The `recipients.json` file specifies recipients for alerts and digests, along wi
 - `recipient` - an email address of a person / delivery list to receive failure notifications or Daily Digest reports.   
     
     > **NOTE:** the email address must be verified in AWS SES.
-- `delivery_method` - the delivery method name (should match to one of the delivery method names defined in the general.json)
-- `monitoring_group` - the monitoring group name (should match to one of the monitoring group names defined in the monitoring_groups.json).
+- `delivery_method` - the delivery method name (should match to one of the delivery method names defined in the **general.json** file, **delivery_methods** section, **name** field).
+- `monitoring_group` - the monitoring group name (should match to one of the monitoring group names defined in the **monitoring_groups.json** file,  **monitoring_groups** section, **group_name** field).
 - `alerts` - indicate whether the recipient would like to receive notifications on failed runs (true/false).
 - `digest` - indicate whether the recipient would like to receive Daily Digest (true/false).
 
-### 5. [Optional] Provide Replacements for Placeholders <a name="provide-replacements-for-placeholders"></a> 
+### 5. [Optional] Configure Replacements for Placeholders <a name="configure-replacements-for-placeholders"></a> 
 The `replacements.json` file provides replacements list for placeholders in other configuration JSON files. Placeholders inside general and other settings should be in double curly brackets (e.g. `<<value>>`). For example, the value for `<<env>>` is defined as `dev`. This means that during the deployment, wherever the `<<env>>` placeholder is used, it will be replaced with `dev`. \
-This allows us to to define the generic configurations that can be easily customized for different environments (DEV, UAT, PROD) or scenarios. 
+This approach simplifies the process of switching between envrironments by consolidating all environment-specific parameters into the `replacements.json` file.
 
 ```
 {
