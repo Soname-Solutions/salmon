@@ -129,7 +129,7 @@ def generate_dashboards_config(resource_types: list) -> dict:
         if os.path.exists(dashboard_path):
             dashboard_section = {
                 "name": f"{resource_type}_dashboard",
-                "folder": "default",
+                "folder": "Default SALMON Dashboards",
                 "type": "file",
                 "allowUiUpdates": True,
                 "updateIntervalSeconds": 30,
@@ -139,7 +139,7 @@ def generate_dashboards_config(resource_types: list) -> dict:
 
     cw_dashboard_section = {
         "name": "cw_dashboard",
-        "folder": "default",
+        "folder": "Default SALMON Dashboards",
         "type": "file",
         "allowUiUpdates": True,
         "updateIntervalSeconds": 30,
