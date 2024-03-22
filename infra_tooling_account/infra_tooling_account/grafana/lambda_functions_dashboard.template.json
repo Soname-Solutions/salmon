@@ -196,7 +196,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter ",
+          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
