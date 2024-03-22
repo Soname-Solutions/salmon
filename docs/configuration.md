@@ -135,7 +135,9 @@ You can specify multiple monitored environments.
  
 **Delivery Methods Configuration**:
 - `name` - the name of your delivery method. Refered in the recipients.json.
-- `delivery_method_type` - the delivery method type (AWS_SES). SMTP, Slack and MS Teams channel will be introduced in the next versions.
+- `delivery_method_type` - the delivery method type (AWS_SES).
+
+    >  SMTP, Slack and MS Teams channel will be introduced soon (refer to our [Changelog](changelog.md)).
 
 Based on the delivery method type, additional parameters are required:
 * AWS_SES
@@ -176,7 +178,7 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 }
 ```
 **Monitoring Groups Configuration**: 
-- `group_name` - the name of your monitoring pipeline. Refered in `recipients.json`.
+- `group_name` - the name of your monitoring pipeline. Refered in recipients.json.
 - the element `glue_jobs` should be adjusted in accordance with the monitoring resource type. Supported values: glue_jobs, step_functions, lambda_functions, glue_workflows, glue_catalogs, glue_crawlers. 
 - `name` - specify the resource name to be monitored.
 
