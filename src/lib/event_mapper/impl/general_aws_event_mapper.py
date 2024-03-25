@@ -137,6 +137,39 @@ class GeneralAwsEventMapper(ABC):
         return message
 
 
+class CustomAwsEventMapper(GeneralAwsEventMapper):
+    """Intermediate class providing custom implementation for create_message_body_with_common_rows.
+
+    Attributes:
+        Inherits attributes from GeneralAwsEventMapper.
+
+    Methods:
+        create_message_body_with_common_rows(self) -> tuple[list, list]: Overrides the method in
+        GeneralAwsEventMapper to provide a custom implementation for creating message body with common rows.
+    """
+
+    def create_message_body_with_common_rows(self) -> tuple[list, list]:
+        message_body = []
+        table = {}
+        rows = []
+        table["table"] = {}
+        table["table"]["rows"] = rows
+        message_body.append(table)
+
+        rows.append(
+            self.create_table_row(
+                ["AWS Account", self.event["detail"]["origin_account"]]
+            )
+        )
+        rows.append(
+            self.create_table_row(["AWS Region", self.event["detail"]["origin_region"]])
+        )
+        rows.append(self.create_table_row(["Time", self.event["time"]]))
+        rows.append(self.create_table_row(["Event Type", self.event["detail-type"]]))
+
+        return message_body, rows
+
+
 class ExecutionInfoUrlMixin:
     @staticmethod
     def get_url(

@@ -41,12 +41,12 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
         #     "databaseName": "testdb1",  # this field is always present
         #     "changedPartitions": [],
         #     "typeOfChange": "UpdateTable", or "CreateTable" or "CreateDatabase"
-        #     "tableName": "tbl1", <- cases a) Db-level -> field is not present, b) this field is present 
+        #     "tableName": "tbl1", <- cases a) Db-level -> field is not present, b) this field is present
         #     "changedTables": ["tbl1"], <- sometimes this field is present instead of "tableName"
         # },
         try:
-            type_of_change = self.event["detail"].get("typeOfChange","")
-            region_name=self.event["region"]
+            type_of_change = self.event["detail"].get("typeOfChange", "")
+            region_name = self.event["region"]
             database_name = self.event["detail"]["databaseName"]
 
             if "Table" in type_of_change:
@@ -54,17 +54,15 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
                 if table_name is None:
                     table_name = self.event["detail"].get("changedTables")[0]
 
-                return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/tables/view/{table_name}?database={database_name}",
+                return (
+                    f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/tables/view/{table_name}?database={database_name}",
+                )
             else:
                 return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{database_name}"
         except Exception as e:
             raise GlueDataCatalogEventMapperException(
                 f"Error getting execution info URL: {e}"
-            )            
-
-
-        
-
+            )
 
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
@@ -79,6 +77,15 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
         rows.append(
             super().create_table_row(
                 ["Type of Change", self.event["detail"]["typeOfChange"]]
+            )
+        )
+        link_url = self.get_execution_info_url(self.get_resource_name())
+        rows.append(
+            super().create_table_row(
+                [
+                    "Execution Info",
+                    f"<a href='{link_url}'>Link to AWS Console</a>",
+                ]
             )
         )
 

@@ -1,4 +1,4 @@
-from .general_aws_event_mapper import GeneralAwsEventMapper
+from .general_aws_event_mapper import CustomAwsEventMapper
 from .general_aws_event_mapper import ExecutionInfoUrlMixin
 from ...settings import Settings
 
@@ -7,7 +7,7 @@ from ...aws.lambda_manager import LambdaManager
 
 
 # Lambda Functions are not yet supported as EventBridge Events by AWS, so leaving it like that for now
-class LambdaFunctionsEventMapper(GeneralAwsEventMapper):
+class LambdaFunctionsEventMapper(CustomAwsEventMapper):
     def __init__(self, resource_type: str, event: dict, settings: Settings):
         super().__init__(resource_type, event, settings)
 

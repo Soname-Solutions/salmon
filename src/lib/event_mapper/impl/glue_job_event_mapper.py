@@ -39,8 +39,13 @@ class GlueJobEventMapper(GeneralAwsEventMapper):
         rows.append(
             super().create_table_row(["State", self.get_resource_state()], style)
         )
+
+        link_url = self.get_execution_info_url(self.get_resource_name())
+        run_id = self.event["detail"]["jobRunId"]
         rows.append(
-            super().create_table_row(["JobRunID", self.event["detail"]["jobRunId"]])
+            super().create_table_row(
+                ["Glue Job Run ID", f"<a href='{link_url}'>{run_id}</a>"]
+            )
         )
         rows.append(
             super().create_table_row(["Message", self.event["detail"]["message"]])

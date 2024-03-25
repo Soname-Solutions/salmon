@@ -54,9 +54,6 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             super().create_table_row(["State Machine Name", self.get_resource_name()])
         )
         rows.append(
-            super().create_table_row(["Execution Name", self.event["detail"]["name"]])
-        )
-        rows.append(
             super().create_table_row(["Status", self.get_resource_state()], style)
         )
         rows.append(
@@ -72,6 +69,16 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
                 [
                     "Stop Date",
                     self.__timestamp_to_datetime(self.event["detail"]["stopDate"]),
+                ]
+            )
+        )
+
+        link_url = self.get_execution_info_url(self.get_resource_name())
+        rows.append(
+            super().create_table_row(
+                [
+                    "Execution Info",
+                    f"<a href='{link_url}'>{self.event['detail']['name']}</a>",
                 ]
             )
         )
