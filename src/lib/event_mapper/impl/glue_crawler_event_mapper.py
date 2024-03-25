@@ -40,6 +40,16 @@ class GlueCrawlerEventMapper(GeneralAwsEventMapper):
         rows.append(
             super().create_table_row(["State", self.get_resource_state()], style)
         )
+
+        link_url = self.get_execution_info_url(self.get_resource_name())
+        rows.append(
+            super().create_table_row(
+                [
+                    "Execution Info",
+                    f"<a href='{link_url}'>Link to AWS Console</a>",
+                ]
+            )
+        )
         rows.append(
             super().create_table_row(["Message", self.event["detail"]["message"]])
         )

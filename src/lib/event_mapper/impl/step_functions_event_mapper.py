@@ -76,4 +76,14 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             )
         )
 
+        link_url = self.get_execution_info_url(self.get_resource_name())
+        rows.append(
+            super().create_table_row(
+                [
+                    "Execution Info",
+                    f"<a href='{link_url}'>Link to AWS Console</a>",
+                ]
+            )
+        )
+
         return message_body

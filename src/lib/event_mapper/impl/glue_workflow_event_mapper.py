@@ -1,4 +1,4 @@
-from .general_aws_event_mapper import GeneralAwsEventMapper
+from .general_aws_event_mapper import CustomAwsEventMapper
 from .general_aws_event_mapper import ExecutionInfoUrlMixin
 from ...settings import Settings
 
@@ -7,7 +7,7 @@ from ...aws.glue_manager import GlueManager
 
 
 # Workflows are not yet supported as EventBridge Events by AWS, so leaving it like that for now
-class GlueWorkflowEventMapper(GeneralAwsEventMapper):
+class GlueWorkflowEventMapper(CustomAwsEventMapper):
     def __init__(self, resource_type: str, event: dict, settings: Settings):
         super().__init__(resource_type, event, settings)
 
@@ -46,12 +46,11 @@ class GlueWorkflowEventMapper(GeneralAwsEventMapper):
         )
 
         link_url = self.get_execution_info_url(self.get_resource_name())
-        run_id=self.event["detail"]["workflowRunId"]
+        run_id = self.event["detail"]["workflowRunId"]
         rows.append(
             super().create_table_row(
                 ["Workflow Run ID", f"<a href='{link_url}'>{run_id}</a>"]
             )
         )
-
 
         return message_body
