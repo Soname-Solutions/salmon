@@ -15,16 +15,16 @@ class JobRun(BaseModel):
     Attempt: int
     # TriggerName: str
     JobName: str
-    StartedOn: datetime
+    StartedOn: Optional[datetime]
     LastModifiedOn: Optional[datetime]
     CompletedOn: Optional[datetime]
     JobRunState: str
     ErrorMessage: Optional[str] = None
     PredecessorRuns: list[str] = []
     AllocatedCapacity: int
-    ExecutionTime: int
+    ExecutionTime: Optional[int]
     Timeout: int
-    MaxCapacity: float
+    MaxCapacity: Optional[float]
     LogGroupName: str
     GlueVersion: str
     DPUSeconds: Optional[float] = 0.0
@@ -63,10 +63,10 @@ class WorkflowRun(BaseModel):
     WorkflowRunId: str
     WorkflowRunProperties: dict
     StartedOn: datetime
-    CompletedOn: datetime
+    CompletedOn: Optional[datetime] = None
     Status: str
     ErrorMessage: Optional[str] = None
-    Statistics: WorkflowStatistics
+    Statistics: Optional[WorkflowStatistics] = None
 
     @property
     def IsSuccess(self) -> bool:
