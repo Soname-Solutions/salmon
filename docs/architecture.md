@@ -42,6 +42,11 @@ Alternative option is to use an optional Grafana instance which connects to this
 
 Default metrics retention period (1 year) can be changed in configuration file.
 
+**CloudWatch storage for event**
+
+A separate CloudWatch Log Group is created to store events collected from monitored environments.  
+Alerting Lambda populates this log while processing an event. Log records is created for successful and failed executions.  
+
 
 ### Tooling Environment - Alerting Functionality
 
