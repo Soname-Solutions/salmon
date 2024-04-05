@@ -26,10 +26,9 @@ from lib.aws.lambda_manager import LambdaManager
 
 
 @pytest.fixture(scope="session")
-def aws_props_init():
+def aws_props_init(config_path):
     # Inits AWS acc id and region (from local settings -> tooling env)
-    file_path = "../config/settings/"
-    settings = Settings.from_file_path(file_path)
+    settings = Settings.from_file_path(config_path)
     account_id, region = settings.get_tooling_account_props()
 
     return (account_id, region)
@@ -62,7 +61,26 @@ def event_dyn_props_init(aws_props_init):
 
     return (account_id, region, time_str, epoch_time, version_str)
 
+################################################################################################################################
 
+# mocking AWS calls done in lambda_alerting
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_settings(mocker):
+    """
+    A module-scoped fixture that automatically mocks Settings.from_s3_path
+    to call Settings.from_file_path with a predetermined local path for all tests.
+    """
+    mocker.patch('lib.settings.Settings.from_s3_path', side_effect=lambda x: Settings.from_file_path("config/settings/"))
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_cloudwatch_writer(mocker):
+    mocker.patch('lib.alerting_service.CloudWatchAlertWriter.write_event_to_cloudwatch')
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_send_messages_to_sqs(mocker):
+    mocker.patch('lambda_alerting.send_messages_to_sqs')
+    
 ################################################################################################################################
 
 # GLUE JOB tests
