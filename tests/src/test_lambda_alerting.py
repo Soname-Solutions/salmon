@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 import pytest
 import os
 from datetime import datetime, timezone, timedelta
@@ -38,16 +39,16 @@ def aws_props_init(config_path):
 def os_vars_init(stage_name, aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
-    os.environ[
-        "NOTIFICATION_QUEUE_URL"
-    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    os.environ["NOTIFICATION_QUEUE_URL"] = (
+        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    )
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ[
-        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
-    ] = f"log-group-salmon-alert-events-{stage_name}"
-    os.environ[
-        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
-    ] = f"log-stream-salmon-alert-events-{stage_name}"
+    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"] = (
+        f"log-group-salmon-alert-events-{stage_name}"
+    )
+    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"] = (
+        f"log-stream-salmon-alert-events-{stage_name}"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -61,9 +62,11 @@ def event_dyn_props_init(aws_props_init):
 
     return (account_id, region, time_str, epoch_time, version_str)
 
+
 ################################################################################################################################
 
 # mocking AWS calls done in lambda_alerting
+
 
 @pytest.fixture(scope="function", autouse=True)
 def mock_settings(mocker):
@@ -71,16 +74,32 @@ def mock_settings(mocker):
     A module-scoped fixture that automatically mocks Settings.from_s3_path
     to call Settings.from_file_path with a predetermined local path for all tests.
     """
-    mocker.patch('lib.settings.Settings.from_s3_path', side_effect=lambda x: Settings.from_file_path("config/settings/"))
+    mocker.patch(
+        "lambda_alerting.Settings.from_s3_path",
+        side_effect=lambda x: Settings.from_file_path("config/settings/"),
+    )
+
 
 @pytest.fixture(scope="function", autouse=True)
 def mock_cloudwatch_writer(mocker):
-    mocker.patch('lib.alerting_service.CloudWatchAlertWriter.write_event_to_cloudwatch')
+    mocker.patch("lambda_alerting.CloudWatchAlertWriter.write_event_to_cloudwatch")
+
 
 @pytest.fixture(scope="function", autouse=True)
 def mock_send_messages_to_sqs(mocker):
-    mocker.patch('lambda_alerting.send_messages_to_sqs')
-    
+    mocked_sqs_queue_sender = MagicMock()
+    mocked_sqs_queue_sender.send_messages.return_value = {"result": "magic_mock"}
+    mocker.patch("lambda_alerting.SQSQueueSender", return_value=mocked_sqs_queue_sender)
+
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_delivery_options(mocker):
+    mocker.patch(
+        "lambda_alerting.DeliveryOptionsResolver.get_delivery_options",
+        return_value=[{"delivery_method": "SES", "recipients": ["email@company.com"]}],
+    )
+
+
 ################################################################################################################################
 
 # GLUE JOB tests
