@@ -1,3 +1,4 @@
+from unittest.mock import patch, MagicMock
 import pytest
 import os
 from datetime import datetime, timezone, timedelta
@@ -16,39 +17,41 @@ from lib.aws.lambda_manager import LambdaManager
 # logger.addHandler(handler)
 
 # RUNNING tests:
-# pytest -q -s --stage-name <<your_env_name_here>> src/test_lambda_alerting.py
+# pytest -q -s src/test_lambda_alerting.py
 #
 # or
 # for specific resource_type
-# pytest -q -s -k test_step_fun --stage-name <<your_env_name_here>> src/test_lambda_alerting.py
+# pytest -q -s -k test_step_fun src/test_lambda_alerting.py
+
+NOTIFICATION_MESSAGES_RESULT = {"result": "magic_mock"}
 
 ################################################################################################################################
 
 
 @pytest.fixture(scope="session")
-def aws_props_init():
+def aws_props_init(config_path):
     # Inits AWS acc id and region (from local settings -> tooling env)
-    file_path = "../config/settings/"
-    settings = Settings.from_file_path(file_path)
+    settings = Settings.from_file_path(config_path)
     account_id, region = settings.get_tooling_account_props()
 
     return (account_id, region)
 
 
 @pytest.fixture(scope="session")
-def os_vars_init(stage_name, aws_props_init):
+def os_vars_init(aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
-    os.environ[
-        "NOTIFICATION_QUEUE_URL"
-    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    stage_name = "teststage"
+    os.environ["NOTIFICATION_QUEUE_URL"] = (
+        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    )
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ[
-        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
-    ] = f"log-group-salmon-alert-events-{stage_name}"
-    os.environ[
-        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
-    ] = f"log-stream-salmon-alert-events-{stage_name}"
+    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"] = (
+        f"log-group-salmon-alert-events-{stage_name}"
+    )
+    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"] = (
+        f"log-stream-salmon-alert-events-{stage_name}"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -61,6 +64,51 @@ def event_dyn_props_init(aws_props_init):
     version_str = current_time.strftime("%Y%m%d%H%M%S")
 
     return (account_id, region, time_str, epoch_time, version_str)
+
+
+################################################################################################################################
+
+# mocking AWS calls done in lambda_alerting
+
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_settings():
+    """
+    A module-scoped fixture that automatically mocks Settings.from_s3_path
+    to call Settings.from_file_path with a predetermined local path for all tests.
+    """
+    with patch(
+        "lambda_alerting.Settings.from_s3_path",
+        side_effect=lambda x: Settings.from_file_path("config/settings/"),
+    ) as _mock:
+        yield _mock
+
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_cloudwatch_writer():
+    with patch(
+        "lambda_alerting.CloudWatchAlertWriter.write_event_to_cloudwatch"
+    ) as _mock:
+        yield _mock
+
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_send_messages_to_sqs():
+    mocked_sqs_queue_sender = MagicMock()
+    mocked_sqs_queue_sender.send_messages.return_value = NOTIFICATION_MESSAGES_RESULT
+    with patch(
+        "lambda_alerting.SQSQueueSender", return_value=mocked_sqs_queue_sender
+    ) as _mock:
+        yield _mock
+
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_delivery_options():
+    with patch(
+        "lambda_alerting.DeliveryOptionsResolver.get_delivery_options",
+        return_value=[{"delivery_method": "SES", "recipients": ["email@company.com"]}],
+    ) as _mock:
+        yield _mock
 
 
 ################################################################################################################################
@@ -101,6 +149,7 @@ def test_glue_job1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_JOBS
     ), "Resouce type is incorrect"
+    assert result["messages"], "Event should have messages"
 
 
 def test_glue_job2(os_vars_init, event_dyn_props_init):
@@ -113,6 +162,7 @@ def test_glue_job2(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_JOBS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 def test_glue_job3(os_vars_init, event_dyn_props_init):
@@ -125,6 +175,7 @@ def test_glue_job3(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_JOBS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -168,6 +219,7 @@ def test_glue_workflow1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_WORKFLOWS
     ), "Resouce type is incorrect"
+    assert result["messages"], "Event should have messages"
 
 
 def test_glue_workflow2(os_vars_init, event_dyn_props_init):
@@ -180,6 +232,7 @@ def test_glue_workflow2(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_WORKFLOWS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -235,6 +288,7 @@ def test_step_function1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.STEP_FUNCTIONS
     ), "Resouce type is incorrect"
+    assert result["messages"], "Event should have messages"
 
 
 def test_step_function2(os_vars_init, event_dyn_props_init):
@@ -242,11 +296,12 @@ def test_step_function2(os_vars_init, event_dyn_props_init):
 
     result = lambda_handler(event, {})
 
-    assert result["event_is_alertable"] == False, "Event should raise alert"
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.STEP_FUNCTIONS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 def test_step_function3(os_vars_init, event_dyn_props_init):
@@ -254,11 +309,12 @@ def test_step_function3(os_vars_init, event_dyn_props_init):
 
     result = lambda_handler(event, {})
 
-    assert result["event_is_alertable"] == False, "Event should raise alert"
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
     assert result["event_is_monitorable"] == False, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.STEP_FUNCTIONS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -308,6 +364,7 @@ def test_glue_crawler1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_CRAWLERS
     ), "Resouce type is incorrect"
+    assert result["messages"], "Event should have messages"
 
 
 def test_glue_crawler2(os_vars_init, event_dyn_props_init):
@@ -317,11 +374,12 @@ def test_glue_crawler2(os_vars_init, event_dyn_props_init):
 
     result = lambda_handler(event, {})
 
-    assert result["event_is_alertable"] == False, "Event should raise alert"
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
     assert result["event_is_monitorable"] == True, "Event should be logged"
     assert (
         result["resource_type"] == resource_types.GLUE_CRAWLERS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -359,6 +417,7 @@ def test_glue_catalog_database1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_DATA_CATALOGS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -396,6 +455,7 @@ def test_glue_catalog_table1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_DATA_CATALOGS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -434,6 +494,7 @@ def test_glue_catalog_column1(os_vars_init, event_dyn_props_init):
     assert (
         result["resource_type"] == resource_types.GLUE_DATA_CATALOGS
     ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 ################################################################################################################################
@@ -494,6 +555,7 @@ def test_lambda_function_failed(os_vars_init, event_dyn_props_init):
     assert (
         LambdaManager.MESSAGE_PART_ERROR in event["detail"]["message"]
     ), "[ERROR] should be a part of the message"
+    assert result["messages"], "Event should have messages"
 
 
 def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
@@ -516,6 +578,7 @@ def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
 
 
 def test_lambda_function_completed(os_vars_init, event_dyn_props_init):
@@ -539,3 +602,4 @@ def test_lambda_function_completed(os_vars_init, event_dyn_props_init):
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"

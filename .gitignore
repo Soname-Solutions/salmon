@@ -4,3 +4,5 @@ __pycache__/
 venv/
 cdk.out/
 .venv
+.coverage
+.scannerwork
