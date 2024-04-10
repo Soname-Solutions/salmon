@@ -13,7 +13,7 @@ This article provides an overview of the Grafana instance and the pre-provisione
 
 The Grafana stack `cf-salmon-InfraToolingGrafanaStack-<<stage-name>>` is an **optional** component, so when you decide to deploy it, you will receive a Grafana instance along with the default SALMON dashboards. Grafana deployed using the Bitnami Grafana image from AWS Marketplace on Amazon EC2 and reads data from Amazon Timestream tables and CloudWatch log group: \
 \
-    ![Grafana Architecture](images/grafana-architecture.png "Grafana Architecture") 
+    ![Grafana Architecture](images/grafana/grafana-architecture.png "Grafana Architecture") 
 
 Refer to our [Configuration guide](docs/configuration.md) for more details on the Grafana configuration. 
 
@@ -27,7 +27,7 @@ To sign in to Grafana, follow these steps:
 ###  Managing Users and Dashboards <a name="managing-users"></a>
 After logged in, under "Dashboards", you will find the default dashboards within a dedicated folder named "Default SALMON Dashboards": \
 \
-    ![Default SALMON Dashboards](images/grafana-dashboards.png "Default SALMON Dashboards") 
+    ![Default SALMON Dashboards](images/grafana/grafana-dashboards.png "Default SALMON Dashboards") 
 
  These dashboards include:
  - **CloudWatch Logs Dashboard with Alert Events**: This dashboard provides insights into CloudWatch logs with alert events.
@@ -42,7 +42,7 @@ To help you get started with data visualization, we created the following dashbo
 ### Visualizing CloudWatch Alerts <a name="cw-dashboard"></a>
 The following CloudWatch dashboard visualizes Alerts from the dedicated CloudWatch log group: \
 \
-    ![CloudWatch Dashboard](images/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
+    ![CloudWatch Dashboard](images/grafana/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
 
 Dashboard features:
 - **Filtering Options**: Users can filter data by Resource type, Event Result, Event Status, and Resource name to focus on specific metrics and resources.
@@ -50,13 +50,13 @@ Dashboard features:
 - **Time Range**: By default, the dashboards display data for the last 24 hours in Coordinated Universal Time (UTC), but users have the flexibility to adjust the time range as needed. 
 - **Event Inspection**: `Event Details` can be inspected in JSON format for detailed examination of each event: \
 \
-    ![Inspect Value](images/grafana-inspect-value.png "Inspect Value")
+    ![Inspect Value](images/grafana/grafana-inspect-value.png "Inspect Value")
 
 
 ### Visualizing Timestream Metrics <a name="timestream-dashboard"></a>
 The following Timestream dashboard visualizes the metrics from the corresponding Timestream table: \
 \
-    ![Timestream Dashboard](images/timestream-dashboard.png "Timestream Dashboard sample") 
+    ![Timestream Dashboard](images/grafana/timestream-dashboard.png "Timestream Dashboard sample") 
 
 
 Dashboard features:
