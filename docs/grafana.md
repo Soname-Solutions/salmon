@@ -1,7 +1,7 @@
 # SALMON Dashboards
 
 * [Overview](#overview)
-    * [Sign In](#sign-in)
+    * [Sign in to Grafana](#sign-in)
     * [Managing Users and Dashboards](#managing-users)
 * [Dashboards](#dashboards)
     * [Visualizing CloudWatch Alerts](#cw-dashboard)
