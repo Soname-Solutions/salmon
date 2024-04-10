@@ -1,5 +1,5 @@
 
-# Salmon architecture overview
+# SALMON architecture overview
 
 *Note: This article uses Salmon-specific terminology which is defined in a short document here: [Key Concepts](docs/key_concepts.md).*
 

@@ -21,18 +21,18 @@ It can suit the need of a small team (you don't have to spend time developing yo
 
 - **Immediate Alerts**: Get instant notifications for pipeline failures, like a glitch in your Glue Job.\
 \
-    ![Alerts](/docs/images/alerting-email.png "Alerting email sample")
+    ![Alerts](docs/images/alerting-email.png "Alerting email sample")
 
 - **SLA Monitoring**: Track execution times, like Step Function durations, and spot when it exceeds the predefined threshold.
 - **Daily Digests**: Receive a comprehensive daily email summarizing your pipeline's health – perfect for a quick status check.\
 \
-    ![Daily Digest](/docs/images/digest-email.png "Daily Digest sample")
+    ![Daily Digest](docs/images/digest-email.png "Daily Digest sample")
 
 - **Team-Specific Notifications**: Operating with multiple teams or domains? Configure SALMON to logically group pipelines and resource, so it can send notifications to relevant recipients only.
 - **Statistics at Your Fingertips**: Gather detailed execution stats and access them through user-friendly dashboards.\
 \
-    ![CloudWatch Dashboard](/docs/images/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
-    ![Timestream Dashboard](/docs/images/timestream-dashboard.png "Timestream Dashboard sample")
+    ![CloudWatch Dashboard](docs/images/grafana/cloudwatch-dashboard.png "CloudWatch Dashboard sample")
+    ![Timestream Dashboard](docs/images/grafana/timestream-dashboard.png "Timestream Dashboard sample")
 
 - **Cross-Account and Region Support**: Monitor pipelines across various AWS accounts and regions in one central place.
 
@@ -45,7 +45,7 @@ For each AWS account and region where your pipelines are deployed (in SALMON's t
 With that setup:
 1. **Alert Handling**: Alerts, such as those for Step Function failures, are generated in the monitored account and sent through the EventBridge bus to the centralized location. There, alert information is parsed, formatted, and sent to the relevant recipients, be it individual emails, distribution lists, Slack channels, etc.
 2. **Metrics Collection**: Metrics data (from all monitored accounts and regions) is extracted periodically (by default, once every 5 minutes) and stored in a Timestream database.
-3. **Accessing Metrics Data**: You can access this data using SALMON's Grafana instance (optional) or by connecting a tool of your choice to the metrics database.  
+3. **Accessing Metrics Data**: You can access this data using SALMON's [Grafana](docs/grafana.md) instance (optional) or by connecting a tool of your choice to the metrics database.  
 Additionally, you can configure a daily digest to be sent out based on this metrics data.
 
 ![High-Level Diagram](docs/images/high-level-diagram.svg "High-Level Diagram")

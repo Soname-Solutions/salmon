@@ -1,8 +1,8 @@
 # SALMON Configuration
 
 * [Overview](#overview)
-    * [Configuration Structure](#conf-structure)
     * [Quick Start](#quick-start)
+    * [Configuration Structure](#conf-structure)    
 * [Configuration Steps](#configuration-steps)
     1. [Create Configuration Files](#create-configuration-files)
     2. [Configure General Settings](#configure-general-settings)
@@ -14,7 +14,18 @@
 ## Overview <a name="overview"></a>
 This guide provides instructions on how to configure the SALMON project to suit your monitoring and alerting needs. 
 
-#### Configuration Structure: <a name="conf-structure"></a>
+#### Quick Start <a name="quick-start"></a>
+
+Before the deployment:
+* **Prepare Configuration Files**: Sample configurations serving as templates are located at the `/config/sample_settings` directory. Copy these templates to the `/config/settings` directory if necessary and fill in the required values as per your requirements (refer to [Configuration Steps](#configuration-steps)).
+
+The configuration files from the `/config/settings` directory are deployed as a part of the AWS CDK deployment process:
+* Configuration files are validated and automatically uploaded to the AWS S3 bucket `s3-salmon-settings-<<stage-name>>`.
+* The CDK project references these settings from the S3 bucket during runtime, utilizing the configurations to set up the necessary infrastructure.
+> **NOTE:**
+> If any modifications are made to the configuration files locally, you would need to redeploy the stacks in order to apply the changes to the S3 bucket (refer to [Deployment and installation](deployment.md) for more details).
+
+#### Configuration Structure <a name="conf-structure"></a>
 ```
 project_root/
 │
@@ -40,17 +51,6 @@ The project utilizes the following configuration files:
 | `monitoring_groups.json` | Defines all resources to be monitored, grouped logically. |
 | `recipients.json`        | Specifies recipients for alerts and daily digest reports, along with their subscriptions to monitoring groups. |
 | `replacements.json`      | [Optional] Contains a replacements list for placeholders in other configuration files. |
-
-#### Quick Start <a name="quick-start"></a>
-
-Before the deployment:
-* **Prepare Configuration Files**: Sample configurations serving as templates are located at the `/config/sample_settings` directory. Copy these templates to the `/config/settings` directory if necessary and fill in the required values as per your requirements (refer to [Configuration Steps](#configuration-steps)).
-
-The configuration files from the `/config/settings` directory are deployed as a part of the AWS CDK deployment process:
-* Configuration files are validated and automatically uploaded to the AWS S3 bucket `s3-salmon-settings-<<stage-name>>`.
-* The CDK project references these settings from the S3 bucket during runtime, utilizing the configurations to set up the necessary infrastructure.
-> **NOTE:**
-> If any modifications are made to the configuration files locally, you would need to redeploy the stacks in order to apply the changes to the S3 bucket (refer to [Deployment and installation](deployment.md) for more details).
 
 ## Configuration Steps
 
