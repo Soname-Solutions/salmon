@@ -22,7 +22,7 @@ def _get_formatted_message(message_body: list, delivery_method_type: str) -> str
         try:
             object_type = [key for key in message_object.keys() if key != "style"][0]
         except IndexError:
-            raise KeyError(f"Message object type {object_type} is not set.")
+            raise KeyError(f"Message object type is not set")
 
         content = message_object.get(object_type)
         style = message_object.get("style")
@@ -59,10 +59,12 @@ def lambda_handler(event, context):
         message_info = notification_message.get("message")
 
         delivery_method = delivery_options_info.get("delivery_method")
-        delivery_method_type = delivery_method.get("delivery_method_type")
-
         if delivery_method is None:
-            raise KeyError("Delivery method is not set.")
+            raise KeyError("Delivery method is not set.")        
+
+        delivery_method_type = delivery_method.get("delivery_method_type")
+        if delivery_method_type is None:
+            raise KeyError("Delivery method type is not set.")                
 
         message_subject = message_info.get("message_subject")
         message_body = message_info.get("message_body")

@@ -1,0 +1,1 @@
+from lambda_extract_metrics import lambda_handler

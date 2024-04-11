@@ -27,16 +27,6 @@ NOTIFICATION_MESSAGES_RESULT = {"result": "magic_mock"}
 
 ################################################################################################################################
 
-
-@pytest.fixture(scope="session")
-def aws_props_init(config_path):
-    # Inits AWS acc id and region (from local settings -> tooling env)
-    settings = Settings.from_file_path(config_path)
-    account_id, region = settings.get_tooling_account_props()
-
-    return (account_id, region)
-
-
 @pytest.fixture(scope="session")
 def os_vars_init(aws_props_init):
     # Sets up necessary lambda OS vars

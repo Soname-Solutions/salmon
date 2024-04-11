@@ -1,0 +1,1 @@
+from lambda_extract_metrics_orch import lambda_handler
