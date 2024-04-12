@@ -1,3 +1,5 @@
 pytest
 botocore
 pytest-mock
+coverage
+beautifulsoup4

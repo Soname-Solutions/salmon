@@ -1,0 +1,1 @@
+from lambda_digest import lambda_handler
