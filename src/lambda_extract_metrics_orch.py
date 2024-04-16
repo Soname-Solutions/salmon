@@ -13,7 +13,6 @@ logger.setLevel(logging.INFO)
 
 lambda_client = boto3.client('lambda')
 
-
 def lambda_handler(event, context):
     # it is triggered once in <x> minutes by eventbridge schedule rule
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
@@ -43,15 +42,3 @@ def lambda_handler(event, context):
         )
         logger.info(f"Invoked lambda {lambda_extract_metrics_name} for monitoring group: {monitoring_group}")
 
-
-if __name__ == "__main__":
-    handler = logging.StreamHandler()    
-    logger.addHandler(handler) # so we see logged messages in console when debugging
-
-    os.environ["SETTINGS_S3_PATH"] = "s3://s3-salmon-settings-devam/settings/"
-    os.environ["LAMBDA_EXTRACT_METRICS_NAME"] = "lambda-salmon-extract-metrics-devam"
-    os.environ[
-        "TIMESTREAM_METRICS_DB_NAME"
-    ] = "timestream-salmon-metrics-events-storage-devam"    
-
-    lambda_handler(None, None)

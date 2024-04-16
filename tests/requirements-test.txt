@@ -3,3 +3,4 @@ botocore
 pytest-mock
 coverage
 beautifulsoup4
+moto
