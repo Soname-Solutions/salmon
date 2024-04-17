@@ -4,7 +4,7 @@ import json
 import boto3
 
 from moto import mock_aws
-from lambda_extract_metrics import lambda_handler
+from lambda_extract_metrics import lambda_handler, process_all_resources_by_env_and_type
 from unittest.mock import patch, call, MagicMock, ANY
 
 from lib.settings.settings import Settings
@@ -57,6 +57,21 @@ def os_vars_init(aws_props_init):
     os.environ["ALERTS_EVENT_BUS_NAME"] = f"eventbus-salmon-alerting-{stage_name}"
 
 
+@pytest.fixture(scope="module")
+def os_vars_values(os_vars_init):
+    settings_s3_path = os.environ["SETTINGS_S3_PATH"]
+    iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
+    timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    alerts_event_bus_name = os.environ["ALERTS_EVENT_BUS_NAME"]
+
+    return (
+        settings_s3_path,
+        iam_role_name,
+        timestream_metrics_db_name,
+        alerts_event_bus_name,
+    )
+
+
 #########################################################################################
 
 
@@ -67,6 +82,11 @@ class MockedSettings:
 
     def get_monitoring_group_content(self, group_name: str) -> dict:
         return {"content": "define in a specific test"}
+     
+    def get_monitored_environment_props(
+        self
+    ):
+        return '1234567890','us-east-1'
 
 
 @pytest.fixture(scope="module")
@@ -82,9 +102,103 @@ def mock_process_all_resources_by_env_and_type():
     ) as mocked_function:
         yield mocked_function
 
+@pytest.fixture(scope="function")
+def mock_process_individual_resource():
+    with patch(
+        "lambda_extract_metrics.process_individual_resource"
+    ) as mocked_function:
+        yield mocked_function        
+
 
 #########################################################################################
 
+
+def test_process_all_resources_by_env_and_type_glue_jobs(os_vars_values, mock_settings, mock_process_individual_resource):
+    (
+        settings_s3_path,
+        iam_role_name,
+        timestream_metrics_db_name,
+        alerts_event_bus_name,
+    ) = os_vars_values
+
+    # making sure calls for process_individual_resource are made and proper AWS client is used 
+    monitored_environment_name = "env1"
+    resource_type = "glue_jobs"
+    resource_names = ["glue_job1", "glue_job2"]
+
+    process_all_resources_by_env_and_type(
+        monitored_environment_name=monitored_environment_name,
+        resource_type=resource_type,
+        resource_names=resource_names,
+        settings=mock_settings,
+        iam_role_name=iam_role_name,
+        timestream_metrics_db_name=timestream_metrics_db_name,
+        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+        alerts_event_bus_name=alerts_event_bus_name,
+    )
+
+    # mock process_individual_resource
+    expected_calls = []
+    for resource_name in resource_names:
+        expected_calls.append(call(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_name=resource_name,
+            boto3_client_creator=ANY,
+            aws_client_name="glue",
+            timestream_writer=ANY,
+            timestream_metrics_db_name=timestream_metrics_db_name,
+            timestream_metrics_table_name=ANY,
+            last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+            alerts_event_bus_name=alerts_event_bus_name,
+        ))
+
+    mock_process_individual_resource.assert_has_calls(expected_calls)
+
+def test_process_all_resources_by_env_and_type_glue_workflows(os_vars_values, mock_settings, mock_process_individual_resource):
+    (
+        settings_s3_path,
+        iam_role_name,
+        timestream_metrics_db_name,
+        alerts_event_bus_name,
+    ) = os_vars_values
+
+    # making sure calls for process_individual_resource are made and proper AWS client is used 
+    monitored_environment_name = "env1"
+    resource_type = "glue_workflows"
+    resource_names = ["glue_workflow1"]
+
+    process_all_resources_by_env_and_type(
+        monitored_environment_name=monitored_environment_name,
+        resource_type=resource_type,
+        resource_names=resource_names,
+        settings=mock_settings,
+        iam_role_name=iam_role_name,
+        timestream_metrics_db_name=timestream_metrics_db_name,
+        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+        alerts_event_bus_name=alerts_event_bus_name,
+    )
+
+    # mock process_individual_resource
+    expected_calls = []
+    for resource_name in resource_names:
+        expected_calls.append(call(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_name=resource_name,
+            boto3_client_creator=ANY,
+            aws_client_name="glue",
+            timestream_writer=ANY,
+            timestream_metrics_db_name=timestream_metrics_db_name,
+            timestream_metrics_table_name=ANY,
+            last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+            alerts_event_bus_name=alerts_event_bus_name,
+        ))
+
+    mock_process_individual_resource.assert_has_calls(expected_calls)
+
+
+#########################################################################################
 def test_lambda_handler_empty_group_content(
     os_vars_init, mock_settings, mock_process_all_resources_by_env_and_type
 ):
@@ -107,7 +221,10 @@ def test_lambda_handler_empty_group_content(
 
 
 def test_lambda_handler_with_group_content(
-    os_vars_init, mock_settings, mock_process_all_resources_by_env_and_type
+    os_vars_init,
+    mock_settings,
+    mock_process_all_resources_by_env_and_type,
+    os_vars_values,
 ):
     monitoring_group = "group1"
     event = {
@@ -141,6 +258,12 @@ def test_lambda_handler_with_group_content(
         ("env2", "glue_jobs", ["glue_job2"]),
         ("env1", "glue_workflows", ["glue_workflow1"]),
     ]
+    (
+        settings_s3_path,
+        iam_role_name,
+        timestream_metrics_db_name,
+        alerts_event_bus_name,
+    ) = os_vars_values
     for call_param in call_params_in_order:
         expected_calls.append(
             call(
@@ -148,13 +271,14 @@ def test_lambda_handler_with_group_content(
                 resource_type=call_param[1],
                 resource_names=call_param[2],
                 settings=ANY,
-                iam_role_name=os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"],
-                timestream_metrics_db_name=os.environ["TIMESTREAM_METRICS_DB_NAME"],
+                iam_role_name=iam_role_name,
+                timestream_metrics_db_name=timestream_metrics_db_name,
                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-                alerts_event_bus_name=os.environ["ALERTS_EVENT_BUS_NAME"],
+                alerts_event_bus_name=alerts_event_bus_name,
             )
         )
 
     mock_process_all_resources_by_env_and_type.assert_has_calls(expected_calls)
+
 
 #########################################################################################
