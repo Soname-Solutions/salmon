@@ -182,37 +182,3 @@ def lambda_handler(event, context):
                     last_update_times=last_update_times,
                     alerts_event_bus_name=alerts_event_bus_name,
                 )
-
-
-if __name__ == "__main__":
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)  # so we see logged messages in console when debugging
-
-    timestream_metrics_db_name = "timestream-salmon-metrics-events-storage-devam"
-    iam_role = "role-salmon-monitored-acc-extract-metrics-devam"
-    s3_path = "s3://s3-salmon-settings-devam/settings/"
-    alerts_event_bus_name = "eventbus-salmon-alerting-devam"
-
-    os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"] = iam_role
-    os.environ["TIMESTREAM_METRICS_DB_NAME"] = timestream_metrics_db_name
-    os.environ["SETTINGS_S3_PATH"] = s3_path
-    os.environ["ALERTS_EVENT_BUS_NAME"] = alerts_event_bus_name
-
-    # adding last_update_times
-    from lib.aws.timestream_manager import TimeStreamQueryRunner
-    from lib.metrics_extractor import retrieve_last_update_time_for_all_resources
-
-    timestream_query_client = boto3.client("timestream-query")
-    query_runner = TimeStreamQueryRunner(timestream_query_client)
-    last_update_times = retrieve_last_update_time_for_all_resources(
-        query_runner, timestream_metrics_db_name, logger
-    )
-
-    monitoring_group = "salmonts_workflows_sparkjobs"
-
-    event = {
-        "monitoring_group": monitoring_group,
-        "last_update_times": last_update_times,
-    }
-
-    lambda_handler(event, None)
