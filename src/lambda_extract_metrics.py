@@ -75,16 +75,18 @@ def process_individual_resource(
     records, common_attributes = metrics_extractor.prepare_metrics_data(
         since_time=since_time
     )
-    logger.info(f"Extracted {len(records)} records")
+    metrics_record_count = len(records)
+    logger.info(f"Extracted {metrics_record_count} records")
 
     # # 4. Write extracted data to timestream table
     metrics_extractor.write_metrics(
         records, common_attributes, timestream_table_writer=timestream_writer
     )
-    logger.info(f"Written {len(records)} records to timestream")
+    logger.info(f"Written {metrics_record_count} records to timestream")
 
     # for resource types where alerts are processed inside Salmon (not by default EventBridge functionality)
-    if hasattr(metrics_extractor, 'send_alerts'):
+    alerts_send = False
+    if hasattr(metrics_extractor, "send_alerts"):
         logger.info(f"Sending alerts to event bus {alerts_event_bus_name}")
         account_id, region = (
             boto3_client_creator.account_id,
@@ -92,6 +94,9 @@ def process_individual_resource(
         )
         metrics_extractor.send_alerts(alerts_event_bus_name, account_id, region)
         logger.info(f"Alerts have been sent successfully")
+        alerts_send = True
+
+    return {"metrics_records_written": metrics_record_count, "alerts_sent": alerts_send}
 
 
 def process_all_resources_by_env_and_type(
@@ -154,7 +159,7 @@ def lambda_handler(event, context):
     settings = Settings.from_s3_path(
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
-    content = settings.get_monitoring_group_content(monitoring_group_name)    
+    content = settings.get_monitoring_group_content(monitoring_group_name)
 
     for attr_name in content:
         attr_value = content[attr_name]
