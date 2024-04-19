@@ -75,16 +75,18 @@ def process_individual_resource(
     records, common_attributes = metrics_extractor.prepare_metrics_data(
         since_time=since_time
     )
-    logger.info(f"Extracted {len(records)} records")
+    metrics_record_count = len(records)
+    logger.info(f"Extracted {metrics_record_count} records")
 
     # # 4. Write extracted data to timestream table
     metrics_extractor.write_metrics(
         records, common_attributes, timestream_table_writer=timestream_writer
     )
-    logger.info(f"Written {len(records)} records to timestream")
+    logger.info(f"Written {metrics_record_count} records to timestream")
 
     # for resource types where alerts are processed inside Salmon (not by default EventBridge functionality)
-    if hasattr(metrics_extractor, 'send_alerts'):
+    alerts_send = False
+    if hasattr(metrics_extractor, "send_alerts"):
         logger.info(f"Sending alerts to event bus {alerts_event_bus_name}")
         account_id, region = (
             boto3_client_creator.account_id,
@@ -92,6 +94,9 @@ def process_individual_resource(
         )
         metrics_extractor.send_alerts(alerts_event_bus_name, account_id, region)
         logger.info(f"Alerts have been sent successfully")
+        alerts_send = True
+
+    return {"metrics_records_written": metrics_record_count, "alerts_sent": alerts_send}
 
 
 def process_all_resources_by_env_and_type(
@@ -154,7 +159,7 @@ def lambda_handler(event, context):
     settings = Settings.from_s3_path(
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
-    content = settings.get_monitoring_group_content(monitoring_group_name)    
+    content = settings.get_monitoring_group_content(monitoring_group_name)
 
     for attr_name in content:
         attr_value = content[attr_name]
@@ -182,37 +187,3 @@ def lambda_handler(event, context):
                     last_update_times=last_update_times,
                     alerts_event_bus_name=alerts_event_bus_name,
                 )
-
-
-if __name__ == "__main__":
-    handler = logging.StreamHandler()
-    logger.addHandler(handler)  # so we see logged messages in console when debugging
-
-    timestream_metrics_db_name = "timestream-salmon-metrics-events-storage-devam"
-    iam_role = "role-salmon-monitored-acc-extract-metrics-devam"
-    s3_path = "s3://s3-salmon-settings-devam/settings/"
-    alerts_event_bus_name = "eventbus-salmon-alerting-devam"
-
-    os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"] = iam_role
-    os.environ["TIMESTREAM_METRICS_DB_NAME"] = timestream_metrics_db_name
-    os.environ["SETTINGS_S3_PATH"] = s3_path
-    os.environ["ALERTS_EVENT_BUS_NAME"] = alerts_event_bus_name
-
-    # adding last_update_times
-    from lib.aws.timestream_manager import TimeStreamQueryRunner
-    from lib.metrics_extractor import retrieve_last_update_time_for_all_resources
-
-    timestream_query_client = boto3.client("timestream-query")
-    query_runner = TimeStreamQueryRunner(timestream_query_client)
-    last_update_times = retrieve_last_update_time_for_all_resources(
-        query_runner, timestream_metrics_db_name, logger
-    )
-
-    monitoring_group = "salmonts_workflows_sparkjobs"
-
-    event = {
-        "monitoring_group": monitoring_group,
-        "last_update_times": last_update_times,
-    }
-
-    lambda_handler(event, None)
