@@ -31,7 +31,7 @@ class BaseDigestDataExtractor(ABC):
     def get_query(self, start_time: datetime, end_time: datetime):
         pass
 
-    def extract_runs(self, query: str) -> dict:
+    def extract_runs(self, query: str, resource_type: str) -> dict:
         timestream_query_client = boto3.client("timestream-query")
         query_runner = TimeStreamQueryRunner(
             timestream_query_client=timestream_query_client
