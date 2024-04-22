@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from lib.metrics_extractor import GlueJobsMetricExtractor
-from lib.aws.glue_manager import JobRun, GlueManager
+from lib.aws.glue_manager import JobRun
 from lib.aws import Boto3ClientCreator
-from unittest.mock import MagicMock
 from unittest.mock import patch
 import pytest
 
@@ -90,53 +89,14 @@ JOB_RUN_RUNNING = JobRun(
 
 ####################################################################
 
-
 @pytest.fixture(scope="module")
 def boto3_client_creator():
     return Boto3ClientCreator("1234567890", "us-east-1")
 
-
-# @pytest.fixture
-# def mock_glue_manager():
-#     with patch("lib.metrics_extractor.glue_jobs_metrics_extractor.GlueManager") as mock:
-#         instance = mock.return_value
-
-#         def is_job_final_state_proxy(job):
-#             return GlueManager.is_job_final_state(job)  # Access the real method
-
-#         instance.is_job_final_state.side_effect = MagicMock(side_effect=GlueManager.is_job_final_state)
-
-#         yield instance
-
-
-@pytest.fixture
-def mock_glue_manager():
-    class MockedGlueManager:
-        def __init__(self, glue_client=None):
-            return None
-
-        @classmethod
-        def is_job_final_state(cls, state: str) -> bool:
-            return GlueManager.is_job_final_state(state)
-
-        # to be overriden in specific tests
-        def get_job_runs(self, job_name: str) -> list[JobRun]:
-            return None
-
-    with patch(
-        "lib.metrics_extractor.glue_jobs_metrics_extractor.GlueManager",
-        MockedGlueManager,
-    ) as mock:
-        yield MockedGlueManager
-
-
 ####################################################################
-
 
 def contains_required_items(record, ts_record_subkey, required_items):
     record_items = [x["Name"] for x in record[ts_record_subkey]]
-    # print(f"Record {ts_record_subkey} = {record_items}")
-    # print(f"Required {ts_record_subkey} = {required_items}")
     for dimension in required_items:
         if dimension not in record_items:
             return False
@@ -153,10 +113,10 @@ def get_measure_value(record, metric_name):
 
 
 # here we check number of records returned and fields (dimensions and metric values)
-def test_two_completed_jobs_records_integrity(boto3_client_creator, mock_glue_manager):
+def test_two_completed_jobs_records_integrity(boto3_client_creator):
 
     # explicitly return 2 good records
-    with patch.object(mock_glue_manager, "get_job_runs") as instance:
+    with patch("lib.metrics_extractor.glue_jobs_metrics_extractor.GlueManager.get_job_runs") as instance:
         instance.return_value = [
             JOB_RUN_COMPLETED_WITH_DPU,
             JOB_RUN_COMPLETED_WITHOUT_DPU,
@@ -189,7 +149,7 @@ def test_two_completed_jobs_records_integrity(boto3_client_creator, mock_glue_ma
 
         record_in_scope = records[0]
 
-        mock_glue_manager.get_job_runs.assert_called_once()  # mocked call executed as expected
+        instance.assert_called_once()  # mocked call executed as expected
         assert (
             len(records) == 3
         ), "There should be three glue job run record"  # we got both records
@@ -202,10 +162,10 @@ def test_two_completed_jobs_records_integrity(boto3_client_creator, mock_glue_ma
 
 
 # here we check number of records returned and fields (dimensions and metric values)
-def test_skip_running_job(boto3_client_creator, mock_glue_manager):
+def test_skip_running_job(boto3_client_creator):
 
     # explicitly return 2 good records
-    with patch.object(mock_glue_manager, "get_job_runs") as instance:
+    with patch("lib.metrics_extractor.glue_jobs_metrics_extractor.GlueManager.get_job_runs") as instance:
         instance.return_value = [
             JOB_RUN_COMPLETED_WITH_DPU,
             JOB_RUN_RUNNING,
@@ -225,16 +185,16 @@ def test_skip_running_job(boto3_client_creator, mock_glue_manager):
             since_time=since_time
         )
 
-        mock_glue_manager.get_job_runs.assert_called_once()  # mocked call executed as expected
+        instance.assert_called_once()  # mocked call executed as expected
         assert (
             len(records) == 1
         ), "There should be just one glue job run record"  # we only take completed jobs
 
 # here we check if we provide proper dpu_seconds value - either from glue output, or calculating ourselves when needed
-def test_dpu_seconds_calculated(boto3_client_creator, mock_glue_manager):
+def test_dpu_seconds_calculated(boto3_client_creator):
 
     # explicitly return 2 good records
-    with patch.object(mock_glue_manager, "get_job_runs") as instance:
+    with patch("lib.metrics_extractor.glue_jobs_metrics_extractor.GlueManager.get_job_runs") as instance:
         instance.return_value = [
             JOB_RUN_COMPLETED_WITH_DPU,
             JOB_RUN_COMPLETED_WITHOUT_DPU,
@@ -254,7 +214,7 @@ def test_dpu_seconds_calculated(boto3_client_creator, mock_glue_manager):
             since_time=since_time
         )
 
-        mock_glue_manager.get_job_runs.assert_called_once()  # mocked call executed as expected
+        instance.assert_called_once()  # mocked call executed as expected
         assert (
             len(records) == 2
         ), "There should be two glue job run record"  # we only take completed jobs
