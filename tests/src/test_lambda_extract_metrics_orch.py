@@ -60,14 +60,14 @@ def os_vars_init(aws_props_init):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def mock_settings():
+def mock_settings(config_path):
     """
     A module-scoped fixture that automatically mocks Settings.from_s3_path
     to call Settings.from_file_path with a predetermined local path for all tests.
     """
     with patch(
         "lambda_alerting.Settings.from_s3_path",
-        side_effect=lambda x: Settings.from_file_path("config/settings/"),
+        side_effect=lambda x: Settings.from_file_path(config_path),
     ) as _mock:
         yield _mock
 
