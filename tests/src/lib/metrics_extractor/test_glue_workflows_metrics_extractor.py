@@ -98,8 +98,8 @@ EXEC_RUNNING = WorkflowRun(
 def test_two_completed_records_integrity(boto3_client_creator):
     
     # explicitly return 2 good records
-    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_step_function_executions:
-        mocked_get_step_function_executions.return_value = [EXEC_SUCCESS1, EXEC_SUCCESS2]
+    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_executions:
+        mocked_get_executions.return_value = [EXEC_SUCCESS1, EXEC_SUCCESS2]
 
         extractor = GlueWorkflowsMetricExtractor(
             boto3_client_creator=boto3_client_creator,
@@ -128,7 +128,7 @@ def test_two_completed_records_integrity(boto3_client_creator):
 
         record_in_scope = records[0]
 
-        mocked_get_step_function_executions.assert_called_once()  # mocked call executed as expected
+        mocked_get_executions.assert_called_once()  # mocked call executed as expected
         assert (
             len(records) == 2
         ), "There should be two run records"  # we got both records
@@ -144,8 +144,8 @@ def test_two_completed_records_integrity(boto3_client_creator):
 def test_skip_running_execution(boto3_client_creator):
 
     # explicitly return 2 good records, (1 is not completed)
-    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_step_function_executions:
-        mocked_get_step_function_executions.return_value = [EXEC_SUCCESS1, EXEC_RUNNING]
+    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_executions:
+        mocked_get_executions.return_value = [EXEC_SUCCESS1, EXEC_RUNNING]
 
         extractor = GlueWorkflowsMetricExtractor(
             boto3_client_creator=boto3_client_creator,
@@ -161,7 +161,7 @@ def test_skip_running_execution(boto3_client_creator):
             since_time=since_time
         )
 
-        mocked_get_step_function_executions.assert_called_once()  # mocked call executed as expected
+        mocked_get_executions.assert_called_once()  # mocked call executed as expected
         assert (
             len(records) == 1
         ), "There should be just one execution record"  # we only take completed executions
@@ -172,8 +172,8 @@ def test_skip_running_execution(boto3_client_creator):
 def test_failed_job_and_error(boto3_client_creator):
 
     # explicitly return 2 good records, (1 is not completed)
-    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_step_function_executions:
-        mocked_get_step_function_executions.return_value = [EXEC_SUCCESS1, EXEC_FAILED]
+    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_executions:
+        mocked_get_executions.return_value = [EXEC_SUCCESS1, EXEC_FAILED]
 
         extractor = GlueWorkflowsMetricExtractor(
             boto3_client_creator=boto3_client_creator,
@@ -189,7 +189,7 @@ def test_failed_job_and_error(boto3_client_creator):
             since_time=since_time
         )                
 
-        mocked_get_step_function_executions.assert_called_once()  # mocked call executed as expected
+        mocked_get_executions.assert_called_once()  # mocked call executed as expected
         assert (
             len(records) == 2
         ), "There should be just two execution records"  
@@ -203,8 +203,8 @@ def test_failed_job_and_error(boto3_client_creator):
 # here we check handling failed jobs
 def test_send_alerts(boto3_client_creator):
     # explicitly return 2 good records, (1 is not completed)
-    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_step_function_executions:
-        mocked_get_step_function_executions.return_value = [EXEC_SUCCESS1, EXEC_RUNNING, EXEC_FAILED]
+    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_executions:
+        mocked_get_executions.return_value = [EXEC_SUCCESS1, EXEC_RUNNING, EXEC_FAILED]
 
         extractor = GlueWorkflowsMetricExtractor(
             boto3_client_creator=boto3_client_creator,

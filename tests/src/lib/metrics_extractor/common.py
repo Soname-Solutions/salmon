@@ -20,6 +20,13 @@ def contains_required_items(record, ts_record_subkey, required_items):
 
     return True
 
+def get_dimension_value(record, dimension_name):
+    dim_data = record["Dimensions"]
+    for dim_entry in dim_data:
+        if dim_entry["Name"] == dimension_name:
+            return dim_entry["Value"]
+
+    return None
 
 def get_measure_value(record, metric_name):
     measure_data = record["MeasureValues"]
