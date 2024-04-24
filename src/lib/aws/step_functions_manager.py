@@ -12,7 +12,7 @@ class ExecutionData(BaseModel):
     name: str
     status: str
     startDate: datetime
-    stopDate: datetime
+    stopDate: Optional[datetime]
 
     @property
     def IsSuccess(self) -> bool:

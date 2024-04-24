@@ -84,9 +84,11 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             records.append(
                 {
                     "Dimensions": dimensions,
-                    "MeasureName": self.EXECUTION_MEASURE_NAME
-                    if lambda_log.IsReportEvent
-                    else self.ERROR_MEASURE_NAME,
+                    "MeasureName": (
+                        self.EXECUTION_MEASURE_NAME
+                        if lambda_log.IsReportEvent
+                        else self.ERROR_MEASURE_NAME
+                    ),
                     "MeasureValueType": "MULTI",
                     "MeasureValues": measure_values,
                     "Time": record_time,
@@ -164,5 +166,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
 
             if events:
                 events_manager = EventsManager()
-                print(f"Lambda extractor: Sending {len(events)} events to EventBridge")
+                event_count = len(events)
+                print(f"Lambda extractor: Sending {event_count} events to EventBridge")
                 events_manager.put_events(events=events)
+                return {"events_sent": event_count}

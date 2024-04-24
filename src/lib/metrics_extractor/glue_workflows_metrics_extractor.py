@@ -149,17 +149,21 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
         """
         if self.workflow_runs:
             events = []
-            for workflow_run in self.workflow_runs:
-                events.append(
-                    self.generate_event(
-                        workflowRun=workflow_run,
-                        event_bus_name=event_bus_name,
-                        workflow_aws_account=workflow_aws_account,
-                        workflow_aws_region=workflow_aws_region,
+            for workflow_run in self.workflow_runs:                        
+                if GlueManager.is_workflow_final_state(workflow_run.Status):
+                    events.append(
+                        self.generate_event(
+                            workflowRun=workflow_run,
+                            event_bus_name=event_bus_name,
+                            workflow_aws_account=workflow_aws_account,
+                            workflow_aws_region=workflow_aws_region,
+                        )
                     )
-                )
 
             if events:
                 events_manager = EventsManager()
-                print(f"GlueWF extractor: Sending {len(events)} events to EventBridge")
+                event_count = len(events)
+                print(f"GlueWF extractor: Sending {event_count} events to EventBridge")
                 events_manager.put_events(events=events)
+                return {"events_sent" : event_count}
+
