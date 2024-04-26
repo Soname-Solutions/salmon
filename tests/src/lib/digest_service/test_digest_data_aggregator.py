@@ -371,7 +371,7 @@ def test_get_aggregated_runs_with_warnings(
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggreagted_runs, expected_summary_entry"),
+    ("scenario, aggregated_runs, expected_summary_entry"),
     [
         (
             "scen1-no-runs",
@@ -410,10 +410,10 @@ def test_get_aggregated_runs_with_warnings(
     ],
 )
 def test_get_summary_entry_with_empty_data(
-    scenario, aggreagted_runs, expected_summary_entry
+    scenario, aggregated_runs, expected_summary_entry
 ):
     digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggreagted_runs)
+    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
 
     assert (
         returned_summary_entry == expected_summary_entry
@@ -421,7 +421,7 @@ def test_get_summary_entry_with_empty_data(
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggreagted_runs, expected_summary_entry"),
+    ("scenario, aggregated_runs, expected_summary_entry"),
     [
         (
             "scen1-success_runs",
@@ -449,10 +449,10 @@ def test_get_summary_entry_with_empty_data(
     ],
 )
 def test_get_summary_entry_with_success_runs(
-    scenario, aggreagted_runs, expected_summary_entry
+    scenario, aggregated_runs, expected_summary_entry
 ):
     digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggreagted_runs)
+    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
 
     assert (
         returned_summary_entry == expected_summary_entry
@@ -460,7 +460,7 @@ def test_get_summary_entry_with_success_runs(
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggreagted_runs, expected_summary_entry"),
+    ("scenario, aggregated_runs, expected_summary_entry"),
     [
         (
             "scen1-errors",
@@ -488,10 +488,10 @@ def test_get_summary_entry_with_success_runs(
     ],
 )
 def test_get_summary_entry_with_errors(
-    scenario, aggreagted_runs, expected_summary_entry
+    scenario, aggregated_runs, expected_summary_entry
 ):
     digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggreagted_runs)
+    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
 
     assert (
         returned_summary_entry == expected_summary_entry
@@ -499,7 +499,7 @@ def test_get_summary_entry_with_errors(
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggreagted_runs, expected_summary_entry"),
+    ("scenario, aggregated_runs, expected_summary_entry"),
     [
         (
             "scen1-warnings",
@@ -527,10 +527,10 @@ def test_get_summary_entry_with_errors(
     ],
 )
 def test_get_summary_entry_with_warnings(
-    scenario, aggreagted_runs, expected_summary_entry
+    scenario, aggregated_runs, expected_summary_entry
 ):
     digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggreagted_runs)
+    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
 
     assert (
         returned_summary_entry == expected_summary_entry
