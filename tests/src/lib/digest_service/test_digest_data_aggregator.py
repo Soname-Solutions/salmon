@@ -420,7 +420,7 @@ def test_get_summary_entry_with_empty_data(
         (
             "scen1-success_runs",
             {
-                "resource1": {
+                "glue-job-test": {
                     "Status": DigestSettings.STATUS_OK,
                     "Executions": 5,
                     "Failures": 0,
