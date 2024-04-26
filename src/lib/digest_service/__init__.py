@@ -6,6 +6,7 @@ from .digest_data_extractor import (
     GlueDataCatalogsDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
+    DigestException,
 )
 from .digest_data_aggregator import DigestDataAggregator
 from .digest_message_builder import DigestMessageBuilder
