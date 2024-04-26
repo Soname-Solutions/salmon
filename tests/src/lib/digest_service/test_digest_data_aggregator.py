@@ -6,7 +6,7 @@ from lib.digest_service import DigestDataAggregator
 @pytest.mark.parametrize(
     (
         "scenario, resource_name, resource_type, extracted_runs, resources_config, expected_status, "
-        "expected_executions, expected_failures"
+        "expected_executions, expected_failures, expected_comments"
     ),
     [
         (
@@ -18,6 +18,7 @@ from lib.digest_service import DigestDataAggregator
             DigestSettings.STATUS_OK,
             0,
             0,
+            "",
         ),
         (
             "scen2-one-run-expected",
@@ -28,6 +29,7 @@ from lib.digest_service import DigestDataAggregator
             DigestSettings.STATUS_ERROR,
             0,
             1,
+            "0 runs during the monitoring period (at least 1 expected)",
         ),
     ],
 )
@@ -40,6 +42,7 @@ def test_get_aggregated_runs_empty_extracted_runs(
     expected_status,
     expected_executions,
     expected_failures,
+    expected_comments,
 ):
     digest_aggregator = DigestDataAggregator()
     result = digest_aggregator.get_aggregated_runs(
@@ -54,6 +57,9 @@ def test_get_aggregated_runs_empty_extracted_runs(
     assert (
         result[resource_name]["Failures"] == expected_failures
     ), f"Failures mismatch for scenario {scenario}"
+    assert (
+        result[resource_name]["values"]["Comments"] == expected_comments
+    ), f"Comments mismatch for scenario {scenario}"
 
 
 def test_get_aggregated_runs_empty_resources_config():
