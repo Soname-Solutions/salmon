@@ -1,54 +1,31 @@
 {
     "monitoring_groups": [
         {
-            "group_name": "pipeline_source1",
+            "group_name": "group1",
             "glue_jobs": [
                 {
-                    "name": "ds-source1-historical-data-load",
-                    "monitored_environment_name": "Dept1 Account [<<env>>]",
-                    "sla_seconds": 1200,
+                    "name": "glue-job-1",
+                    "monitored_environment_name": "monitored1 [<<env>>]"
+                },
+                {
+                    "name": "glue-job-2",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
+                    "sla_seconds": 0
+                },
+                {
+                    "name": "glue-job-3",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
+                    "sla_seconds": 100
+                },                   
+                {
+                    "name": "glue-job-4",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
                     "minimum_number_of_runs": 0
-                },
+                },   
                 {
-                    "name": "ds-source1-source-to-raw-full-load",
-                    "monitored_environment_name": "Data Lake Account [<<env>>]",
-                    "sla_seconds": 1300,
+                    "name": "glue-job-5",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
                     "minimum_number_of_runs": 2
-                },
-                {
-                    "name": "ds-source1-clean-to-ontology-full-load",
-                    "monitored_environment_name": "Dept1 Account [<<env>>]",
-                    "sla_seconds": 1200,
-                    "minimum_number_of_runs": 2
-                }
-            ]
-        },
-        {
-            "group_name": "pipeline_source1_all",
-            "glue_jobs": [
-                {
-                    "name": "ds-source1-*",
-                    "monitored_environment_name": "Dept1 Account [<<env>>]",
-                    "sla_seconds": 2400,
-                    "minimum_number_of_runs": 2
-                }
-            ]
-        },
-        {
-            "group_name": "pipeline_sourceABC",
-            "glue_jobs": [
-                {
-                    "name": "ds-sourceABC-*",
-                    "monitored_environment_name": "Data Lake Account [<<env>>]",
-                    "sla_seconds": 2400,
-                    "minimum_number_of_runs": 2
-                }
-            ],
-            "lambda_functions": [
-                {
-                    "name": "validate_transfer_s3object_DEV",
-                    "monitored_environment_name": "Dept1 Account [<<env>>]",
-                    "minimum_number_of_runs": 40
                 }
             ]
         }
