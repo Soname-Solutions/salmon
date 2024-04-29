@@ -1,0 +1,1 @@
+from lib.settings.cdk.settings_validator import validate

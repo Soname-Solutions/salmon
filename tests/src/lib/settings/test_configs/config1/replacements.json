@@ -1,0 +1,7 @@
+{
+    "<<env>>": "dev",
+    "<<tooling_account_id>>": "1234567890",
+    "<<sender_email>>": "salmon-no-reply@soname.de",
+    "<<grafana_vpc_id>>": "vpc_id", 
+    "<<grafana_security_group_id>>": "security_group_id"
+}
