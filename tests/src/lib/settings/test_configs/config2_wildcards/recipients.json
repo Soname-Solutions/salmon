@@ -1,7 +1,7 @@
 {
     "recipients": [
         {
-            "recipient": "no-reply@company.com",
+            "recipient": "vasilii_pupkin@salmon.com",
             "delivery_method": "local_smtp",            
             "subscriptions": [
                 {

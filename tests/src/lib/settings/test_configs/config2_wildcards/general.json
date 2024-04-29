@@ -3,12 +3,12 @@
         "name": "Tooling Account [<<env>>]",
         "account_id": "<<tooling_account_id>>",
         "region": "us-east-1",
-        "metrics_collection_interval_min": 10,
-        "digest_report_period_hours" : 48, 
-        "digest_cron_expression": "cron(5 8 * * ? *)",
+        "metrics_collection_interval_min": 5,
+        "digest_report_period_hours" : 24, 
+        "digest_cron_expression": "cron(0 8 * * ? *)",
         "grafana_instance": {
-            "grafana_vpc_id": "vpc-123",
-            "grafana_security_group_id": "sg-123"
+            "grafana_vpc_id": "<<grafana_vpc_id>>",
+            "grafana_security_group_id": "<<grafana_security_group_id>>"
         }
     },
     "monitored_environments": [
@@ -22,13 +22,7 @@
             "name": "monitored2 [<<env>>]",
             "account_id": "0987654321",
             "region": "eu-central-1"
-        },
-        {
-            "name": "monitored3 [<<env>>]",
-            "account_id": "1234567890",
-            "region": "us-west-2"
         }
-
     ],
     "delivery_methods": [
         {
