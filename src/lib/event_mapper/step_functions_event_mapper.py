@@ -1,9 +1,10 @@
-from .general_aws_event_mapper import GeneralAwsEventMapper
-from .general_aws_event_mapper import ExecutionInfoUrlMixin
-from ...settings import Settings
 from datetime import datetime
-from ...core.constants import EventResult
-from ...aws.step_functions_manager import StepFunctionsManager
+from lib.event_mapper.general_aws_event_mapper import (
+    GeneralAwsEventMapper,
+    ExecutionInfoUrlMixin,
+)
+from lib.core.constants import EventResult
+from lib.aws.step_functions_manager import StepFunctionsManager
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):

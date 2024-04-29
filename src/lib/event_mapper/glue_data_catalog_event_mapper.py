@@ -1,8 +1,6 @@
-from .general_aws_event_mapper import GeneralAwsEventMapper
-from .general_aws_event_mapper import ExecutionInfoUrlMixin
-from ...settings import Settings
-from ...core.constants import EventResult
-from ...aws.glue_manager import GlueManager
+from lib.event_mapper.general_aws_event_mapper import GeneralAwsEventMapper
+from lib.core.constants import EventResult
+from lib.aws.glue_manager import GlueManager
 
 
 class GlueDataCatalogEventMapperException(Exception):

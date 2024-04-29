@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from ...core.constants import EventResult
-from ..resource_type_resolver import ResourceTypeResolver
 from lib.settings import Settings
-from lib.core.constants import SettingConfigResourceTypes as types
+from lib.core.constants import SettingConfigResourceTypes as types, EventResult
+from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
 
 
 class EventParsingException(Exception):
