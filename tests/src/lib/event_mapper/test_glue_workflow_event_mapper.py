@@ -49,6 +49,7 @@ def test_get_resource_state(
         resource_type=types.GLUE_WORKFLOWS, event=event, settings=mock_settings
     )
     assert mapper.get_resource_state() == final_state
+    assert mapper.get_event_result() == event_result
 
 
 def test_get_execution_info_url(mock_settings):
