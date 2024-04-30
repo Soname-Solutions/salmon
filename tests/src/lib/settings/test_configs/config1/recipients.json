@@ -5,19 +5,9 @@
             "delivery_method": "local_smtp",            
             "subscriptions": [
                 {
-                    "monitoring_group": "pipeline_source1",
+                    "monitoring_group": "group1",
                     "alerts": true,
                     "digest": true
-                },
-                {
-                    "monitoring_group": "pipeline_source1_all",
-                    "alerts": true,
-                    "digest": true
-                },
-                {
-                    "monitoring_group": "pipeline_sourceABC",
-                    "alerts": true,
-                    "digest": false
                 }
             ]
         },
@@ -26,7 +16,7 @@
             "recipient": "proj-alertsmon-accelerator",
             "subscriptions": [
                 {
-                    "monitoring_group": "pipeline_source1",
+                    "monitoring_group": "group1",
                     "alerts": true,
                     "digest": true
                 }
