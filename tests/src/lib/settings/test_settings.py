@@ -8,6 +8,8 @@ from lib.settings import Settings
 from lib.core.constants import DigestSettings
 from unittest.mock import patch
 
+from lib.core.constants import SettingConfigResourceTypes, NotificationType
+
 CURRENT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 MOCKED_S3_BUCKET_NAME = "mocked_s3_config_bucket"
 
@@ -349,6 +351,90 @@ def test_monitoring_group_replace_wildcards():
         assert "glue-job-2" in glue_job_names, f"glue-job-2 not found"
         assert "no-wild-card-job" in glue_job_names, f"no-wild-card-job not found"
 
+# test getting relevant groups by resource_name
+def test_get_monitoring_groups():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config4_many_groups/")
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )
+
+    with patch(
+        "lib.settings.Settings._get_all_resource_names",
+        return_value={
+            "glue_jobs": {
+                "monitored1 [<<env>>]": [
+                    "glue-job-1",
+                    "glue-job-2",
+                ]
+            },
+            "glue_workflows": {
+                "monitored1 [<<env>>]": [
+                    "glue-workflow-1",
+                    "glue-workflow-2",
+                ]
+            },
+            "glue_crawlers": {},
+            "glue_catalogs": {},
+            "step_functions": {},
+            "lambda_functions": {},
+        },
+    ):
+        def assert_group_results(resulting_groups, expected_groups):
+            assert len(resulting_groups) == len(expected_groups)
+            for group in expected_groups:
+                assert group in resulting_groups, f"group {group} not found"
+
+        resource_name = "glue-job-1"
+        expected_groups = ["group-all-glue", "group-glue-job-1"]
+        groups = settings.get_monitoring_groups([resource_name])
+        assert_group_results(groups, expected_groups)        
+
+        resource_name = "glue-workflow-1"
+        expected_groups = ["group-all-glue", "group-glue-workflow-1"]
+        groups = settings.get_monitoring_groups([resource_name])
+        assert_group_results(groups, expected_groups)      
+
+# test getting relevant groups by resource_type
+def test_get_monitoring_groups_by_resource_type():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config4_many_groups/")
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )
+
+    with patch(
+        "lib.settings.Settings._get_all_resource_names",
+        return_value={
+            "glue_jobs": {
+                "monitored1 [<<env>>]": [
+                    "glue-job-1",
+                    "glue-job-2",
+                ]
+            },
+            "glue_workflows": {
+                "monitored1 [<<env>>]": [
+                    "glue-workflow-1",
+                    "glue-workflow-2",
+                ]
+            },
+            "glue_crawlers": {},
+            "glue_catalogs": {},
+            "step_functions": {},
+            "lambda_functions": {},
+        },
+    ):
+        def assert_group_results(resulting_groups, expected_groups):
+            assert len(resulting_groups) == len(expected_groups)
+            for group in expected_groups:
+                assert group in resulting_groups, f"group {group} not found"
+    
+        expected_groups = ["group-all-glue", "group-glue-job-1", "group-glue-job-2"]
+        groups = settings.get_monitoring_groups_by_resource_type(SettingConfigResourceTypes.GLUE_JOBS)
+        assert_group_results(groups, expected_groups)        
+
+        expected_groups = ["group-all-glue", "group-glue-workflow-1"]
+        groups = settings.get_monitoring_groups_by_resource_type(SettingConfigResourceTypes.GLUE_WORKFLOWS)
+        assert_group_results(groups, expected_groups)           
+
 
 ##############################################################################
 # RECIPIENTS.JSON CONTENT TESTS        
@@ -366,3 +452,62 @@ def test_recipients_prop():
     assert content is not None, f"recipients_settings content is empty"
 
     
+def test_get_recipients():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config5_many_recipients/")
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )    
+
+    def assert_recipient_results(resulting_recipients, expected_recipients):
+        assert len(resulting_recipients) == len(expected_recipients)
+        got_recipients = [x['recipient'] for x in resulting_recipients]
+        for recipient in expected_recipients:
+            assert recipient in got_recipients, f"Recipient {recipient} not found"
+
+    monitoring_groups = ["group1"]
+    notification_type = NotificationType.ALERT
+    expected_recipients = ["recipient_all@company.com", "recipient_group1_all@company.com"]
+    recipients = settings.get_recipients(monitoring_groups=monitoring_groups, notification_type=notification_type)
+    assert_recipient_results(recipients, expected_recipients)
+
+    monitoring_groups = ["group2"]
+    notification_type = NotificationType.DIGEST
+    expected_recipients = ["recipient_all@company.com", "recipient_group2_digest@company.com"]
+    recipients = settings.get_recipients(monitoring_groups=monitoring_groups, notification_type=notification_type)
+    assert_recipient_results(recipients, expected_recipients)    
+
+
+def test_get_recipients_and_groups_by_notification_type():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config5_many_recipients/")
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )    
+
+    def assert_recipient_results(resulting_recipients, expected_recipients):
+        assert len(resulting_recipients) == len(expected_recipients)
+        got_recipients = [x['recipient'] for x in resulting_recipients]
+        for recipient in expected_recipients:
+            assert recipient in got_recipients, f"Recipient {recipient} not found"
+
+    notification_type = NotificationType.DIGEST
+    expected_recipients_and_subscriptions = {
+        "recipient_all@company.com":["group1","group2"], 
+        "recipient_group1_all@company.com":["group1"], 
+        "recipient_group2_alerts@company.com":[],
+        "recipient_group2_digest@company.com":["group2"],
+        "recipient_empty@company.com":[],
+        "recipient_all_false@company.com":[],
+    }
+    recipients = settings.get_recipients_and_groups_by_notification_type(notification_type=notification_type)
+
+    assert len(recipients) == len(expected_recipients_and_subscriptions.keys())
+    for recipient in recipients:
+        recipient_key = recipient['recipient']
+        actual_groups = recipient['monitoring_groups']
+
+        expected_groups = expected_recipients_and_subscriptions[recipient_key]
+        assert len(expected_groups) == len(actual_groups)
+        for group in expected_groups:
+            assert group in actual_groups, f"Group {group} not found"
+
+        

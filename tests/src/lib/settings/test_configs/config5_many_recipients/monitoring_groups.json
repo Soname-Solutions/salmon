@@ -1,0 +1,22 @@
+{
+    "monitoring_groups": [
+        {
+            "group_name": "group1",
+            "glue_jobs": [
+                {
+                    "name": "glue-job-*",
+                    "monitored_environment_name": "monitored1 [<<env>>]"
+                }
+            ]
+        },
+        {
+            "group_name": "group2",            
+            "glue_workflows": [
+                {
+                    "name": "glue-workflow-*",
+                    "monitored_environment_name": "monitored1 [<<env>>]"
+                }                
+            ]
+        }                   
+    ]
+}

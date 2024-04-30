@@ -1,0 +1,75 @@
+{
+    "recipients": [
+        {
+            "recipient": "recipient_all@company.com",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "group1",
+                    "alerts": true,
+                    "digest": true
+                },
+                {
+                    "monitoring_group": "group2",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        },
+        {
+            "recipient": "recipient_group1_all@company.com",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "group1",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        },
+        {
+            "recipient": "recipient_group2_alerts@company.com",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "group2",
+                    "alerts": true,
+                    "digest": false
+                }
+            ]
+        },  
+        {
+            "recipient": "recipient_group2_digest@company.com",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "group2",
+                    "alerts": false,
+                    "digest": true
+                }
+            ]
+        },  
+        {
+            "recipient": "recipient_empty@company.com",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+            ]
+        },                     
+        {
+            "recipient": "recipient_all_false@company.com",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "group1",
+                    "alerts": false,
+                    "digest": false
+                },
+                {
+                    "monitoring_group": "group2",
+                    "alerts": false,
+                    "digest": false
+                }                
+            ]
+        }          
+    ]
+}
