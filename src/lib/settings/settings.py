@@ -127,9 +127,9 @@ class Settings:
             "monitored_environments", []
         ):
             if "metrics_extractor_role_arn" not in m_env:
-                m_env[
-                    "metrics_extractor_role_arn"
-                ] = self._get_default_metrics_extractor_role_arn(m_env["account_id"])
+                m_env["metrics_extractor_role_arn"] = (
+                    self._get_default_metrics_extractor_role_arn(m_env["account_id"])
+                )
 
         # Add default sla_seconds and minimum_number_of_runs
         for m_env in self._processed_settings[SettingFileNames.MONITORING_GROUPS].get(
@@ -251,10 +251,6 @@ class Settings:
                 resource_names[res_type][account_name] = manager.get_all_names(
                     resource_type=res_type
                 )
-
-        print("_get_all_resource_names retval = ")
-        print(resource_names)
-        print("..end")
 
         return resource_names
 

@@ -4,11 +4,12 @@ import boto3
 import json
 from moto import mock_aws
 
-from lib.settings import Settings
+from lib.settings import Settings, SettingsException
 from lib.core.constants import DigestSettings
 from unittest.mock import patch
 
 from lib.core.constants import SettingConfigResourceTypes, NotificationType
+import pytest
 
 CURRENT_FOLDER = os.path.dirname(os.path.abspath(__file__))
 MOCKED_S3_BUCKET_NAME = "mocked_s3_config_bucket"
@@ -75,6 +76,25 @@ def test_from_s3_path(s3_setup):
         TOOLING_ACCOUNT_ID,
         TOOLING_REGION,
     ), f"Tooling account properties doesn't match"
+
+# testing reading config without_replacements_file (shouldn't throw an error)
+def test_read_from_path_without_replacements_file():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config6_no_replacements_file/")
+    settings = Settings.from_file_path(config_path)
+
+    tooling_account_props = settings.get_tooling_account_props()
+
+    assert tooling_account_props == (
+        TOOLING_ACCOUNT_ID,
+        TOOLING_REGION,
+    ), f"Tooling account properties doesn't match"
+
+# testing reading config missing_recipients_file (SHOULD throw an error)
+def test_read_from_path_missing_recipients_file():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config7_missing_recipients_file/")
+    
+    with pytest.raises(FileNotFoundError):
+        settings = Settings.from_file_path(config_path)       
 
 
 ##############################################################################
@@ -436,6 +456,39 @@ def test_get_monitoring_groups_by_resource_type():
         assert_group_results(groups, expected_groups)           
 
 
+def test_get_all_resource_names():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )
+
+    glue_job_names = ["glue-job-1","glue-job-2"]
+    step_function_names = ["step-function-1","step-function-2"]
+
+    with patch("lib.aws.GlueManager.get_all_names",return_value = glue_job_names), \
+        patch("lib.aws.StepFunctionsManager.get_all_names",return_value = step_function_names), \
+        patch("lib.aws.StsManager.get_client_via_assumed_role"):
+        
+        result = settings._get_all_resource_names()
+
+        assert SettingConfigResourceTypes.GLUE_JOBS in result
+        assert SettingConfigResourceTypes.STEP_FUNCTIONS in result
+
+        monitored_env_name = 'monitored1 [dev]'
+        assert result[SettingConfigResourceTypes.GLUE_JOBS][monitored_env_name] == glue_job_names
+        assert result[SettingConfigResourceTypes.STEP_FUNCTIONS][monitored_env_name] == step_function_names
+
+# should raise exception when no IAM role provided and still need to retrieve resources
+def test_get_all_resource_names_no_iam_role():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+    settings = Settings.from_file_path(
+        config_path
+    )
+
+    with pytest.raises(SettingsException, match="IAM Role"):
+        settings._get_all_resource_names()
+
+
 ##############################################################################
 # RECIPIENTS.JSON CONTENT TESTS        
 
@@ -510,4 +563,27 @@ def test_get_recipients_and_groups_by_notification_type():
         for group in expected_groups:
             assert group in actual_groups, f"Group {group} not found"
 
-        
+def test_get_delivery_method():
+    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config5_many_recipients/")
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )   
+
+    # 1. testing actual method
+    delivery_method_name = "aws_ses"
+    # taken from config5_many_recipients
+    expected_result = {
+            "name": "aws_ses",
+            "delivery_method_type": "AWS_SES",
+            "sender_email" : "no-reply@company.com"
+        }
+    result = settings.get_delivery_method(delivery_method_name=delivery_method_name)    
+
+    assert result["name"] == expected_result["name"], f"name doesn't match"
+    assert result["delivery_method_type"] == expected_result["delivery_method_type"], f"delivery_method_type doesn't match"
+    assert result["sender_email"] == expected_result["sender_email"], f"sender_email doesn't match"
+
+    # 2. testing non-existent method
+    delivery_method_name = "random_method"
+    result = settings.get_delivery_method(delivery_method_name=delivery_method_name)    
+    assert result == {}, f"result should be empty dict"
