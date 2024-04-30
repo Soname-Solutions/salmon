@@ -257,12 +257,6 @@ class Settings:
     def _replace_wildcards(
         self, monitoring_group: dict, settings_key: str, replacements: dict
     ):
-        # print("monitoring_group")
-        # print(monitoring_group)
-        # print("settings_key")
-        # print(settings_key)
-        # print("replacements")
-        # print(replacements)
         """Replace wildcards with real resource names (which exist in monitored account)"""
         upd_mon_group = []
         for res in monitoring_group.get(settings_key, []):
