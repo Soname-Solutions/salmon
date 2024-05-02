@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import time
 
+
 def epoch_milliseconds(epoch_seconds: float = None) -> int:
     """
     Converts epoch time in seconds to a int representation in milliseconds.
@@ -70,8 +71,6 @@ def str_utc_datetime_to_datetime(datetime_str: str) -> datetime:
     if datetime_str.endswith("."):
         datetime_str = datetime_str + "000000"
 
-    result_datetime = datetime.strptime(
-        datetime_str, "%Y-%m-%d %H:%M:%S.%f"
-    )    
+    result_datetime = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
     result_datetime = result_datetime.replace(tzinfo=timezone.utc)
     return result_datetime

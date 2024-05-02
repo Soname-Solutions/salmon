@@ -1,4 +1,4 @@
-from .impl import (
+from lib.event_mapper import (
     GeneralAwsEventMapper,
     GlueJobEventMapper,
     GlueWorkflowEventMapper,
@@ -7,7 +7,7 @@ from .impl import (
     StepFunctionsEventMapper,
     LambdaFunctionsEventMapper,
 )
-from ..core.constants import SettingConfigResourceTypes as types
+from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class EventMapperProvider:

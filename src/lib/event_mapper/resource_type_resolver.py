@@ -1,4 +1,4 @@
-from ..core.constants import SettingConfigResourceTypes as types
+from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class ResourceTypeResolver:

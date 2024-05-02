@@ -1,9 +1,8 @@
-from .general_aws_event_mapper import CustomAwsEventMapper
-from .general_aws_event_mapper import ExecutionInfoUrlMixin
-from ...settings import Settings
-
-from ...core.constants import EventResult
-from ...aws.lambda_manager import LambdaManager
+from lib.event_mapper.general_aws_event_mapper import (
+    CustomAwsEventMapper,
+    ExecutionInfoUrlMixin,
+)
+from lib.settings import Settings
 
 
 # Lambda Functions are not yet supported as EventBridge Events by AWS, so leaving it like that for now

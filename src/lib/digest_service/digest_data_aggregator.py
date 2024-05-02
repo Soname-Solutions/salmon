@@ -1,6 +1,6 @@
 from collections import defaultdict
 from lib.core.constants import DigestSettings
-from lib.event_mapper.impl import ExecutionInfoUrlMixin
+from lib.event_mapper import ExecutionInfoUrlMixin
 
 
 class DigestDataAggregator:

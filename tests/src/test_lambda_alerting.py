@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 from lambda_alerting import lambda_handler
 from lib.core.constants import SettingConfigResourceTypes as resource_types, EventResult
 from lib.settings import Settings
-from lib.event_mapper.impl.general_aws_event_mapper import ExecutionInfoUrlMixin
+from lib.event_mapper.general_aws_event_mapper import ExecutionInfoUrlMixin
 from lib.aws.lambda_manager import LambdaManager
 
 # uncomment this to see lambda's logging output
@@ -27,21 +27,22 @@ NOTIFICATION_MESSAGES_RESULT = {"result": "magic_mock"}
 
 ################################################################################################################################
 
+
 @pytest.fixture(scope="session")
 def os_vars_init(aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
     stage_name = "teststage"
-    os.environ["NOTIFICATION_QUEUE_URL"] = (
-        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
-    )
+    os.environ[
+        "NOTIFICATION_QUEUE_URL"
+    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"] = (
-        f"log-group-salmon-alert-events-{stage_name}"
-    )
-    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"] = (
-        f"log-stream-salmon-alert-events-{stage_name}"
-    )
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
+    ] = f"log-group-salmon-alert-events-{stage_name}"
+    os.environ[
+        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
+    ] = f"log-stream-salmon-alert-events-{stage_name}"
 
 
 @pytest.fixture(scope="session")

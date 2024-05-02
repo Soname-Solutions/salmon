@@ -1,9 +1,9 @@
-from .general_aws_event_mapper import CustomAwsEventMapper
-from .general_aws_event_mapper import ExecutionInfoUrlMixin
-from ...settings import Settings
-
-from ...core.constants import EventResult
-from ...aws.glue_manager import GlueManager
+from lib.event_mapper.general_aws_event_mapper import (
+    CustomAwsEventMapper,
+    ExecutionInfoUrlMixin,
+)
+from lib.settings import Settings
+from lib.aws.glue_manager import GlueManager
 
 
 # Workflows are not yet supported as EventBridge Events by AWS, so leaving it like that for now

@@ -1,9 +1,10 @@
-from .general_aws_event_mapper import GeneralAwsEventMapper
-from .general_aws_event_mapper import ExecutionInfoUrlMixin
-from ...settings import Settings
-from datetime import datetime
-from ...core.constants import EventResult
-from ...aws.step_functions_manager import StepFunctionsManager
+from datetime import datetime, timezone
+from lib.event_mapper.general_aws_event_mapper import (
+    GeneralAwsEventMapper,
+    ExecutionInfoUrlMixin,
+)
+from lib.core.constants import EventResult
+from lib.aws.step_functions_manager import StepFunctionsManager
 
 
 class StepFunctionsEventMapper(GeneralAwsEventMapper):
@@ -42,7 +43,11 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             str: ISO formatted datetime
         """
         if timestamp is not None:
-            return datetime.fromtimestamp(timestamp / 1e3).isoformat()
+            return (
+                datetime.fromtimestamp(timestamp / 1e3)
+                .astimezone(timezone.utc)
+                .isoformat()
+            )
         return None
 
     def get_message_body(self):

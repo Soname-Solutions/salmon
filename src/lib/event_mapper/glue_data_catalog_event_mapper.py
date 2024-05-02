@@ -1,8 +1,6 @@
-from .general_aws_event_mapper import GeneralAwsEventMapper
-from .general_aws_event_mapper import ExecutionInfoUrlMixin
-from ...settings import Settings
-from ...core.constants import EventResult
-from ...aws.glue_manager import GlueManager
+from lib.event_mapper.general_aws_event_mapper import GeneralAwsEventMapper
+from lib.core.constants import EventResult
+from lib.aws.glue_manager import GlueManager
 
 
 class GlueDataCatalogEventMapperException(Exception):
@@ -54,9 +52,8 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
                 if table_name is None:
                     table_name = self.event["detail"].get("changedTables")[0]
 
-                return (
-                    f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/tables/view/{table_name}?database={database_name}",
-                )
+                return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/tables/view/{table_name}?database={database_name}"
+
             else:
                 return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{database_name}"
         except Exception as e:
