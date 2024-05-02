@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from datetime import datetime
+from datetime import datetime, timezone
 
 from lib.event_mapper import StepFunctionsEventMapper
 from lib.core.constants import EventResult, SettingConfigResourceTypes as types
@@ -14,9 +14,9 @@ def mock_settings():
 
 
 def get_step_function_event(event_state=None):
-    test_time = datetime(2000, 1, 1, 0, 0, 0)
+    test_time = datetime(2000, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
     time_str = str(test_time)
-    epoch_time = int(test_time.timestamp())
+    epoch_time_ms = int(test_time.timestamp()) * 1000
 
     return {
         "detail-type": "Step Functions Execution Status Change",
@@ -28,8 +28,8 @@ def get_step_function_event(event_state=None):
             "name": "6e60909a",
             "stateMachineArn": f"arn:aws:states:test-region:1234567890:stateMachine:stepfunction-test",
             "status": event_state,
-            "startDate": epoch_time,
-            "stopDate": None,
+            "startDate": epoch_time_ms,
+            "stopDate": epoch_time_ms,
         },
     }
 
@@ -76,12 +76,12 @@ def test_get_message_body(mock_settings):
     expected_table_rows = [
         {"values": ["AWS Account", "1234567890"]},
         {"values": ["AWS Region", "test-region"]},
-        {"values": ["Time", "2000-01-01 00:00:00"]},
+        {"values": ["Time", "2000-01-01 00:00:00+00:00"]},
         {"values": ["Event Type", "Step Functions Execution Status Change"]},
         {"values": ["State Machine Name", "stepfunction-test"]},
         {"values": ["Status", event_state]},
-        {"values": ["Start Date", "1970-01-12T02:57:50.400000"]},
-        {"values": ["Stop Date", None]},
+        {"values": ["Start Date", "2000-01-01T00:00:00+00:00"]},
+        {"values": ["Stop Date", "2000-01-01T00:00:00+00:00"]},
         {
             "values": [
                 "Execution Info",

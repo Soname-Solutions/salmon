@@ -4,6 +4,7 @@ from lib.event_mapper.general_aws_event_mapper import (
     ExecutionInfoUrlMixin,
 )
 from lib.core.constants import EventResult
+from lib.core import datetime_utils
 from lib.aws.step_functions_manager import StepFunctionsManager
 
 
@@ -32,20 +33,6 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             run_id=self.event["detail"]["name"],
         )
 
-    @staticmethod
-    def __timestamp_to_datetime(timestamp: int) -> str:
-        """Formats integer datetime from the event to the ISO formatted datetime string
-
-        Args:
-            timestamp (int): Timestamp with milliseconds
-
-        Returns:
-            str: ISO formatted datetime
-        """
-        if timestamp is not None:
-            return datetime.fromtimestamp(timestamp / 1e3).isoformat()
-        return None
-
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
 
@@ -61,7 +48,9 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             super().create_table_row(
                 [
                     "Start Date",
-                    self.__timestamp_to_datetime(self.event["detail"]["startDate"]),
+                    datetime_utils.epoch_milliseconds_to_iso_date_string(
+                        self.event["detail"]["startDate"]
+                    ),
                 ]
             )
         )
@@ -69,7 +58,9 @@ class StepFunctionsEventMapper(GeneralAwsEventMapper):
             super().create_table_row(
                 [
                     "Stop Date",
-                    self.__timestamp_to_datetime(self.event["detail"]["stopDate"]),
+                    datetime_utils.epoch_milliseconds_to_iso_date_string(
+                        self.event["detail"]["stopDate"]
+                    ),
                 ]
             )
         )

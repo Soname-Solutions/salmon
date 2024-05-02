@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 import time
 
+
 def epoch_milliseconds(epoch_seconds: float = None) -> int:
     """
     Converts epoch time in seconds to a int representation in milliseconds.
@@ -70,8 +71,24 @@ def str_utc_datetime_to_datetime(datetime_str: str) -> datetime:
     if datetime_str.endswith("."):
         datetime_str = datetime_str + "000000"
 
-    result_datetime = datetime.strptime(
-        datetime_str, "%Y-%m-%d %H:%M:%S.%f"
-    )    
+    result_datetime = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S.%f")
     result_datetime = result_datetime.replace(tzinfo=timezone.utc)
     return result_datetime
+
+
+def epoch_milliseconds_to_iso_date_string(epoch_milliseconds: int = None) -> str:
+    """
+    Convert epoch milliseconds to an ISO-formatted date string in UTC timezone.
+
+    Args:
+      epoch_milliseconds (int): Unix timestamp in milliseconds. If None, current time is used.
+
+    Returns:
+      str: ISO-formatted date string in UTC timezone.
+    """
+    if epoch_milliseconds is None:
+        epoch_seconds = time.time()
+    else:
+        epoch_seconds = epoch_milliseconds / 1000
+
+    return datetime.fromtimestamp(epoch_seconds).astimezone(timezone.utc).isoformat()
