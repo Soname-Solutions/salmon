@@ -144,9 +144,11 @@ def validate_unique_names(names: List[str], error_message: str) -> List[tuple]:
             seen_names.add(name)
 
     return [
-        (f"Error: {error_message} Non-unique names :{duplicate_names}", False)
-        if duplicate_names
-        else ("", True)
+        (
+            (f"Error: {error_message} Non-unique names :{duplicate_names}", False)
+            if duplicate_names
+            else ("", True)
+        )
     ]
 
 
@@ -157,9 +159,14 @@ def validate_existing_names(
     not_existing_names = [name for name in names if name not in ref_names]
 
     return [
-        (f"Error: {error_message} Non-existing names :{set(not_existing_names)}", False)
-        if not_existing_names
-        else ("", True)
+        (
+            (
+                f"Error: {error_message} Non-existing names :{set(not_existing_names)}",
+                False,
+            )
+            if not_existing_names
+            else ("", True)
+        )
     ]
 
 

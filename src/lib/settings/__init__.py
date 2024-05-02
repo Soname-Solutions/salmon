@@ -1,2 +1,2 @@
 from .cdk import *
-from .settings import Settings
+from .settings import Settings, SettingsException

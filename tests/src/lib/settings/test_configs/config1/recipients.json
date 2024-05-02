@@ -1,0 +1,26 @@
+{
+    "recipients": [
+        {
+            "recipient": "no-reply@company.com",
+            "delivery_method": "local_smtp",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "group1",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        },
+        {
+            "delivery_method": "soname_slack",
+            "recipient": "proj-alertsmon-accelerator",
+            "subscriptions": [
+                {
+                    "monitoring_group": "group1",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        } 
+    ]
+}

@@ -1,0 +1,36 @@
+{
+    "recipients": [
+        {
+            "recipient": "no-reply@company.com",
+            "delivery_method": "local_smtp",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "pipeline_source1",
+                    "alerts": true,
+                    "digest": true
+                },
+                {
+                    "monitoring_group": "pipeline_source1_all",
+                    "alerts": true,
+                    "digest": true
+                },
+                {
+                    "monitoring_group": "pipeline_sourceABC",
+                    "alerts": true,
+                    "digest": false
+                }
+            ]
+        },
+        {
+            "delivery_method": "soname_slack",
+            "recipient": "proj-alertsmon-accelerator",
+            "subscriptions": [
+                {
+                    "monitoring_group": "pipeline_source1",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        } 
+    ]
+}

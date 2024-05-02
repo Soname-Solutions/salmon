@@ -1,0 +1,34 @@
+{
+    "tooling_environment": {
+        "name": "Tooling Account [<<env>>]",
+        "account_id": "<<tooling_account_id>>",
+        "region": "us-east-1",
+        "metrics_collection_interval_min": 5,
+        "digest_report_period_hours" : 24, 
+        "digest_cron_expression": "cron(0 8 * * ? *)",
+        "grafana_instance": {
+            "grafana_vpc_id": "<<grafana_vpc_id>>",
+            "grafana_security_group_id": "<<grafana_security_group_id>>"
+        }
+    },
+    "monitored_environments": [
+        {
+            "name": "monitored1 [<<env>>]",
+            "account_id": "1234567890",
+            "region": "eu-central-1",
+            "metrics_extractor_role_arn": "arn:aws:iam::123456789:role/role-salmon-cross-account-extract-metrics-dev"
+        },
+        {
+            "name": "monitored2 [<<env>>]",
+            "account_id": "0987654321",
+            "region": "eu-central-1"
+        }
+    ],
+    "delivery_methods": [
+        {
+            "name": "aws_ses",
+            "delivery_method_type": "AWS_SES",
+            "sender_email" : "no-reply@company.com"
+        }
+    ]
+}

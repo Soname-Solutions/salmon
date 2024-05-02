@@ -1,0 +1,33 @@
+{
+    "monitoring_groups": [
+        {
+            "group_name": "group1",
+            "glue_jobs": [
+                {
+                    "name": "glue-job-1",
+                    "monitored_environment_name": "monitored1 [<<env>>]"
+                },
+                {
+                    "name": "glue-job-2",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
+                    "sla_seconds": 0
+                },
+                {
+                    "name": "glue-job-3",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
+                    "sla_seconds": 100
+                },                   
+                {
+                    "name": "glue-job-4",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
+                    "minimum_number_of_runs": 0
+                },   
+                {
+                    "name": "glue-job-5",
+                    "monitored_environment_name": "monitored1 [<<env>>]",
+                    "minimum_number_of_runs": 2
+                }
+            ]
+        }
+    ]
+}
