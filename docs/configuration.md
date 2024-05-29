@@ -1,14 +1,15 @@
 # SALMON Configuration
 
-* [Overview](#overview)
-    * [Quick Start](#quick-start)
-    * [Configuration Structure](#conf-structure)    
-* [Configuration Steps](#configuration-steps)
-    1. [Create Configuration Files](#create-configuration-files)
-    2. [Configure General Settings](#configure-general-settings)
-    3. [Configure Monitoring Groups](#configure-monitoring-groups)
-    4. [Configure Recipients and Subscriptions ](#configure-recipients-and-subscriptions)
-    5. [[Optional] Configure Replacements for Placeholders](#configure-replacements-for-placeholders)
+- [SALMON Configuration](#salmon-configuration)
+  - [Overview ](#overview-)
+      - [Quick Start ](#quick-start-)
+      - [Configuration Structure ](#configuration-structure-)
+  - [Configuration Steps](#configuration-steps)
+    - [1. Create Configuration Files ](#1-create-configuration-files-)
+    - [2. Configure General Settings  ](#2-configure-general-settings--)
+    - [3. Configure Monitoring Groups  ](#3-configure-monitoring-groups--)
+    - [4. Configure Recipients and Subscriptions  ](#4-configure-recipients-and-subscriptions--)
+    - [5. \[Optional\] Configure Replacements for Placeholders ](#5-optional-configure-replacements-for-placeholders-)
 
 
 ## Overview <a name="overview"></a>
@@ -132,13 +133,17 @@ You can specify multiple monitored environments.
  
 **Delivery Methods Configuration**:
 - `name` - the name of your delivery method.
-- `delivery_method_type` - the delivery method type (AWS_SES, SMTP).
+- `delivery_method_type` - the delivery method type (AWS_SES, AWS_SNS, SMTP).
 
     >  The primary delivery method for the current version is AWS SES (with plans to add more options such as SMTP, Slack and MS Teams channel notifications).
+
+    > AWS_SNS method is recommended for alerts only. If you want to receive digest messages, please consider using other delivery method types (as digest requires rich text formatting, which support is limited in SNS).
 
 Based on the delivery method type, additional parameters are required:
 * AWS_SES:
     - `sender_email` - the sender email for notifications and digests. Must be verified in AWS SES.
+* AWS_SNS:
+    - No additional parameters needed. Target SNS topic Arn is configured in recipients section.
 
 You can specify multiple delivery methods (even for the same delivery type, no restrictions).
 
@@ -212,7 +217,10 @@ The `recipients.json` file specifies recipients for alerts and digests, along wi
 **Recipients Configuration**:
 - `recipient` - an email address of a person / delivery list to receive failure notifications or Daily Digest reports.   
     
-    > **NOTE:** the email address must be verified in AWS SES.
+    > **NOTE:** for AWS SES method, target email addresses must be verified in AWS SES (verified identities).
+
+    > **NOTE:** put target SNS topic Arn in "recipient" field when using AWS SNS method.
+
 - `delivery_method` - the delivery method name (should match to one of the delivery method names defined in the **general.json** file, **delivery_methods** section, **name** field).
 - `monitoring_group` - the monitoring group name (should match to one of the monitoring group names defined in the **monitoring_groups.json** file,  **monitoring_groups** section, **group_name** field).
 - `alerts` - indicate whether the recipient would like to receive notifications on failed runs (true/false).
