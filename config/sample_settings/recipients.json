@@ -22,8 +22,8 @@
             ]
         },
         {
-            "delivery_method": "soname_slack",
-            "recipient": "proj-alertsmon-accelerator",
+            "recipient": "arn:aws:sns:is-east-1:1234567890:sns-topic-alertsmon",
+            "delivery_method": "sns_main",            
             "subscriptions": [
                 {
                     "monitoring_group": "pipeline_source1",
