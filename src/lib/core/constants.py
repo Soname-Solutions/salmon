@@ -13,6 +13,10 @@ class SettingConfigResourceTypes:
     LAMBDA_FUNCTIONS = "lambda_functions"
     STEP_FUNCTIONS = "step_functions"
 
+class DeliveryMethodTypes:
+    AWS_SES = "AWS_SES"
+    AWS_SNS = "AWS_SNS"
+    SMTP = "SMTP"
 
 class SettingConfigs:
     RESOURCE_TYPES = [
@@ -32,7 +36,6 @@ class SettingConfigs:
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
         SettingConfigResourceTypes.STEP_FUNCTIONS: "stepfunctions",
     }
-
 
 class CloudWatchConfigs:
     QUERY_TIMEOUT_SECONDS = 60

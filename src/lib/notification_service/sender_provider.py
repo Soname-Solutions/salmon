@@ -1,6 +1,8 @@
-from .sender import create_aws_ses_sender, create_smtp_sender
+from lib.notification_service.sender import AwsSesSender, AwsSnsSender, SmtpSender
 from .messages import Message
 from typing import List
+
+from lib.core.constants import DeliveryMethodTypes
 
 
 class SenderProvider:
@@ -18,12 +20,13 @@ class SenderProvider:
 
         if not sender:
             raise ValueError(
-                f"Delivery method {delivery_method_type} is not supported."
+                f"Delivery method type {delivery_method_type} is not supported."
             )
 
         return sender(delivery_method, message, recipients)
 
 
 senders = SenderProvider()
-senders.register_sender("AWS_SES", create_aws_ses_sender)
-senders.register_sender("SMTP", create_smtp_sender)
+senders.register_sender(DeliveryMethodTypes.AWS_SES, AwsSesSender)
+senders.register_sender(DeliveryMethodTypes.AWS_SNS, AwsSnsSender)
+senders.register_sender(DeliveryMethodTypes.SMTP, SmtpSender)

@@ -93,16 +93,3 @@ class SmtpSender(Sender):
                     f"Error during sending message to {self._recipients} "
                     f"by {self.__class__.__name__}: {str(ex)}."
                 ) from ex
-
-
-def create_smtp_sender(
-    delivery_method: dict,
-    message: Message,
-    recipients: List[str],
-):
-    """Create an SmtpSender instance."""
-    return SmtpSender(
-        delivery_method,
-        message,
-        recipients,
-    )

@@ -16,6 +16,7 @@ sns_client = boto3.client("sns")
 
 def _get_formatted_message(message_body: list, delivery_method_type: str) -> str:
     formatted_message_objects = []
+
     formatter = formatters.get(delivery_method_type)
 
     for message_object in message_body:
@@ -60,11 +61,11 @@ def lambda_handler(event, context):
 
         delivery_method = delivery_options_info.get("delivery_method")
         if delivery_method is None:
-            raise KeyError("Delivery method is not set.")        
+            raise KeyError("Delivery method is not set.")
 
         delivery_method_type = delivery_method.get("delivery_method_type")
         if delivery_method_type is None:
-            raise KeyError("Delivery method type is not set.")                
+            raise KeyError("Delivery method type is not set.")
 
         message_subject = message_info.get("message_subject")
         message_body = message_info.get("message_body")
