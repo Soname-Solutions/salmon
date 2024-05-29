@@ -5,9 +5,9 @@ class Formatter(ABC):
     @property
     def _available_methods(self):
         """All available methods to apply during formatting."""
-        return {"text": self.get_text, "table": self.get_table}
+        return {"text": self._get_text, "table": self._get_table}
 
-    def format(self, object_type: str, **kwargs):
+    def _format(self, object_type: str, **kwargs):
         """Get a method based on an object type."""
         method = self._available_methods.get(object_type)
 
@@ -17,11 +17,6 @@ class Formatter(ABC):
         return method(**kwargs)
 
     @abstractmethod
-    def get_text(self) -> None:
-        """Get a text."""
-        pass
-
-    @abstractmethod
-    def get_table(self) -> None:
-        """Get a header."""
+    def get_formatted_message(self, message_body: list) -> str:
+        """Get final formatted message."""
         pass

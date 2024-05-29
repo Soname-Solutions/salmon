@@ -17,11 +17,11 @@ class HtmlFormatter(Formatter):
 
         return []
 
-    def get_text(self, content: str, style: str = None) -> str:
+    def _get_text(self, content: str, style: str = None) -> str:
         """Get a text."""
         return Text(content, style).get_html()
 
-    def get_table(self, content: dict, style: str = None) -> str:
+    def _get_table(self, content: dict, style: str = None) -> str:
         """Get a table."""
         caption = content.get("caption")
         header = content.get("header")
@@ -65,3 +65,26 @@ class HtmlFormatter(Formatter):
             .header {font-size: 19px; font-weight: bold; padding: 20px 10px;}
             """
         return f"<html><head><style>{_css_style}</style></head><body>{body_content}</body></html>"
+
+    def get_formatted_message(self, message_body: list) -> str:
+        """Get a final formatted message."""
+        formatted_message_objects = []
+
+        for message_object in message_body:
+            try:
+                object_type = [key for key in message_object.keys() if key != "style"][0]
+            except IndexError:
+                raise KeyError(f"Message object type is not set")
+
+            content = message_object.get(object_type)
+            style = message_object.get("style")
+
+            formatted_object = self._format(object_type, content=content, style=style)
+
+            if formatted_object is not None:
+                formatted_message_objects.append(formatted_object)
+
+        formatted_message_body = "".join(formatted_message_objects)
+        formatted_message = self.get_complete_html(formatted_message_body)
+
+        return formatted_message

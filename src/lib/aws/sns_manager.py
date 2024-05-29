@@ -47,7 +47,10 @@ class SnsTopicPublisher:
 
         """
         try:
-            formatted_message = json.dumps(message, indent=4)
+            if message is dict:
+                formatted_message = json.dumps(message, indent=4)
+            else:
+                formatted_message = message
 
             if subject:
                 self.sns_client.publish(
