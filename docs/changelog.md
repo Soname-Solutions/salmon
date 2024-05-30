@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.1.0
+
+* Unit test code coverage improved to ~90%
+* Notifications
+  * Added AWS_SNS delivery method type
+
 ## 1.0.0
 
 ### Alerting functionality

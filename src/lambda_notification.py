@@ -8,34 +8,9 @@ import json
 import boto3
 import os
 
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 sns_client = boto3.client("sns")
-
-
-def _get_formatted_message(message_body: list, delivery_method_type: str) -> str:
-    formatted_message_objects = []
-    formatter = formatters.get(delivery_method_type)
-
-    for message_object in message_body:
-        try:
-            object_type = [key for key in message_object.keys() if key != "style"][0]
-        except IndexError:
-            raise KeyError(f"Message object type is not set")
-
-        content = message_object.get(object_type)
-        style = message_object.get("style")
-
-        formatted_object = formatter.format(object_type, content=content, style=style)
-
-        if formatted_object is not None:
-            formatted_message_objects.append(formatted_object)
-
-    formatted_message_body = "".join(formatted_message_objects)
-    formatted_message = formatter.get_complete_html(formatted_message_body)
-
-    return formatted_message
 
 
 def lambda_handler(event, context):
@@ -60,11 +35,11 @@ def lambda_handler(event, context):
 
         delivery_method = delivery_options_info.get("delivery_method")
         if delivery_method is None:
-            raise KeyError("Delivery method is not set.")        
+            raise KeyError("Delivery method is not set.")
 
         delivery_method_type = delivery_method.get("delivery_method_type")
         if delivery_method_type is None:
-            raise KeyError("Delivery method type is not set.")                
+            raise KeyError("Delivery method type is not set.")
 
         message_subject = message_info.get("message_subject")
         message_body = message_info.get("message_body")
@@ -75,7 +50,8 @@ def lambda_handler(event, context):
         if message_body is None:
             raise KeyError("Message body is not set.")
 
-        formatted_message = _get_formatted_message(message_body, delivery_method_type)
+        formatter = formatters.get(delivery_method_type)
+        formatted_message = formatter.get_formatted_message(message_body)
 
         message = Message(formatted_message, message_subject)
 
@@ -90,9 +66,10 @@ def lambda_handler(event, context):
         sender.send()
 
     except Exception as e:
-        logger.error(f"Error while processing an event: {e}")
+        message = f"Error while sending a notification: {e}"
+        logger.error(message)
         event["errorMessage"] = str(e)
         event["errorType"] = e.__class__.__name__
-        sns_publisher.publish_message(event)
+        sns_publisher.publish_message(message + "\n\n" + json.dumps(event, indent=4))
 
     return {"event": event}

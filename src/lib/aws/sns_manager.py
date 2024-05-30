@@ -35,7 +35,7 @@ class SnsTopicPublisher:
         self.topic_arn = topic_arn
         self.sns_client = boto3.client("sns") if sns_client is None else sns_client
 
-    def publish_message(self, message: dict):
+    def publish_message(self, message: dict, subject: str = None):
         """
         Publishes a message to the SNS topic.
 
@@ -47,10 +47,22 @@ class SnsTopicPublisher:
 
         """
         try:
-            self.sns_client.publish(
-                TopicArn=self.topic_arn,
-                Message=json.dumps(message, indent=4),
-            )
+            if message is dict:
+                formatted_message = json.dumps(message, indent=4)
+            else:
+                formatted_message = message
+
+            if subject:
+                self.sns_client.publish(
+                    TopicArn=self.topic_arn,
+                    Message=formatted_message,
+                    Subject=subject
+                )
+            else:
+                self.sns_client.publish(
+                    TopicArn=self.topic_arn,
+                    Message=formatted_message,
+                )
         except Exception as e:
             error_message = f"Error publishing messages to {self.topic_arn}: {e}"
             raise SNSTopicPublisherException(error_message)

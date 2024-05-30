@@ -109,10 +109,3 @@ class AwsSesSender(Sender):
                 f"Error during sending message to {self.verified_recipients} "
                 f"by {self.__class__.__name__}: {str(ex)}."
             ) from ex
-
-
-def create_aws_ses_sender(
-    delivery_method: dict, message: Message, recipients: List[str]
-):
-    """Create an AwsSesSender instance."""
-    return AwsSesSender(delivery_method, message, recipients)

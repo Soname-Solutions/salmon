@@ -220,7 +220,8 @@ class InfraToolingCommonStack(Stack):
             iam.PolicyStatement(
                 actions=["sns:Publish"],
                 effect=iam.Effect.ALLOW,
-                resources=[internal_error_topic.topic_arn],
+                resources=["*"] # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular 
+                # notification configured, so need to publish to arbitrary topics.
             )
         )
 
