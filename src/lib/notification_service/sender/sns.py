@@ -25,7 +25,6 @@ class AwsSnsSender(Sender):
             recipients (List[str]): List of SNS topic Arns to publish to
         """
         super().__init__(delivery_method, message, recipients)
-        # self._sns_publisher = SnsTopicPublisher()
 
     def send(self) -> None:
         try:
@@ -36,6 +35,6 @@ class AwsSnsSender(Sender):
                 )
         except Exception as ex:
             raise AwsSnsSenderException(
-                f"Error while sending a message to {self.verified_recipients} "
+                f"Error while sending a message to {self._recipients} "
                 f"by {self.__class__.__name__}: {str(ex)}."
             ) from ex
