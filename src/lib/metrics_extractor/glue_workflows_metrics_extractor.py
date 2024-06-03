@@ -42,8 +42,9 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
                 # If ErrorMessage is not returned for the failed Glue workflow run,
                 # generate an error message based on all failed components that belong to the workflow
                 if workflow_run.IsFailure and workflow_run_error_message is None:
+                    glue_man = GlueManager(super().get_aws_service_client())
                     workflow_run_error_message = (
-                        GlueManager.generate_workflow_run_error_message(
+                        glue_man.generate_workflow_run_error_message(
                             workflow_name=workflow_run.Name,
                             workflow_run_id=workflow_run.WorkflowRunId,
                         )
