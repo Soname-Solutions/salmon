@@ -140,6 +140,7 @@ class InfraMonitoredStack(Stack):
                 "glue:GetJobRun",
                 "glue:GetJobRuns",
                 "glue:GetWorkflowRuns",
+                "glue:GetWorkflowRun",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,

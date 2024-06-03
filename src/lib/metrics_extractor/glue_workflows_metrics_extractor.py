@@ -38,12 +38,23 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
                     {"Name": "workflow_run_id", "Value": workflow_run.WorkflowRunId}
                 ]
 
+                workflow_run_error_message = workflow_run.ErrorMessage
+                # If ErrorMessage is not returned for the failed Glue workflow run,
+                # generate an error message based on all failed components that belong to the workflow
+                if workflow_run.IsFailure and workflow_run_error_message is None:
+                    workflow_run_error_message = (
+                        GlueManager.generate_workflow_run_error_message(
+                            workflow_name=workflow_run.Name,
+                            workflow_run_id=workflow_run.WorkflowRunId,
+                        )
+                    )
+
                 metric_values = [
                     ("execution", 1, "BIGINT"),
                     ("succeeded", int(workflow_run.IsSuccess), "BIGINT"),
                     ("failed", int(workflow_run.IsFailure), "BIGINT"),
                     ("execution_time_sec", workflow_run.Duration, "DOUBLE"),
-                    ("error_message", workflow_run.ErrorMessage, "VARCHAR"),
+                    ("error_message", workflow_run_error_message, "VARCHAR"),
                     ("actions_total", workflow_run.Statistics.TotalActions, "BIGINT"),
                     (
                         "actions_timeouted",
@@ -149,7 +160,7 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
         """
         if self.workflow_runs:
             events = []
-            for workflow_run in self.workflow_runs:                        
+            for workflow_run in self.workflow_runs:
                 if GlueManager.is_workflow_final_state(workflow_run.Status):
                     events.append(
                         self.generate_event(
@@ -165,5 +176,4 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
                 event_count = len(events)
                 print(f"GlueWF extractor: Sending {event_count} events to EventBridge")
                 events_manager.put_events(events=events)
-                return {"events_sent" : event_count}
-
+                return {"events_sent": event_count}
