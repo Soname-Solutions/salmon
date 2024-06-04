@@ -2,7 +2,7 @@ import boto3
 from datetime import datetime
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union
 
 from ..core.constants import SettingConfigResourceTypes
 
@@ -73,12 +73,13 @@ class WorkflowRun(BaseModel):
         return (self.Status in GlueManager.Workflow_States_Success) and (
             # Glue Workflow can have status "completed" even if some actions have failed, which is misleading
             # adding this check
-            self.Statistics.TotalActions == self.Statistics.SucceededActions
+            self.Statistics.TotalActions
+            == self.Statistics.SucceededActions
         )
 
     @property
     def IsFailure(self) -> bool:
-        return not(self.IsSuccess)
+        return not (self.IsSuccess)
 
     @property
     def Duration(self) -> float:
@@ -106,7 +107,7 @@ class GlueManager:
     Job_States_Failure = ["FAILED", "ERROR", "TIMEOUT", "STOPPED"]
 
     Workflow_States_Success = ["COMPLETED"]
-    Workflow_States_Failure = ["STOPPED", "ERROR", "FAILURE"] 
+    Workflow_States_Failure = ["STOPPED", "ERROR", "FAILURE"]
     # FAILURE is an artificial State introduced in Salmon, so we can override "false positive" state COMPLETED even
     # when there was a failure in underlying Glue Job
 
@@ -168,6 +169,27 @@ class GlueManager:
                 f"Error getting list of glue data catalogs : {e}"
             )
 
+    def _get_all_workflow_errors(
+        self, node: Union[dict, list], node_type: str = None
+    ) -> list[str]:
+        """Recursively extract error messages from the workflow node."""
+
+        errors = []
+        if isinstance(node, dict):
+            node_type = node.get("Type", node_type)  # CRAWLER | JOB | TRIGGER
+            for key, value in node.items():
+                if key == "ErrorMessage" and value:
+                    # Limit each error message if longer then 50 characters
+                    error_msg = value[:50] + "..." if len(value) > 50 else value
+                    errors.append(f"{node_type} Error: {error_msg}")
+                else:
+                    errors.extend(self._get_all_workflow_errors(value, node_type))
+
+        elif isinstance(node, list):
+            for item in node:
+                errors.extend(self._get_all_workflow_errors(item, node_type))
+        return errors
+
     def get_all_names(self, **kwargs):
         resource_type = kwargs.pop("resource_type", None)
         if (
@@ -211,4 +233,37 @@ class GlueManager:
 
         except Exception as e:
             error_message = f"Error getting glue workflow runs : {e}"
+            raise GlueManagerException(error_message)
+
+    def generate_workflow_run_error_message(
+        self, workflow_name: str, workflow_run_id: str
+    ) -> str:
+        """Generate an error message related to the particular workflow run ID"""
+        try:
+            workflow_run = self.glue_client.get_workflow_run(
+                Name=workflow_name,
+                RunId=workflow_run_id,
+                IncludeGraph=True,
+            )
+
+            # Extract error messages from the workflow run graph
+            graph = workflow_run.get("Run", {}).get("Graph", {})
+            error_messages = self._get_all_workflow_errors(graph)
+
+            # Join error messages into a single string and limit its length
+            workflow_error_message = (
+                "; ".join(error_messages) if error_messages else None
+            )
+            error_count = len(error_messages)
+            if error_count > 1:
+                message_prefix = f"Total Errors: {error_count}. "
+                workflow_error_message = (
+                    message_prefix + workflow_error_message[:100] + "..."
+                    if len(workflow_error_message) > 100
+                    else message_prefix + workflow_error_message
+                )
+            return workflow_error_message
+
+        except Exception as e:
+            error_message = f"Error getting glue workflow error message: {e}"
             raise GlueManagerException(error_message)
