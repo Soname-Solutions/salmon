@@ -1,3 +1,3 @@
-from .ses import AwsSesSender
-from .smtp import SmtpSender
-from .sns import AwsSnsSender
+from .ses import AwsSesSender, AwsSesUserNotVerifiedException, AwsSesSenderException, AwsSesNoRelevantRecipientsException
+from .smtp import SmtpSender, SmtpSenderException
+from .sns import AwsSnsSender, AwsSnsSenderException

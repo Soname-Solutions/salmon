@@ -1,7 +1,5 @@
-from lambda_notification import _get_formatted_message, lambda_handler
+from lambda_notification import lambda_handler
 from lib.aws.sns_manager import SnsTopicPublisher
-
-from bs4 import BeautifulSoup
 
 import copy
 import os
@@ -74,40 +72,6 @@ def mock_sender():
         mock_sender_instance.send = MagicMock()
         mock_senders_get.return_value = mock_sender_instance
         yield mock_senders_get, mock_sender_instance
-
-
-######################################################################################
-# Tests for _get_formatted_message function
-
-
-def test_get_formatted_message_html_valid():
-    message_body = TEST_EVENT_ALERT_SES["message"]["message_body"]
-    delivery_method_type = TEST_EVENT_ALERT_SES["delivery_options"]["delivery_method"][
-        "delivery_method_type"
-    ]
-
-    formatted_message = _get_formatted_message(message_body, delivery_method_type)
-
-    soup = BeautifulSoup(formatted_message, "html.parser")
-    assert soup.find() is not None, "The output should be valid HTML"
-    assert soup.find("table") is not None, "The output should contain an HTML table"
-    assert "AWS Account" in formatted_message, "The output should contain 'AWS Account'"
-    assert (
-        "1234567890" in formatted_message
-    ), "The output should contain the account number '1234567890'"
-
-
-def test_get_formatted_message_missing_key_raises_key_error():
-    message_body = [
-        {"style": "header_777"}
-    ]  # Missing required key, thus should raise KeyError
-    delivery_method_type = TEST_EVENT_ALERT_SES["delivery_options"]["delivery_method"][
-        "delivery_method_type"
-    ]
-
-    with pytest.raises(KeyError):
-        _ = _get_formatted_message(message_body, delivery_method_type)
-
 
 ######################################################################################
 # Tests for lambda_handler
