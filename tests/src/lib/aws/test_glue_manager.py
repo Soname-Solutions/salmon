@@ -1,12 +1,11 @@
 import pytest
-from datetime import datetime
 from unittest.mock import patch, MagicMock
+
 from lib.aws.glue_manager import GlueManager, GlueManagerException
 
 
 GLUE_WF_NAME = "TestWorkflow"
 GLUE_WF_RUN_ID = "TestRunId"
-TEST_DATETIME = datetime(2000, 1, 1, 0, 0, 0)
 
 
 @pytest.mark.parametrize(
@@ -81,7 +80,7 @@ TEST_DATETIME = datetime(2000, 1, 1, 0, 0, 0)
                                 "Type": "CRAWLER",
                                 "Job": {
                                     "Name": "TestJob",
-                                    "ErrorMessage": "Test job error_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                                    "ErrorMessage": "Test job error_" + "x" * 50,
                                 },
                             }
                         ]
