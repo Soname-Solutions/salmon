@@ -40,6 +40,7 @@ class InfraToolingMainStack(Stack):
             settings=self.settings,            
         )    
         monitoring_stack.add_dependency(common_stack)    
+        monitoring_stack.add_dependency(alerting_stack)
 
         if self.settings.get_grafana_settings():
             grafana_stack = InfraToolingGrafanaStack(
@@ -49,4 +50,5 @@ class InfraToolingMainStack(Stack):
                 project_name=self.project_name,
                 settings=self.settings,
             )
-            grafana_stack.add_dependency(common_stack)        
+            grafana_stack.add_dependency(common_stack)
+            
