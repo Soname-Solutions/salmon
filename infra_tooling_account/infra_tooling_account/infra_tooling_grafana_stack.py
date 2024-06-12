@@ -1,7 +1,7 @@
 import yaml
 import json
 from aws_cdk import (
-    Stack,
+    NestedStack,
     CfnOutput,
     Fn,
     aws_s3 as s3,
@@ -24,7 +24,7 @@ from lib.core.grafana_config_generator import (
 )
 
 
-class InfraToolingGrafanaStack(Stack):
+class InfraToolingGrafanaStack(NestedStack):
     """
     This class represents a stack for Grafana instance in AWS CloudFormation.
 
@@ -245,7 +245,7 @@ class InfraToolingGrafanaStack(Stack):
         cw_dashboard_data = generate_cloudwatch_dashboard_model(
             cloudwatch_log_group_name=cloudwatch_log_group_name,
             cloudwatch_log_group_arn=cloudwatch_log_group_arn,
-            account_id=Stack.of(self).account,
+            account_id=NestedStack.of(self).account,
         )
         sources = [
             s3deploy.Source.data(
@@ -263,7 +263,7 @@ class InfraToolingGrafanaStack(Stack):
 
         # Generate YAML provisioning config files and upload to S3
         datasources_config = generate_datasources_config(
-            region=Stack.of(self).region,
+            region=NestedStack.of(self).region,
             timestream_database_name=timestream_database_name,
         )
         dashboards_config = generate_dashboards_config(resource_types=resource_types)
@@ -456,7 +456,7 @@ class InfraToolingGrafanaStack(Stack):
             security_group=security_group,
             user_data=ec2.UserData.custom(
                 generate_user_data_script(
-                    region=Stack.of(self).region,
+                    region=NestedStack.of(self).region,
                     settings_bucket_name=settings_bucket_name,
                     grafana_admin_secret_name=grafana_admin_secret_name,
                 )

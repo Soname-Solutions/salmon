@@ -1,5 +1,5 @@
 from aws_cdk import (
-    Stack,
+    NestedStack,
     Fn,
     CfnOutput,
     IgnoreMode,
@@ -24,7 +24,7 @@ from lib.aws.aws_naming import AWSNaming
 from lib.settings.settings import Settings
 
 
-class InfraToolingAlertingStack(Stack):
+class InfraToolingAlertingStack(NestedStack):
     """
     This class represents a stack for infrastructure tooling and alerting in AWS CloudFormation.
 
@@ -239,7 +239,7 @@ class InfraToolingAlertingStack(Stack):
             )
         )
 
-        current_region = Stack.of(self).region
+        current_region = NestedStack.of(self).region
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",

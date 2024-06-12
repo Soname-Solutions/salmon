@@ -1,5 +1,5 @@
 from aws_cdk import (
-    Stack,
+    NestedStack,
     Fn,
     IgnoreMode,
     aws_s3 as s3,
@@ -23,7 +23,7 @@ from lib.settings.settings import Settings
 from lib.core.constants import CDKResourceNames, TimestreamRetention, SettingConfigs
 
 
-class InfraToolingMonitoringStack(Stack):
+class InfraToolingMonitoringStack(NestedStack):
     """
     This class represents a stack for infrastructure tooling and monitoring in AWS CloudFormation.
 
@@ -322,7 +322,7 @@ class InfraToolingMonitoringStack(Stack):
                 )
             )
 
-        current_region = Stack.of(self).region
+        current_region = NestedStack.of(self).region
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
