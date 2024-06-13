@@ -1,5 +1,5 @@
 from aws_cdk import (
-    Stack,
+    NestedStack,
     CfnOutput,
     Duration,
     IgnoreMode,
@@ -23,7 +23,7 @@ from lib.aws.aws_common_resources import AWSCommonResources
 from lib.settings.settings import Settings
 
 
-class InfraToolingCommonStack(Stack):
+class InfraToolingCommonStack(NestedStack):
     """
     This class represents a stack for infrastructure tooling and common functionality in AWS CloudFormation.
 
@@ -249,7 +249,7 @@ class InfraToolingCommonStack(Stack):
             )
         )
 
-        current_region = Stack.of(self).region
+        current_region = NestedStack.of(self).region
         powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
             self,
             id="lambda-powertools",
