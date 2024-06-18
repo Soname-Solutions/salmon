@@ -3,7 +3,6 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP_SSL, SMTPResponseException
-import json
 import ssl
 
 from typing import List
@@ -31,7 +30,7 @@ class SmtpSender(Sender):
         message = MIMEMultipart("mixed")
         message_body = MIMEMultipart("alternative")
 
-        message["Subject"] = self._message.header
+        message["Subject"] = self._message.subject
         message["From"] = self._delivery_method.get("sender_email")
         message["To"] = ",".join(self._recipients)
 
@@ -74,7 +73,7 @@ class SmtpSender(Sender):
         if smtp_secret_name is None:
             raise KeyError("Credentials Secret Name is not set.")
 
-        smtp_secret = json.loads(self._secret_client.get_secret(smtp_secret_name))
+        smtp_secret = self._secret_client.get_secret(smtp_secret_name)
         smtp_server = self._get_smtp_credential_property(smtp_secret, "SMTP_SERVER")
         port = self._get_smtp_credential_property(smtp_secret, "SMTP_PORT")
         login = self._get_smtp_credential_property(smtp_secret, "SMTP_LOGIN")
