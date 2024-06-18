@@ -21,16 +21,24 @@ class InfraToolingMainStack(Stack):
             stage_name=self.stage_name,
             project_name=self.project_name,
             settings=self.settings,
-        )            
+        )
+
+        settings_bucket = common_stack.settings_bucket
+        internal_error_topic = common_stack.internal_error_topic
+        notification_queue = common_stack.notification_queue
 
         alerting_stack = InfraToolingAlertingStack(
             self,
             f"cf-{self.project_name}-InfraToolingAlertingStack-{self.stage_name}",
+            settings_bucket = settings_bucket,
+            internal_error_topic = internal_error_topic,
+            notification_queue = notification_queue,
             stage_name=self.stage_name,
             project_name=self.project_name,
             settings=self.settings,
         )        
         alerting_stack.add_dependency(common_stack)
+        
 
         monitoring_stack = InfraToolingMonitoringStack(
             self,
