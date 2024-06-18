@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 * Unit test code coverage improved to ~90%
 * Notifications
   * Added AWS_SNS delivery method type
+  * Added SMTP delivery method type
 
 ## 1.0.0
 

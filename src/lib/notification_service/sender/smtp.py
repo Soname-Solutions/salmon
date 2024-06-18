@@ -2,7 +2,7 @@ from email.message import Message as BaseEmailMessage
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from smtplib import SMTP_SSL, SMTPResponseException
+from smtplib import SMTP, SMTP_SSL, SMTPResponseException
 import ssl
 
 from typing import List
@@ -22,6 +22,9 @@ class SmtpSender(Sender):
         """Initiate class EmailSender."""
         super().__init__(delivery_method, message, recipients)
         self._secret_client = SecretManager()
+        self._sender_email = self._delivery_method.get("sender_email")
+        self._use_ssl = self._delivery_method.get("use_ssl", True)
+        self._timeout = self._delivery_method.get("timeout", 10.0)
 
     def _get_message(self) -> BaseEmailMessage:
         """Get message to send."""
@@ -31,7 +34,7 @@ class SmtpSender(Sender):
         message_body = MIMEMultipart("alternative")
 
         message["Subject"] = self._message.subject
-        message["From"] = self._delivery_method.get("sender_email")
+        message["From"] = self._sender_email
         message["To"] = ",".join(self._recipients)
 
         # Encode the text and HTML content and set the character encoding. This step is
@@ -65,6 +68,43 @@ class SmtpSender(Sender):
         mime_object.add_header("Content-Disposition", "attachment", filename=file.name)
         return mime_object
 
+    def _send_via_ssl(
+        self,
+        smtp_server: str,
+        port: int,
+        login: str,
+        password: str,
+        context: ssl.SSLContext,
+    ) -> None:
+        """Send email via SMTP SSL."""
+        with SMTP_SSL(
+            host=smtp_server, port=port, timeout=self._timeout, context=context
+        ) as server:
+            server.login(login, password)
+            server.sendmail(
+                self._sender_email,
+                self._recipients,
+                self._get_message().as_string(),
+            )
+
+    def _send_via_starttls(
+        self,
+        smtp_server: str,
+        port: int,
+        login: str,
+        password: str,
+        context: ssl.SSLContext,
+    ) -> None:
+        """Send email via SMTP STARTTLS."""
+        with SMTP(host=smtp_server, port=port, timeout=self._timeout) as server:
+            server.starttls(context=context)
+            server.login(login, password)
+            server.sendmail(
+                self._sender_email,
+                self._recipients,
+                self._get_message().as_string(),
+            )
+
     def send(self) -> None:
         """Send a message via SMTP."""
         context = ssl.create_default_context()
@@ -75,20 +115,17 @@ class SmtpSender(Sender):
 
         smtp_secret = self._secret_client.get_secret(smtp_secret_name)
         smtp_server = self._get_smtp_credential_property(smtp_secret, "SMTP_SERVER")
-        port = self._get_smtp_credential_property(smtp_secret, "SMTP_PORT")
+        port = int(self._get_smtp_credential_property(smtp_secret, "SMTP_PORT"))
         login = self._get_smtp_credential_property(smtp_secret, "SMTP_LOGIN")
         password = self._get_smtp_credential_property(smtp_secret, "SMTP_PASSWORD")
 
-        with SMTP_SSL(smtp_server, port, context=context) as server:
-            try:
-                server.login(login, password)
-                server.sendmail(
-                    self._delivery_method.get("sender_email"),
-                    self._recipients,
-                    self._get_message().as_string(),
-                )
-            except SMTPResponseException as ex:
-                raise SmtpSenderException(
-                    f"Error during sending message to {self._recipients} "
-                    f"by {self.__class__.__name__}: {str(ex)}."
-                ) from ex
+        try:
+            if self._use_ssl:
+                self._send_via_ssl(smtp_server, port, login, password, context)
+            else:
+                self._send_via_starttls(smtp_server, port, login, password, context)
+        except SMTPResponseException as ex:
+            raise SmtpSenderException(
+                f"Error during sending message to {self._recipients} "
+                f"by {self.__class__.__name__}: {str(ex)}."
+            ) from ex

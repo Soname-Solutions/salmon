@@ -45,7 +45,8 @@
             "name": {"type": "string"},
             "delivery_method_type": {"type": "string"},
             "sender_email": {"type": "string"},
-            "credentials_secret_name": {"type": "string"}
+            "credentials_secret_name": {"type": "string"},
+            "use_ssl":  {"type": "boolean"}
           },
           "required": ["name", "delivery_method_type"]
         }
