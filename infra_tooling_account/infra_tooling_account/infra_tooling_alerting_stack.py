@@ -67,46 +67,12 @@ class InfraToolingAlertingStack(NestedStack):
 
         super().__init__(scope, construct_id, **kwargs)
 
-        # input_settings_bucket_arn = settings_bucket.bucket_arn
-        # input_settings_bucket_arn = Fn.import_value(
-        #     AWSNaming.CfnOutput(self, "settings-bucket-arn")
-        # )
-
-        # input_notification_queue_arn = Fn.import_value(
-        #     AWSNaming.CfnOutput(self, "notification-queue-arn")
-        # )
-
-        # input_internal_error_topic_arn = Fn.import_value(
-        #     AWSNaming.CfnOutput(self, "internal-error-topic-arn")
-        # )
-
-        # Settings S3 Bucket Import
-        # settings_bucket = s3.Bucket.from_bucket_arn(
-        #     self,
-        #     "salmonSettingsBucket",
-        #     bucket_arn=input_settings_bucket_arn,
-        # )
-
-        # # Notification Queue Import
-        # notification_queue = sqs.Queue.from_queue_arn(
-        #     self,
-        #     "salmonNotificationQueue",
-        #     queue_arn=input_notification_queue_arn,
-        # )
-
-        # # Internal Error Topic Import
-        # internal_error_topic = sns.Topic.from_topic_arn(
-        #     self,
-        #     "salmonInternalErrorTopic",
-        #     topic_arn=input_internal_error_topic_arn,
-        # )
-
-        alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
+        self.alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
         output_alerting_bus_name = CfnOutput(
             self,
             "salmonAlertingEventBusArn",
-            value=alerting_bus.event_bus_arn,
+            value=self.alerting_bus.event_bus_arn,
             description="Arn of alerting Event Bus",
             export_name=AWSNaming.CfnOutput(self, "alerting-bus-arn"),
         )

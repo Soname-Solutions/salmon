@@ -58,7 +58,7 @@ class InfraToolingCommonStack(NestedStack):
 
         self.settings_bucket = self.create_settings_bucket()
 
-        timestream_storage, kms_key = self.create_timestream_db()
+        self.timestream_storage, self.timestream_kms_key = self.create_timestream_db()
 
         # Internal Error SNS topic
         self.internal_error_topic = sns.Topic(
@@ -93,7 +93,7 @@ class InfraToolingCommonStack(NestedStack):
         output_timestream_database_arn = CfnOutput(
             self,
             "salmonTimestreamDBArn",
-            value=timestream_storage.attr_arn,
+            value=self.timestream_storage.attr_arn,
             description="The ARN of the Metrics and Events Storage",
             export_name=AWSNaming.CfnOutput(self, "metrics-events-storage-arn"),
         )
@@ -101,7 +101,7 @@ class InfraToolingCommonStack(NestedStack):
         output_timestream_database_name = CfnOutput(
             self,
             "salmonTimestreamDBName",
-            value=timestream_storage.database_name,
+            value=self.timestream_storage.database_name,
             description="DB Name of the Metrics and Events Storage",
             export_name=AWSNaming.CfnOutput(self, "metrics-events-db-name"),
         )
@@ -109,7 +109,7 @@ class InfraToolingCommonStack(NestedStack):
         output_timestream_kms_key = CfnOutput(
             self,
             "salmonTimestreamKmsKey",
-            value=kms_key.key_arn,
+            value=self.timestream_kms_key.key_arn,
             description="Arn of KMS Key for Timestream DB",
             export_name=AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn"),
         )

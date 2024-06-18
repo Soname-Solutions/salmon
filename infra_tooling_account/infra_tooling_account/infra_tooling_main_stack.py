@@ -26,6 +26,8 @@ class InfraToolingMainStack(Stack):
         settings_bucket = common_stack.settings_bucket
         internal_error_topic = common_stack.internal_error_topic
         notification_queue = common_stack.notification_queue
+        timestream_storage = common_stack.timestream_storage
+        timestream_kms_key = common_stack.timestream_kms_key
 
         alerting_stack = InfraToolingAlertingStack(
             self,
@@ -38,11 +40,19 @@ class InfraToolingMainStack(Stack):
             settings=self.settings,
         )        
         alerting_stack.add_dependency(common_stack)
+
+        alerting_bus = alerting_stack.alerting_bus
         
 
         monitoring_stack = InfraToolingMonitoringStack(
             self,
             f"cf-{self.project_name}-InfraToolingMonitoringStack-{self.stage_name}",
+            settings_bucket = settings_bucket,
+            internal_error_topic = internal_error_topic,
+            notification_queue = notification_queue,
+            timestream_storage = timestream_storage,
+            timestream_kms_key = timestream_kms_key,
+            alerting_bus = alerting_bus,
             stage_name=self.stage_name,
             project_name=self.project_name,
             settings=self.settings,            

@@ -10,6 +10,7 @@ from aws_cdk import (
     aws_iam as iam,
     aws_sns as sns,
     aws_sqs as sqs,
+    aws_kms as kms,
     aws_timestream as timestream,
     Duration,
 )
@@ -37,7 +38,18 @@ class InfraToolingMonitoringStack(NestedStack):
             Creates Lambda functions for extracting metrics.
     """
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        settings_bucket: s3.Bucket,
+        internal_error_topic: sns.Topic,
+        notification_queue: sqs.Queue,
+        timestream_storage: timestream.CfnDatabase,
+        timestream_kms_key: kms.Key,
+        alerting_bus: events.EventBus,
+        **kwargs,
+    ) -> None:
         """
         Initialize the InfraToolingMonitoringStack.
 
@@ -52,17 +64,19 @@ class InfraToolingMonitoringStack(NestedStack):
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
         self.settings: Settings = kwargs.pop("settings", None)
+        self.settings_bucket = settings_bucket
+        self.internal_error_topic = internal_error_topic
+        self.notification_queue = notification_queue
+        self.timestream_storage = timestream_storage
+        self.timestream_kms_key = timestream_kms_key
+        self.alerting_bus = alerting_bus
 
         super().__init__(scope, construct_id, **kwargs)
 
-        (
-            settings_bucket,
-            internal_error_topic,
-            input_timestream_database_arn,
-            input_timestream_database_name,
-            input_timestream_kms_key_arn,
-            input_alerting_bus_arn,
-        ) = self.get_common_stack_references()
+        input_timestream_database_arn = self.timestream_storage.attr_arn
+        input_timestream_database_name = self.timestream_storage.database_name
+        input_timestream_kms_key_arn = self.timestream_kms_key.key_arn
+        input_alerting_bus_arn = self.alerting_bus.event_bus_arn
 
         (
             extract_metrics_orch_lambda,
@@ -70,22 +84,12 @@ class InfraToolingMonitoringStack(NestedStack):
             monitored_assume_inline_policy,
             powertools_layer,
         ) = self.create_extract_metrics_lambdas(
-            settings_bucket=settings_bucket,
-            internal_error_topic=internal_error_topic,
+            settings_bucket=self.settings_bucket,
+            internal_error_topic=self.internal_error_topic,
             timestream_database_arn=input_timestream_database_arn,
             timestream_database_name=input_timestream_database_name,
             timestream_kms_key_arn=input_timestream_kms_key_arn,
             alerting_bus_arn=input_alerting_bus_arn,
-        )
-
-        # ntification Queue Import
-        input_notification_queue_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "notification-queue-arn")
-        )
-        notification_queue = sqs.Queue.from_queue_arn(
-            self,
-            "salmonNotificationQueue",
-            queue_arn=input_notification_queue_arn,
         )
 
         (
@@ -94,12 +98,12 @@ class InfraToolingMonitoringStack(NestedStack):
         ) = self.settings.get_digest_report_settings()
 
         digest_lambda = self.create_digest_lambda(
-            settings_bucket=settings_bucket,
-            internal_error_topic=internal_error_topic,
+            settings_bucket=self.settings_bucket,
+            internal_error_topic=self.internal_error_topic,
             timestream_database_arn=input_timestream_database_arn,
             timestream_database_name=input_timestream_database_name,
             timestream_kms_key_arn=input_timestream_kms_key_arn,
-            notification_queue=notification_queue,
+            notification_queue=self.notification_queue,
             digest_report_period_hours=digest_report_period_hours,
             monitored_assume_inline_policy=monitored_assume_inline_policy,
             powertools_layer=powertools_layer,
@@ -131,61 +135,6 @@ class InfraToolingMonitoringStack(NestedStack):
             rule_name=AWSNaming.EventBusRule(self, "metrics-extract-cron"),
         )
         rule.add_target(targets.LambdaFunction(extract_metrics_orch_lambda))
-
-    def get_common_stack_references(self):
-        """
-        Retrieves common stack references required for the stack's operations. These include the S3 bucket for settings,
-        the ARN of the internal error SNS topic, and the Timestream database ARN.
-
-        Returns:
-            tuple: A tuple containing references to the settings S3 bucket, internal error topic, and Timestream database ARN.
-        """
-        input_settings_bucket_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "settings-bucket-arn")
-        )
-
-        input_timestream_database_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "metrics-events-storage-arn")
-        )
-
-        input_timestream_database_name = Fn.import_value(
-            AWSNaming.CfnOutput(self, "metrics-events-db-name")
-        )
-
-        input_timestream_kms_key_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn")
-        )
-
-        input_internal_error_topic_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "internal-error-topic-arn")
-        )
-
-        input_alerting_bus_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "alerting-bus-arn")
-        )
-
-        # Settings S3 Bucket Import
-        settings_bucket = s3.Bucket.from_bucket_arn(
-            self,
-            "salmonSettingsBucket",
-            bucket_arn=input_settings_bucket_arn,
-        )
-
-        # Internal Error Topic Import
-        internal_error_topic = sns.Topic.from_topic_arn(
-            self,
-            "salmonInternalErrorTopic",
-            topic_arn=input_internal_error_topic_arn,
-        )
-
-        return (
-            settings_bucket,
-            internal_error_topic,
-            input_timestream_database_arn,
-            input_timestream_database_name,
-            input_timestream_kms_key_arn,
-            input_alerting_bus_arn,
-        )
 
     def create_extract_metrics_lambdas(
         self,
@@ -290,13 +239,11 @@ class InfraToolingMonitoringStack(NestedStack):
         tooling_acc_inline_policy.add_statements(
             # to be send events for those services, which are not in EventBridge yet
             iam.PolicyStatement(
-                actions=[
-                    "events:PutEvents"
-                ],
+                actions=["events:PutEvents"],
                 effect=iam.Effect.ALLOW,
                 resources=[alerting_bus_arn],
             )
-        )        
+        )
 
         monitored_assume_inline_policy = iam.Policy(
             self,
