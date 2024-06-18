@@ -47,7 +47,7 @@
             "sender_email": {"type": "string"},
             "credentials_secret_name": {"type": "string"},
             "use_ssl": {"type": "boolean"},
-            "timeout": {"type": "float"}
+            "timeout": {"type": "number"}
           },
           "required": ["name", "delivery_method_type"]
         }
