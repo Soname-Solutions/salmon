@@ -80,11 +80,11 @@ class SmtpSender(Sender):
         with SMTP_SSL(
             host=smtp_server, port=port, timeout=self._timeout, context=context
         ) as server:
-            server.login(login, password)
+            server.login(user=login, password=password)
             server.sendmail(
-                self._sender_email,
-                self._recipients,
-                self._get_message().as_string(),
+                from_addr=self._sender_email,
+                to_addrs=self._recipients,
+                msg=self._get_message().as_string(),
             )
 
     def _send_via_starttls(
@@ -98,11 +98,11 @@ class SmtpSender(Sender):
         """Send email via SMTP STARTTLS."""
         with SMTP(host=smtp_server, port=port, timeout=self._timeout) as server:
             server.starttls(context=context)
-            server.login(login, password)
+            server.login(user=login, password=password)
             server.sendmail(
-                self._sender_email,
-                self._recipients,
-                self._get_message().as_string(),
+                from_addr=self._sender_email,
+                to_addrs=self._recipients,
+                msg=self._get_message().as_string(),
             )
 
     def send(self) -> None:
@@ -113,14 +113,14 @@ class SmtpSender(Sender):
         if smtp_secret_name is None:
             raise KeyError("Credentials Secret Name is not set.")
 
-        smtp_secret = self._secret_client.get_secret(smtp_secret_name)
+        smtp_secret = self._secret_client.get_secret(secret_name=smtp_secret_name)
         smtp_server = self._get_smtp_credential_property(smtp_secret, "SMTP_SERVER")
         port = int(self._get_smtp_credential_property(smtp_secret, "SMTP_PORT"))
         login = self._get_smtp_credential_property(smtp_secret, "SMTP_LOGIN")
         password = self._get_smtp_credential_property(smtp_secret, "SMTP_PASSWORD")
 
         try:
-            if self._use_ssl:
+            if self._use_ssl and port != 25:
                 self._send_via_ssl(smtp_server, port, login, password, context)
             else:
                 self._send_via_starttls(smtp_server, port, login, password, context)
