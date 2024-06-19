@@ -69,22 +69,14 @@ class InfraToolingAlertingStack(NestedStack):
 
         self.alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
-        output_alerting_bus_name = CfnOutput(
-            self,
-            "salmonAlertingEventBusArn",
-            value=self.alerting_bus.event_bus_arn,
-            description="Arn of alerting Event Bus",
-            export_name=AWSNaming.CfnOutput(self, "alerting-bus-arn"),
-        )
-
-        log_group_name, log_stream_name = self.create_alert_events_log_stream()
+        self.log_group, self.log_stream = self.create_alert_events_log_stream()
 
         alerting_lambda = self.create_alerting_lambda(
             settings_bucket=self.settings_bucket,
             notification_queue=self.notification_queue,
             internal_error_topic=self.internal_error_topic,
-            log_group_name=log_group_name,
-            log_stream_name=log_stream_name,
+            log_group_name=self.log_group.log_group_name,
+            log_stream_name=self.log_stream.log_stream_name,
             alerting_lambda_event_rule=alerting_lambda_event_rule,
         )
 
@@ -134,7 +126,7 @@ class InfraToolingAlertingStack(NestedStack):
 
         return alerting_bus, alerting_lambda_event_rule
 
-    def create_alert_events_log_stream(self) -> tuple[str, str]:
+    def create_alert_events_log_stream(self) -> tuple[cloudwatch_logs.LogGroup, cloudwatch_logs.LogStream]:
         """Creates a log grop and a log stream in CloudWatch to store alert events.
 
         Returns:
@@ -156,7 +148,7 @@ class InfraToolingAlertingStack(NestedStack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        return log_group.log_group_name, log_stream.log_stream_name
+        return log_group, log_stream
 
     def create_alerting_lambda(
         self,
