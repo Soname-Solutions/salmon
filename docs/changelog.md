@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 * Unit test code coverage improved to ~90%
 * Notifications
   * Added AWS_SNS delivery method type
+* Improved CDK code (for tooling account part) readability and manageability by switching to Nested Stacks approach.
 
 ## 1.0.0
 

@@ -55,7 +55,7 @@ Deployment starts with the Tooling Environment:
 
 - browse into **infra_tooling_account** folder
 - run the following command  
-```cdk deploy --all --context stage-name=<your_stage_name>```
+```cdk deploy --context stage-name=<your_stage_name>```
 
 Optionally, you can add an AWS profile identifier via the '--profile' command argument.
 
