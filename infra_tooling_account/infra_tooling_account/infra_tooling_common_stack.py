@@ -1,6 +1,5 @@
 from aws_cdk import (
     NestedStack,
-    CfnOutput,
     Duration,
     IgnoreMode,
     aws_s3 as s3,
@@ -80,54 +79,6 @@ class InfraToolingCommonStack(NestedStack):
 
         notification_lambda = self.create_notification_lambda(
             self.internal_error_topic, self.notification_queue
-        )
-
-        output_settings_bucket_arn = CfnOutput(
-            self,
-            "salmonSettingsBucketArn",
-            value=self.settings_bucket.bucket_arn,
-            description="The ARN of the Settings S3 Bucket",
-            export_name=AWSNaming.CfnOutput(self, "settings-bucket-arn"),
-        )
-
-        output_timestream_database_arn = CfnOutput(
-            self,
-            "salmonTimestreamDBArn",
-            value=self.timestream_storage.attr_arn,
-            description="The ARN of the Metrics and Events Storage",
-            export_name=AWSNaming.CfnOutput(self, "metrics-events-storage-arn"),
-        )
-
-        output_timestream_database_name = CfnOutput(
-            self,
-            "salmonTimestreamDBName",
-            value=self.timestream_storage.database_name,
-            description="DB Name of the Metrics and Events Storage",
-            export_name=AWSNaming.CfnOutput(self, "metrics-events-db-name"),
-        )
-
-        output_timestream_kms_key = CfnOutput(
-            self,
-            "salmonTimestreamKmsKey",
-            value=self.timestream_kms_key.key_arn,
-            description="Arn of KMS Key for Timestream DB",
-            export_name=AWSNaming.CfnOutput(self, "metrics-events-kms-key-arn"),
-        )
-
-        output_notification_queue_arn = CfnOutput(
-            self,
-            "salmonNotificationQueueArn",
-            value=self.notification_queue.queue_arn,
-            description="The ARN of the Notification SQS Queue",
-            export_name=AWSNaming.CfnOutput(self, "notification-queue-arn"),
-        )
-
-        output_internal_error_topic_arn = CfnOutput(
-            self,
-            "salmonInternalErrorTopicArn",
-            value=self.internal_error_topic.topic_arn,
-            description="The ARN of the Internal Error Topic",
-            export_name=AWSNaming.CfnOutput(self, "internal-error-topic-arn"),
         )
 
     def create_timestream_db(self) -> tuple[timestream.CfnDatabase, kms.Key]:

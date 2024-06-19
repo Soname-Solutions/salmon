@@ -2,8 +2,6 @@ import yaml
 import json
 from aws_cdk import (
     NestedStack,
-    CfnOutput,
-    Fn,
     aws_s3 as s3,
     aws_iam as iam,
     aws_ec2 as ec2,
@@ -91,10 +89,7 @@ class InfraToolingGrafanaStack(NestedStack):
             grafana_instance_type,
         ) = self.settings.get_grafana_settings()
 
-        (
-            grafana_admin_secret_name,
-            grafana_admin_secret_arn,
-        ) = self.create_grafana_admin_secret()
+        self.grafana_admin_secret = self.create_grafana_admin_secret()
 
         # Create Grafana key pair if not provided
         if not grafana_key_pair_name:
@@ -106,31 +101,22 @@ class InfraToolingGrafanaStack(NestedStack):
             cloudwatch_log_group_name=alert_events_log_group.log_group_name,
         )
 
-        grafana_instance = self.create_grafana_instance(
+        self.grafana_instance = self.create_grafana_instance(
             grafana_vpc_id=grafana_vpc_id,
             grafana_security_group_id=grafana_security_group_id,
             timestream_kms_key_arn=input_timestream_kms_key_arn,
             timestream_database_arn=input_timestream_database_arn,
             settings_bucket_arn=input_settings_bucket_arn,
             alert_events_log_group_arn=alert_events_log_group.log_group_arn,
-            grafana_admin_secret_name=grafana_admin_secret_name,
-            grafana_admin_secret_arn=grafana_admin_secret_arn,
+            grafana_admin_secret_name=self.grafana_admin_secret.secret_name,
+            grafana_admin_secret_arn=self.grafana_admin_secret.secret_arn,
             grafana_bitnami_image=grafana_bitnami_image,
             grafana_key_pair_name=grafana_key_pair_name,
             grafana_instance_type=grafana_instance_type,
             settings_bucket_name=settings_bucket.bucket_name,
         )
 
-        output_grafana_url = CfnOutput(
-            self,
-            "GrafanaURL",
-            # To sign in to Grafana, go to http://<grafana-instance-public-ip>:3000
-            value=f"http://{grafana_instance.instance_public_ip}:3000",
-            description="Grafana URL",
-            export_name=AWSNaming.CfnOutput(self, "grafana-url"),
-        )
-
-    def create_grafana_admin_secret(self) -> tuple[str, str]:
+    def create_grafana_admin_secret(self) -> secretsmanager.Secret:
         """
         Creates Grafana admin password in Secrets Manager.
 
@@ -151,7 +137,7 @@ class InfraToolingGrafanaStack(NestedStack):
             ),
         )
 
-        return grafana_admin_secret.secret_name, grafana_admin_secret.secret_arn
+        return grafana_admin_secret
 
     def create_grafana_key_pair(self) -> str:
         """

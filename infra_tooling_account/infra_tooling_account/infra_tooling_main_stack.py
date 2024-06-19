@@ -1,4 +1,4 @@
-from aws_cdk import Stack
+from aws_cdk import CfnOutput, Stack
 from constructs import Construct
 from lib.settings.settings import Settings
 
@@ -8,6 +8,7 @@ from infra_tooling_account.infra_tooling_monitoring_stack import (
     InfraToolingMonitoringStack,
 )
 from infra_tooling_account.infra_tooling_grafana_stack import InfraToolingGrafanaStack
+from lib.aws.aws_naming import AWSNaming
 
 
 class InfraToolingMainStack(Stack):
@@ -74,3 +75,28 @@ class InfraToolingMainStack(Stack):
                 settings=self.settings,
             )
             grafana_stack.add_dependency(common_stack)
+
+            output_grafana_url = CfnOutput(
+                self,
+                "GrafanaURL",
+                value=f"http://{grafana_stack.grafana_instance.instance_public_ip}:3000",
+                description="Grafana URL",
+                export_name=AWSNaming.CfnOutput(self, "grafana-url"),
+            )
+            output_grafana_admin_secret = CfnOutput(
+                self,
+                "GrafanaAdminSecret",
+                value=grafana_stack.grafana_admin_secret.secret_name,
+                description="Grafana Initial Admin credentials",
+                export_name=AWSNaming.CfnOutput(self, "grafana-admin-secret"),
+            )
+
+
+        # Outputs
+        output_settings_bucket_arn = CfnOutput(
+            self,
+            "salmonSettingsBucket",
+            value=settings_bucket.bucket_name,
+            description="Settings S3 Bucket",
+            export_name=AWSNaming.CfnOutput(self, "settings-bucket"),
+        )

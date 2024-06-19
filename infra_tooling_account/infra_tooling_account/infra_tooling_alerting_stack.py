@@ -1,7 +1,5 @@
 from aws_cdk import (
     NestedStack,
-    Fn,
-    CfnOutput,
     IgnoreMode,
     aws_s3 as s3,
     aws_events as events,
