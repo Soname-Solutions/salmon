@@ -1,7 +1,7 @@
 
 # SALMON architecture overview
 
-*Note: This article uses Salmon-specific terminology which is defined in a short document here: [Key Concepts](docs/key_concepts.md).*
+*Note: This article uses Salmon-specific terminology which is defined in a short document here: [Key Concepts](/docs/key_concepts.md).*
 
 ## Detailed architecture diagram
 
@@ -18,7 +18,7 @@ This section covers cross-cut platform components.
 Settings Service is a Python library which provides an interface for all solution's components to interact with SALMON's configuration.  
 E.g. getting list and content of monitoring group, checking which recipients should be notified about a specific Glue Job failure etc.
 
-For more information on Settings - please refer to [Configuration Guide](docs/configuration.md).
+For more information on Settings - please refer to [Configuration Guide](/docs/configuration.md).
 
 **Notification Service**
 

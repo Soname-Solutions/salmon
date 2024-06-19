@@ -1,28 +1,39 @@
 # SALMON Dashboards
 
-* [Overview](#overview)
-    * [Sign in to Grafana](#sign-in)
-    * [Managing Users and Dashboards](#managing-users)
-* [Dashboards](#dashboards)
-    * [Visualizing CloudWatch Alerts](#cw-dashboard)
-    * [Visualizing Timestream Metrics](#timestream-dashboard)
+- [SALMON Dashboards](#salmon-dashboards)
+  - [Overview ](#overview-)
+    - [Sign in to Grafana ](#sign-in-to-grafana-)
+    - [Managing Users and Dashboards ](#managing-users-and-dashboards-)
+  - [Dashboards](#dashboards)
+    - [Visualizing CloudWatch Alerts ](#visualizing-cloudwatch-alerts-)
+    - [Visualizing Timestream Metrics ](#visualizing-timestream-metrics-)
 
 
 ##  Overview <a name="overview"></a>
-This article provides an overview of the Grafana instance and the pre-provisioned SALMON dashboards included with its deployment.
 
-The Grafana stack `cf-salmon-InfraToolingGrafanaStack-<<stage-name>>` is an **optional** component, so when you decide to deploy it, you will receive a Grafana instance along with the default SALMON dashboards. Grafana deployed using the Bitnami Grafana image from AWS Marketplace on Amazon EC2 and reads data from Amazon Timestream tables and CloudWatch log group: \
+Salmon collects and stores events and data pipeline metrics in AWS TimeStream database and CloudWatch logs.  
+In order to visualize this data and create your own dashboards, your can either use a tool of your choice or
+opt for **optional** Salmon's Grafana component with pre-built dashboards.
+
+In latter case, Grafana is deployed using the Bitnami Grafana image from AWS Marketplace on Amazon EC2: \
 \
     ![Grafana Architecture](images/grafana/grafana-architecture.png "Grafana Architecture") 
 
-Refer to our [Configuration guide](docs/configuration.md) for more details on the Grafana configuration. 
+
+How to switch Grafana component on: in **general.json** config file, add *"grafana_instance"* section (for more details please refer to our [Configuration guide](/docs/configuration.md) for more details on the Grafana configuration).
+
 
 ### Sign in to Grafana <a name="sign-in"></a>
+
 To sign in to Grafana, follow these steps:
-1. Open your web browser and go to the URL specified in the output `GrafanaURL` once Grafana stack creation is completed.
+1. In AWS Console, browse to AWS CloudFormation stack `cf-salmon-InfraMainStack-<<stage-name>>`
+2. Stack's output contains:
+   1. IP address of Grafana instance
+   2. AWS Secret containing initial credentials for Grafana Admin user
+3. Open your web browser and go to the URL specified in the output `GrafanaURL`.
     >  You can also navigate to the EC2 instance named as `ec2-salmon-grafana-instance-<<stage-name>>` to check the public IP and access Grafana via `http://<grafana-instance-public-ip>:3000`. 
-2. On the signin page, enter username and password from the corresponding secret `secret-salmon-grafana-password-<<stage-name>>` created in AWS Secrets Manager.
-3. Click Sign in.
+4. On the signin page, enter username and password from the corresponding secret `secret-salmon-grafana-password-<<stage-name>>` created in AWS Secrets Manager.
+5. Click Sign in.
 
 ###  Managing Users and Dashboards <a name="managing-users"></a>
 After logged in, under "Dashboards", you will find the default dashboards within a dedicated folder named "Default SALMON Dashboards": \
