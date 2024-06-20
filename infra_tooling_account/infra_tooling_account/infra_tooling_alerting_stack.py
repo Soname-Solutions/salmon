@@ -1,7 +1,5 @@
 from aws_cdk import (
     NestedStack,
-    Fn,
-    CfnOutput,
     IgnoreMode,
     aws_s3 as s3,
     aws_events as events,
@@ -38,7 +36,15 @@ class InfraToolingAlertingStack(NestedStack):
             Creates Lambda function for events alerting.
     """
 
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        settings_bucket: s3.Bucket,
+        internal_error_topic: sns.Topic,
+        notification_queue: sqs.Queue,
+        **kwargs,
+    ) -> None:
         """
         Initialize the InfraToolingAlertingStack.
 
@@ -53,60 +59,22 @@ class InfraToolingAlertingStack(NestedStack):
         self.stage_name = kwargs.pop("stage_name", None)
         self.project_name = kwargs.pop("project_name", None)
         self.settings: Settings = kwargs.pop("settings", None)
+        self.settings_bucket = settings_bucket
+        self.internal_error_topic = internal_error_topic
+        self.notification_queue = notification_queue
 
         super().__init__(scope, construct_id, **kwargs)
 
-        input_settings_bucket_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "settings-bucket-arn")
-        )
+        self.alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
 
-        input_notification_queue_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "notification-queue-arn")
-        )
-
-        input_internal_error_topic_arn = Fn.import_value(
-            AWSNaming.CfnOutput(self, "internal-error-topic-arn")
-        )
-
-        # Settings S3 Bucket Import
-        settings_bucket = s3.Bucket.from_bucket_arn(
-            self,
-            "salmonSettingsBucket",
-            bucket_arn=input_settings_bucket_arn,
-        )
-
-        # Notification Queue Import
-        notification_queue = sqs.Queue.from_queue_arn(
-            self,
-            "salmonNotificationQueue",
-            queue_arn=input_notification_queue_arn,
-        )
-
-        # Internal Error Topic Import
-        internal_error_topic = sns.Topic.from_topic_arn(
-            self,
-            "salmonInternalErrorTopic",
-            topic_arn=input_internal_error_topic_arn,
-        )
-
-        alerting_bus, alerting_lambda_event_rule = self.create_event_bus()
-
-        output_alerting_bus_name = CfnOutput(
-            self,
-            "salmonAlertingEventBusArn",
-            value=alerting_bus.event_bus_arn,
-            description="Arn of alerting Event Bus",
-            export_name=AWSNaming.CfnOutput(self, "alerting-bus-arn"),
-        )        
-
-        log_group_name, log_stream_name = self.create_alert_events_log_stream()
+        self.log_group, self.log_stream = self.create_alert_events_log_stream()
 
         alerting_lambda = self.create_alerting_lambda(
-            settings_bucket=settings_bucket,
-            notification_queue=notification_queue,
-            internal_error_topic=internal_error_topic,
-            log_group_name=log_group_name,
-            log_stream_name=log_stream_name,
+            settings_bucket=self.settings_bucket,
+            notification_queue=self.notification_queue,
+            internal_error_topic=self.internal_error_topic,
+            log_group_name=self.log_group.log_group_name,
+            log_stream_name=self.log_stream.log_stream_name,
             alerting_lambda_event_rule=alerting_lambda_event_rule,
         )
 
@@ -156,7 +124,7 @@ class InfraToolingAlertingStack(NestedStack):
 
         return alerting_bus, alerting_lambda_event_rule
 
-    def create_alert_events_log_stream(self) -> tuple[str, str]:
+    def create_alert_events_log_stream(self) -> tuple[cloudwatch_logs.LogGroup, cloudwatch_logs.LogStream]:
         """Creates a log grop and a log stream in CloudWatch to store alert events.
 
         Returns:
@@ -178,7 +146,7 @@ class InfraToolingAlertingStack(NestedStack):
             removal_policy=RemovalPolicy.DESTROY,
         )
 
-        return log_group.log_group_name, log_stream.log_stream_name
+        return log_group, log_stream
 
     def create_alerting_lambda(
         self,
