@@ -10,6 +10,7 @@ from infra_tooling_account.infra_tooling_monitoring_stack import (
 from infra_tooling_account.infra_tooling_grafana_stack import InfraToolingGrafanaStack
 from lib.aws.aws_naming import AWSNaming
 
+from lib.git.version_history_helper import get_current_commit_and_latest_ver
 
 class InfraToolingMainStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
@@ -18,6 +19,8 @@ class InfraToolingMainStack(Stack):
         self.settings: Settings = kwargs.pop("settings", None)
 
         super().__init__(scope, id, **kwargs)
+
+        latest_commit_hash, salmon_ver_no = get_current_commit_and_latest_ver()
 
         common_stack = InfraToolingCommonStack(
             self,
@@ -100,3 +103,16 @@ class InfraToolingMainStack(Stack):
             description="Settings S3 Bucket",
             export_name=AWSNaming.CfnOutput(self, "settings-bucket"),
         )
+        output_salmon_version = CfnOutput(
+            self,
+            "salmonVersionNumber",
+            value=salmon_ver_no,
+            description="Version Number of Salmon deployment"
+        )        
+        output_salmon_commit = CfnOutput(
+            self,
+            "salmonCommitHash",
+            value=latest_commit_hash,
+            description="Git Commit Hash of code used for deployment"
+        )        
+
