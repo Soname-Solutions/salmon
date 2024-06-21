@@ -34,7 +34,8 @@
             "name": "local_smtp",
             "delivery_method_type": "SMTP",
             "sender_email": "<<sender_email>>",
-            "credentials_secret_name": "sm-my-smtp-server-creds"
+            "credentials_secret_name": "sm-my-smtp-server-creds",
+            "use_ssl": true
         },
         {
             "name": "sns_main",

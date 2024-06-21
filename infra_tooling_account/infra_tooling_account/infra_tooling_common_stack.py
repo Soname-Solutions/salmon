@@ -171,7 +171,9 @@ class InfraToolingCommonStack(NestedStack):
             iam.PolicyStatement(
                 actions=["sns:Publish"],
                 effect=iam.Effect.ALLOW,
-                resources=["*"] # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular 
+                resources=[
+                    "*"
+                ]  # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular
                 # notification configured, so need to publish to arbitrary topics.
             )
         )
@@ -197,6 +199,16 @@ class InfraToolingCommonStack(NestedStack):
                 ],
                 effect=iam.Effect.ALLOW,
                 resources=[internal_error_topic.topic_arn],
+            )
+        )
+
+        notification_lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=["secretsmanager:GetSecretValue"],
+                effect=iam.Effect.ALLOW,
+                resources=[
+                    "*"
+                ],  # to be able to retrieve Secrets required for SMTP sender
             )
         )
 
