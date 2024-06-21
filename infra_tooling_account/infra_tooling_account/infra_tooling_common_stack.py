@@ -112,7 +112,9 @@ class InfraToolingCommonStack(NestedStack):
         settings_bucket = s3.Bucket(
             self,
             "salmonSettingsBucket",
-            bucket_name=AWSNaming.S3Bucket(self, "settings"),
+            bucket_name=AWSNaming.S3Bucket(
+                self, f"settings-{NestedStack.of(self).account}"
+            ),
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
