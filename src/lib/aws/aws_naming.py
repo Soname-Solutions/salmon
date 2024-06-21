@@ -62,7 +62,7 @@ class AWSNaming:
     def S3Bucket(cls, stack_obj: object, meaning: str, account_id: str) -> str:
         prefix = "s3"
         return AWSNaming.__resource_name_with_check(
-            stack_obj, prefix, meaning, account_id=account_id
+            stack_obj=stack_obj, prefix=prefix, meaning=meaning, account_id=account_id
         )
 
     @classmethod
