@@ -11,11 +11,15 @@ class AWSNaming:
 
     @classmethod
     def __resource_name_with_check(
-        cls, stack_obj: object, prefix: str, meaning: str
+        cls, stack_obj: object, prefix: str, meaning: str, **kwargs
     ) -> str:
         project_name, stage_name = AWSNaming.__get_project_and_stage(stack_obj)
+        additional_parts = "-".join(str(value) for value in kwargs.values() if value)
 
-        outp = f"{prefix}-{project_name}-{meaning}-{stage_name}"
+        if additional_parts:
+            outp = f"{prefix}-{project_name}-{meaning}-{stage_name}-{additional_parts}"
+        else:
+            outp = f"{prefix}-{project_name}-{meaning}-{stage_name}"
 
         return outp
 
@@ -55,9 +59,11 @@ class AWSNaming:
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
-    def S3Bucket(cls, stack_obj: object, meaning: str) -> str:
+    def S3Bucket(cls, stack_obj: object, meaning: str, account_id: str) -> str:
         prefix = "s3"
-        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+        return AWSNaming.__resource_name_with_check(
+            stack_obj, prefix, meaning, account_id=account_id
+        )
 
     @classmethod
     def SNSTopic(cls, stack_obj: object, meaning: str) -> str:
@@ -67,7 +73,7 @@ class AWSNaming:
     @classmethod
     def SQSQueue(cls, stack_obj: object, meaning: str) -> str:
         prefix = "queue"
-        ending = ".fifo" # FIFO queue names must end in '.fifo'
+        ending = ".fifo"  # FIFO queue names must end in '.fifo'
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning) + ending
 
     @classmethod

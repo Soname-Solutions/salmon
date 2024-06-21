@@ -112,7 +112,9 @@ class InfraToolingCommonStack(NestedStack):
         settings_bucket = s3.Bucket(
             self,
             "salmonSettingsBucket",
-            bucket_name=AWSNaming.S3Bucket(self, "settings"),
+            bucket_name=AWSNaming.S3Bucket(
+                self, "settings", NestedStack.of(self).account
+            ),
             block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
@@ -173,7 +175,7 @@ class InfraToolingCommonStack(NestedStack):
                 effect=iam.Effect.ALLOW,
                 resources=[
                     "*"
-                ]  # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular
+                ],  # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular
                 # notification configured, so need to publish to arbitrary topics.
             )
         )
