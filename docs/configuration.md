@@ -148,14 +148,15 @@ Based on the delivery method type, additional parameters are required:
     - `sender_email` - the sender email for notifications and digests.
     - `credentials_secret_name` - the name of the secret stored in AWS Secrets Manager containing the SMTP server credentials. Required key-value pairs: SMTP_SERVER, SMTP_PORT, SMTP_LOGIN, SMTP_PASSWORD. \
     Sample JSON context of the secret:
-    ``` json
-       {
-         "SMTP_SERVER": "put_smtp_host_here",
-         "SMTP_PORT": "put_smtp_port_here",
-         "SMTP_LOGIN": "put_smtp_login_here",
-         "SMTP_PASSWORD": "put_smtp_password_here"
-        }
-    ```
+        ``` json
+        {
+            "SMTP_SERVER": "put_smtp_host_here",
+            "SMTP_PORT": "put_smtp_port_here",
+            "SMTP_LOGIN": "put_smtp_login_here",
+            "SMTP_PASSWORD": "put_smtp_password_here"
+            }
+        ```
+        >  The secret in AWS Secrets Manager should have a tag with the key `salmon` and any value. This is required to limit access to only the secrets tagged with `salmon`. 
     - (optional) `use_ssl` - indicate whether to use SSL for the SMTP server connection. If set to True, the connection will use SSL. Otherwhise, STARTTLS will be used. Default value: `True`.
     - (optional) `timeout` -  the connection timeout in seconds. Default value: `10.0`.
 
