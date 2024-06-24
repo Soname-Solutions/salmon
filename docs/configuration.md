@@ -154,8 +154,9 @@ Based on the delivery method type, additional parameters are required:
             "SMTP_PORT": "put_smtp_port_here",
             "SMTP_LOGIN": "put_smtp_login_here",
             "SMTP_PASSWORD": "put_smtp_password_here"
-            }
+        }
         ```
+        > **NOTE:**
         >  The secret in AWS Secrets Manager should have a tag with the key `salmon` and any value. This is required to limit access to only the secrets tagged with `salmon`. 
     - (optional) `use_ssl` - indicate whether to use SSL for the SMTP server connection. If set to True, the connection will use SSL. Otherwhise, STARTTLS will be used. Default value: `True`.
     - (optional) `timeout` -  the connection timeout in seconds. Default value: `10.0`.
