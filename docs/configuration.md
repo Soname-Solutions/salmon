@@ -196,7 +196,7 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 **Monitoring Groups Configuration**: 
 - `group_name` - the name of your monitoring group.
 
-- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate section should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**. \
+- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate subsection should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**. \
 Within each section, list the resources of the corresponding resource type along with their properties:
 
     - `name` - specify the resource name to be monitored.
@@ -206,6 +206,44 @@ Within each section, list the resources of the corresponding resource type along
     - `monitored_environment_name` - the name of the Monitored environment (should match to one of the monitored environment names defined in the **general.json** file, **monitored_environments** section, **name** field).
     - (optional) `sla_seconds` - the Service Level Agreement (SLA) in seconds for the resource. If the execution time exceeds the SLA set, such resource run will be marked with the Warning status and and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
     - (optional) `minimum_number_of_runs` - the minimum number of runs expected for the resource. If there have been less resource runs than expected, such run will be marked with the Warning status and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.
+
+<details>
+<summary>Example: Configuring Monitoring Groups based on your resource naming conventions</summary>
+  Many companies use AWS resource naming conventions.  
+
+  For example, convention could be: `{type}-{project}-{meaning}-{env}` (result into something like "`job-pnlcalculations-ingestion-dev`" for a Glue job).  
+
+  If you want to monitor all your Glue jobs in project "A" and project "B", but different teams are responsible for managing those projects, an effective strategy is to create two monitoring groups using wildcard statements based on naming conventions.  
+
+  Here's how it can be done:
+  ```json
+{
+    "monitoring_groups": [     
+        {
+            "group_name": "job_projectA",
+            "glue_jobs": [
+                {
+                    "name": "job-projectA-*",
+                    ...
+                }
+            ]
+        },
+        {
+            "group_name": "job_projectB",
+            "glue_jobs": [
+                {
+                    "name": "job-projectB-*",
+                    ...
+                }
+            ]
+        },        
+}        
+  ```
+  The benefits of this approach include:
+  1. You can scope all relevant jobs in a single statement without listing all jobs individually, relying on naming conventions.
+  2. Any new job created for the project will automatically be included in the monitoring group as long as it follows the naming convention.
+  3. Two separate monitoring groups allow you to divide responsibilities between teams. Team "A" can subscribe only to project "A" jobs, while the second team can manage project "B" jobs.  
+</details>
 
 ### 4. Configure Recipients and Subscriptions  <a name="configure-recipients-and-subscriptions"></a> 
 The `recipients.json` file specifies recipients for alerts and digests, along with their subscriptions to the monitoring groups.
