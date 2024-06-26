@@ -175,7 +175,7 @@ class InfraToolingCommonStack(NestedStack):
                 effect=iam.Effect.ALLOW,
                 resources=[
                     "*"
-                ]  # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular
+                ],  # referring to '*' instead of internal_error_topic.topic_arn as there might be SNS way of regular
                 # notification configured, so need to publish to arbitrary topics.
             )
         )
@@ -207,10 +207,13 @@ class InfraToolingCommonStack(NestedStack):
         notification_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
+                conditions={
+                    "StringLike": {f"aws:ResourceTag/{self.project_name}": "*"}
+                },
                 effect=iam.Effect.ALLOW,
                 resources=[
                     "*"
-                ],  # to be able to retrieve Secrets required for SMTP sender
+                ],  # to be able to retrieve Secrets tagged with "salmon" required for SMTP sender
             )
         )
 
