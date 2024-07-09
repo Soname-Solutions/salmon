@@ -9,6 +9,7 @@ class ResourceTypeResolver:
             "Data Catalog": types.GLUE_DATA_CATALOGS,
             "Crawler": types.GLUE_CRAWLERS,
         },
+        "aws.glue-dataquality": {"Data Quality": types.GLUE_DATA_QUALITY},
         "aws.states": {"Execution": types.STEP_FUNCTIONS},
         "salmon.glue_workflow": {
             "Glue Workflow State Change": types.GLUE_WORKFLOWS

@@ -10,13 +10,16 @@ class SettingConfigResourceTypes:
     GLUE_WORKFLOWS = "glue_workflows"
     GLUE_CRAWLERS = "glue_crawlers"
     GLUE_DATA_CATALOGS = "glue_catalogs"
+    GLUE_DATA_QUALITY = "glue_data_quality"
     LAMBDA_FUNCTIONS = "lambda_functions"
     STEP_FUNCTIONS = "step_functions"
+
 
 class DeliveryMethodTypes:
     AWS_SES = "AWS_SES"
     AWS_SNS = "AWS_SNS"
     SMTP = "SMTP"
+
 
 class SettingConfigs:
     RESOURCE_TYPES = [
@@ -24,6 +27,7 @@ class SettingConfigs:
         SettingConfigResourceTypes.GLUE_WORKFLOWS,
         SettingConfigResourceTypes.GLUE_CRAWLERS,
         SettingConfigResourceTypes.GLUE_DATA_CATALOGS,
+        SettingConfigResourceTypes.GLUE_DATA_QUALITY,
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS,
         SettingConfigResourceTypes.STEP_FUNCTIONS,
     ]
@@ -33,9 +37,11 @@ class SettingConfigs:
         SettingConfigResourceTypes.GLUE_WORKFLOWS: "glue",
         SettingConfigResourceTypes.GLUE_CRAWLERS: "glue",
         SettingConfigResourceTypes.GLUE_DATA_CATALOGS: "glue",
+        SettingConfigResourceTypes.GLUE_DATA_QUALITY: "glue-dataquality",
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
         SettingConfigResourceTypes.STEP_FUNCTIONS: "stepfunctions",
     }
+
 
 class CloudWatchConfigs:
     QUERY_TIMEOUT_SECONDS = 60
