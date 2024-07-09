@@ -74,6 +74,14 @@ class InfraMonitoredStack(Stack):
             event_pattern=events.EventPattern(source=["aws.glue"]),
         )
 
+        # EventBridge Glue Data Quality rule
+        glue_dq_alerting_event_rule = events.Rule(
+            self,
+            "salmonGlueDQAlertingEventRule",
+            rule_name=AWSNaming.EventBusRule(self, "glue-dataquality"),
+            event_pattern=events.EventPattern(source=["aws.glue-dataquality"]),
+        )
+
         # EventBridge Step Functions rule
         step_functions_alerting_event_rule = events.Rule(
             self,
@@ -90,9 +98,14 @@ class InfraMonitoredStack(Stack):
         )
 
         glue_alerting_event_rule.add_target(rule_target)
+        glue_dq_alerting_event_rule.add_target(rule_target)
         step_functions_alerting_event_rule.add_target(rule_target)
 
-        return [glue_alerting_event_rule, step_functions_alerting_event_rule]
+        return [
+            glue_alerting_event_rule,
+            glue_dq_alerting_event_rule,
+            step_functions_alerting_event_rule,
+        ]
 
     def create_metrics_extract_iam_role(self):
         """
@@ -141,6 +154,7 @@ class InfraMonitoredStack(Stack):
                 "glue:GetJobRuns",
                 "glue:GetWorkflowRuns",
                 "glue:GetWorkflowRun",
+                "glue:ListDataQualityRulesets",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,

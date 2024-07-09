@@ -176,7 +176,7 @@ class GlueManager:
 
         except Exception as e:
             raise GlueManagerException(
-                f"Error getting list of glue data qaulity rulesets: {e}"
+                f"Error getting list of glue data quality rulesets: {e}"
             )
 
     def _get_all_workflow_errors(
