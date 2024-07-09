@@ -169,6 +169,16 @@ class GlueManager:
                 f"Error getting list of glue data catalogs : {e}"
             )
 
+    def _get_all_data_quality_names(self):
+        try:
+            response = self.glue_client.list_data_quality_rulesets()
+            return [res["Name"] for res in response.get("Rulesets")]
+
+        except Exception as e:
+            raise GlueManagerException(
+                f"Error getting list of glue data qaulity rulesets: {e}"
+            )
+
     def _get_all_workflow_errors(
         self, node: Union[dict, list], node_type: str = None
     ) -> list[str]:
@@ -204,6 +214,8 @@ class GlueManager:
             return self._get_all_crawler_names()
         elif resource_type == SettingConfigResourceTypes.GLUE_DATA_CATALOGS:
             return self._get_all_data_catalog_names()
+        elif resource_type == SettingConfigResourceTypes.GLUE_DATA_QUALITY:
+            return self._get_all_data_quality_names()
         else:
             raise GlueManagerException(f"Unknown glue resource type {resource_type}")
 

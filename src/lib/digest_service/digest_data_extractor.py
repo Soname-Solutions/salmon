@@ -111,6 +111,17 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
         return query
 
 
+class GlueDataQualityDigestDataExtractor(BaseDigestDataExtractor):
+    """
+    Class is responsible for preparing the query for extracting Glue Data Quality runs.
+    """
+
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
+        print("Calling a method which hasn't been implemented yet")
+        query = ""
+        return query
+
+
 class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
     Class is responsible for preparing the query for extracting Step Functions runs.

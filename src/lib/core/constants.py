@@ -37,7 +37,7 @@ class SettingConfigs:
         SettingConfigResourceTypes.GLUE_WORKFLOWS: "glue",
         SettingConfigResourceTypes.GLUE_CRAWLERS: "glue",
         SettingConfigResourceTypes.GLUE_DATA_CATALOGS: "glue",
-        SettingConfigResourceTypes.GLUE_DATA_QUALITY: "glue-dataquality",
+        SettingConfigResourceTypes.GLUE_DATA_QUALITY: "glue",
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
         SettingConfigResourceTypes.STEP_FUNCTIONS: "stepfunctions",
     }

@@ -4,6 +4,7 @@ from lib.digest_service import (
     GlueWorkflowsDigestDataExtractor,
     GlueCrawlersDigestDataExtractor,
     GlueDataCatalogsDigestDataExtractor,
+    GlueDataQualityDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
 )
@@ -50,6 +51,10 @@ DigestDataExtractorProvider.register_digest_provider(
 DigestDataExtractorProvider.register_digest_provider(
     resource_type=types.GLUE_DATA_CATALOGS,
     digest_extractor=GlueDataCatalogsDigestDataExtractor,
+)
+DigestDataExtractorProvider.register_digest_provider(
+    resource_type=types.GLUE_DATA_QUALITY,
+    digest_extractor=GlueDataQualityDigestDataExtractor,
 )
 DigestDataExtractorProvider.register_digest_provider(
     resource_type=types.STEP_FUNCTIONS,

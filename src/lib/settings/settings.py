@@ -29,6 +29,7 @@ RESOURCE_TYPES_LINKED_AWS_MANAGERS = {
     SettingConfigResourceTypes.GLUE_WORKFLOWS: GlueManager,
     SettingConfigResourceTypes.GLUE_CRAWLERS: GlueManager,
     SettingConfigResourceTypes.GLUE_DATA_CATALOGS: GlueManager,
+    SettingConfigResourceTypes.GLUE_DATA_QUALITY: GlueManager,
     SettingConfigResourceTypes.LAMBDA_FUNCTIONS: LambdaManager,
     SettingConfigResourceTypes.STEP_FUNCTIONS: StepFunctionsManager,
 }
@@ -127,9 +128,9 @@ class Settings:
             "monitored_environments", []
         ):
             if "metrics_extractor_role_arn" not in m_env:
-                m_env["metrics_extractor_role_arn"] = (
-                    self._get_default_metrics_extractor_role_arn(m_env["account_id"])
-                )
+                m_env[
+                    "metrics_extractor_role_arn"
+                ] = self._get_default_metrics_extractor_role_arn(m_env["account_id"])
 
         # Add default sla_seconds and minimum_number_of_runs
         for m_env in self._processed_settings[SettingFileNames.MONITORING_GROUPS].get(
