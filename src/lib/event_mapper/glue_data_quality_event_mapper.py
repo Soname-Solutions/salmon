@@ -23,29 +23,32 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
             return EventResult.INFO
 
     def get_execution_info_url(self, resource_name: str):
-        if self.event["detail"]["context"]["contextType"] == "GLUE_DATA_CATALOG":
+        context = self.event.get("detail", {}).get("context", {})
+        context_type = context.get("contextType")
+
+        if context_type == "GLUE_DATA_CATALOG":
             return ExecutionInfoUrlMixin.get_url(
                 resource_type=self.resource_type,
                 region_name=self.event["region"],
                 resource_name=resource_name,
-                run_id=self.event["detail"]["context"]["runId"],
-                glue_table_name=self.event["detail"]["context"]["tableName"],
-                glue_db_name=self.event["detail"]["context"]["databaseName"],
-                glue_catalog_id=self.event["detail"]["context"]["catalogId"],
+                run_id=context.get("runId"),
+                context_type=context_type,
+                glue_table_name=context.get("tableName"),
+                glue_db_name=context.get("databaseName"),
+                glue_catalog_id=context.get("catalogId"),
             )
-        elif self.event["detail"]["context"]["contextType"] == "GLUE_JOB":
+        elif context_type == "GLUE_JOB":
             return ExecutionInfoUrlMixin.get_url(
-                resource_type=types.GLUE_JOBS,
+                resource_type=self.resource_type,
                 region_name=self.event["region"],
-                resource_name=self.event["detail"]["context"]["jobName"],
-                run_id=self.event["detail"]["context"]["jobId"],
+                resource_name=context.get("jobName"),
+                run_id=context.get("jobId"),
+                context_type=context_type,
             )
 
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()
-
         style = super().get_row_style()
-
         rows.append(
             super().create_table_row(["Glue DQ Ruleset Name", self.get_resource_name()])
         )
@@ -53,28 +56,25 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
             super().create_table_row(["State", self.get_resource_state()], style)
         )
 
-        if self.event["detail"]["context"]["contextType"] == "GLUE_DATA_CATALOG":
+        context = self.event.get("detail", {}).get("context", {})
+        if context.get("contextType") == "GLUE_DATA_CATALOG":
             rows.append(
-                super().create_table_row(
-                    ["Glue Table Name", self.event["detail"]["context"]["tableName"]]
-                )
+                super().create_table_row(["Glue Table Name", context.get("tableName")])
             )
             rows.append(
                 super().create_table_row(
                     [
                         "Glue Database Name",
-                        self.event["detail"]["context"]["databaseName"],
+                        context.get("databaseName"),
                     ]
                 )
             )
-            run_id = self.event["detail"]["context"]["runId"]
+            run_id = context.get("runId")
         else:
             rows.append(
-                super().create_table_row(
-                    ["Glue Job Name", self.event["detail"]["context"]["jobName"]]
-                )
+                super().create_table_row(["Glue Job Name", context.get("jobName")])
             )
-            run_id = self.event["detail"]["context"]["jobId"]
+            run_id = context.get("jobId")
 
         link_url = self.get_execution_info_url(self.get_resource_name())
         rows.append(
