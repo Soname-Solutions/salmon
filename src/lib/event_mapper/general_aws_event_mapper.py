@@ -183,9 +183,11 @@ class ExecutionInfoUrlMixin:
 
         url_prefix = f"https://{region_name}.console.aws.amazon.com"
 
+        # additional params required for Glue Data Quality and Data Catalogs resource types
         glue_table_name = kwargs.pop("glue_table_name", None)
         glue_db_name = kwargs.pop("glue_db_name", None)
         glue_catalog_id = kwargs.pop("glue_catalog_id", None)
+        glue_job_name = kwargs.pop("glue_job_name", None)
         context_type = kwargs.pop("context_type", None)
         type_of_change = kwargs.pop("type_of_change", None)
 
@@ -208,7 +210,7 @@ class ExecutionInfoUrlMixin:
             types.GLUE_DATA_QUALITY: lambda: (
                 f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/tables/evaluation-run-details/{glue_table_name}?database={glue_db_name}&catalogId={glue_catalog_id}&runid={run_id}"
                 if context_type == "GLUE_DATA_CATALOG"
-                else f"{url_prefix}/gluestudio/home?region={region_name}#/editor/job/{resource_name}/dataquality"
+                else f"{url_prefix}/gluestudio/home?region={region_name}#/editor/job/{glue_job_name}/dataquality"
             ),
             types.GLUE_DATA_CATALOGS: lambda: (
                 f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/tables/view/{glue_table_name}?database={glue_db_name}"
@@ -217,13 +219,11 @@ class ExecutionInfoUrlMixin:
             ),
         }
 
-        url_generator = url_mapping.get(resource_type)
-        if url_generator:
-            try:
+        try:
+            url_generator = url_mapping.get(resource_type)
+            if url_generator:
                 return url_generator()
-            except TypeError:
-                raise ValueError(
-                    f"Missing required parameters for resource type {resource_type}"
-                )
-        else:
-            raise ValueError(f"Unsupported resource type: {resource_type}")
+            return ""
+
+        except Exception as e:
+            raise EventParsingException(f"Error getting execution info URL: {e}")

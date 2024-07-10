@@ -41,8 +41,9 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
             return ExecutionInfoUrlMixin.get_url(
                 resource_type=self.resource_type,
                 region_name=self.event["region"],
-                resource_name=context.get("jobName"),
+                resource_name=resource_name,
                 run_id=context.get("jobId"),
+                glue_job_name=context.get("jobName"),
                 context_type=context_type,
             )
 
