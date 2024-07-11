@@ -45,7 +45,10 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
         #     "tableName": "tbl1", <- cases a) Db-level -> field is not present, b) this field is present
         #     "changedTables": ["tbl1"], <- sometimes this field is present instead of "tableName"
         # },
+        db_name = self.event["detail"].get("databaseName")
+        type_of_change = self.event["detail"].get("typeOfChange", "")
         table_name = self.event["detail"].get("tableName")
+
         if table_name is None:
             changed_tables = self.event["detail"].get("changedTables")
             if changed_tables:
@@ -55,10 +58,9 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
             resource_type=self.resource_type,
             region_name=self.event["region"],
             resource_name=resource_name,
-            run_id=self.event["detail"]["context"]["runId"],
             glue_table_name=table_name,
-            glue_db_name=self.event["detail"].get("databaseName"),
-            type_of_change=self.event["detail"].get("typeOfChange"),
+            glue_db_name=db_name,
+            type_of_change=type_of_change,
         )
 
     def get_message_body(self):

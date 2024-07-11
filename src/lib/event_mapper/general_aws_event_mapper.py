@@ -188,8 +188,8 @@ class ExecutionInfoUrlMixin:
         glue_db_name = kwargs.pop("glue_db_name", None)
         glue_catalog_id = kwargs.pop("glue_catalog_id", None)
         glue_job_name = kwargs.pop("glue_job_name", None)
-        context_type = kwargs.pop("context_type", None)
-        type_of_change = kwargs.pop("type_of_change", None)
+        context_type = kwargs.pop("context_type", "")
+        type_of_change = kwargs.pop("type_of_change", "")
 
         url_mapping = {
             types.GLUE_JOBS: lambda: (
@@ -222,6 +222,7 @@ class ExecutionInfoUrlMixin:
         try:
             url_generator = url_mapping.get(resource_type)
             if url_generator:
+                print(url_generator())
                 return url_generator()
             return ""
 
