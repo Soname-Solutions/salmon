@@ -78,6 +78,5 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
                 ["Glue DQ Run ID", f"<a href='{link_url}'>{run_id}</a>"]
             )
         )
-        print(message_body)
 
         return message_body

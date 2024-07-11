@@ -184,10 +184,10 @@ class ExecutionInfoUrlMixin:
         url_prefix = f"https://{region_name}.console.aws.amazon.com"
 
         # additional params required for Glue Data Quality and Data Catalogs resource types
-        glue_table_name = kwargs.pop("glue_table_name", None)
-        glue_db_name = kwargs.pop("glue_db_name", None)
-        glue_catalog_id = kwargs.pop("glue_catalog_id", None)
-        glue_job_name = kwargs.pop("glue_job_name", None)
+        glue_table_name = kwargs.pop("glue_table_name", "")
+        glue_db_name = kwargs.pop("glue_db_name", "")
+        glue_catalog_id = kwargs.pop("glue_catalog_id", "")
+        glue_job_name = kwargs.pop("glue_job_name", "")
         context_type = kwargs.pop("context_type", "")
         type_of_change = kwargs.pop("type_of_change", "")
 
@@ -219,12 +219,7 @@ class ExecutionInfoUrlMixin:
             ),
         }
 
-        try:
-            url_generator = url_mapping.get(resource_type)
-            if url_generator:
-                print(url_generator())
-                return url_generator()
-            return ""
-
-        except Exception as e:
-            raise EventParsingException(f"Error getting execution info URL: {e}")
+        url_generator = url_mapping.get(resource_type)
+        if url_generator:
+            return url_generator()
+        return ""

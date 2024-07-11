@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from datetime import datetime
 
-from lib.event_mapper import GeneralAwsEventMapper
+from lib.event_mapper import GeneralAwsEventMapper, ExecutionInfoUrlMixin
 from lib.core.constants import SettingConfigResourceTypes as types, EventResult
 
 TEST_EVENT = {
@@ -33,7 +33,11 @@ class ConcreteAwsEventMapper(GeneralAwsEventMapper):
         return EventResult.FAILURE
 
     def get_execution_info_url(self, resource_name: str):
-        return f"https://{resource_name}"
+        return ExecutionInfoUrlMixin.get_url(
+            resource_type="test-resource-type",
+            region_name="test-region",
+            resource_name=resource_name,
+        )
 
     def get_message_body(self):
         message_body, _ = super().create_message_body_with_common_rows()
@@ -59,4 +63,4 @@ def test_event_mapper_to_message(mock_settings):
     )
     assert returned_message["message_body"][0]["table"]["rows"] == expected_rows
     assert event_mapper.get_event_result() == EventResult.FAILURE
-    assert event_mapper.get_execution_info_url("glue-test") == "https://glue-test"
+    assert event_mapper.get_execution_info_url("glue-test") == ""
