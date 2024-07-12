@@ -8,6 +8,7 @@ from lib.core.constants import SettingConfigResourceTypes as resource_types, Eve
 from lib.settings import Settings
 from lib.event_mapper.general_aws_event_mapper import ExecutionInfoUrlMixin
 from lib.aws.lambda_manager import LambdaManager
+from lib.aws.glue_manager import GlueManager
 
 # uncomment this to see lambda's logging output
 # import logging
@@ -593,4 +594,89 @@ def test_lambda_function_completed(os_vars_init, event_dyn_props_init):
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
     ), "URL is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
+
+
+################################################################################################################################
+
+# Glue Data Quality tests
+
+
+# Utility function to generate a Glue DQ event with dynamic properties.
+def get_glue_dq_event(event_dyn_props, resource_name, status, event_result):
+    (account_id, region, time_str, epoch_time, version_str) = event_dyn_props
+
+    return {
+        "version": version_str,  # instead of "normal" '0', we put here custom value, so we can track and find event in CloudWatch LogInsights
+        "id": "1643c080-ab60-1171-65e1-f4fe17e5773e",
+        "detail-type": "Data Quality Evaluation Results Available",
+        "source": "aws.glue-dataquality",
+        "account": account_id,
+        "time": time_str,
+        "region": region,
+        "resources": [],
+        "detail": {
+            "rulesetNames": [resource_name],
+            "state": status,  # "COMPLETED" / "FAILED"
+            "event_result": event_result,  # "INFO" / "FAILURE",
+            "context": {
+                "catalogId": account_id,
+                "contextType": GlueManager.DQ_Catalog_Context_Type,
+                "databaseName": "test-glue-dq-db",
+                "tableName": "test-glue-dq-table",
+                "runId": "dqrun-823d27d644915f91833172789d4f3c9cc705d90d",
+            },
+        },
+    }
+
+
+def test_glue_dq_failed(os_vars_init, event_dyn_props_init):
+    event = get_glue_dq_event(
+        event_dyn_props=event_dyn_props_init,
+        resource_name="glue-salmonts-dq-ruleset-1",
+        status="FAILED",
+        event_result=EventResult.FAILURE,
+    )
+
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == True, "Event should raise alert"
+    assert result["event_is_monitorable"] == True, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.GLUE_DATA_QUALITY
+    ), "Resouce type is incorrect"
+
+
+def test_glue_dq_succeeded(os_vars_init, event_dyn_props_init):
+    event = get_glue_dq_event(
+        event_dyn_props=event_dyn_props_init,
+        resource_name="glue-salmonts-dq-ruleset-2",
+        status="SUCCEEDED",
+        event_result=EventResult.SUCCESS,
+    )
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
+    assert result["event_is_monitorable"] == True, "Event should be logged"
+    assert (
+        result["resource_type"] == resource_types.GLUE_DATA_QUALITY
+    ), "Resouce type is incorrect"
+    assert not (result["messages"]), "Event shouldn't have messages"
+
+
+def test_glue_dq_completed(os_vars_init, event_dyn_props_init):
+    event = get_glue_dq_event(
+        event_dyn_props=event_dyn_props_init,
+        resource_name="glue-salmonts-dq-ruleset-3",
+        status="COMPLETED",
+        event_result=EventResult.INFO,
+    )
+
+    result = lambda_handler(event, {})
+
+    assert result["event_is_alertable"] == False, "Event shouldn't raise alert"
+    assert result["event_is_monitorable"] == False, "Event shouldn't be logged"
+    assert (
+        result["resource_type"] == resource_types.GLUE_DATA_QUALITY
+    ), "Resouce type is incorrect"
     assert not (result["messages"]), "Event shouldn't have messages"

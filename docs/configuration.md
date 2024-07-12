@@ -198,7 +198,7 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 **Monitoring Groups Configuration**: 
 - `group_name` - the name of your monitoring group.
 
-- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate subsection should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**. \
+- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate subsection should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**, **glue_data_quality**. \
 Within each section, list the resources of the corresponding resource type along with their properties:
 
     - `name` - specify the resource name to be monitored.

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from lib.settings import Settings
 from lib.core.constants import SettingConfigResourceTypes as types, EventResult
 from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
+from lib.aws.glue_manager import GlueManager
 
 
 class EventParsingException(Exception):
@@ -177,13 +178,51 @@ class ExecutionInfoUrlMixin:
         resource_name: str,
         account_id: str = None,
         run_id: str = None,
+        **kwargs,
     ) -> str:
         """Returns the link to the particular resource run."""
+
+        url_prefix = f"https://{region_name}.console.aws.amazon.com"
+
+        # additional params required for Glue Data Quality and Data Catalogs resource types
+        glue_table_name = kwargs.pop("glue_table_name", "")
+        glue_db_name = kwargs.pop("glue_db_name", "")
+        glue_catalog_id = kwargs.pop("glue_catalog_id", "")
+        glue_job_name = kwargs.pop("glue_job_name", "")
+        context_type = kwargs.pop("context_type", "")
+        type_of_change = kwargs.pop("type_of_change", "")
+
         url_mapping = {
-            types.GLUE_JOBS: f"https://{region_name}.console.aws.amazon.com/gluestudio/home?region={region_name}#/job/{resource_name}/run/{run_id}",
-            types.STEP_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/states/home?region={region_name}#/v2/executions/details/arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}",
-            types.LAMBDA_FUNCTIONS: f"https://{region_name}.console.aws.amazon.com/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{resource_name}/log-events/",
-            types.GLUE_CRAWLERS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/crawlers/view/{resource_name}",
-            types.GLUE_WORKFLOWS: f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/etl-configuration/workflows/run/{resource_name}?runId={run_id}",
+            types.GLUE_JOBS: lambda: (
+                f"{url_prefix}/gluestudio/home?region={region_name}#/job/{resource_name}/run/{run_id}"
+            ),
+            types.STEP_FUNCTIONS: lambda: (
+                f"{url_prefix}/states/home?region={region_name}#/v2/executions/details/arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}"
+            ),
+            types.LAMBDA_FUNCTIONS: lambda: (
+                f"{url_prefix}/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{resource_name}/log-events/"
+            ),
+            types.GLUE_CRAWLERS: lambda: (
+                f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/crawlers/view/{resource_name}"
+            ),
+            types.GLUE_WORKFLOWS: lambda: (
+                f"{url_prefix}/glue/home?region={region_name}#/v2/etl-configuration/workflows/run/{resource_name}?runId={run_id}"
+            ),
+            types.GLUE_DATA_QUALITY: lambda: (
+                f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/tables/evaluation-run-details/{glue_table_name}?database={glue_db_name}&catalogId={glue_catalog_id}&runid={run_id}"
+                if context_type == GlueManager.DQ_Catalog_Context_Type
+                else f"{url_prefix}/gluestudio/home?region={region_name}#/editor/job/{glue_job_name}/dataquality"
+            ),
+            types.GLUE_DATA_CATALOGS: lambda: (
+                f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/tables/view/{glue_table_name}?database={glue_db_name}"
+                if "Table" in type_of_change
+                else f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/databases/view/{glue_db_name}"
+            ),
         }
-        return url_mapping.get(resource_type, "")
+
+        url_generator = url_mapping.get(resource_type)
+        if url_generator:
+            return url_generator()
+        raise KeyError(
+            f"Execution link is not generated for the resource type {resource_type}"
+        )

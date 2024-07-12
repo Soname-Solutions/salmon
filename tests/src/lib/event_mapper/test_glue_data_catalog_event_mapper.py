@@ -93,18 +93,6 @@ def test_get_execution_info_url(
     assert returned_url == expected_url
 
 
-def test_get_execution_info_url_exception(mock_settings):
-    event = {
-        "account": "test-account",
-        "region": "test-region",
-    }
-    mapper = GlueDataCatalogEventMapper(
-        resource_type=types.GLUE_DATA_CATALOGS, event=event, settings=mock_settings
-    )
-    with pytest.raises(GlueDataCatalogEventMapperException):
-        mapper.get_execution_info_url(resource_name="glue-data-catalog-test")
-
-
 def test_get_message_body(mock_settings):
     event_state = "SUCCEEDED"
     event = get_glue_data_catalog_event(

@@ -4,6 +4,7 @@ from lib.event_mapper import (
     GlueWorkflowEventMapper,
     GlueCrawlerEventMapper,
     GlueDataCatalogEventMapper,
+    GlueDataQualityEventMapper,
     StepFunctionsEventMapper,
     LambdaFunctionsEventMapper,
 )
@@ -38,6 +39,9 @@ EventMapperProvider.register_event_mapper(types.GLUE_WORKFLOWS, GlueWorkflowEven
 EventMapperProvider.register_event_mapper(types.GLUE_CRAWLERS, GlueCrawlerEventMapper)
 EventMapperProvider.register_event_mapper(
     types.GLUE_DATA_CATALOGS, GlueDataCatalogEventMapper
+)
+EventMapperProvider.register_event_mapper(
+    types.GLUE_DATA_QUALITY, GlueDataQualityEventMapper
 )
 EventMapperProvider.register_event_mapper(
     types.STEP_FUNCTIONS, StepFunctionsEventMapper

@@ -116,6 +116,15 @@ class GlueManager:
 
     Catalog_State_Success = "SUCCESS"
 
+    Data_Quality_Success = ["SUCCEEDED"]
+    Data_Quality_Failure = ["FAILED", "TIMEOUT", "STOPPED"]
+    DQ_Catalog_Context_Type = "GLUE_DATA_CATALOG"
+    DQ_Job_Context_Type = "GLUE_JOB"
+    DQ_Context_Mapping = {
+        DQ_Catalog_Context_Type: "runId",
+        DQ_Job_Context_Type: "jobId",
+    }
+
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
 
@@ -169,6 +178,16 @@ class GlueManager:
                 f"Error getting list of glue data catalogs : {e}"
             )
 
+    def _get_all_data_quality_names(self):
+        try:
+            response = self.glue_client.list_data_quality_rulesets()
+            return [res["Name"] for res in response.get("Rulesets")]
+
+        except Exception as e:
+            raise GlueManagerException(
+                f"Error getting list of glue data quality rulesets: {e}"
+            )
+
     def _get_all_workflow_errors(
         self, node: Union[dict, list], node_type: str = None
     ) -> list[str]:
@@ -204,6 +223,8 @@ class GlueManager:
             return self._get_all_crawler_names()
         elif resource_type == SettingConfigResourceTypes.GLUE_DATA_CATALOGS:
             return self._get_all_data_catalog_names()
+        elif resource_type == SettingConfigResourceTypes.GLUE_DATA_QUALITY:
+            return self._get_all_data_quality_names()
         else:
             raise GlueManagerException(f"Unknown glue resource type {resource_type}")
 

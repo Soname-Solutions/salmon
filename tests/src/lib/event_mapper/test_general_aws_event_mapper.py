@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch
 from datetime import datetime
 
-from lib.event_mapper import GeneralAwsEventMapper
+from lib.event_mapper import GeneralAwsEventMapper, ExecutionInfoUrlMixin
 from lib.core.constants import SettingConfigResourceTypes as types, EventResult
 
 TEST_EVENT = {
@@ -11,7 +11,7 @@ TEST_EVENT = {
     "detail-type": "Glue Job State Change",
     "account": "1234567890",
     "region": "test-region",
-    "detail": {"name": "glue-test", "state": "Failed"},
+    "detail": {"name": "glue-test", "state": "Failed", "jobRunId": "123456789"},
 }
 
 
@@ -33,7 +33,12 @@ class ConcreteAwsEventMapper(GeneralAwsEventMapper):
         return EventResult.FAILURE
 
     def get_execution_info_url(self, resource_name: str):
-        return f"https://{resource_name}"
+        return ExecutionInfoUrlMixin.get_url(
+            resource_type=self.resource_type,
+            region_name=self.event["region"],
+            resource_name=resource_name,
+            run_id=self.event["detail"]["jobRunId"],
+        )
 
     def get_message_body(self):
         message_body, _ = super().create_message_body_with_common_rows()
@@ -59,4 +64,19 @@ def test_event_mapper_to_message(mock_settings):
     )
     assert returned_message["message_body"][0]["table"]["rows"] == expected_rows
     assert event_mapper.get_event_result() == EventResult.FAILURE
-    assert event_mapper.get_execution_info_url("glue-test") == "https://glue-test"
+    assert (
+        event_mapper.get_execution_info_url("glue-test")
+        == "https://test-region.console.aws.amazon.com/gluestudio/home?region=test-region#/job/glue-test/run/123456789"
+    )
+
+
+def test_event_mapper_exception(mock_settings):
+    resource_type = "test-resource-type"
+    event_mapper = ConcreteAwsEventMapper(
+        resource_type=resource_type, event=TEST_EVENT, settings=mock_settings
+    )
+    with pytest.raises(
+        KeyError,
+        match=f"Execution link is not generated for the resource type {resource_type}",
+    ):
+        event_mapper.get_execution_info_url("glue-test")

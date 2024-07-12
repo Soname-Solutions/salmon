@@ -136,9 +136,10 @@ def test_getting_tooling_env_props_when_explicitly_defined():
     }
 
     metrics_collection_interval_min = settings.get_metrics_collection_interval_min()
-    digest_report_period_hours, digest_cron_expression = (
-        settings.get_digest_report_settings()
-    )
+    (
+        digest_report_period_hours,
+        digest_cron_expression,
+    ) = settings.get_digest_report_settings()
     (
         grafana_vpc_id,
         grafana_security_group_id,
@@ -176,9 +177,10 @@ def test_getting_tooling_env_props_when_omitted():
     }
 
     metrics_collection_interval_min = settings.get_metrics_collection_interval_min()
-    digest_report_period_hours, digest_cron_expression = (
-        settings.get_digest_report_settings()
-    )
+    (
+        digest_report_period_hours,
+        digest_cron_expression,
+    ) = settings.get_digest_report_settings()
     grafana_settings = settings.get_grafana_settings()
 
     assert (
@@ -281,6 +283,7 @@ def test_monitoring_groups():
             "glue_catalogs": {},
             "step_functions": {},
             "lambda_functions": {},
+            "glue_data_quality": {},
         },
     ):
         groups = settings.list_monitoring_groups()
@@ -337,6 +340,7 @@ def test_monitoring_group_resource_properties():
             "glue_catalogs": {},
             "step_functions": {},
             "lambda_functions": {},
+            "glue_data_quality": {},
         },
     ):
         content = settings.get_monitoring_group_content(monitoring_group_name)
@@ -393,6 +397,7 @@ def test_monitoring_group_replace_wildcards():
             "glue_catalogs": {},
             "step_functions": {},
             "lambda_functions": {},
+            "glue_data_quality": {},
         },
     ):
         content = settings.get_monitoring_group_content(monitoring_group_name)
@@ -433,6 +438,7 @@ def test_get_monitoring_groups():
             "glue_catalogs": {},
             "step_functions": {},
             "lambda_functions": {},
+            "glue_data_quality": {},
         },
     ):
 
@@ -478,6 +484,7 @@ def test_get_monitoring_groups_by_resource_type():
             "glue_catalogs": {},
             "step_functions": {},
             "lambda_functions": {},
+            "glue_data_quality": {},
         },
     ):
 
@@ -511,7 +518,6 @@ def test_get_all_resource_names():
     with patch("lib.aws.GlueManager.get_all_names", return_value=glue_job_names), patch(
         "lib.aws.StepFunctionsManager.get_all_names", return_value=step_function_names
     ), patch("lib.aws.StsManager.get_client_via_assumed_role"):
-
         result = settings._get_all_resource_names()
 
         assert SettingConfigResourceTypes.GLUE_JOBS in result

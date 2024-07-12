@@ -1,4 +1,7 @@
-from lib.event_mapper.general_aws_event_mapper import GeneralAwsEventMapper
+from lib.event_mapper.general_aws_event_mapper import (
+    GeneralAwsEventMapper,
+    ExecutionInfoUrlMixin,
+)
 from lib.core.constants import EventResult
 from lib.aws.glue_manager import GlueManager
 
@@ -42,24 +45,23 @@ class GlueDataCatalogEventMapper(GeneralAwsEventMapper):
         #     "tableName": "tbl1", <- cases a) Db-level -> field is not present, b) this field is present
         #     "changedTables": ["tbl1"], <- sometimes this field is present instead of "tableName"
         # },
-        try:
-            type_of_change = self.event["detail"].get("typeOfChange", "")
-            region_name = self.event["region"]
-            database_name = self.event["detail"]["databaseName"]
+        type_of_change = self.event["detail"].get("typeOfChange", "")
+        database_name = self.event["detail"].get("databaseName")
+        table_name = self.event["detail"].get("tableName")
 
-            if "Table" in type_of_change:
-                table_name = self.event["detail"].get("tableName")
-                if table_name is None:
-                    table_name = self.event["detail"].get("changedTables")[0]
+        if table_name is None:
+            changed_tables = self.event["detail"].get("changedTables")
+            if changed_tables:
+                table_name = changed_tables[0]
 
-                return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/tables/view/{table_name}?database={database_name}"
-
-            else:
-                return f"https://{region_name}.console.aws.amazon.com/glue/home?region={region_name}#/v2/data-catalog/databases/view/{database_name}"
-        except Exception as e:
-            raise GlueDataCatalogEventMapperException(
-                f"Error getting execution info URL: {e}"
-            )
+        return ExecutionInfoUrlMixin.get_url(
+            resource_type=self.resource_type,
+            region_name=self.event["region"],
+            resource_name=resource_name,
+            glue_table_name=table_name,
+            glue_db_name=database_name,
+            type_of_change=type_of_change,
+        )
 
     def get_message_body(self):
         message_body, rows = super().create_message_body_with_common_rows()

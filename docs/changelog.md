@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.2.0
+* Alerting functionality implemented for Glue Data Quality events
+
 ## 1.1.0
 
 * Unit test code coverage improved to ~90%

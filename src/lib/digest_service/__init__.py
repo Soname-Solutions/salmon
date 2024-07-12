@@ -4,6 +4,7 @@ from .digest_data_extractor import (
     GlueWorkflowsDigestDataExtractor,
     GlueCrawlersDigestDataExtractor,
     GlueDataCatalogsDigestDataExtractor,
+    GlueDataQualityDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
     DigestException,

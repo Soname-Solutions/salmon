@@ -9,6 +9,7 @@ from lib.event_mapper import (
     GlueDataCatalogEventMapper,
     StepFunctionsEventMapper,
     LambdaFunctionsEventMapper,
+    GlueDataQualityEventMapper,
 )
 from lib.core.constants import SettingConfigResourceTypes as types, SettingConfigs
 
@@ -51,6 +52,7 @@ def test_unregistered_event_mapper():
         ("scen4", types.GLUE_CRAWLERS, GlueCrawlerEventMapper),
         ("scen5", types.LAMBDA_FUNCTIONS, LambdaFunctionsEventMapper),
         ("scen6", types.STEP_FUNCTIONS, StepFunctionsEventMapper),
+        ("scen7", types.GLUE_DATA_QUALITY, GlueDataQualityEventMapper),
     ],
 )
 def test_get_event_mapper(
