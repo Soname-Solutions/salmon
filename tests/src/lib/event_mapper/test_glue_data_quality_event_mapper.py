@@ -7,6 +7,7 @@ from lib.event_mapper import (
     GlueDataQualityEventMapperException,
 )
 from lib.core.constants import SettingConfigResourceTypes as types
+from lib.aws.glue_manager import GlueManager
 
 EVENT_TYPE = "Data Quality Evaluation Results Availablee"
 DQ_RULESET_NAME = "glue-dq-ruleset-test"
@@ -23,7 +24,9 @@ def mock_settings():
 
 
 def get_glue_dq_event(
-    event_state="SUCCEEDED", detail_type=EVENT_TYPE, contextType="GLUE_JOB"
+    event_state=GlueManager.Data_Quality_Success,
+    detail_type=EVENT_TYPE,
+    contextType=GlueManager.DQ_Job_Context_Type,
 ):
     return {
         "detail-type": detail_type,
@@ -107,6 +110,7 @@ def test_get_context_details_exception(mock_settings):
 
 def test_get_run_id_exception(mock_settings):
     event = get_glue_dq_event()
+    # removing jobId since GLUE_JOB context is used in test event by default
     del event["detail"]["context"]["jobId"]
 
     mapper = GlueDataQualityEventMapper(
@@ -143,13 +147,13 @@ def test_get_resource_state(mock_settings, scenario, event_state, expected_state
         (
             "scen1",
             "FAILED",
-            "GLUE_JOB",
+            GlueManager.DQ_Job_Context_Type,
             "https://test-region.console.aws.amazon.com/gluestudio/home?region=test-region#/editor/job/glue-dq-job-test/dataquality",
         ),
         (
             "scen2",
             "RUNNING",
-            "GLUE_DATA_CATALOG",
+            GlueManager.DQ_Catalog_Context_Type,
             "https://test-region.console.aws.amazon.com/glue/home?region=test-region#/v2/data-catalog/tables/evaluation-run-details/glue-dq-table-test?database=glue-dq-db-test&catalogId=1234567890&runid=dqrun-823d27d644915f91833172789d4f3c9cc705d90d",
         ),
     ],
@@ -167,8 +171,7 @@ def test_get_execution_info_url(
 
 
 def test_get_message_body(mock_settings):
-    event_state = "SUCCEEDED"
-    event = get_glue_dq_event(event_state=event_state, contextType="GLUE_JOB")
+    event = get_glue_dq_event()
     mapper = GlueDataQualityEventMapper(
         resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
     )
@@ -181,7 +184,7 @@ def test_get_message_body(mock_settings):
         {"values": ["Time", "2000-01-01 00:00:00"]},
         {"values": ["Event Type", EVENT_TYPE]},
         {"values": ["Glue DQ Ruleset Name", DQ_RULESET_NAME]},
-        {"values": ["State", event_state]},
+        {"values": ["State", GlueManager.Data_Quality_Success]},
         {"values": ["Glue Job Name", JOB_NAME]},
         {
             "values": [

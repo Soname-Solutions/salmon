@@ -35,13 +35,15 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
         context = self.event.get("detail", {}).get("context", {})
         context_type = context.get("contextType")
 
-        if context_type not in GlueManager.Data_Quality_Context_Types:
+        if context_type not in [
+            GlueManager.DQ_Catalog_Context_Type,
+            GlueManager.DQ_Job_Context_Type,
+        ]:
             raise GlueDataQualityEventMapperException(
                 f"Unknown or missing context type in the DQ event: {self.event}"
             )
 
-        run_id_key_map = {"GLUE_DATA_CATALOG": "runId", "GLUE_JOB": "jobId"}
-        run_id = context.get(run_id_key_map[context_type])
+        run_id = context.get(GlueManager.DQ_Context_Mapping[context_type])
         if not run_id:
             raise GlueDataQualityEventMapperException(
                 f"Missing run ID for context type {context_type} in the DQ event: {self.event}"
@@ -75,7 +77,7 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
         )
 
         context, context_type, run_id = self._get_context_and_run_id()
-        if context_type == "GLUE_DATA_CATALOG":
+        if context_type == GlueManager.DQ_Catalog_Context_Type:
             rows.append(
                 super().create_table_row(["Glue Table Name", context.get("tableName")])
             )
@@ -87,7 +89,7 @@ class GlueDataQualityEventMapper(GeneralAwsEventMapper):
                     ]
                 )
             )
-        elif context_type == "GLUE_JOB":
+        elif context_type == GlueManager.DQ_Job_Context_Type:
             rows.append(
                 super().create_table_row(["Glue Job Name", context.get("jobName")])
             )

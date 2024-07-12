@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from lib.settings import Settings
 from lib.core.constants import SettingConfigResourceTypes as types, EventResult
 from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
+from lib.aws.glue_manager import GlueManager
 
 
 class EventParsingException(Exception):
@@ -209,7 +210,7 @@ class ExecutionInfoUrlMixin:
             ),
             types.GLUE_DATA_QUALITY: lambda: (
                 f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/tables/evaluation-run-details/{glue_table_name}?database={glue_db_name}&catalogId={glue_catalog_id}&runid={run_id}"
-                if context_type == "GLUE_DATA_CATALOG"
+                if context_type == GlueManager.DQ_Catalog_Context_Type
                 else f"{url_prefix}/gluestudio/home?region={region_name}#/editor/job/{glue_job_name}/dataquality"
             ),
             types.GLUE_DATA_CATALOGS: lambda: (

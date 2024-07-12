@@ -621,7 +621,7 @@ def get_glue_dq_event(event_dyn_props, resource_name, status, event_result):
             "event_result": event_result,  # "INFO" / "FAILURE",
             "context": {
                 "catalogId": account_id,
-                "contextType": "GLUE_DATA_CATALOG",
+                "contextType": GlueManager.DQ_Catalog_Context_Type,
                 "databaseName": "test-glue-dq-db",
                 "tableName": "test-glue-dq-table",
                 "runId": "dqrun-823d27d644915f91833172789d4f3c9cc705d90d",

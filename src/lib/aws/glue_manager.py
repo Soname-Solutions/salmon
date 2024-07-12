@@ -118,7 +118,12 @@ class GlueManager:
 
     Data_Quality_Success = ["SUCCEEDED"]
     Data_Quality_Failure = ["FAILED", "TIMEOUT", "STOPPED"]
-    Data_Quality_Context_Types = ["GLUE_DATA_CATALOG", "GLUE_JOB"]
+    DQ_Catalog_Context_Type = "GLUE_DATA_CATALOG"
+    DQ_Job_Context_Type = "GLUE_JOB"
+    DQ_Context_Mapping = {
+        DQ_Catalog_Context_Type: "runId",
+        DQ_Job_Context_Type: "jobId",
+    }
 
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
