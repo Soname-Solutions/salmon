@@ -23,7 +23,7 @@ def mock_settings():
 
 
 def get_glue_dq_event(
-    event_state="SUCCEEDED", detail_type=EVENT_TYPE, contextType=None
+    event_state="SUCCEEDED", detail_type=EVENT_TYPE, contextType="GLUE_JOB"
 ):
     return {
         "detail-type": detail_type,
@@ -91,6 +91,32 @@ def test_get_resource_name_exception(mock_settings, scenario, event):
         match=f"Required GLue DQ Ruleset name is not defined in the DQ event",
     ):
         mapper.get_resource_name()
+
+
+def test_get_context_details_exception(mock_settings):
+    event = get_glue_dq_event(contextType="test-context-type")
+    mapper = GlueDataQualityEventMapper(
+        resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
+    )
+    with pytest.raises(
+        GlueDataQualityEventMapperException,
+        match=f"Unknown or missing context type in the DQ event",
+    ):
+        mapper.get_execution_info_url(resource_name=DQ_RULESET_NAME)
+
+
+def test_get_run_id_exception(mock_settings):
+    event = get_glue_dq_event()
+    del event["detail"]["context"]["jobId"]
+
+    mapper = GlueDataQualityEventMapper(
+        resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
+    )
+    with pytest.raises(
+        GlueDataQualityEventMapperException,
+        match=f"Missing run ID for context type GLUE_JOB in the DQ event",
+    ):
+        mapper.get_execution_info_url(resource_name=DQ_RULESET_NAME)
 
 
 @pytest.mark.parametrize(
