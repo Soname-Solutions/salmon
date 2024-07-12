@@ -10,7 +10,10 @@ from .glue_data_catalog_event_mapper import (
     GlueDataCatalogEventMapper,
     GlueDataCatalogEventMapperException,
 )
-from .glue_data_quality_event_mapper import GlueDataQualityEventMapper
+from .glue_data_quality_event_mapper import (
+    GlueDataQualityEventMapper,
+    GlueDataQualityEventMapperException,
+)
 from .glue_crawler_event_mapper import GlueCrawlerEventMapper
 from .step_functions_event_mapper import StepFunctionsEventMapper
 from .lambda_functions_event_mapper import LambdaFunctionsEventMapper

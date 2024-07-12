@@ -222,4 +222,6 @@ class ExecutionInfoUrlMixin:
         url_generator = url_mapping.get(resource_type)
         if url_generator:
             return url_generator()
-        return ""
+        raise KeyError(
+            f"Execution link is not generated for the resource type {resource_type}"
+        )

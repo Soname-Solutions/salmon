@@ -2,7 +2,10 @@ import pytest
 from unittest.mock import patch
 from datetime import datetime
 
-from lib.event_mapper import GlueDataQualityEventMapper
+from lib.event_mapper import (
+    GlueDataQualityEventMapper,
+    GlueDataQualityEventMapperException,
+)
 from lib.core.constants import SettingConfigResourceTypes as types
 
 EVENT_TYPE = "Data Quality Evaluation Results Availablee"
@@ -19,7 +22,9 @@ def mock_settings():
         yield mocked_settings
 
 
-def get_glue_dq_event(event_state=None, detail_type=EVENT_TYPE, contextType=None):
+def get_glue_dq_event(
+    event_state="SUCCEEDED", detail_type=EVENT_TYPE, contextType=None
+):
     return {
         "detail-type": detail_type,
         "source": "aws.glue-dataquality",
@@ -40,6 +45,52 @@ def get_glue_dq_event(event_state=None, detail_type=EVENT_TYPE, contextType=None
             },
         },
     }
+
+
+def test_get_resource_name_success(mock_settings):
+    event = get_glue_dq_event()
+    mapper = GlueDataQualityEventMapper(
+        resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
+    )
+    mapper = GlueDataQualityEventMapper(
+        resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
+    )
+    assert mapper.get_resource_name() == DQ_RULESET_NAME
+
+
+@pytest.mark.parametrize(
+    "scenario, event",
+    [
+        (
+            "scen1-missing-rulesetNames-key",
+            {"account": "1234567890", "region": "test-region", "detail": {}},
+        ),
+        (
+            "scen2-empty-rulesetNames-list",
+            {
+                "account": "1234567890",
+                "region": "test-region",
+                "detail": {"rulesetNames": []},
+            },
+        ),
+        (
+            "scen3-missing-detail-key",
+            {
+                "account": "1234567890",
+                "region": "test-region",
+            },
+        ),
+    ],
+)
+def test_get_resource_name_exception(mock_settings, scenario, event):
+    mapper = GlueDataQualityEventMapper(
+        resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
+    )
+    with pytest.raises(
+        GlueDataQualityEventMapperException,
+        match=f"Required GLue DQ Ruleset name is not defined in the DQ event",
+    ):
+        mapper.get_resource_name()
 
 
 @pytest.mark.parametrize(
