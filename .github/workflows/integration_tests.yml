@@ -1,4 +1,4 @@
-name: Run integrations tests
+name: Run integrational tests
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -7,7 +7,7 @@ env:
   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
   CDK_MONITORED_ENV_FOLDER: infra_monitored_account
   STAGE_NAME: devci
-run-name: integrations tests
+run-name: integrational testing
 on: [workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
