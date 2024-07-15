@@ -4,7 +4,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
   AWS_DEFAULT_REGION: 'eu-central-1'
-  #CDK_APP_FOLDER: handson/github_actions_cdk
+  CDK_APP_FOLDER: infra_tooling_account
 run-name: test pipeline 
 on: [push, workflow_dispatch]
 jobs:
@@ -14,10 +14,20 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      - name: Prepare Python libraries
-        run: pip3 install boto3
+      - name: Setup Node.js env
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: npm install aws-cdk
+        run: npm i -g aws-cdk        
+
+      - name: install python requirements
+        run: |
+          cd ${{ env.CDK_APP_FOLDER }}
+          pip3 install -r requirements.txt        
         
-      - name: Prepare replacements.json
+      - name: Prepare replacements.json (put actual AWS account)
         run: python tests/devci_settings/prepare_replacements.py
 
       - name: Copy devci settings
