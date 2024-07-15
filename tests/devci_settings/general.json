@@ -1,0 +1,38 @@
+{
+    "tooling_environment": {
+        "name": "Tooling Account [dev]",
+        "account_id": "<<main_account_id>>",
+        "region": "eu-central-1",
+        "digest_report_period_hours" : 72, 
+        "metrics_collection_interval_min" : 15
+    },
+    "monitored_environments": [    
+        {
+            "name": "Account1 [dev]",
+            "account_id": "<<main_account_id>>",
+            "region": "eu-central-1"
+        }    
+    ],
+    "delivery_methods": [
+        {
+            "name": "primary_ses",
+            "delivery_method_type": "AWS_SES",
+            "sender_email" : "anatolii.maslov@soname.de"
+        },
+        {
+            "name": "local_smtp",
+            "delivery_method_type": "SMTP",
+            "sender_email" : "salmon-no-reply@soname.de",
+            "credentials_secret_name": "sm-soname-smtp-server-creds"
+        },
+        {
+            "name": "soname_slack",
+            "delivery_method_type": "SLACK",
+            "credentials_secret_name": "sm-soname-slack-creds"
+        },
+        {
+            "name": "sns_test",
+            "delivery_method_type": "AWS_SNS"
+        }
+    ]
+}

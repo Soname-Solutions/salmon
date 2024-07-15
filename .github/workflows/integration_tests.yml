@@ -1,0 +1,60 @@
+name: Run integrational tests
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  AWS_DEFAULT_REGION: 'eu-central-1'
+  CDK_TOOLING_ENV_FOLDER: infra_tooling_account
+  CDK_MONITORED_ENV_FOLDER: infra_monitored_account
+  STAGE_NAME: devci
+run-name: integrational testing
+on: [workflow_dispatch]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js env
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: npm install aws-cdk
+        run: npm i -g aws-cdk        
+
+      - name: Install Python requirements
+        run: |
+          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          pip3 install -r requirements.txt        
+        
+      - name: Prepare replacements.json (put actual AWS account)
+        run: python tests/devci_settings/prepare_replacements.py
+
+      - name: Copy devci settings
+        run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/
+
+      - name: CDK deploy Tooling Env
+        run: |
+          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
+        
+      - name: CDK deploy Monitored Env
+        run: |
+          cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
+
+      - name: Put your amazing automation tests here
+        run: ls
+
+      - name: CDK destroy Monitored Env
+        run: |
+          cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          cdk destroy --context stage-name=${{ env.STAGE_NAME }}  --force
+
+      - name: CDK destroy Tooling Env
+        run: |
+          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          cdk destroy --context stage-name=${{ env.STAGE_NAME }}  --force
+                    
