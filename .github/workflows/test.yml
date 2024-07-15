@@ -22,7 +22,7 @@ jobs:
       - name: npm install aws-cdk
         run: npm i -g aws-cdk        
 
-      - name: install python requirements
+      - name: Install Python requirements
         run: |
           cd ${{ env.CDK_APP_FOLDER }}
           pip3 install -r requirements.txt        
@@ -36,8 +36,10 @@ jobs:
       - name: Check replacements.json content
         run: cat config/settings/replacements.json
 
-      - name: list settings
-        run: ls config/settings/
+      - name: CDK deploy
+        run: |
+          cd ${{ env.CDK_APP_FOLDER }}
+          cdk deploy --require-approval never
         
 
 
