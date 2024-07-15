@@ -35,9 +35,6 @@ jobs:
       - name: Copy devci settings
         run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/
 
-      - name: Check replacements.json content
-        run: cat config/settings/replacements.json
-
       - name: CDK deploy Tooling Env
         run: |
           cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
