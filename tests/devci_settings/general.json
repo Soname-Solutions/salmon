@@ -1,20 +1,15 @@
 {
     "tooling_environment": {
         "name": "Tooling Account [dev]",
-        "account_id": "405389362913",
+        "account_id": "<<main_account_id>>",
         "region": "eu-central-1",
         "digest_report_period_hours" : 72, 
         "metrics_collection_interval_min" : 15
     },
-    "monitored_environments": [
-        {
-            "name": "Account2 [dev]",
-            "account_id": "025590872641",
-            "region": "eu-central-1"
-        },        
+    "monitored_environments": [    
         {
             "name": "Account1 [dev]",
-            "account_id": "405389362913",
+            "account_id": "<<main_account_id>>",
             "region": "eu-central-1"
         }    
     ],
