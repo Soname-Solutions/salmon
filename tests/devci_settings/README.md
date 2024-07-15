@@ -1,1 +1,1 @@
-This folder contains settings used in automatic integration tests.
+This folder contains settings used in automatic integrational testing.
