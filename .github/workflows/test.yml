@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+
+      - name: Prepare Python libraries
+        run: pip3 install boto3
         
       - name: Prepare replacements.json
         run: python tests/devci_settings/prepare_replacements.py
