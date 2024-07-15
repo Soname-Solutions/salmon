@@ -47,43 +47,6 @@
                     "minimum_number_of_runs": 0
                 }
             ]
-        },
-        {
-            "group_name": "salmonts_2nd_acc_all_glue",
-            "glue_jobs": [
-                {
-                    "name": "glue-salmonts-*-dev2",
-                    "monitored_environment_name": "Account2 [dev]",
-                    "sla_seconds": 0,
-                    "minimum_number_of_runs": 0
-                }                
-            ],
-            "glue_workflows": [
-                {
-                    "name": "glue-salmonts-workflow-dev2",
-                    "monitored_environment_name": "Account2 [dev]",
-                    "sla_seconds": 0,
-                    "minimum_number_of_runs": 0
-                }
-            ]            
-        },
-        {
-            "group_name": "salmonts_2nd_acc_lambdas_stepfunctions",
-            "lambda_functions": [
-                {
-                    "name": "lambda-salmonts-*-dev2",
-                    "monitored_environment_name": "Account2 [dev]",
-                    "minimum_number_of_runs": 0
-                }
-            ],
-            "step_functions": [
-                {
-                    "name": "stepfunction-salmonts-*-dev2",
-                    "monitored_environment_name": "Account2 [dev]",
-                    "sla_seconds": 0,
-                    "minimum_number_of_runs": 0
-                }
-            ]
         }
     ]
 }
