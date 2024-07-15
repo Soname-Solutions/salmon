@@ -1,0 +1,20 @@
+name: CDK Demo
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+  AWS_DEFAULT_REGION: 'eu-central-1'
+  #CDK_APP_FOLDER: handson/github_actions_cdk
+run-name: test pipeline 
+on: [push, workflow_dispatch]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - run: aws sts get-caller-identity      
+      - run: aws s3 ls
+
+      
