@@ -5,6 +5,7 @@ env:
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
   AWS_DEFAULT_REGION: 'eu-central-1'
   CDK_APP_FOLDER: infra_tooling_account
+  STAGE_NAME: devci
 run-name: test pipeline 
 on: [push, workflow_dispatch]
 jobs:
@@ -39,7 +40,7 @@ jobs:
       - name: CDK deploy
         run: |
           cd ${{ env.CDK_APP_FOLDER }}
-          cdk deploy --require-approval never
+          cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
         
 
 
