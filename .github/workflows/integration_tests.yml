@@ -1,4 +1,4 @@
-name: CDK Demo
+name: Run integrations tests
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -7,7 +7,7 @@ env:
   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
   CDK_MONITORED_ENV_FOLDER: infra_monitored_account
   STAGE_NAME: devci
-run-name: test pipeline 
+run-name: integrations tests
 on: [push, workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
@@ -48,4 +48,16 @@ jobs:
           cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
           cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
 
-      
+      - name: Put your amazing automation tests here
+        run: ls
+
+      - name: CDK destroy Monitored Env
+        run: |
+          cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          cdk destroy --context stage-name=${{ env.STAGE_NAME }}  --force
+
+      - name: CDK destroy Tooling Env
+        run: |
+          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          cdk destroy --context stage-name=${{ env.STAGE_NAME }}  --force
+                    
