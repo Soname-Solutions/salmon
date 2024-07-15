@@ -4,7 +4,8 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
   AWS_DEFAULT_REGION: 'eu-central-1'
-  CDK_APP_FOLDER: infra_tooling_account
+  CDK_TOOLING_ENV_FOLDER: infra_tooling_account
+  CDK_MONITORED_ENV_FOLDER: infra_monitored_account
   STAGE_NAME: devci
 run-name: test pipeline 
 on: [push, workflow_dispatch]
@@ -25,7 +26,7 @@ jobs:
 
       - name: Install Python requirements
         run: |
-          cd ${{ env.CDK_APP_FOLDER }}
+          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
           pip3 install -r requirements.txt        
         
       - name: Prepare replacements.json (put actual AWS account)
@@ -37,11 +38,14 @@ jobs:
       - name: Check replacements.json content
         run: cat config/settings/replacements.json
 
-      - name: CDK deploy
+      - name: CDK deploy Tooling Env
         run: |
-          cd ${{ env.CDK_APP_FOLDER }}
+          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
           cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
         
-
+      - name: CDK deploy Monitored Env
+        run: |
+          cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
 
       
