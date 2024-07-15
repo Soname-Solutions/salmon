@@ -8,7 +8,7 @@ env:
   CDK_MONITORED_ENV_FOLDER: infra_monitored_account
   STAGE_NAME: devci
 run-name: integrations tests
-on: [push, workflow_dispatch]
+on: [workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
