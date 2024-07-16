@@ -13,7 +13,7 @@ jobs:
       - name: Install Python requirements
         run: |
           cd ${{ env.TESTS_FOLDER }}
-          pip3 install -r requirements.txt        
+          pip3 install -r requirements-test.txt        
                   
       - name: Run unit tests
         run: pytest ${{ env.TESTS_FOLDER }}\
