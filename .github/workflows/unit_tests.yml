@@ -1,0 +1,20 @@
+name: Run unit tests
+env:
+    TESTS_FOLDER: tests
+run-name: unit tests
+on: [push, workflow_dispatch]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install Python requirements
+        run: |
+          cd ${{ env.TESTS_FOLDER }}
+          pip3 install -r requirements.txt        
+                  
+      - name: Run unit tests
+        run: pytest ${{ env.TESTS_FOLDER }}\
+
