@@ -1,6 +1,7 @@
 name: Run unit tests
 env:
     TESTS_FOLDER: tests
+    AWS_DEFAULT_REGION: 'eu-central-1'
 run-name: unit tests
 on: [push, workflow_dispatch]
 jobs:
@@ -15,9 +16,9 @@ jobs:
           cd ${{ env.TESTS_FOLDER }}
           pip3 install -r requirements-test.txt        
 
-      - name: Prep env settings
-        run: |
-          set AWS_DEFAULT_REGION=eu-central-1
+    #   - name: Prep env settings
+    #     run: |
+    #       set AWS_DEFAULT_REGION=eu-central-1
                   
       - name: Run unit tests
         run: pytest ${{ env.TESTS_FOLDER }}\
