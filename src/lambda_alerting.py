@@ -49,6 +49,7 @@ def map_to_notification_messages(message: dict, delivery_options: list) -> list:
 
 
 def lambda_handler(event, context):
+    a = 1/0
     logger.info(f"event = {event}")
 
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
