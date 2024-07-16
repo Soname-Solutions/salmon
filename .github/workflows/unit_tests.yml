@@ -1,0 +1,27 @@
+name: Run unit tests
+env:
+    AWS_ACCESS_KEY_ID: dummy_value
+    AWS_SECRET_ACCESS_KEY: dummy_value
+    AWS_DEFAULT_REGION: 'eu-central-1'    
+    TESTS_FOLDER: tests
+run-name: unit tests
+on: [push, workflow_dispatch]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Install Python requirements
+        run: |
+          cd ${{ env.TESTS_FOLDER }}
+          pip3 install -r requirements-test.txt        
+
+      # Copying configuration files, so they are present. The files' content is not important for unit tests
+      - name: Copy sample settings
+        run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/
+                  
+      - name: Run unit tests
+        run: pytest ${{ env.TESTS_FOLDER }}\
+
