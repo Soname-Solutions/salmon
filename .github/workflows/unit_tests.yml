@@ -19,6 +19,12 @@ jobs:
     #   - name: Prep env settings
     #     run: |
     #       set AWS_DEFAULT_REGION=eu-central-1
+
+      - name: Prepare replacements.json (put actual AWS account)
+        run: python tests/devci_settings/prepare_replacements.py
+
+      - name: Copy devci settings
+        run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/
                   
       - name: Run unit tests
         run: pytest ${{ env.TESTS_FOLDER }}\
