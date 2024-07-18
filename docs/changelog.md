@@ -3,7 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## 1.2.0
-* Alerting functionality implemented for Glue Data Quality events
+### Alerting functionality
+* Implemented for Glue Data Quality events
+
+### Monitoring capabilities
+* Metrics Collection and Digest implemented for Glue Data Quality Rulesets
+* Grafana dashboard added for Glue Data Quality metrics
 
 ## 1.1.0
 
