@@ -4,7 +4,7 @@ from lib.metrics_extractor import (
     GlueWorkflowsMetricExtractor,
     GlueCatalogsMetricExtractor,
     GlueCrawlersMetricExtractor,
-    GlueDataQuailityMetricExtractor,
+    GlueDataQualityMetricExtractor,
     LambdaFunctionsMetricExtractor,
     StepFunctionsMetricExtractor,
 )
@@ -50,7 +50,7 @@ MetricsExtractorProvider.register_metrics_extractor(
     types.GLUE_CRAWLERS, GlueCrawlersMetricExtractor
 )
 MetricsExtractorProvider.register_metrics_extractor(
-    types.GLUE_DATA_QUALITY, GlueDataQuailityMetricExtractor
+    types.GLUE_DATA_QUALITY, GlueDataQualityMetricExtractor
 )
 MetricsExtractorProvider.register_metrics_extractor(
     types.LAMBDA_FUNCTIONS, LambdaFunctionsMetricExtractor

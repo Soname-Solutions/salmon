@@ -7,7 +7,13 @@ from .cloudwatch_manager import (
     CloudWatchEventsPublisherException,
     CloudWatchManagerException,
 )
-from .glue_manager import JobRun, JobRunsData, GlueManager, GlueManagerException
+from .glue_manager import (
+    JobRun,
+    JobRunsData,
+    GlueManager,
+    GlueManagerException,
+    RulesetRun,
+)
 from .lambda_manager import LogEntry, LambdaManager, LambdaManagerException
 from .s3_manager import S3Manager, S3ManagerReadException
 from .ses_manager import AwsSesManager, AwsSesRawEmailSenderException
