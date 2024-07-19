@@ -57,6 +57,7 @@ For more details please refer to [Solution arhictecture description](docs/archit
 | AWS Service | Alerts | Metrics |
 |:---|:---:|:---:|
 | AWS Glue Jobs | Immediately on Failure | Job Executions stats <br/> (Duration, State, DPU-Hours consumed, etc.) |
+| AWS Glue Data Quaility | Immediately on Failure | Ruleset Executions stats <br/> (Duration, Score, Number of Rules failed/succeeded, etc.) |
 | AWS Glue Workflows | With a small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
 | AWS Glue Crawlers | Immediately on Failure | In next versions... |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |

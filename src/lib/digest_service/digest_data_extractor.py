@@ -124,7 +124,7 @@ class GlueDataQualityDigestDataExtractor(BaseDigestDataExtractor):
             f""" else '' end as job_run_id, execution, failed, succeeded, execution_time_sec, """
             f""" case when failed > 0 then error_message else '' end as error_message, """
             # additional attributes required for the DQ execution link
-            f""" context_type, glue_table_name, glue_db_name, glue_job_name"""
+            f""" context_type, glue_table_name, glue_db_name, glue_job_name """
             f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
         )
         return query

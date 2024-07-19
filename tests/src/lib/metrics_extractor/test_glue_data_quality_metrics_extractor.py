@@ -232,12 +232,12 @@ def test_two_completed_records_integrity(boto3_client_creator, mock_glue_client)
             "scen3",
             RULESET_RUN_MIXED_RULES,
             "0",  # succeeded
-            "1",  # considered failed since 1 out of 3 rules failed
+            "1",  # failed since not all rules passed
             "1",  # rules_succeeded
             "2",  # rules_failed
             "3",  # total_rules
             # error string concatenated and trimmed as expected
-            "Rule_2: Dataset has 9.0 columns and failed to satisfy constraint; Rule_3: Dataset failed to satisfy ...",  # error string concatenated and trimmed as expected
+            "Rule_2: Dataset has 9.0 columns and failed to satisfy constraint; Rule_3: Dataset failed to satisfy ...",
         ),
     ],
 )
