@@ -99,6 +99,7 @@ def test_digest_extract_runs_with_data(mock_query_runner, scenario, resource_typ
         ("scen4", types.GLUE_CRAWLERS),
         ("scen5", types.LAMBDA_FUNCTIONS),
         ("scen6", types.STEP_FUNCTIONS),
+        ("scen7", types.GLUE_DATA_QUALITY),
     ],
 )
 @patch("lib.digest_service.digest_data_extractor.TimeStreamQueryRunner")
@@ -134,6 +135,7 @@ def test_digest_extract_runs_no_data(mock_query_runner, scenario, resource_type)
         ("scen4", types.GLUE_CRAWLERS),
         ("scen5", types.LAMBDA_FUNCTIONS),
         ("scen6", types.STEP_FUNCTIONS),
+        ("scen7", types.GLUE_DATA_QUALITY),
     ],
 )
 @patch("lib.digest_service.digest_data_extractor.TimeStreamQueryRunner")

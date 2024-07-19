@@ -48,27 +48,28 @@ class GlueDataQualityMetricExtractor(BaseMetricsExtractor):
                 ("error_message", ruleset_run.ErrorString, "VARCHAR"),
             ]
 
-            if ruleset_run.DataSource:
+            if ruleset_run.DataSource and ruleset_run.DataSource.GlueTable:
                 specific_metrics = [
-                    (
-                        "ruleset_run_id",
-                        ruleset_run.RulesetEvaluationRunId,
-                        "VARCHAR",
-                    ),
+                    ("ruleset_run_id", ruleset_run.RulesetEvaluationRunId, "VARCHAR"),
                     (
                         "glue_table_name",
                         ruleset_run.DataSource.GlueTable.TableName,
                         "VARCHAR",
                     ),
                     (
-                        "glue_database_name",
+                        "glue_db_name",
                         ruleset_run.DataSource.GlueTable.DatabaseName,
                         "VARCHAR",
                     ),
+                    ("glue_job_name", None, "VARCHAR"),
+                    ("glue_job_run_id", None, "VARCHAR"),
                 ]
 
             else:
                 specific_metrics = [
+                    ("ruleset_run_id", None, "VARCHAR"),
+                    ("glue_table_name", None, "VARCHAR"),
+                    ("glue_db_name", None, "VARCHAR"),
                     ("glue_job_name", ruleset_run.JobName, "VARCHAR"),
                     ("glue_job_run_id", ruleset_run.JobRunId, "VARCHAR"),
                 ]

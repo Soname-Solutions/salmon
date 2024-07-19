@@ -151,41 +151,8 @@ def test_two_completed_records_integrity(boto3_client_creator, mock_glue_client)
     with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_executions:
         mocked_get_executions.return_value = [
             RULESET_RUN_GLUE_TABLE_SUCCESS,
-            RULESET_RUN_GLUE_TABLE_ERROR,
+            RULESET_RUN_GLUE_JOB_SUCCESS,
         ]
-
-        extractor = GlueDataQualityMetricExtractor(
-            boto3_client_creator=boto3_client_creator,
-            aws_client_name="glue",
-            resource_name=RULESET_NAME,
-            monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
-        )
-
-        since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(since_time=since_time)
-
-        mocked_get_executions.assert_called_once()  # mocked call executed as expected
-        assert len(records) == 2, "There should be just two execution records"
-
-
-@pytest.mark.parametrize(
-    "scenario, ruleset_run, specific_metrics",
-    [
-        (
-            "scen1",
-            RULESET_RUN_GLUE_TABLE_SUCCESS,
-            ["ruleset_run_id", "glue_table_name", "glue_database_name"],
-        ),
-        ("scen2", RULESET_RUN_GLUE_JOB_SUCCESS, ["glue_job_name", "glue_job_run_id"]),
-    ],
-)
-def test_dq_metrics_dimensions(
-    boto3_client_creator, scenario, ruleset_run, specific_metrics, mock_glue_client
-):
-    with patch(GET_EXECUTIONS_METHOD_NAME) as mocked_get_executions:
-        mocked_get_executions.return_value = [ruleset_run]
 
         extractor = GlueDataQualityMetricExtractor(
             boto3_client_creator=boto3_client_creator,
@@ -200,7 +167,7 @@ def test_dq_metrics_dimensions(
         records, _ = extractor.prepare_metrics_data(since_time=since_time)
 
         required_dimensions = ["dq_result_id"]
-        commmon_metrics = [
+        required_metrics = [
             "score",
             "context_type",
             "execution",
@@ -211,14 +178,30 @@ def test_dq_metrics_dimensions(
             "total_rules",
             "execution_time_sec",
             "error_message",
+            "ruleset_run_id",
+            "glue_table_name",
+            "glue_db_name",
+            "glue_job_name",
+            "glue_job_run_id",
         ]
 
         mocked_get_executions.assert_called_once()  # mocked call executed as expected
+        assert len(records) == 2, "There should be just two execution records"
+
+        # check RULESET_RUN with GLUE_TABLE datasource
         assert contains_required_items(
             records[0], "Dimensions", required_dimensions
         ), "Not all required dimensions for timestream record are present"
         assert contains_required_items(
-            records[0], "MeasureValues", commmon_metrics + specific_metrics
+            records[0], "MeasureValues", required_metrics
+        ), "Not all required metrics for timestream record are present"
+
+        # check RULESET_RUN with GLUE_JOB datasource
+        assert contains_required_items(
+            records[1], "Dimensions", required_dimensions
+        ), "Not all required dimensions for timestream record are present"
+        assert contains_required_items(
+            records[1], "MeasureValues", required_metrics
         ), "Not all required metrics for timestream record are present"
 
 
@@ -228,33 +211,33 @@ def test_dq_metrics_dimensions(
         (
             "scen1",
             RULESET_RUN_GLUE_TABLE_ERROR,
-            "0",
+            "0",  # succeeded
             "1",  # failed
-            "0",
-            "1",
-            "1",
+            "0",  # rules_succeeded
+            "1",  # rules_failed
+            "1",  # total_rules
             "Rule_1: Dataset has 9.0 columns and failed to satisfy constraint",
         ),
         (
             "scen2",
             RULESET_RUN_GLUE_JOB_ERROR,
-            "0",
+            "0",  # succeeded
             "1",  # failed
-            "0",
-            "1",
-            "1",
+            "0",  # rules_succeeded
+            "1",  # rules_failed
+            "1",  # total_rules
             "Rule_1: Dataset has 12.0 columns and failed to satisfy constraint",
         ),
         (
             "scen3",
             RULESET_RUN_MIXED_RULES,
-            "0",
-            "1",  # considered failed even though one rule passed
-            "1",
-            "2",
-            "3",
+            "0",  # succeeded
+            "1",  # considered failed since 1 out of 3 rules failed
+            "1",  # rules_succeeded
+            "2",  # rules_failed
+            "3",  # total_rules
             # error string concatenated and trimmed as expected
-            "Rule_2: Dataset has 9.0 columns and failed to satisfy constraint; Rule_3: Dataset failed to satisfy ...",
+            "Rule_2: Dataset has 9.0 columns and failed to satisfy constraint; Rule_3: Dataset failed to satisfy ...",  # error string concatenated and trimmed as expected
         ),
     ],
 )
@@ -303,20 +286,20 @@ def test_failed_dq_run(
             GlueManager.DQ_Catalog_Context_Type,
             RULESET_RUN_GLUE_TABLE_SUCCESS,
             "1",  # succeeded
-            "0",
-            "1",
-            "0",
-            "1",
+            "0",  # failed
+            "1",  # rules_succeeded
+            "0",  # rules_failed
+            "1",  # total_rules
         ),
         (
             "scen2",
             GlueManager.DQ_Job_Context_Type,
             RULESET_RUN_GLUE_JOB_SUCCESS,
             "1",  # succeeded
-            "0",
-            "1",
-            "0",
-            "1",
+            "0",  # failed
+            "1",  # rules_succeeded
+            "0",  # rules_failed
+            "1",  # total_rules
         ),
     ],
 )

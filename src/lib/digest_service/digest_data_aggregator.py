@@ -85,7 +85,14 @@ class DigestDataAggregator:
                 resource_name=resource_run["resource_name"],
                 account_id=resource_config["account_id"],
                 run_id=resource_run["job_run_id"],
+                # extra arguments required for Glue DQ execution link
+                glue_table_name=resource_run.get("glue_table_name"),
+                glue_db_name=resource_run.get("glue_db_name"),
+                glue_catalog_id=resource_run.get("glue_catalog_id"),
+                glue_job_name=resource_run.get("glue_job_name"),
+                context_type=resource_run.get("context_type"),
             )
+
             # construct error comment based on the job run URL and error message
             if job_run_url:
                 error_comment = f" - <a href={job_run_url}>ERROR: {resource_run['error_message'][:50]}</a>"

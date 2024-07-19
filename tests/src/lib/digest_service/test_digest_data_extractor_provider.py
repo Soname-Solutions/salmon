@@ -6,6 +6,7 @@ from lib.digest_service import (
     GlueWorkflowsDigestDataExtractor,
     GlueCrawlersDigestDataExtractor,
     GlueDataCatalogsDigestDataExtractor,
+    GlueDataQualityDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
     DigestDataExtractorProvider,
@@ -44,6 +45,7 @@ def test_unregistered_resource_type():
         ("scen4", types.GLUE_CRAWLERS, GlueCrawlersDigestDataExtractor),
         ("scen5", types.LAMBDA_FUNCTIONS, LambdaFunctionsDigestDataExtractor),
         ("scen6", types.STEP_FUNCTIONS, StepFunctionsDigestDataExtractor),
+        ("scen7", types.GLUE_DATA_QUALITY, GlueDataQualityDigestDataExtractor),
     ],
 )
 def test_get_digest_provider(scenario, resource_type, expected_extractor):

@@ -160,6 +160,7 @@ def lambda_handler(event, context):
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
     content = settings.get_monitoring_group_content(monitoring_group_name)
+    print(content)
 
     for attr_name in content:
         attr_value = content[attr_name]
@@ -175,7 +176,9 @@ def lambda_handler(event, context):
             for monitored_environment_name, group in groupby(
                 data, key=lambda x: x["monitored_environment_name"]
             ):
+                print("data: ", data)
                 resource_names = [item["name"] for item in group]
+                print("resource_names: ", resource_names)
 
                 process_all_resources_by_env_and_type(
                     monitored_environment_name=monitored_environment_name,
