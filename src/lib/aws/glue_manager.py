@@ -288,6 +288,7 @@ class GlueManager:
 
     def _get_all_data_quality_names(self):
         try:
+            # Note: Returns a list of rulesets only with Glue table datasource
             response = self.glue_client.list_data_quality_rulesets()
             return [res["Name"] for res in response.get("Rulesets")]
 
@@ -364,10 +365,10 @@ class GlueManager:
             error_message = f"Error getting glue workflow runs : {e}"
             raise GlueManagerException(error_message)
 
-    def list_data_quality_results(self, since_time: datetime) -> list[str]:
+    def list_data_quality_results(self, started_after: datetime) -> list[str]:
         try:
             response = self.glue_client.list_data_quality_results(
-                Filter={"StartedAfter": since_time}
+                Filter={"StartedAfter": started_after}
             )
             outp = [x["ResultId"] for x in response["Results"]]
             return outp
@@ -377,16 +378,18 @@ class GlueManager:
             raise GlueManagerException(error_message)
 
     def get_data_quality_runs(
-        self,
-        resource_name: str,
-        result_ids: list[str],
+        self, resource_name: str, result_ids: list[str], since_time: datetime
     ) -> list[str]:
         try:
             response = self.glue_client.batch_get_data_quality_result(
                 ResultIds=result_ids
             )
             dq_runs_data = RulesetRunsData(**response)
-            outp = [x for x in dq_runs_data.Results if x.RulesetName == resource_name]
+            outp = [
+                x
+                for x in dq_runs_data.Results
+                if x.RulesetName == resource_name and x.StartedOn > since_time
+            ]
 
             return outp
 

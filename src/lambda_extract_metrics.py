@@ -1,23 +1,51 @@
 import os
-from typing import Any
 import boto3
 import logging
 from itertools import groupby
 
 from lib.aws import AWSNaming, Boto3ClientCreator, TimestreamTableWriter
+from lib.aws.glue_manager import GlueManager
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
 from lib.metrics_extractor import MetricsExtractorProvider
-from lib.metrics_extractor.metrics_extractor_utils import get_last_update_time
+from lib.metrics_extractor.metrics_extractor_utils import (
+    get_last_update_time,
+    get_min_update_time,
+)
 from lib.core.constants import SettingConfigResourceTypes as types
-import json
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 timestream_client = boto3.client("timestream-write")
 timestream_query_client = boto3.client("timestream-query")
+
+
+def collect_glue_data_quality_result_ids(
+    monitored_environment_name: str,
+    resource_names: list[str],
+    last_update_times: dict,
+    boto3_client_creator: Boto3ClientCreator,
+    aws_client_name: str,
+    timestream_writer: TimestreamTableWriter,
+) -> list[str]:
+    logger.info(
+        f"Collecting Glue Data Quality result IDs at env: {monitored_environment_name}"
+    )
+    min_update_time = get_min_update_time(
+        last_update_times=last_update_times,
+        resource_names=resource_names,
+        timestream_writer=timestream_writer,
+    )
+
+    logger.info(f"Extracting Glue Data Quality result IDs since {min_update_time}")
+
+    boto3_client = boto3_client_creator.get_client(aws_client_name=aws_client_name)
+    glue_man = GlueManager(glue_client=boto3_client)
+    result_ids = glue_man.list_data_quality_results(started_after=min_update_time)
+
+    return result_ids
 
 
 def process_individual_resource(
@@ -31,6 +59,7 @@ def process_individual_resource(
     timestream_metrics_table_name: str,
     last_update_times: dict,
     alerts_event_bus_name: str,
+    result_ids: list,
 ):
     logger.info(
         f"Processing: {resource_type}: [{resource_name}] at env:{monitored_environment_name}"
@@ -73,7 +102,7 @@ def process_individual_resource(
 
     # # 3. Extract metrics data in form of prepared list of timestream records
     records, common_attributes = metrics_extractor.prepare_metrics_data(
-        since_time=since_time
+        since_time=since_time, result_ids=result_ids
     )
     metrics_record_count = len(records)
     logger.info(f"Extracted {metrics_record_count} records")
@@ -128,7 +157,19 @@ def process_all_resources_by_env_and_type(
         timestream_write_client=timestream_client,
     )
 
-    # 3. Process each resource of a specific type in a specific environment
+    # 3. Collect Result IDs for all Glue Data Quality resources in a specific environment at once
+    result_ids = []
+    if resource_type == types.GLUE_DATA_QUALITY:
+        result_ids = collect_glue_data_quality_result_ids(
+            monitored_environment_name=monitored_environment_name,
+            resource_names=resource_names,
+            last_update_times=last_update_times.get(resource_type),
+            boto3_client_creator=boto3_client_creator,
+            aws_client_name=aws_client_name,
+            timestream_writer=timestream_man,
+        )
+
+    # 4. Process each resource of a specific type in a specific environment
     for name in resource_names:
         process_individual_resource(
             monitored_environment_name=monitored_environment_name,
@@ -141,6 +182,7 @@ def process_all_resources_by_env_and_type(
             timestream_metrics_table_name=metrics_table_name,
             last_update_times=last_update_times,
             alerts_event_bus_name=alerts_event_bus_name,
+            result_ids=result_ids,
         )
 
 
@@ -160,7 +202,6 @@ def lambda_handler(event, context):
         settings_s3_path, iam_role_list_monitored_res=iam_role_name
     )
     content = settings.get_monitoring_group_content(monitoring_group_name)
-    print(content)
 
     for attr_name in content:
         attr_value = content[attr_name]
@@ -176,9 +217,7 @@ def lambda_handler(event, context):
             for monitored_environment_name, group in groupby(
                 data, key=lambda x: x["monitored_environment_name"]
             ):
-                print("data: ", data)
                 resource_names = [item["name"] for item in group]
-                print("resource_names: ", resource_names)
 
                 process_all_resources_by_env_and_type(
                     monitored_environment_name=monitored_environment_name,

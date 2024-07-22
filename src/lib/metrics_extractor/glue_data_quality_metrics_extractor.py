@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Tuple
 
 from lib.aws.glue_manager import GlueManager, RulesetRun
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
@@ -11,15 +10,15 @@ class GlueDataQualityMetricExtractor(BaseMetricsExtractor):
     Class is responsible for extracting glue data quality metrics
     """
 
-    def _extract_metrics_data(self, since_time: datetime) -> list[RulesetRun]:
+    def _extract_metrics_data(
+        self, since_time: datetime, result_ids: list
+    ) -> list[RulesetRun]:
         glue_man = GlueManager(self.get_aws_service_client())
-        result_ids = glue_man.list_data_quality_results(
-            since_time=since_time,
-        )
-
         if result_ids:
             ruleset_runs = glue_man.get_data_quality_runs(
-                resource_name=self.resource_name, result_ids=result_ids
+                resource_name=self.resource_name,
+                result_ids=result_ids,
+                since_time=since_time,
             )
             return ruleset_runs
         return []
@@ -100,7 +99,11 @@ class GlueDataQualityMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(self, since_time: datetime) -> Tuple[list, dict]:
-        ruleset_runs = self._extract_metrics_data(since_time=since_time)
+    def prepare_metrics_data(
+        self, since_time: datetime, result_ids: list = []
+    ) -> tuple[list, dict]:
+        ruleset_runs = self._extract_metrics_data(
+            since_time=since_time, result_ids=result_ids
+        )
         records, common_attributes = self._data_to_timestream_records(ruleset_runs)
         return records, common_attributes

@@ -1,6 +1,6 @@
 from datetime import datetime
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
-
+from typing import Tuple
 import json
 
 from lib.aws import (
@@ -97,7 +97,9 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(self, since_time: datetime) -> tuple[list, dict]:
+    def prepare_metrics_data(
+        self, since_time: datetime, result_ids: list = []
+    ) -> tuple[list, dict]:
         self.lambda_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(self.lambda_runs)
         return records, common_attributes

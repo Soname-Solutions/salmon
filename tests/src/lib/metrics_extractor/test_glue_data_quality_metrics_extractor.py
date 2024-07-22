@@ -164,7 +164,13 @@ def test_two_completed_records_integrity(boto3_client_creator, mock_glue_client)
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(since_time=since_time)
+        records, _ = extractor.prepare_metrics_data(
+            since_time=since_time,
+            result_ids=[
+                RULESET_RUN_GLUE_TABLE_SUCCESS.ResultId,
+                RULESET_RUN_GLUE_JOB_SUCCESS.ResultId,
+            ],
+        )
 
         required_dimensions = ["dq_result_id"]
         required_metrics = [
@@ -266,7 +272,9 @@ def test_failed_dq_run(
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(since_time=since_time)
+        records, _ = extractor.prepare_metrics_data(
+            since_time=since_time, result_ids=[ruleset_run.ResultId]
+        )
 
         mocked_get_executions.assert_called_once()
         assert len(records) == 1, "There should be one execution record"
@@ -328,7 +336,9 @@ def test_succeeded_dq_run(
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(since_time=since_time)
+        records, _ = extractor.prepare_metrics_data(
+            since_time=since_time, result_ids=[ruleset_run.ResultId]
+        )
 
         mocked_get_executions.assert_called_once()
         assert len(records) == 1, "There should be one execution record"

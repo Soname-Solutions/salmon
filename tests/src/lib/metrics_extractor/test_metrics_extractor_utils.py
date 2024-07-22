@@ -6,6 +6,7 @@ from lib.core.datetime_utils import str_utc_datetime_to_datetime
 from lib.metrics_extractor import (
     retrieve_last_update_time_for_all_resources,
     get_last_update_time,
+    get_min_update_time,
     MetricsExtractorException,
 )
 from unittest.mock import MagicMock
@@ -20,6 +21,8 @@ logger.addHandler(handler)
 
 
 ###############################################################################
+
+EARLIEST_WRITABLE_TIME = datetime(2000, 1, 1, 0, 0, 0)
 
 
 @pytest.fixture(scope="module")
@@ -42,6 +45,19 @@ def last_update_time_sample_data():
             }
         ],
     }
+
+
+@pytest.fixture(scope="function")
+def mock_timestream_writer():
+    mocked_timestream_writer = MagicMock()
+    mocked_timestream_writer.get_earliest_writeable_time_for_table.return_value = (
+        EARLIEST_WRITABLE_TIME
+    )
+
+    with patch(
+        "lambda_extract_metrics.TimestreamTableWriter", mocked_timestream_writer
+    ) as mock_get_extractor:
+        yield mocked_timestream_writer
 
 
 ###############################################################################
@@ -167,3 +183,65 @@ def test_get_last_update_time_valid_input(last_update_time_sample_data):
         last_update_time_sample_data, "glue_jobs", "glue-job-1"
     )
     assert actual_datetime == expected_datetime
+
+
+@pytest.mark.parametrize(
+    "scenario, last_update_times, resource_names, expected_date",
+    [
+        (
+            "scen1",
+            [
+                {
+                    "resource_name": "test-dq-ruleset-1",
+                    "last_update_time": "2024-07-21 00:01:52.820000000",
+                },
+                {
+                    "resource_name": "test-de-ruleset-2",
+                    "last_update_time": "2024-07-22 00:01:56.042000000",
+                },
+            ],
+            ["test-dq-ruleset-1", "test-de-ruleset-2"],
+            # both resources have last_update_time assigned, so the earliest date should be returned
+            str_utc_datetime_to_datetime("2024-07-21 00:01:52.820000000"),
+        ),
+        (
+            "scen2",
+            [
+                {
+                    "resource_name": "test-dq-ruleset-5",
+                    "last_update_time": "2024-07-20 00:00:41.652000000",
+                }
+            ],
+            ["test-dq-ruleset-2"],
+            # this resource does not have last_update_time assigned, so earliest writable time should be returned
+            EARLIEST_WRITABLE_TIME,
+        ),
+        (
+            "scen3",
+            [
+                {
+                    "resource_name": "test-dq-ruleset-1",
+                    "last_update_time": "2024-07-20 00:00:41.652000000",
+                },
+                {
+                    "resource_name": "test-dq-ruleset-2",
+                    "last_update_time": "2024-07-21 00:01:52.820000000",
+                },
+                {
+                    "resource_name": "test-de-ruleset-3",
+                    "last_update_time": "2024-07-22 00:01:56.042000000",
+                },
+            ],
+            ["test-de-ruleset-3"],
+            # only one resource provided, so its last_update_time should be returned
+            str_utc_datetime_to_datetime("2024-07-22 00:01:56.042000000"),
+        ),
+    ],
+)
+def test_get_min_update_time(
+    mock_timestream_writer, scenario, last_update_times, resource_names, expected_date
+):
+    returned_min_date = get_min_update_time(
+        last_update_times, resource_names, mock_timestream_writer
+    )
+    assert returned_min_date == expected_date, f"Date mismatch for scenario {scenario}"
