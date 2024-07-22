@@ -374,6 +374,5 @@ def test_no_dq_runs(
             since_time = datetime(2020, 1, 1, 0, 0, 0)
             records, _ = extractor.prepare_metrics_data(since_time=since_time)
 
-            mock_list_data_quality_results.assert_called_once()
             mocked_get_executions.assert_not_called()  # not called since no ResultIDs returned for the specified period
             assert len(records) == 0, "There shouldn't be execution records"

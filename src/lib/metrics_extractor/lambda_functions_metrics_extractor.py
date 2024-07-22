@@ -1,17 +1,14 @@
 from datetime import datetime
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
-from typing import Tuple
 import json
 
 from lib.aws import (
     LogEntry,
     LambdaManager,
     CloudWatchManager,
-    TimestreamTableWriter,
-    TimeStreamQueryRunner,
 )
 from lib.aws.lambda_manager import LambdaManager, LogEntry
-from lib.core.constants import SettingConfigs, EventResult
+from lib.core.constants import EventResult
 from lib.core.datetime_utils import datetime_to_epoch_milliseconds
 from lib.aws.events_manager import EventsManager
 

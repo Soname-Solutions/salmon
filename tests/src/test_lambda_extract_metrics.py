@@ -164,16 +164,6 @@ def mock_boto3_client_creator():
         yield mocked_boto3_client_creator
 
 
-@pytest.fixture(scope="function", autouse=True)
-def mock_glue_client():
-    mock_glue_client = MagicMock()
-    results = {"Results": [{"ResultId": "result1"}, {"ResultId": "result2"}]}
-    mock_glue_client.list_data_quality_results.return_value = results
-    mock_glue_client.batch_get_data_quality_result.return_value = {}
-    with patch("boto3.client", return_value=mock_glue_client) as mock_glue:
-        yield mock_glue
-
-
 #########################################################################################
 
 
@@ -498,9 +488,10 @@ def test_process_all_resources_by_env_and_type_glue_data_quality(
     resource_type = types.GLUE_DATA_QUALITY
     resource_names = ["glue_dq1", "glue_dq2"]
 
+    expected_result_ids = ["test_result_id1", "test_result_id2"]
     with patch(
         "lambda_extract_metrics.collect_glue_data_quality_result_ids",
-        return_value=["test_result_id1", "test_result_id2"],
+        return_value=expected_result_ids,
     ):
         process_all_resources_by_env_and_type(
             monitored_environment_name=monitored_environment_name,
@@ -528,7 +519,7 @@ def test_process_all_resources_by_env_and_type_glue_data_quality(
                 timestream_metrics_table_name=ANY,
                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
                 alerts_event_bus_name=alerts_event_bus_name,
-                result_ids=["test_result_id1", "test_result_id2"],
+                result_ids=expected_result_ids,
             )
         )
 
@@ -643,6 +634,7 @@ def test_collect_glue_data_quality_result_ids(
         "lib.aws.GlueManager.list_data_quality_results",
         return_value=expected_result_ids,
     ) as mock_list_data_quality_results:
+        # call the function
         returned_result_ids = collect_glue_data_quality_result_ids(
             monitored_environment_name=monitored_environment_name,
             resource_names=resource_names,

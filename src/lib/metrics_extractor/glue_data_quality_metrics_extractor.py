@@ -13,8 +13,8 @@ class GlueDataQualityMetricExtractor(BaseMetricsExtractor):
     def _extract_metrics_data(
         self, since_time: datetime, result_ids: list
     ) -> list[RulesetRun]:
-        glue_man = GlueManager(self.get_aws_service_client())
         if result_ids:
+            glue_man = GlueManager(self.get_aws_service_client())
             ruleset_runs = glue_man.get_data_quality_runs(
                 resource_name=self.resource_name,
                 result_ids=result_ids,
