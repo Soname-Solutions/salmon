@@ -1,13 +1,17 @@
-name: Run integrational tests
+name: CDK Deployment Tests
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: 'eu-central-1'
   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
   CDK_MONITORED_ENV_FOLDER: infra_monitored_account
-  STAGE_NAME: devci
-run-name: integrational testing
-on: [workflow_dispatch]
+  STAGE_NAME: devcdk
+run-name: CDK Deployment Tests - Commit ${{ github.sha }}
+on: 
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
@@ -28,6 +32,7 @@ jobs:
           cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
           pip3 install -r requirements.txt        
         
+      # we intentionally use devci, as they represent sufficient, yet compact configuration
       - name: Prepare replacements.json (put actual AWS account)
         run: python tests/devci_settings/prepare_replacements.py
 
@@ -43,9 +48,6 @@ jobs:
         run: |
           cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
           cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
-
-      - name: Put your amazing automation tests here
-        run: ls
 
       - name: CDK destroy Monitored Env
         run: |
