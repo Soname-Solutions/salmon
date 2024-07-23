@@ -9,8 +9,8 @@ env:
 run-name: CDK Deployment Tests - Commit ${{ github.sha }}
 on: 
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
   workflow_dispatch:
 jobs:
   Explore-GitHub-Actions:
