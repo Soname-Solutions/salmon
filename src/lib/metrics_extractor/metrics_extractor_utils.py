@@ -112,13 +112,13 @@ def get_last_update_time(
     return None
 
 
-def get_min_update_time(
+def get_earliest_last_update_time_for_resource_set(
     last_update_times: list,
     resource_names: list,
     timestream_writer: TimestreamTableWriter,
 ) -> datetime:
     """
-    Returns the minimum update time for the specified resources.
+    Returns the earliest update time for the specified resources.
     """
     resources_dict = {
         item["resource_name"]: item["last_update_time"] for item in last_update_times

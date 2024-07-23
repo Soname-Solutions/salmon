@@ -1,6 +1,6 @@
 import json
+import boto3
 from datetime import datetime
-
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 from lib.core.constants import EventResult
 
@@ -104,9 +104,7 @@ class GlueWorkflowsMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(
-        self, since_time: datetime, result_ids: list = []
-    ) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         self.workflow_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(
             self.workflow_runs

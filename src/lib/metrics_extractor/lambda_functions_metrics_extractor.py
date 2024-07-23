@@ -1,14 +1,17 @@
 from datetime import datetime
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
+
 import json
 
 from lib.aws import (
     LogEntry,
     LambdaManager,
     CloudWatchManager,
+    TimestreamTableWriter,
+    TimeStreamQueryRunner,
 )
 from lib.aws.lambda_manager import LambdaManager, LogEntry
-from lib.core.constants import EventResult
+from lib.core.constants import SettingConfigs, EventResult
 from lib.core.datetime_utils import datetime_to_epoch_milliseconds
 from lib.aws.events_manager import EventsManager
 
@@ -94,9 +97,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(
-        self, since_time: datetime, result_ids: list = []
-    ) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> tuple[list, dict]:
         self.lambda_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(self.lambda_runs)
         return records, common_attributes

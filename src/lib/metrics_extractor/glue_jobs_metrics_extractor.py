@@ -76,9 +76,7 @@ class GlueJobsMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(
-        self, since_time: datetime, result_ids: list = []
-    ) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         job_runs = self._extract_metrics_data(since_time=since_time)
         records, common_attributes = self._data_to_timestream_records(job_runs)
         return records, common_attributes

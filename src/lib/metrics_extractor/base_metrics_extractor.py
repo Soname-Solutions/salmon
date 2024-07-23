@@ -1,3 +1,4 @@
+import boto3
 from abc import ABC, abstractmethod
 from datetime import datetime
 
@@ -71,15 +72,12 @@ class BaseMetricsExtractor(ABC):
         return last_date
 
     @abstractmethod
-    def prepare_metrics_data(
-        self, since_time: datetime, result_ids: list = []
-    ) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         """
         Extract metrics data from AWS and convert them to Timestream records.
         Returns:
             records (list): List of Timestream records
             common_attributes (dict): Common attributes for all records (e.g. dimensions)
-            result_ids (list): List of Glue DQ Result IDs (relevant only for GLUE_DATA_QUALITY resource type)
         """
         pass
 

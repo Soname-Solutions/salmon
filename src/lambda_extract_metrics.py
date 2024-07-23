@@ -11,7 +11,7 @@ from lib.core.constants import SettingConfigs
 from lib.metrics_extractor import MetricsExtractorProvider
 from lib.metrics_extractor.metrics_extractor_utils import (
     get_last_update_time,
-    get_min_update_time,
+    get_earliest_last_update_time_for_resource_set,
 )
 from lib.core.constants import SettingConfigResourceTypes as types
 
@@ -25,7 +25,7 @@ timestream_query_client = boto3.client("timestream-query")
 def collect_glue_data_quality_result_ids(
     monitored_environment_name: str,
     resource_names: list[str],
-    last_update_times: dict,
+    dq_last_update_times: dict,
     boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
     timestream_writer: TimestreamTableWriter,
@@ -33,8 +33,8 @@ def collect_glue_data_quality_result_ids(
     logger.info(
         f"Collecting Glue Data Quality result IDs at env: {monitored_environment_name}"
     )
-    min_update_time = get_min_update_time(
-        last_update_times=last_update_times,
+    min_update_time = get_earliest_last_update_time_for_resource_set(
+        last_update_times=dq_last_update_times,
         resource_names=resource_names,
         timestream_writer=timestream_writer,
     )
@@ -100,14 +100,18 @@ def process_individual_resource(
         since_time = timestream_writer.get_earliest_writeable_time_for_table()
     logger.info(f"Extracting metrics since {since_time}")
 
-    # # 3. Extract metrics data in form of prepared list of timestream records
+    # # 3. Set Result IDs for Glue Data Quality resources
+    if resource_type == types.GLUE_DATA_QUALITY:
+        metrics_extractor.set_result_ids(result_ids=result_ids)
+
+    # # 4. Extract metrics data in form of prepared list of timestream records
     records, common_attributes = metrics_extractor.prepare_metrics_data(
-        since_time=since_time, result_ids=result_ids
+        since_time=since_time
     )
     metrics_record_count = len(records)
     logger.info(f"Extracted {metrics_record_count} records")
 
-    # # 4. Write extracted data to timestream table
+    # # 5. Write extracted data to timestream table
     metrics_extractor.write_metrics(
         records, common_attributes, timestream_table_writer=timestream_writer
     )
@@ -163,7 +167,7 @@ def process_all_resources_by_env_and_type(
         result_ids = collect_glue_data_quality_result_ids(
             monitored_environment_name=monitored_environment_name,
             resource_names=resource_names,
-            last_update_times=last_update_times.get(resource_type),
+            dq_last_update_times=last_update_times.get(resource_type),
             boto3_client_creator=boto3_client_creator,
             aws_client_name=aws_client_name,
             timestream_writer=timestream_man,

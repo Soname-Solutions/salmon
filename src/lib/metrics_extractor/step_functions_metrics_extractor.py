@@ -81,9 +81,7 @@ class StepFunctionsMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(
-        self, since_time: datetime, result_ids: list = []
-    ) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):
         step_functions_man = StepFunctionsManager(super().get_aws_service_client())
         step_function_executions = self._extract_metrics_data(
             since_time=since_time, step_functions_manager=step_functions_man

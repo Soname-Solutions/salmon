@@ -164,13 +164,13 @@ def test_two_completed_records_integrity(boto3_client_creator, mock_glue_client)
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(
-            since_time=since_time,
+        extractor.set_result_ids(
             result_ids=[
                 RULESET_RUN_GLUE_TABLE_SUCCESS.ResultId,
                 RULESET_RUN_GLUE_JOB_SUCCESS.ResultId,
             ],
         )
+        records, _ = extractor.prepare_metrics_data(since_time=since_time)
 
         required_dimensions = ["dq_result_id"]
         required_metrics = [
@@ -272,9 +272,10 @@ def test_failed_dq_run(
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(
-            since_time=since_time, result_ids=[ruleset_run.ResultId]
+        extractor.set_result_ids(
+            result_ids=[ruleset_run.ResultId],
         )
+        records, _ = extractor.prepare_metrics_data(since_time=since_time)
 
         mocked_get_executions.assert_called_once()
         assert len(records) == 1, "There should be one execution record"
@@ -336,9 +337,10 @@ def test_succeeded_dq_run(
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
-        records, _ = extractor.prepare_metrics_data(
-            since_time=since_time, result_ids=[ruleset_run.ResultId]
+        extractor.set_result_ids(
+            result_ids=[ruleset_run.ResultId],
         )
+        records, _ = extractor.prepare_metrics_data(since_time=since_time)
 
         mocked_get_executions.assert_called_once()
         assert len(records) == 1, "There should be one execution record"
@@ -372,6 +374,9 @@ def test_no_dq_runs(
             )
 
             since_time = datetime(2020, 1, 1, 0, 0, 0)
+            extractor.set_result_ids(
+                result_ids=[],
+            )
             records, _ = extractor.prepare_metrics_data(since_time=since_time)
 
             mocked_get_executions.assert_not_called()  # not called since no ResultIDs returned for the specified period

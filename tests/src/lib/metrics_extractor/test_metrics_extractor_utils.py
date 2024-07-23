@@ -6,7 +6,7 @@ from lib.core.datetime_utils import str_utc_datetime_to_datetime
 from lib.metrics_extractor import (
     retrieve_last_update_time_for_all_resources,
     get_last_update_time,
-    get_min_update_time,
+    get_earliest_last_update_time_for_resource_set,
     MetricsExtractorException,
 )
 from unittest.mock import MagicMock
@@ -238,10 +238,10 @@ def test_get_last_update_time_valid_input(last_update_time_sample_data):
         ),
     ],
 )
-def test_get_min_update_time(
+def test_get_earliest_last_update_time_for_resource_set(
     mock_timestream_writer, scenario, last_update_times, resource_names, expected_date
 ):
-    returned_min_date = get_min_update_time(
+    returned_min_date = get_earliest_last_update_time_for_resource_set(
         last_update_times, resource_names, mock_timestream_writer
     )
     assert returned_min_date == expected_date, f"Date mismatch for scenario {scenario}"

@@ -10,6 +10,9 @@ class GlueDataQualityMetricExtractor(BaseMetricsExtractor):
     Class is responsible for extracting glue data quality metrics
     """
 
+    def set_result_ids(self, result_ids: list = []):
+        self.result_ids = result_ids
+
     def _extract_metrics_data(
         self, since_time: datetime, result_ids: list
     ) -> list[RulesetRun]:
@@ -99,11 +102,9 @@ class GlueDataQualityMetricExtractor(BaseMetricsExtractor):
 
         return records, common_attributes
 
-    def prepare_metrics_data(
-        self, since_time: datetime, result_ids: list = []
-    ) -> tuple[list, dict]:
+    def prepare_metrics_data(self, since_time: datetime) -> tuple[list, dict]:
         ruleset_runs = self._extract_metrics_data(
-            since_time=since_time, result_ids=result_ids
+            since_time=since_time, result_ids=self.result_ids
         )
         records, common_attributes = self._data_to_timestream_records(ruleset_runs)
         return records, common_attributes

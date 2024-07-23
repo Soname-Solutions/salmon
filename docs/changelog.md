@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## 1.2.0
-* Added Glue Data Quality service (alerts, metrics, digest, optional Grafana dashboard).
+* Added integration with AWS Glue Data Quality (alerts, metrics, digest, optional Grafana dashboard).
 
 ## 1.1.0
 
