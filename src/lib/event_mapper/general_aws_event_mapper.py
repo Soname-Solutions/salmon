@@ -187,7 +187,9 @@ class ExecutionInfoUrlMixin:
         # additional params required for Glue Data Quality and Data Catalogs resource types
         glue_table_name = kwargs.pop("glue_table_name", "")
         glue_db_name = kwargs.pop("glue_db_name", "")
-        glue_catalog_id = kwargs.pop("glue_catalog_id", "")
+        glue_catalog_id = kwargs.pop(
+            "glue_catalog_id", account_id
+        )  # AWS Glue Catalog ID is the AWS account ID
         glue_job_name = kwargs.pop("glue_job_name", "")
         context_type = kwargs.pop("context_type", "")
         type_of_change = kwargs.pop("type_of_change", "")

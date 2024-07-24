@@ -155,6 +155,8 @@ class InfraMonitoredStack(Stack):
                 "glue:GetWorkflowRuns",
                 "glue:GetWorkflowRun",
                 "glue:ListDataQualityRulesets",
+                "glue:ListDataQualityResults",
+                "glue:GetDataQualityResult",
             ],
             resources=["*"],
             effect=iam.Effect.ALLOW,

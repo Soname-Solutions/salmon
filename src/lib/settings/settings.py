@@ -273,6 +273,13 @@ class Settings:
             elif res_name in replacements[res_monitored_env_name]:
                 new_entry = deepcopy(res)
                 upd_mon_group.append(new_entry)
+            # Data Quality Rulesets within Glue Jobs are not returned using list_data_quality_rulesets.
+            # Consequently, wildcards do not work for them.
+            # Therefore, we use the resource name as it is specified in the configuration.
+            elif settings_key == SettingConfigResourceTypes.GLUE_DATA_QUALITY:
+                new_entry = deepcopy(res)
+                upd_mon_group.append(new_entry)
+
         if upd_mon_group:
             monitoring_group.pop(settings_key, None)
             monitoring_group[settings_key] = upd_mon_group

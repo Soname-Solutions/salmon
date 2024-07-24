@@ -93,6 +93,112 @@ class WorkflowRunsData(BaseModel):
 
 
 ###########################################################
+# DQ Rulesets-related pydantic classes
+class RulesetGlueTable(BaseModel):
+    DatabaseName: Optional[str] = None
+    TableName: Optional[str] = None
+
+
+class RulesetDataSource(BaseModel):
+    GlueTable: Optional[RulesetGlueTable] = None
+
+
+class RuleResult(BaseModel):
+    Name: str
+    Description: str
+    Result: str
+    EvaluatedMetrics: dict
+    EvaluationMessage: Optional[str] = None
+
+
+class RulesetRun(BaseModel):
+    ResultId: str
+    Score: float
+    RulesetName: str
+    EvaluationContext: Optional[str] = None
+    RulesetEvaluationRunId: Optional[str] = None
+    StartedOn: datetime
+    CompletedOn: Optional[datetime] = None
+    JobName: Optional[str] = None
+    JobRunId: Optional[str] = None
+    RuleResults: list[RuleResult]
+    DataSource: Optional[RulesetDataSource] = None
+
+    @property
+    def ContextType(self) -> str:
+        """Assign the context type based on the Datasource(Glue table) attached."""
+        return (
+            GlueManager.DQ_Catalog_Context_Type
+            if self.DataSource and self.DataSource.GlueTable
+            else GlueManager.DQ_Job_Context_Type
+        )
+
+    @property
+    def Duration(self) -> float:
+        """Calculate the execution time for the data quality run."""
+        return (self.CompletedOn - self.StartedOn).total_seconds()
+
+    @property
+    def numRulesSucceeded(self) -> int:
+        """Count the number of rules that succeeded."""
+        return sum(
+            result.Result in GlueManager.Data_Quality_Rule_Success
+            for result in self.RuleResults
+        )
+
+    @property
+    def numRulesFailed(self) -> int:
+        """Count the number of rules that failed."""
+        return sum(
+            result.Result in GlueManager.Data_Quality_Rule_Failure
+            for result in self.RuleResults
+        )
+
+    @property
+    def totalRules(self) -> int:
+        """Count the total number of rules assigned to the ruleset."""
+        return len(self.RuleResults)
+
+    @property
+    def IsFailure(self) -> bool:
+        """Check if any rule assigned to the ruleset failed."""
+        return any(
+            result.Result in GlueManager.Data_Quality_Rule_Failure
+            for result in self.RuleResults
+        )
+
+    @property
+    def IsSuccess(self) -> bool:
+        """Check if all rules assigned to the ruleset passed."""
+        return all(
+            result.Result in GlueManager.Data_Quality_Rule_Success
+            for result in self.RuleResults
+        )
+
+    @property
+    def ErrorString(self) -> str:
+        """Compile the EvaluationMessages from RuleResults into a formatted string."""
+        messages = [
+            f"{result.Name}: {result.EvaluationMessage}"
+            for result in self.RuleResults
+            if result.EvaluationMessage
+        ]
+
+        if not messages:
+            return None
+
+        error_string = "; ".join(messages)
+        # trim the error string to 100 characters, adding '...' if it exceeds this length
+        if len(error_string) > 100:
+            error_string = error_string[:100] + "..."
+        return error_string
+
+
+class RulesetRunsData(BaseModel):
+    Results: list[RulesetRun]
+
+
+###########################################################
 # Glue manager classes
 
 
@@ -118,6 +224,8 @@ class GlueManager:
 
     Data_Quality_Success = ["SUCCEEDED"]
     Data_Quality_Failure = ["FAILED", "TIMEOUT", "STOPPED"]
+    Data_Quality_Rule_Failure = ["FAIL", "ERROR"]
+    Data_Quality_Rule_Success = ["PASS"]
     DQ_Catalog_Context_Type = "GLUE_DATA_CATALOG"
     DQ_Job_Context_Type = "GLUE_JOB"
     DQ_Context_Mapping = {
@@ -180,6 +288,7 @@ class GlueManager:
 
     def _get_all_data_quality_names(self):
         try:
+            # Note: Returns a list of rulesets only with Glue table datasource
             response = self.glue_client.list_data_quality_rulesets()
             return [res["Name"] for res in response.get("Rulesets")]
 
@@ -254,6 +363,38 @@ class GlueManager:
 
         except Exception as e:
             error_message = f"Error getting glue workflow runs : {e}"
+            raise GlueManagerException(error_message)
+
+    def list_data_quality_results(self, started_after: datetime) -> list[str]:
+        try:
+            response = self.glue_client.list_data_quality_results(
+                Filter={"StartedAfter": started_after}
+            )
+            outp = [x["ResultId"] for x in response["Results"]]
+            return outp
+
+        except Exception as e:
+            error_message = f"Error listing data quality results: {e}"
+            raise GlueManagerException(error_message)
+
+    def get_data_quality_runs(
+        self, resource_name: str, result_ids: list[str], since_time: datetime
+    ) -> list[str]:
+        try:
+            response = self.glue_client.batch_get_data_quality_result(
+                ResultIds=result_ids
+            )
+            dq_runs_data = RulesetRunsData(**response)
+            outp = [
+                x
+                for x in dq_runs_data.Results
+                if x.RulesetName == resource_name and x.StartedOn > since_time
+            ]
+
+            return outp
+
+        except Exception as e:
+            error_message = f"Error getting data quality runs for {resource_name}: {e}"
             raise GlueManagerException(error_message)
 
     def generate_workflow_run_error_message(

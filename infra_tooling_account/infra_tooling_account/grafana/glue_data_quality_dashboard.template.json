@@ -1,0 +1,317 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "Amazon-Timestream",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Metrics Dashboard",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 3,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "no data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Execution time, hours"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 40
+        },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "execution",
+          "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(failed) as \"Failed\", sum(succeeded) as \"Succeeded\", sum(execution_time_sec)/3600 as \"Execution time, hours\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 21,
+        "x": 3,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "execution",
+          "rawQuery": "SELECT  time, ${measure:csv} FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "title": "Glue Data Quality Rulesets",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Measure name",
+        "multi": true,
+        "name": "measure",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "execution",
+            "value": "execution"
+          },
+          {
+            "selected": false,
+            "text": "score",
+            "value": "score"
+          },
+          {
+            "selected": false,
+            "text": "succeeded",
+            "value": "succeeded"
+          },
+          {
+            "selected": false,
+            "text": "failed",
+            "value": "failed"
+          },
+          {
+            "selected": false,
+            "text": "rules_succeeded",
+            "value": "rules_succeeded"
+          },
+          {
+            "selected": false,
+            "text": "rules_failed",
+            "value": "rules_failed"
+          },
+          {
+            "selected": false,
+            "text": "total_rules",
+            "value": "total_rules"
+          },
+          {
+            "selected": false,
+            "text": "execution_time_sec",
+            "value": "execution_time_sec"
+          }
+        ],
+        "query": "execution,score,succeeded,failed,rules_succeeded,rules_failed,total_rules,execution_time_sec",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Amazon-Timestream",
+        "definition": "SELECT distinct monitored_environment FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Monitored Environment ",
+        "multi": true,
+        "name": "monitored_env",
+        "options": [],
+        "query": "SELECT distinct monitored_environment FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": "Amazon-Timestream",
+        "definition": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Resource Name",
+        "multi": true,
+        "name": "resource_name",
+        "options": [],
+        "query": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Metrics Dashboard for Glue Data Quality Rulesets",
+  "version": 3,
+  "weekStart": ""
+}

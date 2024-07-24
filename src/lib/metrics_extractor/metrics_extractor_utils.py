@@ -1,10 +1,11 @@
+from datetime import datetime
 from lib.aws.timestream_manager import TimeStreamQueryRunner
 from lib.core.constants import SettingConfigs
 from lib.aws.aws_naming import AWSNaming
+from lib.aws import TimestreamTableWriter
 from logging import Logger
 
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
-from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class MetricsExtractorException(Exception):
@@ -109,3 +110,26 @@ def get_last_update_time(
             return datettime_utc
 
     return None
+
+
+def get_earliest_last_update_time_for_resource_set(
+    last_update_times: list,
+    resource_names: list,
+    timestream_writer: TimestreamTableWriter,
+) -> datetime:
+    """
+    Returns the earliest update time for the specified resources.
+    """
+    resources_dict = {
+        item["resource_name"]: item["last_update_time"] for item in last_update_times
+    }
+
+    # Check if all resources have last_update_time assigned and get the min date
+    if all(resource in resources_dict for resource in resource_names):
+        update_times = [
+            str_utc_datetime_to_datetime(resources_dict[resource])
+            for resource in resource_names
+        ]
+        return min(update_times)
+    # If not all resources exist, get earliest writable time
+    return timestream_writer.get_earliest_writeable_time_for_table()
