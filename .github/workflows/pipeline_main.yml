@@ -1,0 +1,16 @@
+name: Main Test Pipeline
+env:
+    AWS_ACCESS_KEY_ID: dummy_value
+    AWS_SECRET_ACCESS_KEY: dummy_value
+    AWS_DEFAULT_REGION: 'eu-central-1'    
+run-name: Main Test Pipeline
+on: [push, workflow_dispatch]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4        
+
+      - name: step 1
+        run: ls

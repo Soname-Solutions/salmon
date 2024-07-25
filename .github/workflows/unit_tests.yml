@@ -5,7 +5,7 @@ env:
     AWS_DEFAULT_REGION: 'eu-central-1'    
     TESTS_FOLDER: tests
 run-name: unit tests
-on: [push, workflow_dispatch]
+on: [workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
