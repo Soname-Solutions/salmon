@@ -1,8 +1,4 @@
 name: Main Test Pipeline
-env:
-    AWS_ACCESS_KEY_ID: dummy_value
-    AWS_SECRET_ACCESS_KEY: dummy_value
-    AWS_DEFAULT_REGION: 'eu-central-1'    
 run-name: Main Test Pipeline
 on: [push, workflow_dispatch]
 jobs:
@@ -12,9 +8,10 @@ jobs:
     #     param1: .github/labeler.yml
     secrets: inherit
 
-#   PrepareCDKJob:
-#     needs: CallWorkflowJob
-#     uses: ./.github/workflows/sub_cdk_prepare.yml
+  PrepareCDKJob:
+    needs: CallWorkflowJob
+    uses: ./.github/workflows/sub_cdk_prepare.yml
+    secrets: inherit
 
 
 
