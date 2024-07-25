@@ -1,16 +1,13 @@
 name: Called Workflow 1
 env:
-    AWS_ACCESS_KEY_ID: dummy_value
-    AWS_SECRET_ACCESS_KEY: dummy_value
-    AWS_DEFAULT_REGION: 'eu-central-1'    
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: 'eu-central-1'
 run-name: Called Workflow 1
 on: [workflow_call]
 jobs:
-  Explore-GitHub-Actions:
+  MainCalledWorkflowJob:
     runs-on: ubuntu-latest
     steps:
       - name: step 1
-        run: ls
-
-      - name: step 2
-        run: sleep 10   
+        run: aws sts get-caller-identity
