@@ -8,6 +8,9 @@ on: [push, workflow_dispatch]
 jobs:
   CallWorkflowJob:
     uses: ./.github/workflows/called_workflow1.yml
+    # with:
+    #     param1: .github/labeler.yml
+    secrets: inherit
 
 #   PrepareCDKJob:
 #     needs: CallWorkflowJob
