@@ -6,7 +6,7 @@ env:
 run-name: Main Test Pipeline
 on: [push, workflow_dispatch]
 jobs:
-  Explore-GitHub-Actions:
+  TestJob:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
@@ -15,10 +15,12 @@ jobs:
       - name: step 1
         run: ls
 
-  CallWorkflow:
+  CallWorkflowJob:
+    needs: TestJob
     uses: ./.github/workflows/called_workflow1.yml
 
-  PrepareCDK:
+  PrepareCDKJob:
+    needs: CallWorkflowJob
     uses: ./.github/workflows/sub_cdk_prepare.yml
 
 
