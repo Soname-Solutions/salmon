@@ -14,3 +14,6 @@ jobs:
 
       - name: step 1
         run: ls
+
+      - name: run called workflow 1
+        uses: ./.github/workflows/called_workflow1.yml
