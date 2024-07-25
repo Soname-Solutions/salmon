@@ -13,5 +13,8 @@ jobs:
     uses: ./.github/workflows/sub_cdk_prepare.yml
     secrets: inherit
 
-
+  DeployCDKJob:
+    needs: PrepareCDKJob
+    uses: ./.github/workflows/sub_cdk_deploy.yml
+    secrets: inherit
 
