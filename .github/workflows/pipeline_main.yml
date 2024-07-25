@@ -4,8 +4,8 @@ on: [push, workflow_dispatch]
 jobs:
   CallWorkflowJob:
     uses: ./.github/workflows/called_workflow1.yml
-    # with:
-    #     param1: .github/labeler.yml
+    with:
+        param1: value1
     secrets: inherit
 
   PrepareCDKJob:
@@ -13,8 +13,8 @@ jobs:
     uses: ./.github/workflows/sub_cdk_prepare.yml
     secrets: inherit
 
-  DeployCDKJob:
-    needs: PrepareCDKJob
-    uses: ./.github/workflows/sub_cdk_deploy.yml
-    secrets: inherit
+  # DeployCDKJob:
+  #   needs: PrepareCDKJob
+  #   uses: ./.github/workflows/sub_cdk_deploy.yml
+  #   secrets: inherit
 
