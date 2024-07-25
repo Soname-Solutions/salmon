@@ -17,3 +17,9 @@ jobs:
 
   CallWorkflow:
     uses: ./.github/workflows/called_workflow1.yml
+
+  PrepareCDK:
+    uses: ./.github/workflows/sub_cdk_prepare.yml
+
+
+
