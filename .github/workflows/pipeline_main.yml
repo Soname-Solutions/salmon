@@ -18,30 +18,29 @@ jobs:
       - name: prepare CDK
         uses: ./.github/actions/cdk-prepare
         with:
-          cdk-folder-name: "infra_tooling_account"
+          cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
           settings-folder-name: "tests/devci_settings"
 
       - name: deploy tooling env via CDK
         uses: ./.github/actions/cdk-deploy
         with:
-          cdk-folder-name: "infra_tooling_account"
+          cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
           stage-name: ${{ env.STAGE_NAME }}
-                  
 
+      - name: deploy monitoring env via CDK
+        uses: ./.github/actions/cdk-deploy
+        with:
+          cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}
 
-  # CallWorkflowJob:
-  #   uses: ./.github/workflows/called_workflow1.yml
-  #   with:
-  #       param1: value1
-  #   secrets: inherit
-
-  # PrepareCDKJob:
-  #   needs: CallWorkflowJob
-  #   uses: ./.github/workflows/sub_cdk_prepare.yml
-  #   secrets: inherit
-
-  # DeployCDKJob:
-  #   needs: PrepareCDKJob
-  #   uses: ./.github/workflows/sub_cdk_deploy.yml
-  #   secrets: inherit
-
+      - name: destroy monitoring env via CDK
+        uses: ./.github/actions/cdk-destroy
+        with:
+          cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}
+  
+      - name: destroy tooling env via CDK
+        uses: ./.github/actions/cdk-destroy
+        with:
+          cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}  

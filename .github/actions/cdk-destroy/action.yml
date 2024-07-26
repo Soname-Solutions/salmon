@@ -1,19 +1,18 @@
-name: 'Hello World'
-description: 'Greet someone'
+name: CDK destroy action
+description: Destroy CDK app
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
+  cdk-folder-name:  
+    description: 'where cdk app resides'
     required: true
-    default: 'World'
-outputs:
-  random-number:
-    description: "Random number"
-    value: ${{ steps.random-number-generator.outputs.random-number }}
+  stage-name:  
+    description: 'stage-name which is used as CDK context var'
+    required: true
+
 runs:
   using: "composite"
   steps:
-    - name: Set Greeting
-      run: echo "Hello $INPUT_WHO_TO_GREET."
+    - name: CDK destroy
       shell: bash
-      env:
-        INPUT_WHO_TO_GREET: ${{ inputs.who-to-greet }}
+      run: |
+        cd ${{ inputs.cdk-folder-name }}
+        cdk destroy --context stage-name=${{ inputs.stage-name }} --force
