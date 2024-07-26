@@ -13,6 +13,29 @@ runs:
       shell: bash
       run: aws sts get-caller-identity
 
+    - name: Setup Node.js env
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: npm install aws-cdk
+      shell: bash
+      run: npm i -g aws-cdk        
+
+    - name: Install Python requirements
+      shell: bash
+      run: |
+        cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
+        pip3 install -r requirements.txt        
+      
+    # we intentionally use devci, as they represent sufficient, yet compact configuration
+    - name: Prepare replacements.json (put actual AWS account)
+      shell: bash
+      run: python tests/devci_settings/prepare_replacements.py
+
+    - name: Copy devci settings
+      shell: bash
+      run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/        
 
 
 # name: SubWorkflow CDK Prepare
@@ -29,8 +52,6 @@ runs:
 #   prepare-cdk:
 #     runs-on: ubuntu-latest
 #     steps:
-#       - name: Check out repository code
-#         uses: actions/checkout@v4
 
 #       - name: Setup Node.js env
 #         uses: actions/setup-node@v4
