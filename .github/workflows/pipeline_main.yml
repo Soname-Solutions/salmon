@@ -6,6 +6,7 @@ env:
   AWS_DEFAULT_REGION: 'eu-central-1'
   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
   CDK_MONITORED_ENV_FOLDER: infra_monitored_account  
+  STAGE_NAME: devcdk
 on: [push, workflow_dispatch]
 jobs:
   TestCompositeActions:
@@ -14,16 +15,18 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      - run: |
-         pwd
-         ls
-
-      - id: aws-who-is
+      - name: prepare CDK
         uses: ./.github/actions/cdk-prepare
         with:
           cdk-folder-name: "infra_tooling_account"
           settings-folder-name: "tests/devci_settings"
-        
+
+      - name: deploy tooling env via CDK
+        uses: ./.github/actions/cdk-deploy
+        with:
+          cdk-folder-name: "infra_tooling_account"
+          stage-name: ${{ env.STAGE_NAME }}
+                  
 
 
   # CallWorkflowJob:

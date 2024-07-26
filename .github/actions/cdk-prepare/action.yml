@@ -11,10 +11,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: aws who is
-      shell: bash
-      run: aws sts get-caller-identity
-
     - name: Setup Node.js env
       uses: actions/setup-node@v4
       with:
@@ -35,42 +31,6 @@ runs:
       shell: bash
       run: python ${{ inputs.settings-folder-name }}/prepare_replacements.py
 
-    - name: Copy devci settings
+    - name: Copy deployment settings to config/settings
       shell: bash
       run: mkdir -p config/settings && cp ${{ inputs.settings-folder-name }}/*.json config/settings/        
-
-
-# name: SubWorkflow CDK Prepare
-# env:
-#   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#   AWS_DEFAULT_REGION: 'eu-central-1'
-#   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
-#   CDK_MONITORED_ENV_FOLDER: infra_monitored_account
-#   STAGE_NAME: devcdk
-# #run-name: CDK Deployment Tests - Commit ${{ github.sha }}
-# on: [workflow_call]
-# jobs:
-#   prepare-cdk:
-#     runs-on: ubuntu-latest
-#     steps:
-
-#       - name: Setup Node.js env
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: 20
-      
-#       - name: npm install aws-cdk
-#         run: npm i -g aws-cdk        
-
-#       - name: Install Python requirements
-#         run: |
-#           cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
-#           pip3 install -r requirements.txt        
-        
-#       # we intentionally use devci, as they represent sufficient, yet compact configuration
-#       - name: Prepare replacements.json (put actual AWS account)
-#         run: python tests/devci_settings/prepare_replacements.py
-
-#       - name: Copy devci settings
-#         run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/
