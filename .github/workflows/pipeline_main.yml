@@ -2,16 +2,26 @@ name: Main Test Pipeline
 run-name: Main Test Pipeline
 on: [push, workflow_dispatch]
 jobs:
-  CallWorkflowJob:
-    uses: ./.github/workflows/called_workflow1.yml
-    with:
-        param1: value1
-    secrets: inherit
+  TestCompositeActions:
+    runs-on: ubuntu-latest
+    steps:
+      - id: hello-action
+        uses: ./github/actions/hello.yml
+        with:
+          who-to-greet: "Vasya"
+        
 
-  PrepareCDKJob:
-    needs: CallWorkflowJob
-    uses: ./.github/workflows/sub_cdk_prepare.yml
-    secrets: inherit
+
+  # CallWorkflowJob:
+  #   uses: ./.github/workflows/called_workflow1.yml
+  #   with:
+  #       param1: value1
+  #   secrets: inherit
+
+  # PrepareCDKJob:
+  #   needs: CallWorkflowJob
+  #   uses: ./.github/workflows/sub_cdk_prepare.yml
+  #   secrets: inherit
 
   # DeployCDKJob:
   #   needs: PrepareCDKJob
