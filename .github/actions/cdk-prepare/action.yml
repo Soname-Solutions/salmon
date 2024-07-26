@@ -10,6 +10,7 @@ runs:
   using: "composite"
   steps:
     - name: aws who is
+      shell: bash
       run: aws sts get-caller-identity
 
 
