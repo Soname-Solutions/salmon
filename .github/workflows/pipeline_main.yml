@@ -8,6 +8,10 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      - run: |
+         pwd
+         ls
+
       - id: hello-action
         uses: ./.github/actions/hello.yml
         with:
