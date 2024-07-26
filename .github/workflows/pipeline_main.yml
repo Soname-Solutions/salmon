@@ -13,7 +13,7 @@ jobs:
          ls
 
       - id: hello-action
-        uses: ./.github/actions/hello.yml
+        uses: ./.github/actions/hello
         with:
           who-to-greet: "Vasya"
         
