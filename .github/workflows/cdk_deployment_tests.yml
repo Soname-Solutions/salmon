@@ -4,8 +4,9 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: 'eu-central-1'
   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
-  CDK_MONITORED_ENV_FOLDER: infra_monitored_account
+  CDK_MONITORED_ENV_FOLDER: infra_monitored_account  
   STAGE_NAME: devcdk
+  SETTING_FOLDER_NAME: "tests/devci_settings"
 run-name: CDK Deployment Tests - Commit ${{ github.sha }}
 on: 
   push:
@@ -13,49 +14,38 @@ on:
       - main
   workflow_dispatch:
 jobs:
-  Explore-GitHub-Actions:
+  cdk-deployment-cycle-test:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js env
-        uses: actions/setup-node@v4
+      - name: prepare CDK
+        uses: ./.github/actions/cdk-prepare
         with:
-          node-version: 20
-      
-      - name: npm install aws-cdk
-        run: npm i -g aws-cdk        
+          cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
 
-      - name: Install Python requirements
-        run: |
-          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
-          pip3 install -r requirements.txt        
-        
-      # we intentionally use devci, as they represent sufficient, yet compact configuration
-      - name: Prepare replacements.json (put actual AWS account)
-        run: python tests/devci_settings/prepare_replacements.py
+      - name: deploy tooling env via CDK
+        uses: ./.github/actions/cdk-deploy
+        with:
+          cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}
 
-      - name: Copy devci settings
-        run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/
+      - name: deploy monitoring env via CDK
+        uses: ./.github/actions/cdk-deploy
+        with:
+          cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}
 
-      - name: CDK deploy Tooling Env
-        run: |
-          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
-          cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
-        
-      - name: CDK deploy Monitored Env
-        run: |
-          cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
-          cdk deploy --context stage-name=${{ env.STAGE_NAME }}  --require-approval never
-
-      - name: CDK destroy Monitored Env
-        run: |
-          cd ${{ env.CDK_MONITORED_ENV_FOLDER }}
-          cdk destroy --context stage-name=${{ env.STAGE_NAME }}  --force
-
-      - name: CDK destroy Tooling Env
-        run: |
-          cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
-          cdk destroy --context stage-name=${{ env.STAGE_NAME }}  --force
-                    
+      - name: destroy monitoring env via CDK
+        uses: ./.github/actions/cdk-destroy
+        with:
+          cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}
+  
+      - name: destroy tooling env via CDK
+        uses: ./.github/actions/cdk-destroy
+        with:
+          cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
+          stage-name: ${{ env.STAGE_NAME }}
