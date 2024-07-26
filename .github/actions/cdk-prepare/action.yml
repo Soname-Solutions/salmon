@@ -1,0 +1,36 @@
+name: CDK prepare action
+description: Installs CDK
+inputs:
+  cdk-folder-name:  
+    description: 'where cdk app resides'
+    required: true
+  settings-folder-name:  
+    description: 'where settings for cdk deployment are stored. Without ending "/"'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js env
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: npm install aws-cdk
+      shell: bash
+      run: npm i -g aws-cdk        
+
+    - name: Install Python requirements
+      shell: bash
+      run: |
+        cd ${{ inputs.cdk-folder-name }}
+        pip3 install -r requirements.txt        
+      
+    # we intentionally use devci, as they represent sufficient, yet compact configuration
+    - name: Prepare replacements.json (put actual AWS account)
+      shell: bash
+      run: python ${{ inputs.settings-folder-name }}/prepare_replacements.py
+
+    - name: Copy deployment settings to config/settings
+      shell: bash
+      run: mkdir -p config/settings && cp ${{ inputs.settings-folder-name }}/*.json config/settings/        
