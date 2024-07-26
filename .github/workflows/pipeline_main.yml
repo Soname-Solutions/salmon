@@ -5,6 +5,9 @@ jobs:
   TestCompositeActions:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
       - id: hello-action
         uses: ./github/actions/hello.yml
         with:
