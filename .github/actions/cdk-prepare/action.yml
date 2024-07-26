@@ -1,10 +1,12 @@
 name: CDK prepare action
 description: Installs CDK
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
+  cdk-folder-name:  
+    description: 'where cdk app resides'
     required: true
-    default: 'World'
+  settings-folder-name:  
+    description: 'where settings for cdk deployment are stored. Without ending "/"'
+    required: true
 
 runs:
   using: "composite"
@@ -25,17 +27,17 @@ runs:
     - name: Install Python requirements
       shell: bash
       run: |
-        cd ${{ env.CDK_TOOLING_ENV_FOLDER }}
+        cd ${{ inputs.cdk-folder-name }}
         pip3 install -r requirements.txt        
       
     # we intentionally use devci, as they represent sufficient, yet compact configuration
     - name: Prepare replacements.json (put actual AWS account)
       shell: bash
-      run: python tests/devci_settings/prepare_replacements.py
+      run: python ${{ inputs.settings-folder-name }}/prepare_replacements.py
 
     - name: Copy devci settings
       shell: bash
-      run: mkdir -p config/settings && cp tests/devci_settings/*.json config/settings/        
+      run: mkdir -p config/settings && cp ${{ inputs.settings-folder-name }}/*.json config/settings/        
 
 
 # name: SubWorkflow CDK Prepare
