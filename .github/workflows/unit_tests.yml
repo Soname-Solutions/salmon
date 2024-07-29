@@ -6,12 +6,12 @@ env:
     TESTS_FOLDER: tests
 run-name: unit tests
 on:
-  push
+  push:
   pull_request:
     types:
       - opened
       - synchronize
-  workflow_dispatch
+  workflow_dispatch:
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
