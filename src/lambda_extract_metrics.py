@@ -102,7 +102,7 @@ def process_individual_resource(
 
     # # 3. Set Result IDs for Glue Data Quality resources
     if resource_type == types.GLUE_DATA_QUALITY:
-        metrics_extractor.set_result_ids(result_ids=result_ids)
+        metrics_extractor.set_result_ids(result_ids=result_ids, newparam="test")
 
     # # 4. Extract metrics data in form of prepared list of timestream records
     records, common_attributes = metrics_extractor.prepare_metrics_data(
