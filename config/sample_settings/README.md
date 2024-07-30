@@ -9,7 +9,7 @@ Contains the following parts:
 
 ### Tooling environment
 
-- metrics_collection_interval_min - interval (in minutes) for extracting metrics from monitored environments
+- metrics_collection_cron_expression - the cron schedule for triggering the metrics extraction process. 
 - digest_report_period_hours - indicates how many recent hours should be covered in the daily digest report. Defaults to 24 hours. 
 - digest_cron_expression: the cron schedule to trigger the daily digest report. Defaults to "cron(0 8 * * ? *)", every day at 8am UTC.
 

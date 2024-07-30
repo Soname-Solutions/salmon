@@ -69,7 +69,7 @@ class Settings:
         ---
         get_monitored_account_ids: Get monitored account IDs.
         get_monitored_account_region_pairs: Get monitored account IDs and Regions.
-        get_metrics_collection_interval_min: Get metrics collection interval.
+        get_metrics_collection_cron_expression: Get metrics collection cron schedule.
         get_tooling_account_props: Returns account_id and region of the tooling environment.
         get_digest_report_settings: Returns Digest report period (hours) and cron schedule.
         get_grafana_settings: Returns Grafana related settings.
@@ -310,10 +310,10 @@ class Settings:
 
         return monitored_account_region_pairs
 
-    def get_metrics_collection_interval_min(self) -> int:
-        """Get metrics_collection_interval_min"""
+    def get_metrics_collection_cron_expression(self) -> int:
+        """Get metrics_collection_cron_expression"""
         return self.processed_settings[SettingFileNames.GENERAL]["tooling_environment"][
-            "metrics_collection_interval_min"
+            "metrics_collection_cron_expression"
         ]
 
     def get_digest_report_settings(self) -> tuple[int, str]:
