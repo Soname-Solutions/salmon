@@ -3,7 +3,7 @@
         "name": "Tooling Account [dev]",
         "account_id": "1234567890",
         "region": "us-east-1",
-        "metrics_collection_interval_min": 10,
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)",
         "digest_report_period_hours" : 48, 
         "digest_cron_expression": "cron(5 8 * * ? *)",
         "grafana_instance": {

@@ -4,7 +4,7 @@
         "account_id": "<<main_account_id>>",
         "region": "eu-central-1",
         "digest_report_period_hours" : 72, 
-        "metrics_collection_interval_min" : 15
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)"
     },
     "monitored_environments": [    
         {
