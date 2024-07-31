@@ -1,4 +1,4 @@
-name: Run unit tests
+name: Unit tests
 env:
     AWS_ACCESS_KEY_ID: dummy_value
     AWS_SECRET_ACCESS_KEY: dummy_value
