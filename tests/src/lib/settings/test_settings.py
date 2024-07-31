@@ -126,7 +126,7 @@ def test_getting_tooling_env_props_when_explicitly_defined():
 
     # in general -> tooling env we have (all defined EXPLICITLY, not using defaul values)
     expected_values = {
-        "metrics_collection_interval_min": 10,
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)",
         "digest_report_period_hours": 48,
         "digest_cron_expression": "cron(5 8 * * ? *)",
         "grafana_instance": {
@@ -135,7 +135,7 @@ def test_getting_tooling_env_props_when_explicitly_defined():
         },
     }
 
-    metrics_collection_interval_min = settings.get_metrics_collection_interval_min()
+    metrics_collection_cron_expression = settings.get_metrics_collection_cron_expression()
     (
         digest_report_period_hours,
         digest_cron_expression,
@@ -149,8 +149,8 @@ def test_getting_tooling_env_props_when_explicitly_defined():
     ) = settings.get_grafana_settings()
 
     assert (
-        metrics_collection_interval_min
-        == expected_values["metrics_collection_interval_min"]
+        metrics_collection_cron_expression
+        == expected_values["metrics_collection_cron_expression"]
     )
     assert digest_report_period_hours == expected_values["digest_report_period_hours"]
     assert digest_cron_expression == expected_values["digest_cron_expression"]
@@ -171,12 +171,12 @@ def test_getting_tooling_env_props_when_omitted():
 
     # in general -> tooling env we have (all defined EXPLICITLY, not using defaul values)
     expected_values = {
-        "metrics_collection_interval_min": 5,  # this one is mandatory anyway
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)",
         "digest_report_period_hours": DigestSettings.REPORT_PERIOD_HOURS,
         "digest_cron_expression": DigestSettings.CRON_EXPRESSION,
     }
 
-    metrics_collection_interval_min = settings.get_metrics_collection_interval_min()
+    metrics_collection_cron_expression = settings.get_metrics_collection_cron_expression()
     (
         digest_report_period_hours,
         digest_cron_expression,
@@ -184,8 +184,8 @@ def test_getting_tooling_env_props_when_omitted():
     grafana_settings = settings.get_grafana_settings()
 
     assert (
-        metrics_collection_interval_min
-        == expected_values["metrics_collection_interval_min"]
+        metrics_collection_cron_expression
+        == expected_values["metrics_collection_cron_expression"]
     )
     assert digest_report_period_hours == expected_values["digest_report_period_hours"]
     assert digest_cron_expression == expected_values["digest_cron_expression"]

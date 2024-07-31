@@ -7,7 +7,7 @@
           "name": {"type": "string"},
           "account_id": {"type": "string"},
           "region": {"type": "string"},
-          "metrics_collection_interval_min": {"type": "integer"},
+          "metrics_collection_cron_expression": {"type": "string"},
           "digest_report_period_hours": {"type": "integer"},
           "digest_cron_expression": {"type": "string"},
           "grafana_instance": {
@@ -22,7 +22,7 @@
             "required": ["grafana_vpc_id", "grafana_security_group_id"]
           }
         },
-        "required": ["name", "account_id", "region", "metrics_collection_interval_min"]
+        "required": ["name", "account_id", "region", "metrics_collection_cron_expression"]
       },
       "monitored_environments": {
         "type": "array",

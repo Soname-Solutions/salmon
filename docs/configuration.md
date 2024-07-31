@@ -71,7 +71,7 @@ The `general.json` configuration file sets up the tooling environment, monitored
         "name": "Tooling Account [<<env>>]",
         "account_id": "<<tooling_account_id>>",
         "region": "eu-central-1",
-        "metrics_collection_interval_min": 5,
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? *)",
         "digest_report_period_hours" : 24, 
         "digest_cron_expression": "cron(0 8 * * ? *)",
         "grafana_instance": {
@@ -103,7 +103,7 @@ The `general.json` configuration file sets up the tooling environment, monitored
 
     > Here, `<<env>>` acts as a placeholder that represents the environment name. This allows you to specify a generic name for the tooling account while keeping the option to customize it based on the environment. To define the actual values for placeholders, you can use the replacements.json file (refer to [Configure Replacements for Placeholders](#configure-replacements-for-placeholders)). This file serves as a mapping between placeholders and their corresponding values.
 - `account_id`, `region` - AWS region and account ID for the Tooling environment.
-- `metrics_collection_interval_min` - an interval (in minutes) for extracting metrics from Monitored environments.
+- `metrics_collection_cron_expression` - the cron schedule to trigger metrics extraction from Monitored environments.
 - `digest_report_period_hours` - how many recent hours should be covered in the Daily Digest report. Default value: `24` hours.
 - `digest_cron_expression` - the cron schedule to trigger the Daily Digest report. Default value: `cron(0 8 * * ? *)`, every day at 8am UTC.
 

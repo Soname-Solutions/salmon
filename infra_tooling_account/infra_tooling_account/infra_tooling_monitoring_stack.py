@@ -121,16 +121,14 @@ class InfraToolingMonitoringStack(NestedStack):
             timestream_database_name=input_timestream_database_name
         )
 
-        metrics_collection_interval_min = (
-            self.settings.get_metrics_collection_interval_min()
+        metrics_collection_cron_expression = (
+            self.settings.get_metrics_collection_cron_expression()
         )
 
         rule = events.Rule(
             self,
             "MetricsExtractionScheduleRule",
-            schedule=events.Schedule.rate(
-                Duration.minutes(metrics_collection_interval_min)
-            ),
+            schedule=events.Schedule.expression(metrics_collection_cron_expression),
             rule_name=AWSNaming.EventBusRule(self, "metrics-extract-cron"),
         )
         rule.add_target(targets.LambdaFunction(extract_metrics_orch_lambda))
