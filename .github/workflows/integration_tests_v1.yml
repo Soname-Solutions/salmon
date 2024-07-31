@@ -5,17 +5,22 @@ env:
     AWS_DEFAULT_REGION: 'eu-central-1'
     CDK_FOLDER: integration_tests/cdk
     STAGE_NAME: devit
-    SETTING_FOLDER_NAME: "tests/devci_settings"
+    SETTING_FOLDER_NAME: "integration_tests/settings"
 run-name: integration tests
 on: [workflow_dispatch]
 jobs:
-  Explore-GitHub-Actions:
+  integration-testing:
     runs-on: ubuntu-latest
     steps:
         - name: Check out repository code
           uses: actions/checkout@v4        
 
-        - run: ls
+        - name: prepare CDK
+          uses: ./.github/actions/cdk-prepare
+          with:
+            cdk-folder-name: ${{ env.CDK_FOLDER }}
+            settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
+  
 
 
 

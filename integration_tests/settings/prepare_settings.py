@@ -2,6 +2,9 @@ import boto3
 import json
 import os
 
+# this script is executed before CDK deploy, it prepares settings (e.g. replaces variable parts such as AWS account ID etc.)
+# The script can be modified for any specific set of config files 
+
 def get_aws_account_id():
     session = boto3.Session()
     sts_client = session.client('sts')
