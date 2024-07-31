@@ -1,3 +1,5 @@
 {
-    "<<main_account_id>>": "to be replaced"
+    "<<main_account_id>>": "to be replaced",
+    "<<env_name>>": "devit",
+    "<<region>>": "eu-central-1"
 }

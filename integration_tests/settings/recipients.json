@@ -1,26 +1,4 @@
 {
-    "recipients": [      
-        {
-            "recipient": "anatolii.maslov@soname.de",
-            "delivery_method": "primary_ses",            
-            "subscriptions": [
-                {
-                    "monitoring_group": "salmonts_pyjobs",
-                    "alerts": false,
-                    "digest": false
-                },
-                {
-                    "monitoring_group": "salmonts_workflows_sparkjobs",
-                    "alerts": false,
-                    "digest": false
-                },
-                {
-                    "monitoring_group": "salmonts_lambdas_stepfunctions",
-                    "alerts": false,
-                    "digest": false
-                }
-            ]
-        }
-               
+    "recipients": [   
     ]
 }

@@ -21,7 +21,12 @@ jobs:
             cdk-folder-name: ${{ env.CDK_FOLDER }}
             settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
   
-
+        - name: deploy integration tests infra via CDK
+          uses: ./.github/actions/cdk-deploy
+          with:
+            cdk-folder-name: ${{ env.CDK_FOLDER }}
+            stage-name: ${{ env.STAGE_NAME }}
+  
 
 
 
