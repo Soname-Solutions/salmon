@@ -15,7 +15,6 @@ jobs:
 
       - name: Install Python requirements
         run: |
-          cd ${{ env.TESTS_FOLDER }}
           pip3 install -r requirements-test.txt        
 
       # Copying configuration files, so they are present. The files' content is not important for unit tests

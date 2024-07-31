@@ -23,7 +23,6 @@ runs:
     - name: Install Python requirements
       shell: bash
       run: |
-        cd ${{ inputs.cdk-folder-name }}
         pip3 install -r requirements.txt        
       
     # we intentionally use devci, as they represent sufficient, yet compact configuration

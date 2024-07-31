@@ -1,18 +1,22 @@
 name: Integration tests V1
 env:
-    AWS_ACCESS_KEY_ID: dummy_value
-    AWS_SECRET_ACCESS_KEY: dummy_value
-    AWS_DEFAULT_REGION: 'eu-central-1'    
-    TESTS_FOLDER: tests
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_DEFAULT_REGION: 'eu-central-1'
+    CDK_FOLDER: integration_tests/cdk
+    STAGE_NAME: devit
+    SETTING_FOLDER_NAME: "tests/devci_settings"
 run-name: integration tests
-on: [push, workflow_dispatch]
+on: [workflow_dispatch]
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     steps:
+        - name: Check out repository code
+          uses: actions/checkout@v4        
+
         - run: ls
 
 
-    #   - name: Check out repository code
-    #     uses: actions/checkout@v4
+
 
