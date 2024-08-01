@@ -1,3 +1,4 @@
+import boto3
 import json
 import os
 import argparse
@@ -6,6 +7,15 @@ from inttest_lib.common import get_target_sns_topic_name
 
 # this script is executed before CDK deploy, it prepares settings (e.g. replaces variable parts such as AWS account ID etc.)
 # The script can be modified for any specific set of config files
+
+
+def get_aws_account_id():
+    session = boto3.Session()
+    sts_client = session.client("sts")
+    response = sts_client.get_caller_identity()
+    account_id = response["Account"]
+    return account_id
+
 
 def read_replacements_file(file_path):
     with open(file_path, "r") as file:
@@ -27,7 +37,6 @@ def main():
     file_path = os.path.join(script_dir, "settings", "replacements.json")
 
     parser = argparse.ArgumentParser(description="Process some settings.")
-    parser.add_argument("--account-id", required=True, type=str, help="main account-id")
     parser.add_argument("--stage-name", required=True, type=str, help="stage-name")
     parser.add_argument("--region", required=True, type=str, help="region")
     args = parser.parse_args()
@@ -35,7 +44,7 @@ def main():
     stage_name = args.stage_name
 
     replacements_dict = {
-        "<<main_account_id>>": args.account_id,
+        "<<main_account_id>>": get_aws_account_id(),
         "<<stage_name>>": stage_name,
         "<<region>>": args.region,
         "<<target_topic_name>>": get_target_sns_topic_name(stage_name=stage_name),
