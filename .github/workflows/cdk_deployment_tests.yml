@@ -6,7 +6,7 @@ env:
   CDK_TOOLING_ENV_FOLDER: infra_tooling_account
   CDK_MONITORED_ENV_FOLDER: infra_monitored_account  
   STAGE_NAME: devcdk
-  SETTING_FOLDER_NAME: "tests/devci_settings"
+  SETTING_FOLDER_NAME: "tests/devcdk/settings"
 run-name: CDK Deployment Tests - Commit ${{ github.sha }}
 on: 
   push:
