@@ -13,9 +13,4 @@ glueContext = GlueContext(sc)
 
 print("Glue SPARK Job ONE!")
 
-result = random.randint(0, 1)
-
-if result == 0:
-    raise Exception("intentional glue job failure - SPARK ONE")
-else:
-    print("Successful execution - SPARK ONE")
+raise Exception("intentional glue job failure - SPARK ONE")

@@ -15,7 +15,6 @@ from .lib_cdk_sample_resources import iam as iam_helper
 from .lib_cdk_sample_resources import glue as glue_helper
 from lib.aws.aws_naming import AWSNaming
 from inttest_lib.common import TARGET_MEANING, get_target_sns_topic_name
-from lib.aws.sns_manager import SnsHelper
 from lib.aws.aws_common_resources import AWSCommonResources, SNS_TOPIC_INTERNAL_ERROR_MEANING
 
 SRC_FOLDER_NAME = "../src_testing_stand/"
@@ -131,9 +130,6 @@ def handler(event, context):
         internal_error_topic_name = AWSNaming.SNSTopic(self, SNS_TOPIC_INTERNAL_ERROR_MEANING)
         internal_error_topic_arn = f"arn:aws:sns:{current_region}:{current_account}:{internal_error_topic_name}"
         
-        SnsHelper.get_topic_arn_by_name(
-            sns_client=sns_client, topic_name=internal_error_topic_name
-        )
         internal_error_sns_topic = sns.Topic.from_topic_arn(
             self, "importedTopic", topic_arn=internal_error_topic_arn
         )
