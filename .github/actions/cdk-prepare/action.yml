@@ -34,7 +34,7 @@ runs:
     # we intentionally use devci, as they represent sufficient, yet compact configuration
     - name: Prepare replacements.json (put actual AWS account)
       shell: bash
-      run: python ${{ inputs.settings-folder-name }}/prepare_settings.py --stage-name ${{ inputs.stage-name }} --region-name ${{ inputs.region-name }}
+      run: python ${{ inputs.settings-folder-name }}/../prepare_settings.py --stage-name ${{ inputs.stage-name }} --region-name ${{ inputs.region-name }}
 
     - name: Copy deployment settings to config/settings
       shell: bash

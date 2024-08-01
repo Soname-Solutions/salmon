@@ -2,8 +2,7 @@ import boto3
 import json
 import os
 import argparse
-import sys
-sys.path.append("../../integration_tests")
+
 from inttest_lib.common import get_target_sns_topic_name
 
 # this script is executed before CDK deploy, it prepares settings (e.g. replaces variable parts such as AWS account ID etc.)
@@ -32,13 +31,14 @@ def update_replacements_file(file_path, replacements_dict):
     with open(file_path, "w") as file:
         json.dump(data, file, indent=4)
 
+
 def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(script_dir, "replacements.json")
+    file_path = os.path.join(script_dir, "settings", "replacements.json")
 
-    parser = argparse.ArgumentParser(description='Process some settings.')
-    parser.add_argument('--stage-name', required=True, type=str, help='stage-name')
-    parser.add_argument('--region-name', required=True, type=str, help='region-name')
+    parser = argparse.ArgumentParser(description="Process some settings.")
+    parser.add_argument("--stage-name", required=True, type=str, help="stage-name")
+    parser.add_argument("--region-name", required=True, type=str, help="region-name")
     args = parser.parse_args()
 
     stage_name = args.stage_name
@@ -47,11 +47,14 @@ def main():
         "<<main_account_id>>": get_aws_account_id(),
         "<<stage_name>>": stage_name,
         "<<region>>": args.region_name,
-        "<<target_topic_name>>": get_target_sns_topic_name(stage_name=stage_name)
+        "<<target_topic_name>>": get_target_sns_topic_name(stage_name=stage_name),
     }
 
     update_replacements_file(file_path, replacements_dict)
-    print(f"Replacements applied to replacements.json: {json.dumps(replacements_dict, indent=4)}")
+    print(
+        f"Replacements applied to replacements.json: {json.dumps(replacements_dict, indent=4)}"
+    )
+
 
 if __name__ == "__main__":
     main()
