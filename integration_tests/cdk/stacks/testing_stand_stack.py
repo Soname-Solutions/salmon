@@ -10,10 +10,12 @@ from aws_cdk import (
 from aws_cdk.aws_s3_assets import Asset
 from constructs import Construct
 import os
+import boto3
 from .lib_cdk_sample_resources import iam as iam_helper
 from .lib_cdk_sample_resources import glue as glue_helper
 from lib.aws.aws_naming import AWSNaming
 from inttest_lib.common import TARGET_MEANING, get_target_sns_topic_name
+from lib.aws.sns_manager import SnsHelper
 
 SRC_FOLDER_NAME = "../src_testing_stand/"
 
@@ -69,8 +71,8 @@ class TestingStandStack(Stack):
             self,
             "TargetSQSQueue",
             content_based_deduplication=True,
-            fifo=True,            
-            queue_name=AWSNaming.SQSQueue(self, TARGET_MEANING)
+            fifo=True,
+            queue_name=AWSNaming.SQSQueue(self, TARGET_MEANING),
         )
 
         # Create a Lambda function
@@ -118,5 +120,19 @@ def handler(event, context):
         # Grant the Lambda function permissions to send messages to the SQS queue
         target_queue.grant_send_messages(lambda_function)
 
-        # Add the Lambda function as a subscription to the SNS topic
+        # Add the Lambda function as a subscription to the target SNS topic
         target_topic.add_subscription(subs.LambdaSubscription(lambda_function))
+
+        # Add Lambda subscription to Internal-errors topic
+        sns_client = boto3.client("sns")
+        internal_error_topic_name = AWSNaming.SNSTopic(self, "internal-error")
+        internal_error_topic_arn = SnsHelper.get_topic_arn_by_name(
+            sns_client=sns_client, topic_name=internal_error_topic_name
+        )
+        internal_error_sns_topic = sns.Topic.from_topic_arn(
+            self, "importedTopic", topic_arn=internal_error_topic_arn
+        )
+
+        internal_error_sns_topic.add_subscription(
+            subs.LambdaSubscription(lambda_function)
+        )

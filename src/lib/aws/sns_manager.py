@@ -1,11 +1,29 @@
 import boto3
 import json
 
+class SNSHelperException(Exception):
+    """Exception raised for errors encountered while working with SNS helper."""
+
+    pass
 
 class SNSTopicPublisherException(Exception):
     """Exception raised for errors encountered while publishing message to the SNS topic."""
 
     pass
+
+
+
+class SnsHelper:
+    @classmethod
+    def get_topic_arn_by_name(cls, sns_client, topic_name):
+        response = sns_client.list_topics()
+        topics = response['Topics']
+        
+        for topic in topics:
+            if topic_name in topic['TopicArn']:
+                return topic['TopicArn']
+        
+        raise SNSHelperException(f"Topic with name {topic_name} not found.")
 
 
 class SnsTopicPublisher:
