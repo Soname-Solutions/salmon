@@ -69,6 +69,7 @@ class TestingStandStack(Stack):
             self,
             "TargetSQSQueue",
             queue_name=AWSNaming.SQSQueue(self, TARGET_MEANING),
+            fifo=False
         )
 
         # Create a Lambda function
