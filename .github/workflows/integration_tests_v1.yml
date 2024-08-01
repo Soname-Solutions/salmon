@@ -23,7 +23,7 @@ jobs:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
             stage-name: ${{ env.STAGE_NAME }}
-            region-name: ${{ env.AWS_DEFAULT_REGION }}
+            region: ${{ env.AWS_DEFAULT_REGION }}
 
         # 1. Deploy Tooling env
         - name: deploy tooling infra via CDK

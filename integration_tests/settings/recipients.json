@@ -1,7 +1,7 @@
 {
     "recipients": [   
         {
-            "recipient": "arn:aws:sns:<<region_name>>:<<main_account_id>>:<<target_topic_name>>",
+            "recipient": "arn:aws:sns:<<region>>:<<main_account_id>>:<<target_topic_name>>",
             "delivery_method": "sns",            
             "subscriptions": [
                 {

@@ -38,7 +38,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Process some settings.")
     parser.add_argument("--stage-name", required=True, type=str, help="stage-name")
-    parser.add_argument("--region-name", required=True, type=str, help="region-name")
+    parser.add_argument("--region", required=True, type=str, help="region")
     args = parser.parse_args()
 
     stage_name = args.stage_name
@@ -46,7 +46,7 @@ def main():
     replacements_dict = {
         "<<main_account_id>>": get_aws_account_id(),
         "<<stage_name>>": stage_name,
-        "<<region_name>>": args.region_name,
+        "<<region>>": args.region,
         "<<target_topic_name>>": get_target_sns_topic_name(stage_name=stage_name),
     }
 
