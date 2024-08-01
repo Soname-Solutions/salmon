@@ -25,6 +25,8 @@ jobs:
         with:
           cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
           settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
+          stage-name: ${{ env.STAGE_NAME }}
+          region: ${{ env.AWS_DEFAULT_REGION }}          
 
       - name: deploy tooling env via CDK
         uses: ./.github/actions/cdk-deploy
