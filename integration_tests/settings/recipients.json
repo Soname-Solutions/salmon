@@ -1,4 +1,15 @@
 {
     "recipients": [   
+        {
+            "recipient": "arn:aws:sns:<<region_name>>:<<main_account_id>>:<<target_topic_name>>",
+            "delivery_method": "sns",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "it_ts_gluejobs",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        }         
     ]
 }

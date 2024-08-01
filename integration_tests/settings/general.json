@@ -1,6 +1,6 @@
 {
     "tooling_environment": {
-        "name": "Tooling Account [<<env_name>>]",
+        "name": "Tooling Account [<<stage_name>>]",
         "account_id": "<<main_account_id>>",
         "region": "<<region>>",
         "digest_report_period_hours" : 24, 
@@ -9,7 +9,7 @@
     },
     "monitored_environments": [    
         {
-            "name": "Account1 [<<env_name>>]",
+            "name": "Account1 [<<stage_name>>]",
             "account_id": "<<main_account_id>>",
             "region": "<<region>>"
         }    

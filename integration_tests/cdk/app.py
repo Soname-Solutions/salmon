@@ -5,7 +5,9 @@ import logging
 
 import aws_cdk as cdk
 
-#sys.path.append("../src")
+sys.path.append("../../src")
+sys.path.append("../../integration_tests")
+
 from stacks.testing_stand_stack import TestingStandStack
 
 app = cdk.App()

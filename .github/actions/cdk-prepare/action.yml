@@ -7,6 +7,12 @@ inputs:
   settings-folder-name:  
     description: 'where settings for cdk deployment are stored. Without ending "/"'
     required: true
+  stage-name:  
+    description: 'stage-name for CDK deployment'
+    required: true    
+  region-name:  
+    description: 'region for CDK deployment'
+    required: true        
 
 runs:
   using: "composite"
@@ -28,7 +34,7 @@ runs:
     # we intentionally use devci, as they represent sufficient, yet compact configuration
     - name: Prepare replacements.json (put actual AWS account)
       shell: bash
-      run: python ${{ inputs.settings-folder-name }}/prepare_settings.py
+      run: python ${{ inputs.settings-folder-name }}/prepare_settings.py --stage-name ${{ inputs.stage-name }} --region-name ${{ inputs.region-name }}
 
     - name: Copy deployment settings to config/settings
       shell: bash
