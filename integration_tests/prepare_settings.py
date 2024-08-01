@@ -46,7 +46,7 @@ def main():
     replacements_dict = {
         "<<main_account_id>>": get_aws_account_id(),
         "<<stage_name>>": stage_name,
-        "<<region>>": args.region_name,
+        "<<region_name>>": args.region_name,
         "<<target_topic_name>>": get_target_sns_topic_name(stage_name=stage_name),
     }
 
