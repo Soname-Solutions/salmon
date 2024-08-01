@@ -68,8 +68,9 @@ class TestingStandStack(Stack):
         target_queue = sqs.Queue(
             self,
             "TargetSQSQueue",
-            queue_name=AWSNaming.SQSQueue(self, TARGET_MEANING),
-            fifo=False
+            content_based_deduplication=True,
+            fifo=True,            
+            queue_name=AWSNaming.SQSQueue(self, TARGET_MEANING)
         )
 
         # Create a Lambda function
@@ -106,7 +107,8 @@ def handler(event, context):
         }
         sqs.send_message(
             QueueUrl=queue_url,
-            MessageBody=json.dumps(message)
+            MessageBody=json.dumps(message),
+            MessageGroupId='integration-tests'
         )
     return {"statusCode": 200, "body": json.dumps('Success')}
                 """
