@@ -22,17 +22,26 @@ jobs:
           with:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
-  
+
+        # 1. Deploy Tooling env
+        - name: deploy tooling infra via CDK
+          uses: ./.github/actions/cdk-deploy
+          with:
+            cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
+            stage-name: ${{ env.STAGE_NAME }}            
+
+        # 2. Deploy IntegrTests stack (it subscribes to specific resources [SNS topic(s)] from tooling)
         - name: deploy integration tests infra via CDK
           uses: ./.github/actions/cdk-deploy
           with:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             stage-name: ${{ env.STAGE_NAME }}
   
+        # 3. Deploy Monitored env
         - name: deploy tooling infra via CDK
           uses: ./.github/actions/cdk-deploy
           with:
-            cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
-            stage-name: ${{ env.STAGE_NAME }}
+            cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
+            stage-name: ${{ env.STAGE_NAME }}     
 
 
