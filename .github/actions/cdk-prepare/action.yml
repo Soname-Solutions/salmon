@@ -12,10 +12,7 @@ inputs:
     required: true    
   region:  
     description: 'region for CDK deployment'
-    required: true        
-  account-id:  
-    description: 'account for CDK deployment'
-    required: true  
+    required: true
 
 runs:
   using: "composite"
@@ -37,7 +34,7 @@ runs:
     # we intentionally use devci, as they represent sufficient, yet compact configuration
     - name: Prepare replacements.json (put actual AWS account)
       shell: bash
-      run: python ${{ inputs.settings-folder-name }}/../prepare_settings.py --account-id ${{ inputs.account-id }} --stage-name ${{ inputs.stage-name }} --region ${{ inputs.region }}
+      run: python ${{ inputs.settings-folder-name }}/../prepare_settings.py --stage-name ${{ inputs.stage-name }} --region ${{ inputs.region }}
 
     - name: Copy deployment settings to config/settings
       shell: bash
