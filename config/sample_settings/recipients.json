@@ -1,7 +1,7 @@
 {
     "recipients": [
         {
-            "recipient": "vasilii_pupkin@salmon.com",
+            "recipient": "admin@salmon.com",
             "delivery_method": "local_smtp",            
             "subscriptions": [
                 {
@@ -22,7 +22,7 @@
             ]
         },
         {
-            "recipient": "arn:aws:sns:is-east-1:1234567890:sns-topic-alertsmon",
+            "recipient": "arn:aws:sns:us-east-1:1234567890:sns-topic-alertsmon",
             "delivery_method": "sns_main",            
             "subscriptions": [
                 {

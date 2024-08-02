@@ -33,6 +33,11 @@ class AWSNaming:
     def EventBusRule(cls, stack_obj: object, meaning: str) -> str:
         prefix = "eventbusrule"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+    
+    @classmethod
+    def GlueJob(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "glue"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
     def IAMPolicy(cls, stack_obj: object, meaning: str) -> str:

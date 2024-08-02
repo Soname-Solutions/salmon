@@ -18,7 +18,7 @@ import os
 
 from lib.core.constants import CDKDeployExclusions
 from lib.aws.aws_naming import AWSNaming
-from lib.aws.aws_common_resources import AWSCommonResources
+from lib.aws.aws_common_resources import AWSCommonResources, SNS_TOPIC_INTERNAL_ERROR_MEANING
 from lib.settings.settings import Settings
 
 
@@ -63,7 +63,7 @@ class InfraToolingCommonStack(NestedStack):
         self.internal_error_topic = sns.Topic(
             self,
             "salmonInternalErrorTopic",
-            topic_name=AWSNaming.SNSTopic(self, "internal-error"),
+            topic_name=AWSNaming.SNSTopic(self, SNS_TOPIC_INTERNAL_ERROR_MEANING),
         )
 
         # Notification FIFO SQS Queue

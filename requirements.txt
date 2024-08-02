@@ -3,3 +3,4 @@ constructs>=10.0.0,<11.0.0
 jsonschema
 boto3
 pydantic
+aws-cdk.aws-glue-alpha
