@@ -1,0 +1,28 @@
+name: Integration tests Assert PoC
+# env:
+#     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#     AWS_DEFAULT_REGION: 'eu-central-1'
+#     CDK_INTEGRATION_TESTS_FOLDER: integration_tests/cdk
+#     CDK_TOOLING_ENV_FOLDER: infra_tooling_account
+#     CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
+#     STAGE_NAME: devit
+#     SETTING_FOLDER_NAME: "integration_tests/settings"
+run-name: integration tests asserts
+on: [push, workflow_dispatch]
+jobs:
+  integration-testing:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Check out repository code
+          uses: actions/checkout@v4     
+
+        - name: Install Python Test requirements
+          shell: bash
+          run: |
+            pip3 install -r requirements-test.txt        
+                    
+        - name: Install Python requirements
+          shell: bash
+          run: |
+            pytest integration_tests/tests
