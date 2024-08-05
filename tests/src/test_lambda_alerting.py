@@ -34,16 +34,16 @@ def os_vars_init(aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
     stage_name = "teststage"
-    os.environ[
-        "NOTIFICATION_QUEUE_URL"
-    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    os.environ["NOTIFICATION_QUEUE_URL"] = (
+        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{stage_name}.fifo"
+    )
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ[
-        "ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"
-    ] = f"log-group-salmon-alert-events-{stage_name}"
-    os.environ[
-        "ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"
-    ] = f"log-stream-salmon-alert-events-{stage_name}"
+    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"] = (
+        f"log-group-salmon-alert-events-{stage_name}"
+    )
+    os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"] = (
+        f"log-stream-salmon-alert-events-{stage_name}"
+    )
 
 
 @pytest.fixture(scope="session")
