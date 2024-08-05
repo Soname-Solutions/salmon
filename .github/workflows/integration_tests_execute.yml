@@ -1,15 +1,15 @@
 name: Integration tests - Execute Tests
-# env:
-#     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#     AWS_DEFAULT_REGION: 'eu-central-1'
-#     CDK_INTEGRATION_TESTS_FOLDER: integration_tests/cdk
-#     CDK_TOOLING_ENV_FOLDER: infra_tooling_account
-#     CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
-#     STAGE_NAME: devit
-#     SETTING_FOLDER_NAME: "integration_tests/settings"
+env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_DEFAULT_REGION: 'eu-central-1'
+    CDK_INTEGRATION_TESTS_FOLDER: integration_tests/cdk
+    CDK_TOOLING_ENV_FOLDER: infra_tooling_account
+    CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
+    STAGE_NAME: devit
+    SETTING_FOLDER_NAME: "integration_tests/settings"
 run-name: integration tests - execute tests
-on: [push, workflow_dispatch]
+on: [workflow_dispatch]
 jobs:
   integration-testing:
     runs-on: ubuntu-latest
@@ -22,7 +22,12 @@ jobs:
           run: |
             pip3 install -r requirements-test.txt        
                     
-        - name: Install Python requirements
+        - name: Testing stand executions
           shell: bash
           run: |
-            pytest integration_tests/tests
+            python integration_tests/testing_stang_execution.py --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+
+        - name: Run tests
+          shell: bash
+          run: |
+            pytest integration_tests/tests --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            

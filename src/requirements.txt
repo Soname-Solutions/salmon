@@ -1,5 +1,0 @@
-boto3  # AWS SDK for Python
-jsonschema # Validate JSON settings schema
-pydantic
-json
-yaml
