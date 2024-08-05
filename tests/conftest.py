@@ -12,10 +12,11 @@ sys.path.append(lib_path)
 
 from lib.settings import Settings
 
-@pytest.fixture(scope='session')
-def config_path():    
+
+@pytest.fixture(scope="session")
+def config_path():
     current_dir = Path(__file__).parent
-    file_path = current_dir / "../config/settings/"    
+    file_path = current_dir / "../config/settings/"
     return file_path
 
 
@@ -28,6 +29,7 @@ def aws_props_init(config_path):
 
     return (account_id, region)
 
+
 @pytest.fixture(scope="session")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
@@ -36,4 +38,6 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    os.environ["MOTO_S3_CUSTOM_ENDPOINTS"] = "http://custom.internal.endpoint,http://custom.other.endpoint"
+    os.environ["MOTO_S3_CUSTOM_ENDPOINTS"] = (
+        "http://custom.internal.endpoint,http://custom.other.endpoint"
+    )
