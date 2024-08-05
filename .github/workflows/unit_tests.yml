@@ -5,7 +5,11 @@ env:
     AWS_DEFAULT_REGION: 'eu-central-1'    
     TESTS_FOLDER: tests
 run-name: unit tests
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
+  pull_request:
+   types: [opened, reopened]
 jobs:
   unit-testing:
     runs-on: ubuntu-latest
