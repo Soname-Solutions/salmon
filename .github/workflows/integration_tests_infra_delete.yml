@@ -1,0 +1,52 @@
+name: Integration tests - Delete Infra
+env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_DEFAULT_REGION: 'eu-central-1'
+    CDK_INTEGRATION_TESTS_FOLDER: integration_tests/cdk
+    CDK_TOOLING_ENV_FOLDER: infra_tooling_account
+    CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
+    STAGE_NAME: devit
+    SETTING_FOLDER_NAME: "integration_tests/settings"
+run-name: integration tests - delete infra
+on: [workflow_dispatch]
+jobs:
+  integration-testing-delete-infra:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Check out repository code
+          uses: actions/checkout@v4        
+
+        - name: prepare CDK
+          uses: ./.github/actions/cdk-prepare
+          with:
+            cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
+            settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
+            stage-name: ${{ env.STAGE_NAME }}
+            region: ${{ env.AWS_DEFAULT_REGION }}
+
+        # 1. Destroy Monitored env
+        - name: deploy monitored infra via CDK
+          uses: ./.github/actions/cdk-destroy
+          with:
+            cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
+            stage-name: ${{ env.STAGE_NAME }}                 
+
+        # 2. Destroy IntegrTests stack
+        - name: deploy integration tests infra via CDK
+          uses: ./.github/actions/cdk-destroy
+          with:
+            cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
+            stage-name: ${{ env.STAGE_NAME }}
+              
+        # 3. Destroy Tooling env
+        - name: deploy tooling infra via CDK
+          uses: ./.github/actions/cdk-destroy
+          with:
+            cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
+            stage-name: ${{ env.STAGE_NAME }}            
+
+
+
+
+

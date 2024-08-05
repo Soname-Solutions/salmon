@@ -1,4 +1,4 @@
-name: Integration tests V1
+name: Integration tests - Create Infra
 env:
     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -8,10 +8,10 @@ env:
     CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
     STAGE_NAME: devit
     SETTING_FOLDER_NAME: "integration_tests/settings"
-run-name: integration tests
+run-name: integration tests - create infra
 on: [workflow_dispatch]
 jobs:
-  integration-testing:
+  integration-testing-create-infra:
     runs-on: ubuntu-latest
     steps:
         - name: Check out repository code
