@@ -15,7 +15,7 @@ sns_client = boto3.client("sns")
 
 def lambda_handler(event, context):
     """
-    Lambda function to process event data, and send the message via the delivery method.
+    Lambda function cto process event data, and send the message via the delivery method.
 
     Args:
         event (object): Event data containing details about the AWS resource state change.
