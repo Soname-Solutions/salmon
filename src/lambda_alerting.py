@@ -19,7 +19,7 @@ EVENT_RESULTS_MONITORABLE = [EventResult.SUCCESS, EventResult.FAILURE]
 
 
 def send_messages_to_sqs(queue_url: str, message_group_id: str, messages: list[dict]):
-    """Sends messages array to the given SQS queue
+    """Sends messages array  to the given SQS queue
 
     Args:
         queue_url (str): SQS queue URL
