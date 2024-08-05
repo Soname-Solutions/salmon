@@ -39,7 +39,7 @@ def collect_glue_data_quality_result_ids(
         timestream_writer=timestream_writer,
     )
 
-    logger.info(f"Extracting Glue Data Quality result IDs since {min_update_time}")
+    logger.info(f"Extraccting Glue Data Quality result IDs since {min_update_time}")
 
     boto3_client = boto3_client_creator.get_client(aws_client_name=aws_client_name)
     glue_man = GlueManager(glue_client=boto3_client)
