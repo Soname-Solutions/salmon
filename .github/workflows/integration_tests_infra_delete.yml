@@ -26,21 +26,21 @@ jobs:
             region: ${{ env.AWS_DEFAULT_REGION }}
 
         # 1. Destroy Monitored env
-        - name: deploy monitored infra via CDK
+        - name: destroy monitored infra via CDK
           uses: ./.github/actions/cdk-destroy
           with:
             cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
             stage-name: ${{ env.STAGE_NAME }}                 
 
         # 2. Destroy IntegrTests stack
-        - name: deploy integration tests infra via CDK
+        - name: destroy integration tests infra via CDK
           uses: ./.github/actions/cdk-destroy
           with:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             stage-name: ${{ env.STAGE_NAME }}
               
         # 3. Destroy Tooling env
-        - name: deploy tooling infra via CDK
+        - name: destroy tooling infra via CDK
           uses: ./.github/actions/cdk-destroy
           with:
             cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
