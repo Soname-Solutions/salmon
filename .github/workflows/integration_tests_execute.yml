@@ -20,12 +20,16 @@ jobs:
         - name: Install Python Test requirements
           shell: bash
           run: |
-            pip3 install -r requirements-test.txt        
+            pip3 install -r requirements-test.txt    
+            
+        - name: Set workflow start time in epoch milliseconds
+          id: set_start_time
+          run: echo "start_epochtimemsec=$(($(date +%s%3N)))" >> $GITHUB_ENV              
                     
         - name: Testing stand executions
           shell: bash
           run: |
-            python integration_tests/testing_stang_execution.py --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+            python integration_tests/testing_stang_execution.py --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
 
         - name: Run tests
           shell: bash
