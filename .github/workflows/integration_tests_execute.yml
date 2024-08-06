@@ -29,9 +29,13 @@ jobs:
         - name: Testing stand executions
           shell: bash
           run: |
-            python integration_tests/testing_stand_execution.py --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+            python integration_tests/testing_stand_execution.py --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+
+        # Making sure alerts have enough time to arrive
+        - name: Pause for 2 minutes
+          run: sleep 120
 
         - name: Run tests
           shell: bash
           run: |
-            pytest integration_tests/tests --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
+            pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
