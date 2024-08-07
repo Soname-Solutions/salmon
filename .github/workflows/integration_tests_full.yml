@@ -1,0 +1,23 @@
+
+# TBD
+# Should execute sub-workflows
+
+# - infra_create
+# - execute tests
+# - infra delete
+
+name: Integration tests - Full Workflow
+env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_DEFAULT_REGION: 'eu-central-1'
+run-name: integration tests - full
+on: [workflow_dispatch]
+jobs:
+    stub:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Install Python Test requirementsStub action
+              shell: bash
+              run: ls
+                          

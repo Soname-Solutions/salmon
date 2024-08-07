@@ -1,0 +1,42 @@
+name: Integration tests - Execute Tests
+env:
+    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}  # temp for testing
+    AWS_DEFAULT_REGION: 'eu-central-1'
+    CDK_INTEGRATION_TESTS_FOLDER: integration_tests/cdk
+    CDK_TOOLING_ENV_FOLDER: infra_tooling_account
+    CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
+    STAGE_NAME: devit
+    SETTING_FOLDER_NAME: "integration_tests/settings"
+run-name: integration tests - execute tests
+on: [workflow_dispatch]
+jobs:
+  integration-testing:
+    runs-on: ubuntu-latest
+    steps:
+        - name: Check out repository code
+          uses: actions/checkout@v4     
+
+        - name: Install Python Test requirements
+          shell: bash
+          run: |
+            pip3 install -r requirements-test.txt    
+            
+        - name: Set workflow start time in epoch milliseconds
+          id: set_start_time
+          run: echo "start_epochtimemsec=$(($(date +%s%3N)))" >> $GITHUB_ENV              
+                    
+        - name: Testing stand executions
+          shell: bash
+          run: |
+            python integration_tests/testing_stand_execution.py --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+
+        # Making sure alerts have enough time to arrive
+        - name: Pause for 2 minutes
+          run: sleep 120
+
+        - name: Run tests
+          shell: bash
+          run: |
+            pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            

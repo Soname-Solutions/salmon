@@ -4,3 +4,4 @@ jsonschema
 boto3
 pydantic
 aws-cdk.aws-glue-alpha
+yaml
