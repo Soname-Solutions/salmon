@@ -3,11 +3,17 @@ import os
 import sys
 from pathlib import Path
 
+# adding inttest_lib
 parent_folder = str(Path(__file__).resolve().parent.parent)
 sys.path.append(parent_folder)
 
+# adding main lib
+project_root = str(Path(__file__).resolve().parent.parent.parent)
+#os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+lib_path = os.path.join(project_root, "src")
+sys.path.append(lib_path)
+
 from inttest_lib.sqs_queue_reader import SqsMessage, SQSQueueReader
-from inttest_lib.time_helper import epoch_to_utc_string
 
 def pytest_addoption(parser):
     parser.addoption(
