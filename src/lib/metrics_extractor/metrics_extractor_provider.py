@@ -7,6 +7,7 @@ from lib.metrics_extractor import (
     GlueDataQualityMetricExtractor,
     LambdaFunctionsMetricExtractor,
     StepFunctionsMetricExtractor,
+    EMRServerlessMetricExtractor,
 )
 
 from lib.core.constants import SettingConfigResourceTypes as types
@@ -57,4 +58,7 @@ MetricsExtractorProvider.register_metrics_extractor(
 )
 MetricsExtractorProvider.register_metrics_extractor(
     types.STEP_FUNCTIONS, StepFunctionsMetricExtractor
+)
+MetricsExtractorProvider.register_metrics_extractor(
+    types.EMR_SERVERLESS, EMRServerlessMetricExtractor
 )

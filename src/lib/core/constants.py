@@ -13,6 +13,7 @@ class SettingConfigResourceTypes:
     GLUE_DATA_QUALITY = "glue_data_quality"
     LAMBDA_FUNCTIONS = "lambda_functions"
     STEP_FUNCTIONS = "step_functions"
+    EMR_SERVERLESS = "emr_serverless"
 
 
 class DeliveryMethodTypes:
@@ -30,6 +31,7 @@ class SettingConfigs:
         SettingConfigResourceTypes.GLUE_DATA_QUALITY,
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS,
         SettingConfigResourceTypes.STEP_FUNCTIONS,
+        SettingConfigResourceTypes.EMR_SERVERLESS,
     ]
 
     RESOURCE_TYPES_LINKED_AWS_SERVICES = {
@@ -40,6 +42,7 @@ class SettingConfigs:
         SettingConfigResourceTypes.GLUE_DATA_QUALITY: "glue",
         SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "lambda",
         SettingConfigResourceTypes.STEP_FUNCTIONS: "stepfunctions",
+        SettingConfigResourceTypes.EMR_SERVERLESS: "emr-serverless",
     }
 
 

@@ -17,4 +17,5 @@ from .glue_data_quality_event_mapper import (
 from .glue_crawler_event_mapper import GlueCrawlerEventMapper
 from .step_functions_event_mapper import StepFunctionsEventMapper
 from .lambda_functions_event_mapper import LambdaFunctionsEventMapper
+from .emr_serverless_event_mapper import EMRServerlessEventMapper
 from .event_mapper_provider import EventMapperProvider

@@ -7,6 +7,7 @@ from .digest_data_extractor import (
     GlueDataQualityDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
+    EMRServerlessDigestDataExtractor,
     DigestException,
 )
 from .digest_data_aggregator import DigestDataAggregator

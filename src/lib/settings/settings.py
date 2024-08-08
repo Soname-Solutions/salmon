@@ -11,6 +11,7 @@ from lib.aws import (
     S3Manager,
     StepFunctionsManager,
     StsManager,
+    EMRManager,
 )
 import lib.core.file_manager as fm
 import lib.core.json_utils as ju
@@ -32,6 +33,7 @@ RESOURCE_TYPES_LINKED_AWS_MANAGERS = {
     SettingConfigResourceTypes.GLUE_DATA_QUALITY: GlueManager,
     SettingConfigResourceTypes.LAMBDA_FUNCTIONS: LambdaManager,
     SettingConfigResourceTypes.STEP_FUNCTIONS: StepFunctionsManager,
+    SettingConfigResourceTypes.EMR_SERVERLESS: EMRManager,
 }
 
 
