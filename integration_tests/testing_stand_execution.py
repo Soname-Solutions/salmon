@@ -42,7 +42,7 @@ def main():
     runner.initiate()
     runner.await_completion()
 
-    # 2.2 ... TBD other rsource types
+    # 2.2 ... TBD other resource types
 
     # 3. execute extract-metrics-orch lambda (in async mode, so if failure - destination would work)
     LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(stack_obj_for_naming, "extract-metrics-orch")
