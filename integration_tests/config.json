@@ -1,0 +1,8 @@
+{
+    "scoped_resource_meanings": {
+        "glue_jobs": [
+            "pyjob-success",
+            "pyjob-fail"
+        ]
+    }
+}

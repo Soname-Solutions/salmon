@@ -1,13 +1,22 @@
+from types import SimpleNamespace
 import pytest
 import os
 import sys
 from pathlib import Path
 
+# adding inttest_lib
 parent_folder = str(Path(__file__).resolve().parent.parent)
 sys.path.append(parent_folder)
 
+# adding main lib
+project_root = str(Path(__file__).resolve().parent.parent.parent)
+#os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+lib_path = os.path.join(project_root, "src")
+sys.path.append(lib_path)
+
 from inttest_lib.sqs_queue_reader import SqsMessage, SQSQueueReader
-from inttest_lib.time_helper import epoch_to_utc_string
+from inttest_lib.common import get_stack_obj_for_naming, get_testing_stand_resource_names, TARGET_MEANING
+from lib.aws.aws_naming import AWSNaming
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -33,8 +42,16 @@ def region(request):
     return request.config.getoption("--region")
 
 @pytest.fixture(scope='session')
-def sqs_messages(start_epochtimemsec, stage_name, region) -> list[SqsMessage]:
-    queue_name = f"queue-salmon-inttest-target-{stage_name}.fifo"
+def stack_obj_for_naming(stage_name):
+    return get_stack_obj_for_naming(stage_name=stage_name)
+
+@pytest.fixture(scope='session')
+def testing_stand_resource_names(stage_name):
+    return get_testing_stand_resource_names(stage_name=stage_name)
+
+@pytest.fixture(scope='session')
+def sqs_messages(start_epochtimemsec, stack_obj_for_naming, stage_name, region) -> list[SqsMessage]:
+    queue_name = AWSNaming.SQSQueue(stack_obj_for_naming, TARGET_MEANING)
     queue_url = SQSQueueReader.get_queue_url_from_name(queue_name, region)
     reader = SQSQueueReader(queue_url)
     messages: list[SqsMessage] = reader.get_all_messages()

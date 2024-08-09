@@ -41,8 +41,10 @@ class SQSQueueReader:
             if not messages:
                 break              
             
-            for msg in messages:
+            for msg in messages:                
                 message_id = msg.get('MessageId',"")
+                receipt_handle = msg.get('ReceiptHandle',"")                
+                print(message_id)
                 body = json.loads(msg.get('Body', ""))
                 subject = body.get('Subject', {})
                 message_body = body.get('MessageBody', '')
