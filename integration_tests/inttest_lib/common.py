@@ -22,7 +22,7 @@ def get_resource_name_meanings(resource_type: str) -> list[str]:
         Return not exactly the names of resources, but, for better compatibility - their "meanings"
         So fulle resources names should be reconstructed by AWSNaming.<Resource>(stack, meaning)
     """
-    config_filename = os.path.join(os.path.dirname(__file__), 'config.json')
+    config_filename = os.path.join(os.path.dirname(__file__), '..', 'config.json')
 
     with open(config_filename,'r') as config_file:
         config_data = json.load(config_file)
@@ -33,8 +33,9 @@ def get_resource_name_meanings(resource_type: str) -> list[str]:
 def get_stack_obj_for_naming(stage_name):
     return SimpleNamespace(project_name = PROJECT_NAME, stage_name = stage_name)
 
-def get_testing_stand_resource_names(stage_name):
-    stack_obj_for_naming = get_stack_obj_for_naming(stage_name)
+def get_testing_stand_resource_names(stage_name, stack_obj_for_naming = None):
+    if stack_obj_for_naming is None:
+        stack_obj_for_naming = get_stack_obj_for_naming(stage_name)
 
     glue_jobs = SettingConfigResourceTypes.GLUE_JOBS
     testing_stand_resources = {

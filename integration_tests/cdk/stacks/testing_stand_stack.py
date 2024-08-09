@@ -13,9 +13,16 @@ import os
 import boto3
 from .lib_cdk_sample_resources import iam as iam_helper
 from .lib_cdk_sample_resources import glue as glue_helper
+
+from inttest_lib.common import (
+    TARGET_MEANING,
+    get_target_sns_topic_name,
+    get_resource_name_meanings,
+)
+
 from lib.aws.aws_naming import AWSNaming
-from inttest_lib.common import TARGET_MEANING, get_target_sns_topic_name
-from lib.aws.aws_common_resources import AWSCommonResources, SNS_TOPIC_INTERNAL_ERROR_MEANING
+from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
+from lib.core.constants import SettingConfigResourceTypes
 
 SRC_FOLDER_NAME = "../src_testing_stand/"
 
@@ -41,14 +48,14 @@ class TestingStandStack(Stack):
             role_name=AWSNaming.IAMRole(self, "glue-role"),
         )
 
-        # Creating two sample Python Shell glue job ("one", "two")
-        job_items = ["success", "fail"]
+        # Creating sample glue jobs (list - in from ../config.json)
+        glue_job_meanings = get_resource_name_meanings(SettingConfigResourceTypes.GLUE_JOBS)
         glue_jobs = []
-        for job_item in job_items:
-            job_id = f"GlueJob{job_item.capitalize()}"
-            job_name = AWSNaming.GlueJob(self, f"pyjob-{job_item}")
+        for glue_job_meaning in glue_job_meanings:
+            job_id = f"GlueJob{glue_job_meaning.capitalize()}"
+            job_name = AWSNaming.GlueJob(self, glue_job_meaning)
             job_script = glue.Code.from_asset(
-                os.path.join(SRC_FOLDER_NAME, f"glue-sparkjob-{job_item}.py")
+                os.path.join(SRC_FOLDER_NAME, "glue_jobs", f"{glue_job_meaning}.py")
             )
             # calling helper to create a job
             glue_job_tmp = glue_helper.create_pyspark_glue_job(
@@ -127,9 +134,11 @@ def handler(event, context):
         sns_client = boto3.client("sns")
         current_region = Stack.of(self).region
         current_account = Stack.of(self).account
-        internal_error_topic_name = AWSNaming.SNSTopic(self, SNS_TOPIC_INTERNAL_ERROR_MEANING)
+        internal_error_topic_name = AWSNaming.SNSTopic(
+            self, SNS_TOPIC_INTERNAL_ERROR_MEANING
+        )
         internal_error_topic_arn = f"arn:aws:sns:{current_region}:{current_account}:{internal_error_topic_name}"
-        
+
         internal_error_sns_topic = sns.Topic.from_topic_arn(
             self, "importedTopic", topic_arn=internal_error_topic_arn
         )
