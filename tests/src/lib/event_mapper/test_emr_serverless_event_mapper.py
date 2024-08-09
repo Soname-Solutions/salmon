@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from datetime import datetime
 
 from lib.event_mapper import EMRServerlessEventMapper, EMRServerlessEventMapperException
-from lib.core.constants import SettingConfigResourceTypes as types
+from lib.core.constants import EventResult, SettingConfigResourceTypes as types
 
 EVENT_TYPE = "EMR Serverless Job Run State Change"
 EMR_APP_NAME = "emr-app-test"
@@ -13,6 +13,7 @@ JOB_RUN = {
     "jobRun": {
         "applicationId": EMR_APP_ID,
         "jobRunId": "00flfo8g80vlko17",
+        "name": JOB_NAME,
         "createdAt": str(datetime(2000, 1, 1, 0, 0, 0)),
         "updatedAt": str(datetime(2000, 1, 1, 1, 0, 0)),
         "state": "FAILED",
@@ -69,7 +70,7 @@ def test_get_resource_name_success(mock_settings, mock_emr_client):
 
 
 def test_get_resource_name_exception(mock_settings, mock_emr_client):
-    event = get_emr_serverless_event()
+    event = get_emr_serverless_event(event_state="FAILED")
     # remove app id from the event
     del event["detail"]["applicationId"]
 
@@ -84,7 +85,7 @@ def test_get_resource_name_exception(mock_settings, mock_emr_client):
 
 
 def test_get_run_id_exception(mock_settings, mock_emr_client):
-    event = get_emr_serverless_event()
+    event = get_emr_serverless_event(event_state="RUNNING")
     # remove run id from the event
     del event["detail"]["jobRunId"]
 
@@ -98,11 +99,27 @@ def test_get_run_id_exception(mock_settings, mock_emr_client):
         mapper.get_message_body()
 
 
+@pytest.mark.parametrize(
+    "scenario, event_state,  expected_event_result",
+    [
+        ("scen1", "SUCCESS", EventResult.SUCCESS),
+        ("scen2", "FAILED", EventResult.FAILURE),
+        ("scen3", "RUNNING", EventResult.INFO),
+    ],
+)
+def test_get_event_result(mock_settings, scenario, event_state, expected_event_result):
+    event = get_emr_serverless_event(event_state=event_state)
+    mapper = EMRServerlessEventMapper(
+        resource_type=types.EMR_SERVERLESS, event=event, settings=mock_settings
+    )
+    assert mapper.get_event_result() == expected_event_result
+
+
 def test_get_execution_info_url(mock_settings, mock_emr_client):
     expected_url = (
         "https://test-region.console.aws.amazon.com/emr?region=test-region#/serverless"
     )
-    event = get_emr_serverless_event()
+    event = get_emr_serverless_event(event_state="FAILED")
     mapper = EMRServerlessEventMapper(
         resource_type=types.EMR_SERVERLESS, event=event, settings=mock_settings
     )
@@ -125,6 +142,7 @@ def test_get_message_body(mock_settings, mock_emr_client):
         {"values": ["Time", str(datetime(2000, 1, 1, 0, 0, 0))]},
         {"values": ["Event Type", EVENT_TYPE]},
         {"values": ["EMR Serverless Application Name", EMR_APP_NAME]},
+        {"values": ["EMR Serverless Job Name", JOB_NAME]},
         {"values": ["State", "SUCCESS"]},
         {"values": ["Job Run ID", "1234567890"]},
         {
