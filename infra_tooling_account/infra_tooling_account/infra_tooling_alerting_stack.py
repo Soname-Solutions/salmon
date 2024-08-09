@@ -124,7 +124,9 @@ class InfraToolingAlertingStack(NestedStack):
 
         return alerting_bus, alerting_lambda_event_rule
 
-    def create_alert_events_log_stream(self) -> tuple[cloudwatch_logs.LogGroup, cloudwatch_logs.LogStream]:
+    def create_alert_events_log_stream(
+        self,
+    ) -> tuple[cloudwatch_logs.LogGroup, cloudwatch_logs.LogStream]:
         """Creates a log grop and a log stream in CloudWatch to store alert events.
 
         Returns:
@@ -204,6 +206,18 @@ class InfraToolingAlertingStack(NestedStack):
                 actions=["sns:Publish"],
                 effect=iam.Effect.ALLOW,
                 resources=[internal_error_topic.topic_arn],
+            )
+        )
+
+        alerting_lambda_role.add_to_policy(
+            # to be able to enrich EMR Serverless alerts with EMR app name, job name, error message
+            iam.PolicyStatement(
+                actions=[
+                    "emr-serverless:GetJobRun",
+                    "emr-serverless:GetApplication",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=["*"],
             )
         )
 
