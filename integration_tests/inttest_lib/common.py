@@ -13,14 +13,6 @@ from lib.aws.aws_naming import AWSNaming
 TARGET_MEANING = "inttest-target"
 PROJECT_NAME = "salmon"
 
-def get_target_sns_topic_name(stage_name: str) -> str:
-    prefix = "topic"
-    meaning = TARGET_MEANING
-
-    outp = f"{prefix}-{PROJECT_NAME}-{meaning}-{stage_name}"
-
-    return outp
-
 def get_resource_name_meanings(resource_type: str) -> list[str]:
     """
         Lists all resources of specific type which is in testing scope.
@@ -49,3 +41,5 @@ def get_testing_stand_resource_names(stage_name, stack_obj_for_naming = None):
 
     return testing_stand_resources
 
+def get_target_sns_topic_name(stage_name: str) -> str:    
+    return AWSNaming.SNSTopic(stack_obj=get_stack_obj_for_naming(stage_name), meaning=TARGET_MEANING)
