@@ -204,7 +204,9 @@ Within each section, list the resources of the corresponding resource type along
     - `name` - specify the resource name to be monitored.
 
         >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`. \
-        > Note: In Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards).
+        > Notes: \
+            - In Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards).\
+            - For EMR Serverless resource type, please specify the name of the EMR application.
 
     - `monitored_environment_name` - the name of the Monitored environment (should match to one of the monitored environment names defined in the **general.json** file, **monitored_environments** section, **name** field).
     - (optional) `sla_seconds` - the Service Level Agreement (SLA) in seconds for the resource. If the execution time exceeds the SLA set, such resource run will be marked with the Warning status and and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.

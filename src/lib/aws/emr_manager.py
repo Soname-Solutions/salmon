@@ -8,6 +8,7 @@ from typing import Optional
 
 ################################################################
 class SparkSubmit(BaseModel):
+    # script location
     entryPoint: str
 
 
@@ -19,11 +20,8 @@ class EMRJobRunData(BaseModel):
     applicationId: str
     jobRunId: str
     name: Optional[str] = None
-    arn: str
-    createdBy: str
     createdAt: datetime
     updatedAt: datetime
-    executionRole: str
     state: str
     stateDetails: Optional[str] = None
     jobDriver: Optional[JobDriver] = None
@@ -71,19 +69,14 @@ class EMRManager:
     STATES_FAILURE = ["FAILED", "CANCELLED"]
     # FYI: all states = 'SUBMITTED'|'PENDING'|'SCHEDULED'|'RUNNING'|'SUCCESS'|'FAILED'|'CANCELLING'|'CANCELLED'
 
-    def __init__(self, emr_client=None):
-        self.emr_client = (
-            boto3.client("emr-serverless") if emr_client is None else emr_client
+    def __init__(self, sf_client=None):
+        self.sf_client = (
+            boto3.client("emr-serverless") if sf_client is None else sf_client
         )
 
     @classmethod
     def is_final_state(cls, state: str) -> bool:
         return state in cls.STATES_SUCCESS or state in cls.STATES_FAILURE
-
-    def __init__(self, sf_client=None):
-        self.sf_client = (
-            boto3.client("emr-serverless") if sf_client is None else sf_client
-        )
 
     def get_all_names(self, **kwargs):
         try:

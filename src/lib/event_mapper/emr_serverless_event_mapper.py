@@ -7,6 +7,10 @@ from lib.aws.emr_manager import EMRManager
 from lib.settings import Settings
 
 
+class EMRServerlessEventMapperException(Exception):
+    pass
+
+
 class EMRServerlessEventMapper(GeneralAwsEventMapper):
     def __init__(self, resource_type: str, event: dict, settings: Settings):
         super().__init__(resource_type, event, settings)
@@ -19,7 +23,7 @@ class EMRServerlessEventMapper(GeneralAwsEventMapper):
     def get_resource_name(self):
         """Retrieve the EMR Serverless application name."""
         if not self.app_id:
-            raise ValueError(
+            raise EMRServerlessEventMapperException(
                 f"EMR Serverless Application ID is not defined in the event: {self.event}"
             )
         return self.emr_manager.get_application_name(app_id=self.app_id)
@@ -47,7 +51,7 @@ class EMRServerlessEventMapper(GeneralAwsEventMapper):
         style = super().get_row_style()
 
         if not self.run_id:
-            raise ValueError(
+            raise EMRServerlessEventMapperException(
                 f"EMR Job Run ID is not defined in the event: {self.event}"
             )
 
