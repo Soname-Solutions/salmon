@@ -1,6 +1,11 @@
 import json
 import os
+import sys
 from types import SimpleNamespace
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+lib_path = os.path.join(project_root, 'src')
+sys.path.append(lib_path)
 
 from lib.core.constants import SettingConfigResourceTypes
 from lib.aws.aws_naming import AWSNaming
