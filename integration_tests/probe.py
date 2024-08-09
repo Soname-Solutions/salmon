@@ -1,34 +1,25 @@
 import os
 import sys
 import boto3
-from types import SimpleNamespace
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
+from inttest_lib.runners.lambda_function_runner import LambdaFunctionRunner
+
 from lib.aws.aws_naming import AWSNaming
 from lib.core.constants import SettingConfigResourceTypes
 from lib.aws.timestream_manager import TimeStreamQueryRunner
 
+
+from inttest_lib.common import get_stack_obj_for_naming, get_testing_stand_resource_names
+
 stage_name = "devit"
-stack_obj_for_naming = SimpleNamespace(project_name="salmon", stage_name=stage_name)
+region = "eu-central-1"
 
-DB_NAME = AWSNaming.TimestreamDB(stack_obj_for_naming, "metrics-events-storage")
-TABLE_NAME = AWSNaming.TimestreamMetricsTable(
-    stack_obj_for_naming, SettingConfigResourceTypes.GLUE_JOBS
-)
+stack_obj_for_naming = get_stack_obj_for_naming(stage_name)
 
-client = boto3.client("timestream-query")
-query_runner = TimeStreamQueryRunner(client)
+TESTING_STAND_RESOURCES = get_testing_stand_resource_names(stage_name)
 
-epoch_ms = 1723157446000
-
-query = f"""SELECT sum(execution) as executions, sum(succeeded) as succeeded, sum(failed) as failed
-             FROM "{DB_NAME}"."{TABLE_NAME}"
-            WHERE time > from_milliseconds({epoch_ms})
-"""
-print(query)
-
-result = query_runner.execute_query(query=query)
-print(result)
+print(TESTING_STAND_RESOURCES)

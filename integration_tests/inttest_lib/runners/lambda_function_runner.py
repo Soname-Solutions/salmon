@@ -46,8 +46,9 @@ class LambdaFunctionRunner(BaseResourceRunner):
 
 
     def await_completion(self, poll_interval=10):
-        start_time = datetime.utcnow()
+        start_time = datetime.now()
         while True:
+            time.sleep(poll_interval)
             all_completed = True
             for lambda_function_name, request_id in self.function_runs.items():
                 if not self._is_lambda_completed(lambda_function_name, request_id, start_time):
@@ -56,8 +57,7 @@ class LambdaFunctionRunner(BaseResourceRunner):
             if all_completed:
                 print("All Lambda functions have completed.")
                 return
-            print("Waiting for Lambda functions to complete...")
-            time.sleep(poll_interval)
+            print("Waiting for Lambda functions to complete...")      
 
     def _is_lambda_completed(self, lambda_function_name, request_id, start_time):
         log_group_name = f'/aws/lambda/{lambda_function_name}'
