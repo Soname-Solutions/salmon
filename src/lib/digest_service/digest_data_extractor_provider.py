@@ -7,6 +7,7 @@ from lib.digest_service import (
     GlueDataQualityDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
+    EMRServerlessDigestDataExtractor,
 )
 
 from lib.core.constants import SettingConfigResourceTypes as types
@@ -63,4 +64,8 @@ DigestDataExtractorProvider.register_digest_provider(
 DigestDataExtractorProvider.register_digest_provider(
     resource_type=types.LAMBDA_FUNCTIONS,
     digest_extractor=LambdaFunctionsDigestDataExtractor,
+)
+DigestDataExtractorProvider.register_digest_provider(
+    resource_type=types.EMR_SERVERLESS,
+    digest_extractor=EMRServerlessDigestDataExtractor,
 )

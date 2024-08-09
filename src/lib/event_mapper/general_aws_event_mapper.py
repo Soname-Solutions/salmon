@@ -220,6 +220,9 @@ class ExecutionInfoUrlMixin:
                 if "Table" in type_of_change
                 else f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/databases/view/{glue_db_name}"
             ),
+            types.EMR_SERVERLESS: lambda: (
+                f"https://{region_name}.console.aws.amazon.com/emr?region={region_name}#/serverless"
+            ),
         }
 
         url_generator = url_mapping.get(resource_type)

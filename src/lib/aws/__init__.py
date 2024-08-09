@@ -20,6 +20,7 @@ from .ses_manager import AwsSesManager, AwsSesRawEmailSenderException
 from .sns_manager import SnsTopicPublisher, SNSTopicPublisherException
 from .sqs_manager import SQSQueueSender, SQSQueueSenderException
 from .step_functions_manager import StepFunctionsManager, StepFunctionsManagerException
+from .emr_manager import EMRManager, EMRManagerException
 from .sts_manager import StsManager, StsManagerException
 from .timestream_manager import (
     TimestreamTableWriter,

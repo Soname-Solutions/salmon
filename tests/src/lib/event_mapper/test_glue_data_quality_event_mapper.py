@@ -55,9 +55,6 @@ def test_get_resource_name_success(mock_settings):
     mapper = GlueDataQualityEventMapper(
         resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
     )
-    mapper = GlueDataQualityEventMapper(
-        resource_type=types.GLUE_DATA_QUALITY, event=event, settings=mock_settings
-    )
     assert mapper.get_resource_name() == DQ_RULESET_NAME
 
 

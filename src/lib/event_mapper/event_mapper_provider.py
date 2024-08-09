@@ -7,6 +7,7 @@ from lib.event_mapper import (
     GlueDataQualityEventMapper,
     StepFunctionsEventMapper,
     LambdaFunctionsEventMapper,
+    EMRServerlessEventMapper,
 )
 from lib.core.constants import SettingConfigResourceTypes as types
 
@@ -48,4 +49,7 @@ EventMapperProvider.register_event_mapper(
 )
 EventMapperProvider.register_event_mapper(
     types.LAMBDA_FUNCTIONS, LambdaFunctionsEventMapper
+)
+EventMapperProvider.register_event_mapper(
+    types.EMR_SERVERLESS, EMRServerlessEventMapper
 )

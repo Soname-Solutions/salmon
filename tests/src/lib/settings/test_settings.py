@@ -135,7 +135,9 @@ def test_getting_tooling_env_props_when_explicitly_defined():
         },
     }
 
-    metrics_collection_cron_expression = settings.get_metrics_collection_cron_expression()
+    metrics_collection_cron_expression = (
+        settings.get_metrics_collection_cron_expression()
+    )
     (
         digest_report_period_hours,
         digest_cron_expression,
@@ -176,7 +178,9 @@ def test_getting_tooling_env_props_when_omitted():
         "digest_cron_expression": DigestSettings.CRON_EXPRESSION,
     }
 
-    metrics_collection_cron_expression = settings.get_metrics_collection_cron_expression()
+    metrics_collection_cron_expression = (
+        settings.get_metrics_collection_cron_expression()
+    )
     (
         digest_report_period_hours,
         digest_cron_expression,
@@ -284,6 +288,7 @@ def test_monitoring_groups():
             "step_functions": {},
             "lambda_functions": {},
             "glue_data_quality": {},
+            "emr_serverless": {},
         },
     ):
         groups = settings.list_monitoring_groups()
@@ -341,6 +346,7 @@ def test_monitoring_group_resource_properties():
             "step_functions": {},
             "lambda_functions": {},
             "glue_data_quality": {},
+            "emr_serverless": {},
         },
     ):
         content = settings.get_monitoring_group_content(monitoring_group_name)
@@ -398,6 +404,7 @@ def test_monitoring_group_replace_wildcards():
             "step_functions": {},
             "lambda_functions": {},
             "glue_data_quality": {},
+            "emr_serverless": {},
         },
     ):
         content = settings.get_monitoring_group_content(monitoring_group_name)
@@ -439,6 +446,7 @@ def test_get_monitoring_groups():
             "step_functions": {},
             "lambda_functions": {},
             "glue_data_quality": {},
+            "emr_serverless": {},
         },
     ):
 
@@ -485,6 +493,7 @@ def test_get_monitoring_groups_by_resource_type():
             "step_functions": {},
             "lambda_functions": {},
             "glue_data_quality": {},
+            "emr_serverless": {},
         },
     ):
 

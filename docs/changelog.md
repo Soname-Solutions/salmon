@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## 1.2.0
 * Added integration with AWS Glue Data Quality (alerts, metrics, digest, optional Grafana dashboard).
+* Added integration with Amazon EMR Serverless (alerts).
 
 ## 1.1.0
 
