@@ -19,9 +19,7 @@ JOB_RUN = {
         "state": "FAILED",
         "stateDetails": "Job failed",
         "jobDriver": {
-            "sparkSubmit": {
-                "entryPoint": "s3://s3-salmonts-emr-scripts-dev/job2_failure.py"
-            }
+            "sparkSubmit": {"entryPoint": "s3://s3-bucket/sample_spark_job.py"}
         },
     }
 }
@@ -148,7 +146,7 @@ def test_get_message_body(mock_settings, mock_emr_client):
         {
             "values": [
                 "Script Location",
-                "s3://s3-salmonts-emr-scripts-dev/job2_failure.py",
+                "s3://s3-bucket/sample_spark_job.py",
             ]
         },
         {

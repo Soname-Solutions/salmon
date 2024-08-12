@@ -32,6 +32,14 @@
                     "sla_seconds": 2400,
                     "minimum_number_of_runs": 2
                 }
+            ],
+            "emr_serverless":[
+                {
+                    "name": "ds-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]",
+                    "sla_seconds": 2400,
+                    "minimum_number_of_runs": 2
+                }
             ]
         },
         {
