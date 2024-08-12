@@ -84,7 +84,7 @@ class EMRManager:
             return [res["name"] for res in response.get("applications")]
 
         except Exception as e:
-            error_message = f"Error getting list of EMR applications: {e}"
+            error_message = f"Error getting a list of EMR applications: {e}"
             raise EMRManagerException(error_message)
 
     def get_application_name(self, app_id: str) -> str:
