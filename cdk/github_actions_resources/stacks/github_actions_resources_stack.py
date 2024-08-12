@@ -110,7 +110,8 @@ class GitHubActionsResourcesStack(Stack):
                                                                 "timestream:Select",
                                                                 "timestream:DescribeTable",
                                                                 "timestream:ListMeasures",
-                                                                "timestream:DescribeEndpoints",
+                                                                "timestream:DescribeEndpoints", # align with tooling stack - separate statement
+                                                                "kms:Decrypt"
                                                             ],
                                                             resources=["*"],  # Adjust as necessary to restrict to specific resources
                                                         )
