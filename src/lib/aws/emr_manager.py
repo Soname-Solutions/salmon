@@ -16,6 +16,12 @@ class JobDriver(BaseModel):
     sparkSubmit: Optional[SparkSubmit]
 
 
+class ResourceUtilization(BaseModel):
+    vCPUHour: Optional[float] = None
+    memoryGBHour: Optional[float] = None
+    storageGBHour: Optional[float] = None
+
+
 class EMRJobRunData(BaseModel):
     applicationId: str
     jobRunId: str
@@ -25,6 +31,10 @@ class EMRJobRunData(BaseModel):
     state: str
     stateDetails: Optional[str] = None
     jobDriver: Optional[JobDriver] = None
+    totalResourceUtilization: ResourceUtilization
+    totalExecutionDurationSeconds: Optional[int] = None
+    billedResourceUtilization: ResourceUtilization
+    mode: Optional[str] = None
 
     @property
     def IsSuccess(self) -> bool:
@@ -79,6 +89,8 @@ class EMRManager:
         return state in cls.STATES_SUCCESS or state in cls.STATES_FAILURE
 
     def get_all_names(self, **kwargs):
+        """Get all EMR Serverless application names"""
+
         try:
             response = self.sf_client.list_applications()
             return [res["name"] for res in response.get("applications")]
@@ -88,6 +100,8 @@ class EMRManager:
             raise EMRManagerException(error_message)
 
     def get_application_name(self, app_id: str) -> str:
+        """Get EMR Serverless application name by its ID"""
+
         try:
             response = self.sf_client.get_application(applicationId=app_id)
             return response.get("application").get("name")
@@ -96,12 +110,44 @@ class EMRManager:
             error_message = f"Error getting a name of EMR application ID {app_id}: {e}"
             raise EMRManagerException(error_message)
 
+    def get_application_id_by_name(self, app_name: str) -> str:
+        """Get EMR Serverless application ID by its name"""
+
+        try:
+            response = self.sf_client.list_applications()
+            applications = response.get("applications", [])
+
+            for app in applications:
+                if app.get("name") == app_name:
+                    return app.get("id")
+            return None
+
+        except Exception as e:
+            error_message = f"Error getting EMR app ID by its name: {e}"
+            raise EMRManagerException(error_message)
+
     def get_job_run(self, app_id: str, run_id: str) -> str:
+        """Get detailed information about a job run submitted to the EMR Serverless application"""
+
         try:
             response = self.sf_client.get_job_run(applicationId=app_id, jobRunId=run_id)
             job_run = EMRJobRunResponse(**response)
             return job_run.jobRun
 
         except Exception as e:
-            error_message = f"Error getting run details of EMR job run ID {run_id}: {e}"
+            error_message = f"Error getting run details of EMR Job run ID {run_id}: {e}"
+            raise EMRManagerException(error_message)
+
+    def list_job_runs(self, app_id: str, since_time: datetime) -> str:
+        """List Job runs IDs submitted to the EMR Serverless application"""
+
+        try:
+            response = self.sf_client.list_job_runs(
+                applicationId=app_id, createdAtAfter=since_time
+            )
+            outp = [x["id"] for x in response.get("jobRuns")]
+            return outp
+
+        except Exception as e:
+            error_message = f"Error getting a list of Job IDs submitted to the EMR application {app_id}: {e}"
             raise EMRManagerException(error_message)
