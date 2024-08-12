@@ -44,3 +44,63 @@ class GitHubActionsResourcesStack(Stack):
                                             )
                                         ])
         iam_user.attach_inline_policy(assume_role_policy)  
+
+        # Policy for Integration Tests (Glue Job)
+        glue_policy = iam.Policy(self, "GlueJobRunnerPolicy",
+                                 policy_name="GlueJobRunnerPolicy",
+                                 statements=[
+                                     iam.PolicyStatement(
+                                         actions=[
+                                             "glue:StartJobRun",
+                                             "glue:GetJobRun",
+                                             "glue:GetJob",
+                                             "glue:ListJobs"
+                                         ],
+                                         resources=["*"],  # todo: restrict to specific resources
+                                     )
+                                 ])
+
+        # Attach the Glue policy to the IAM user
+        iam_user.attach_inline_policy(glue_policy) 
+
+        # Policy for Integration Tests (Lambda Functions)
+        lambda_runner_policy = iam.Policy(self, "LambdaRunnerPolicy",
+                                          policy_name="LambdaRunnerPolicy",
+                                          statements=[
+                                              iam.PolicyStatement(
+                                                  actions=[
+                                                      # Lambda actions
+                                                      "lambda:InvokeFunction",
+                                                      # CloudWatch Logs actions
+                                                      "logs:FilterLogEvents",
+                                                      "logs:GetLogEvents",
+                                                      "logs:StartQuery",
+                                                      "logs:GetQueryResults",
+                                                      "logs:DescribeLogGroups",
+                                                  ],
+                                                  resources=["*"],  # todo: restrict to specific resources
+                                              )
+                                          ])
+
+        # Attach the combined policy to the IAM user
+        iam_user.attach_inline_policy(lambda_runner_policy)
+
+        sqs_queue_reader_policy = iam.Policy(self, "SqsQueueReaderPolicy",
+                                             policy_name="SqsQueueReaderPolicy",
+                                             statements=[
+                                                 iam.PolicyStatement(
+                                                     actions=[
+                                                         # SQS actions
+                                                         "sqs:ReceiveMessage",
+                                                         "sqs:GetQueueAttributes",
+                                                         "sqs:ListQueues",  # Optional
+                                                         "sqs:GetQueueUrl",
+                                                         # STS actions
+                                                         "sts:GetCallerIdentity",
+                                                     ],
+                                                     resources=["*"],  # todo: restrict to specific resources
+                                                 )
+                                             ])
+
+        # Attach the policy to the IAM user
+        iam_user.attach_inline_policy(sqs_queue_reader_policy)        
