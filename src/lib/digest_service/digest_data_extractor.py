@@ -168,3 +168,14 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
             f""" GROUP BY monitored_environment, resource_name,  error_message) t  """
         )
         return query
+
+
+class EMRServerlessDigestDataExtractor(BaseDigestDataExtractor):
+    """
+    Class is responsible for preparing the query for extracting EMR Serverless runs.
+    """
+
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
+        print("Calling a method which hasn't been implemented yet")
+        query = ""
+        return query

@@ -32,6 +32,13 @@
                     "sla_seconds": 2400,
                     "minimum_number_of_runs": 2
                 }
+            ],
+            "emr_serverless":[
+                {
+                    "name": "emr-app-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]",
+                    "minimum_number_of_runs": 2
+                }
             ]
         },
         {

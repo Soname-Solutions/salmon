@@ -135,7 +135,7 @@ You can specify multiple monitored environments.
 - `name` - the name of your delivery method.
 - `delivery_method_type` - the delivery method type (AWS_SES, AWS_SNS, SMTP).
 
-    >  The primary delivery method for the current version is AWS SES (with plans to add more options such as SMTP, Slack and MS Teams channel notifications).
+    > The primary delivery method for the current version is AWS SES (with plans to add more options such as SMTP, Slack and MS Teams channel notifications).
 
     > AWS_SNS method is recommended for alerts only. If you want to receive digest messages, please consider using other delivery method types (as digest requires rich text formatting, which support is limited in SNS).
 
@@ -198,13 +198,15 @@ The `monitoring_groups.json` configuration file lists all resources to be monito
 **Monitoring Groups Configuration**: 
 - `group_name` - the name of your monitoring group.
 
-- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate subsection should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**, **glue_data_quality**. \
+- For each AWS resource type (such as `glue_jobs`, `step_functions`), a separate subsection should be created. The supported resource types include: **glue_jobs**, **step_functions**, **lambda_functions**, **glue_workflows**, **glue_catalogs**, **glue_crawlers**, **glue_data_quality**, **emr_serverless**. \
 Within each section, list the resources of the corresponding resource type along with their properties:
 
     - `name` - specify the resource name to be monitored.
 
         >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`. \
-        > Note: In Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards).
+        > **NOTE:** Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards). 
+
+        > For EMR Serverless resource type, please specify a name of the EMR Serverless application.
 
     - `monitored_environment_name` - the name of the Monitored environment (should match to one of the monitored environment names defined in the **general.json** file, **monitored_environments** section, **name** field).
     - (optional) `sla_seconds` - the Service Level Agreement (SLA) in seconds for the resource. If the execution time exceeds the SLA set, such resource run will be marked with the Warning status and and an additional comment will be displayed in the Daily Digest. If this parameter is not set or equals to zero - the check is not applied during the Digest generation. Default value: `0`.

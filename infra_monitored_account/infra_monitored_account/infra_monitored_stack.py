@@ -90,6 +90,14 @@ class InfraMonitoredStack(Stack):
             event_pattern=events.EventPattern(source=["aws.states"]),
         )
 
+        # EventBridge EMR Serverless rule
+        emr_serverless_alerting_event_rule = events.Rule(
+            self,
+            "salmonEMRServerlessAlertingEventRule",
+            rule_name=AWSNaming.EventBusRule(self, "emr-serverless"),
+            event_pattern=events.EventPattern(source=["aws.emr-serverless"]),
+        )
+
         rule_target = targets.EventBus(
             event_bus=events.EventBus.from_event_bus_arn(
                 self, "CrossAccountEventBus", cross_account_event_bus_arn
@@ -100,11 +108,13 @@ class InfraMonitoredStack(Stack):
         glue_alerting_event_rule.add_target(rule_target)
         glue_dq_alerting_event_rule.add_target(rule_target)
         step_functions_alerting_event_rule.add_target(rule_target)
+        emr_serverless_alerting_event_rule.add_target(rule_target)
 
         return [
             glue_alerting_event_rule,
             glue_dq_alerting_event_rule,
             step_functions_alerting_event_rule,
+            emr_serverless_alerting_event_rule,
         ]
 
     def create_metrics_extract_iam_role(self):
@@ -202,12 +212,32 @@ class InfraMonitoredStack(Stack):
         )
         step_functions_inline_policy.add_statements(step_functions_policy_statement)
 
+        # EMR Serverless Policy
+        emr_serverless_policy_statement = iam.PolicyStatement(
+            actions=[
+                "emr-serverless:ListApplications",
+                "emr-serverless:GetJobRun",
+                "emr-serverless:GetApplication",
+            ],
+            resources=["*"],
+            effect=iam.Effect.ALLOW,
+        )
+        emr_serverless_inline_policy = iam.Policy(
+            self,
+            "emr-serverless-extract",
+            policy_name=AWSNaming.IAMPolicy(self, "emr-serverless-extract"),
+        )
+        emr_serverless_inline_policy.add_statements(emr_serverless_policy_statement)
+
         cross_account_iam_role_extract_metrics.attach_inline_policy(glue_inline_policy)
         cross_account_iam_role_extract_metrics.attach_inline_policy(
             lambda_inline_policy
         )
         cross_account_iam_role_extract_metrics.attach_inline_policy(
             step_functions_inline_policy
+        )
+        cross_account_iam_role_extract_metrics.attach_inline_policy(
+            emr_serverless_inline_policy
         )
 
         return cross_account_iam_role_extract_metrics
