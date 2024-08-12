@@ -59,8 +59,6 @@ class GitHubActionsResourcesStack(Stack):
                                          resources=["*"],  # todo: restrict to specific resources
                                      )
                                  ])
-
-        # Attach the Glue policy to the IAM user
         iam_user.attach_inline_policy(glue_policy) 
 
         # Policy for Integration Tests (Lambda Functions)
@@ -81,10 +79,9 @@ class GitHubActionsResourcesStack(Stack):
                                                   resources=["*"],  # todo: restrict to specific resources
                                               )
                                           ])
-
-        # Attach the combined policy to the IAM user
         iam_user.attach_inline_policy(lambda_runner_policy)
 
+        # Policy for Integration Tests (SQS Queue)
         sqs_queue_reader_policy = iam.Policy(self, "SqsQueueReaderPolicy",
                                              policy_name="SqsQueueReaderPolicy",
                                              statements=[
@@ -101,6 +98,23 @@ class GitHubActionsResourcesStack(Stack):
                                                      resources=["*"],  # todo: restrict to specific resources
                                                  )
                                              ])
-
-        # Attach the policy to the IAM user
         iam_user.attach_inline_policy(sqs_queue_reader_policy)        
+
+        # Policy for Integration Tests (Timestream DB interactions)
+        timestream_query_runner_policy = iam.Policy(self, "TimestreamQueryRunnerPolicy",
+                                                    policy_name="TimestreamQueryRunnerPolicy",
+                                                    statements=[
+                                                        iam.PolicyStatement(
+                                                            actions=[
+                                                                # Timestream query actions
+                                                                "timestream:Select",
+                                                                "timestream:DescribeTable",
+                                                                "timestream:ListMeasures",
+                                                                "timestream:DescribeEndpoints",
+                                                            ],
+                                                            resources=["*"],  # Adjust as necessary to restrict to specific resources
+                                                        )
+                                                    ])
+
+        # Attach the Timestream query policy to the IAM user
+        iam_user.attach_inline_policy(timestream_query_runner_policy)        
