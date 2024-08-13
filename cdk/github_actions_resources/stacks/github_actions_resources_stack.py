@@ -79,7 +79,7 @@ class GitHubActionsResourcesStack(Stack):
                         "glue:GetJob",
                         "glue:ListJobs",
                     ],
-                    resources=["*"],  # todo: restrict to specific resources
+                    resources=["arn:aws:glue:*:*:job/*salmon*"],
                 )
             ],
         )
@@ -92,19 +92,22 @@ class GitHubActionsResourcesStack(Stack):
             "LambdaRunnerPolicy",
             policy_name="LambdaRunnerPolicy",
             statements=[
+                # Lambda actions
+                iam.PolicyStatement(
+                    actions=["lambda:InvokeFunction"],
+                    resources=["arn:aws:lambda:*:*:function:*salmon*"],
+                ),
+                # CloudWatch Logs actions
                 iam.PolicyStatement(
                     actions=[
-                        # Lambda actions
-                        "lambda:InvokeFunction",
-                        # CloudWatch Logs actions
                         "logs:FilterLogEvents",
                         "logs:GetLogEvents",
                         "logs:StartQuery",
                         "logs:GetQueryResults",
                         "logs:DescribeLogGroups",
                     ],
-                    resources=["*"],  # todo: restrict to specific resources
-                )
+                    resources=["arn:aws:logs:*:*:log-group:*salmon*"],
+                ),
             ],
         )
         iam_user.attach_inline_policy(lambda_runner_policy)
@@ -125,7 +128,7 @@ class GitHubActionsResourcesStack(Stack):
                         # STS actions
                         "sts:GetCallerIdentity",
                     ],
-                    resources=["*"],  # todo: restrict to specific resources
+                    resources=["arn:aws:sqs:*:*:*salmon*"],
                 )
             ],
         )
@@ -143,11 +146,30 @@ class GitHubActionsResourcesStack(Stack):
                         "timestream:Select",
                         "timestream:DescribeTable",
                         "timestream:ListMeasures",
-                        "timestream:DescribeEndpoints",  # align with tooling stack - separate statement
                         "kms:Decrypt",
                     ],
-                    resources=["*"],  # todo: restrict to specific resources
-                )
+                    resources=["arn:aws:timestream:*:*:database/*salmon*/table/*"],
+                ),
+                iam.PolicyStatement(
+                    actions=[
+                        # This should refer to "*" (AWS limitations)
+                        "timestream:DescribeEndpoints",
+                    ],
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    actions=[
+                        "kms:Decrypt",
+                    ],
+                    resources=[
+                        "*"
+                    ],
+                    conditions={ # Restriction is implemented on KMS key alias level
+                        "ForAnyValue:StringLike": {
+                            "kms:ResourceAliases": "alias/*salmon*"
+                        }
+                    }
+                ),                
             ],
         )
         iam_user.attach_inline_policy(timestream_query_runner_policy)
