@@ -11,7 +11,7 @@ env:
 run-name: integration tests - delete infra
 on: 
   workflow_dispatch:
-  repository_dispatch:
+  workflow_call:
 jobs:
   integration-testing-delete-infra:
     runs-on: ubuntu-latest

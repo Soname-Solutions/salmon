@@ -14,11 +14,11 @@ env:
 run-name: integration tests - full
 on: [workflow_dispatch]
 jobs:
-    full-integration-tests-workflow:
-        runs-on: ubuntu-latest
-        steps:
-          - name: Check out repository code
-            uses: actions/checkout@v4   
-
     job-create-infra:
         uses: ./.github/workflows/integration_tests_infra_create.yml
+        secrets: inherit
+
+    job-execute-tests:
+        uses: ./.github/workflows/integration_tests_execute.yml
+        needs: job-create-infra
+        secrets: inherit

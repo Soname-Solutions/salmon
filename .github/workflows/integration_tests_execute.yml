@@ -11,7 +11,7 @@ env:
 run-name: integration tests - execute tests
 on: 
   workflow_dispatch:
-  repository_dispatch:
+  workflow_call:
 jobs:
   integration-testing:
     runs-on: ubuntu-latest
