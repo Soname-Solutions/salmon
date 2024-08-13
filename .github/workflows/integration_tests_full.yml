@@ -20,5 +20,5 @@ jobs:
           - name: Check out repository code
             uses: actions/checkout@v4   
 
-          - name: Create Infra
-            uses: ./.github/workflows/integration_tests_infra_create.yml
+    job-create-infra:
+        uses: ./.github/workflows/integration_tests_infra_create.yml
