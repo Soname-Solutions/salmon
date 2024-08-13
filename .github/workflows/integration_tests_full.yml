@@ -14,10 +14,8 @@ env:
 run-name: integration tests - full
 on: [workflow_dispatch]
 jobs:
-    stub:
+    full-integration-tests-workflow:
         runs-on: ubuntu-latest
         steps:
-            - name: Install Python Test requirementsStub action
-              shell: bash
-              run: ls
-                          
+          - name: Create Infra
+            uses: ./.github/workflows/integration_tests_infra_create.yml

@@ -9,7 +9,9 @@ env:
     STAGE_NAME: devit
     SETTING_FOLDER_NAME: "integration_tests/settings"
 run-name: integration tests - create infra
-on: [workflow_dispatch]
+on: 
+  workflow_dispatch:
+  workflow_call:
 jobs:
   integration-testing-create-infra:
     runs-on: ubuntu-latest

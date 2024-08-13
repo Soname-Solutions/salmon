@@ -9,7 +9,9 @@ env:
     STAGE_NAME: devit
     SETTING_FOLDER_NAME: "integration_tests/settings"
 run-name: integration tests - delete infra
-on: [workflow_dispatch]
+on: 
+  workflow_dispatch:
+  repository_dispatch:
 jobs:
   integration-testing-delete-infra:
     runs-on: ubuntu-latest
