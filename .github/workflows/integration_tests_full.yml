@@ -17,5 +17,8 @@ jobs:
     full-integration-tests-workflow:
         runs-on: ubuntu-latest
         steps:
+          - name: Check out repository code
+            uses: actions/checkout@v4   
+
           - name: Create Infra
             uses: ./.github/workflows/integration_tests_infra_create.yml
