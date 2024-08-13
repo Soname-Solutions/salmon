@@ -1,8 +1,7 @@
 import boto3
-import json
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
@@ -31,9 +30,13 @@ class EMRJobRunData(BaseModel):
     state: str
     stateDetails: Optional[str] = None
     jobDriver: Optional[JobDriver] = None
-    totalResourceUtilization: ResourceUtilization
+    totalResourceUtilization: Optional[ResourceUtilization] = Field(
+        default_factory=ResourceUtilization
+    )
     totalExecutionDurationSeconds: Optional[int] = None
-    billedResourceUtilization: ResourceUtilization
+    billedResourceUtilization: Optional[ResourceUtilization] = Field(
+        default_factory=ResourceUtilization
+    )
     mode: Optional[str] = None
 
     @property

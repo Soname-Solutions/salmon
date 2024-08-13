@@ -62,7 +62,7 @@ For more details please refer to [Solution arhictecture description](docs/archit
 | AWS Glue Crawlers | Immediately on Failure | In next versions... |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |
 | AWS Lambda Functions | With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
-| Amazon EMR Serverless | Immediately on Failure | Execution stats (Duration, State, Billed vCPU, Memory, Storage etc.) of Job submitted to the EMR application  |
+| Amazon EMR Serverless | Immediately on Failure | Execution stats (Duration, State, Billed vCPU, Memory, Storage, etc.) of Job submitted to the EMR application  |
 
 ## How to start
 
