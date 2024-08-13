@@ -4,7 +4,11 @@ env:
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     AWS_DEFAULT_REGION: 'eu-central-1'
 run-name: integration tests - full
-on: [workflow_dispatch]
+on: 
+    push:
+        branches:
+          - main    
+    workflow_dispatch:
 jobs:
     job-create-infra:
         uses: ./.github/workflows/integration_tests_infra_create.yml
