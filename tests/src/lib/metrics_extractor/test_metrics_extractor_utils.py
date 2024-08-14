@@ -236,6 +236,13 @@ def test_get_last_update_time_valid_input(last_update_time_sample_data):
             # only one resource provided, so its last_update_time should be returned
             str_utc_datetime_to_datetime("2024-07-22 00:01:56.042000000"),
         ),
+        (
+            "scen4",
+            [],
+            ["test-de-ruleset-4"],
+            # no last_update_times found, so earliest writable time should be returned
+            EARLIEST_WRITABLE_TIME,
+        ),
     ],
 )
 def test_get_earliest_last_update_time_for_resource_set(

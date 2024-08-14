@@ -37,7 +37,6 @@ class EMRJobRunData(BaseModel):
     billedResourceUtilization: Optional[ResourceUtilization] = Field(
         default_factory=ResourceUtilization
     )
-    mode: Optional[str] = None
 
     @property
     def IsSuccess(self) -> bool:
@@ -80,7 +79,16 @@ class EMRManagerException(Exception):
 class EMRManager:
     STATES_SUCCESS = ["SUCCESS"]
     STATES_FAILURE = ["FAILED", "CANCELLED"]
-    # FYI: all states = 'SUBMITTED'|'PENDING'|'SCHEDULED'|'RUNNING'|'SUCCESS'|'FAILED'|'CANCELLING'|'CANCELLED'
+    ALL_STATES = [
+        "SUBMITTED",
+        "PENDING",
+        "SCHEDULED",
+        "RUNNING",
+        "SUCCESS",
+        "FAILED",
+        "CANCELLING",
+        "CANCELLED",
+    ]
 
     def __init__(self, sf_client=None):
         self.sf_client = (
@@ -141,12 +149,17 @@ class EMRManager:
             error_message = f"Error getting run details of EMR Job run ID {run_id}: {e}"
             raise EMRManagerException(error_message)
 
-    def list_job_runs(self, app_id: str, since_time: datetime) -> str:
+    def list_job_runs(
+        self, app_id: str, since_time: datetime, states: list[str] = []
+    ) -> str:
         """List Job runs IDs submitted to the EMR Serverless application"""
 
         try:
+            if not states:
+                states = self.ALL_STATES
+
             response = self.sf_client.list_job_runs(
-                applicationId=app_id, createdAtAfter=since_time
+                applicationId=app_id, createdAtAfter=since_time, states=states
             )
             outp = [x["id"] for x in response.get("jobRuns")]
             return outp

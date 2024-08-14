@@ -110,6 +110,7 @@ def process_individual_resource(
     )
     metrics_record_count = len(records)
     logger.info(f"Extracted {metrics_record_count} records")
+    print(f"Records extracted for {resource_type}[{resource_name}] ", records)
 
     # # 5. Write extracted data to timestream table
     metrics_extractor.write_metrics(
