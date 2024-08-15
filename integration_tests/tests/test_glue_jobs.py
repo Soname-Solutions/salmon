@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 import pytest
 import boto3
-from inttest_lib.sqs_queue_reader import SqsMessage
+from inttest_lib.dynamo_db_reader import IntegrationTestMessage
 from inttest_lib.message_checker import MessagesChecker
 
 from lib.aws.aws_naming import AWSNaming
@@ -61,7 +61,7 @@ def test_digest_message(sqs_messages, testing_stand_resource_names):
     """    
     msqchk = MessagesChecker(sqs_messages)
 
-    digest_messages: list[SqsMessage] = msqchk.subject_contains_all(["Digest Report"])
+    digest_messages: list[IntegrationTestMessage] = msqchk.subject_contains_all(["Digest Report"])
 
     message_body = digest_messages[0].MessageBody
     

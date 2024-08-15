@@ -43,7 +43,7 @@ class GitHubActionsResourcesStack(Stack):
         self.attach_assume_role_policy(iam_user)
         self.attach_glue_job_runner_policy(iam_user)
         self.attach_lambda_runner_policy(iam_user)
-        self.attach_sqs_queue_reader_policy(iam_user)
+        self.attach_dynamodb_reader_policy(iam_user)        
         self.attach_timestream_query_runner_policy(iam_user)
 
     def attach_assume_role_policy(self, iam_user):
@@ -112,28 +112,6 @@ class GitHubActionsResourcesStack(Stack):
         )
         iam_user.attach_inline_policy(lambda_runner_policy)
 
-    def attach_sqs_queue_reader_policy(self, iam_user):
-        sqs_queue_reader_policy = iam.Policy(
-            self,
-            "SqsQueueReaderPolicy",
-            policy_name="SqsQueueReaderPolicy",
-            statements=[
-                iam.PolicyStatement(
-                    actions=[
-                        # SQS actions
-                        "sqs:ReceiveMessage",
-                        "sqs:GetQueueAttributes",
-                        "sqs:ListQueues",  # Optional
-                        "sqs:GetQueueUrl",
-                        # STS actions
-                        "sts:GetCallerIdentity",
-                    ],
-                    resources=["arn:aws:sqs:*:*:*salmon*"],
-                )
-            ],
-        )
-        iam_user.attach_inline_policy(sqs_queue_reader_policy)
-
     def attach_timestream_query_runner_policy(self, iam_user):
         timestream_query_runner_policy = iam.Policy(
             self,
@@ -173,3 +151,22 @@ class GitHubActionsResourcesStack(Stack):
             ],
         )
         iam_user.attach_inline_policy(timestream_query_runner_policy)
+
+    def attach_dynamodb_reader_policy(self, iam_user):
+        # Policy for reading from DynamoDB
+        dynamodb_reader_policy = iam.Policy(
+            self,
+            "DynamoDBReaderPolicy",
+            policy_name="DynamoDBReaderPolicy",
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "dynamodb:Scan",
+                    ],
+                    resources=[
+                        "arn:aws:dynamodb:*:*:table/*salmon*",
+                    ],
+                )
+            ],
+        )
+        iam_user.attach_inline_policy(dynamodb_reader_policy)

@@ -14,7 +14,7 @@ project_root = str(Path(__file__).resolve().parent.parent.parent)
 lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
-from inttest_lib.sqs_queue_reader import SqsMessage, SQSQueueReader
+from inttest_lib.dynamo_db_reader import IntegrationTestMessage, DynamoDBReader
 from inttest_lib.common import get_stack_obj_for_naming, get_testing_stand_resource_names, TARGET_MEANING
 from lib.aws.aws_naming import AWSNaming
 
@@ -50,11 +50,10 @@ def testing_stand_resource_names(stage_name):
     return get_testing_stand_resource_names(stage_name=stage_name)
 
 @pytest.fixture(scope='session')
-def sqs_messages(start_epochtimemsec, stack_obj_for_naming, stage_name, region) -> list[SqsMessage]:
-    queue_name = AWSNaming.SQSQueue(stack_obj_for_naming, TARGET_MEANING)
-    queue_url = SQSQueueReader.get_queue_url_from_name(queue_name, region)
-    reader = SQSQueueReader(queue_url)
-    messages: list[SqsMessage] = reader.get_all_messages()
+def sqs_messages(start_epochtimemsec, stack_obj_for_naming, stage_name, region) -> list[IntegrationTestMessage]:
+    table_name = AWSNaming.DynamoDBTable(stack_obj_for_naming, TARGET_MEANING)
+    reader = DynamoDBReader(table_name)
+    messages: list[IntegrationTestMessage] = reader.get_all_messages()
     filtered_messages = [x for x in messages if x.SentTimestamp > start_epochtimemsec]
     return filtered_messages
 
