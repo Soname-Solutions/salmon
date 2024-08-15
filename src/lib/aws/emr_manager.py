@@ -79,16 +79,7 @@ class EMRManagerException(Exception):
 class EMRManager:
     STATES_SUCCESS = ["SUCCESS"]
     STATES_FAILURE = ["FAILED", "CANCELLED"]
-    ALL_STATES = [
-        "SUBMITTED",
-        "PENDING",
-        "SCHEDULED",
-        "RUNNING",
-        "SUCCESS",
-        "FAILED",
-        "CANCELLING",
-        "CANCELLED",
-    ]
+    # FYI: all states = 'SUBMITTED'|'PENDING'|'SCHEDULED'|'RUNNING'|'SUCCESS'|'FAILED'|'CANCELLING'|'CANCELLED'
 
     def __init__(self, sf_client=None):
         self.sf_client = (
@@ -155,14 +146,26 @@ class EMRManager:
         """List Job runs IDs submitted to the EMR Serverless application"""
 
         try:
-            if not states:
-                states = self.ALL_STATES
+            # paginator is used in order to attain the entire result set
+            paginator = self.sf_client.get_paginator("list_job_runs")
 
-            response = self.sf_client.list_job_runs(
-                applicationId=app_id, createdAtAfter=since_time, states=states
+            # paginate through results
+            results_per_response = 50
+            page_iterator = paginator.paginate(
+                applicationId=app_id,
+                createdAtAfter=since_time,
+                states=states,  # if an empty list [] passed - all statuses will be considered
+                PaginationConfig={
+                    "PageSize": results_per_response,
+                },
             )
-            outp = [x["id"] for x in response.get("jobRuns")]
-            return outp
+
+            # collect all job run IDs returned
+            runs_ids = [
+                job["id"] for page in page_iterator for job in page.get("jobRuns", [])
+            ]
+
+            return runs_ids
 
         except Exception as e:
             error_message = f"Error getting a list of Job IDs submitted to the EMR application {app_id}: {e}"

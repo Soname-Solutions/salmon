@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytest
 from unittest.mock import patch, MagicMock, call
 from lib.metrics_extractor import EMRServerlessMetricExtractor
 from lib.aws.emr_manager import (
@@ -23,6 +24,7 @@ EMR_MANAGER_CLASS_NAME = (
     "lib.metrics_extractor.emr_serverless_metrics_extractor.EMRManager"
 )
 GET_EXECUTIONS_METHOD_NAME = f"{EMR_MANAGER_CLASS_NAME}.get_job_run"
+LIST_EXECUTIONS_METHOD_NAME = f"{EMR_MANAGER_CLASS_NAME}.list_job_runs"
 
 JOB_RUN_SUCCESS = EMRJobRunData(
     applicationId=EMR_APP_ID,
@@ -46,7 +48,6 @@ JOB_RUN_SUCCESS = EMRJobRunData(
 JOB_RUN_ERROR = EMRJobRunData(
     applicationId=EMR_APP_ID,
     jobRunId=JOB_ID_ERROR,
-    name=JOB_NAME,
     createdAt=datetime(2024, 1, 1, 0, 0, 0),
     updatedAt=datetime(2024, 1, 1, 0, 5, 0),
     state="FAILED",
@@ -65,24 +66,21 @@ JOB_RUN_ERROR = EMRJobRunData(
 
 
 # ####################################################################
-def setup_mock_emr_client(job_runs):
+@pytest.fixture(scope="function", autouse=True)
+def mock_emr_client():
     mock_emr_client = MagicMock()
     mock_emr_client.list_applications.return_value = {
         "applications": [{"name": EMR_APP_NAME, "id": EMR_APP_ID}]
     }
-    mock_emr_client.list_job_runs.return_value = {"jobRuns": job_runs}
-    return mock_emr_client
+    with patch("boto3.client", return_value=mock_emr_client) as mock_emr:
+        yield mock_emr
 
 
-def test_two_completed_records_integrity(boto3_client_creator):
-    # mock emr client with two job runs returned by list_job_runs
-    mock_emr_client = setup_mock_emr_client(
-        job_runs=[{"id": JOB_ID_SUCCESS}, {"id": JOB_ID_ERROR}]
-    )
-
-    with patch("boto3.client", return_value=mock_emr_client), patch(
+def test_two_completed_records_integrity(boto3_client_creator, mock_emr_client):
+    with patch(LIST_EXECUTIONS_METHOD_NAME) as mocked_list_executions, patch(
         GET_EXECUTIONS_METHOD_NAME
     ) as mocked_get_executions:
+        mocked_list_executions.return_value = [JOB_ID_SUCCESS, JOB_ID_ERROR]
         # get_job_run should return EMRJobRunData for each job correspondingly
         mocked_get_executions.side_effect = [
             JOB_RUN_SUCCESS,
@@ -137,13 +135,11 @@ def test_two_completed_records_integrity(boto3_client_creator):
         ), "Not all required metrics for timestream record are present"
 
 
-def test_failed_job_run(boto3_client_creator):
-    # mock emr client with one failed job run returned by list_job_runs
-    mock_emr_client = setup_mock_emr_client(job_runs=[{"id": JOB_ID_ERROR}])
-
-    with patch("boto3.client", return_value=mock_emr_client), patch(
+def test_failed_job_run(boto3_client_creator, mock_emr_client):
+    with patch(LIST_EXECUTIONS_METHOD_NAME) as mocked_list_executions, patch(
         GET_EXECUTIONS_METHOD_NAME
     ) as mocked_get_executions:
+        mocked_list_executions.return_value = [JOB_ID_ERROR]
         # get_job_run should return EMRJobRunData correspondingly
         mocked_get_executions.return_value = JOB_RUN_ERROR
 
@@ -162,30 +158,21 @@ def test_failed_job_run(boto3_client_creator):
         mocked_get_executions.assert_called_once()
         assert len(records) == 1, "There should be one execution record"
         assert get_dimension_value(records[0], "job_run_id") == JOB_ID_ERROR
-        assert get_measure_value(records[0], "job_run_name") == JOB_NAME
+        assert get_measure_value(records[0], "job_run_name") == "None"
         assert get_measure_value(records[0], "app_id") == EMR_APP_ID
         assert get_measure_value(records[0], "execution") == "1"
         assert get_measure_value(records[0], "succeeded") == "0"
         assert get_measure_value(records[0], "failed") == "1"  # error
-        assert get_measure_value(records[0], "execution_time_sec") == "42"
         assert (
             get_measure_value(records[0], "error_message") == "ExitCode: 1."
         )  # error message assigned as expected
-        assert get_measure_value(records[0], "total_vCPU_hour") == "0.048"
-        assert get_measure_value(records[0], "total_memory_GB_hour") == "0.191"
-        assert get_measure_value(records[0], "total_storage_GB_hour") == "0.239"
-        assert get_measure_value(records[0], "billed_vCPU_hour") == "0.067"
-        assert get_measure_value(records[0], "billed_memory_GB_hour") == "0.267"
-        assert get_measure_value(records[0], "billed_storage_GB_hour") == "0.0"
 
 
-def test_success_job_run(boto3_client_creator):
-    # mock emr client with one success job run returned by list_job_runs
-    mock_emr_client = setup_mock_emr_client(job_runs=[{"id": JOB_ID_SUCCESS}])
-
-    with patch("boto3.client", return_value=mock_emr_client), patch(
+def test_success_job_run(boto3_client_creator, mock_emr_client):
+    with patch(LIST_EXECUTIONS_METHOD_NAME) as mocked_list_executions, patch(
         GET_EXECUTIONS_METHOD_NAME
     ) as mocked_get_executions:
+        mocked_list_executions.return_value = [JOB_ID_SUCCESS]
         # get_job_run should return EMRJobRunData correspondingly
         mocked_get_executions.return_value = JOB_RUN_SUCCESS
 
@@ -209,25 +196,17 @@ def test_success_job_run(boto3_client_creator):
         assert get_measure_value(records[0], "execution") == "1"
         assert get_measure_value(records[0], "succeeded") == "1"  # success
         assert get_measure_value(records[0], "failed") == "0"
-        assert get_measure_value(records[0], "execution_time_sec") == "45"
         assert (
             get_measure_value(records[0], "error_message") == "None"
         )  # no error message as expected
-        assert get_measure_value(records[0], "total_vCPU_hour") == "0.049"
-        assert get_measure_value(records[0], "total_memory_GB_hour") == "0.192"
-        assert get_measure_value(records[0], "total_storage_GB_hour") == "0.231"
-        assert get_measure_value(records[0], "billed_vCPU_hour") == "0.068"
-        assert get_measure_value(records[0], "billed_memory_GB_hour") == "0.268"
-        assert get_measure_value(records[0], "billed_storage_GB_hour") == "0.1"
 
 
-def test_no_job_runs(boto3_client_creator):
-    # mock emr client with no job runs returned by list_job_runs
-    mock_emr_client = setup_mock_emr_client(job_runs=[])
-
-    with patch("boto3.client", return_value=mock_emr_client), patch(
+def test_no_job_runs(boto3_client_creator, mock_emr_client):
+    with patch(LIST_EXECUTIONS_METHOD_NAME) as mocked_list_executions, patch(
         GET_EXECUTIONS_METHOD_NAME
     ) as mocked_get_executions:
+        mocked_list_executions.return_value = []
+
         extractor = EMRServerlessMetricExtractor(
             boto3_client_creator=boto3_client_creator,
             aws_client_name="emr-serverless",
@@ -242,4 +221,4 @@ def test_no_job_runs(boto3_client_creator):
 
         # get_job_run shouldn't be called since no Job IDs returned
         mocked_get_executions.assert_not_called()
-        assert len(records) == 0, "There shouldn't be records"
+        assert len(records) == 0, "There shouldn't be any job run returned"

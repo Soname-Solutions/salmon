@@ -15,9 +15,9 @@ class EMRServerlessMetricExtractor(BaseMetricsExtractor):
         app_id = emr_man.get_application_id_by_name(app_name=self.resource_name)
 
         # list runs with finished state since a given time
-        states = emr_man.STATES_FAILURE + emr_man.STATES_SUCCESS
+        finished_states = emr_man.STATES_FAILURE + emr_man.STATES_SUCCESS
         runs_ids = emr_man.list_job_runs(
-            app_id=app_id, since_time=since_time, states=states
+            app_id=app_id, since_time=since_time, states=finished_states
         )
         if not runs_ids:
             return []
@@ -38,7 +38,6 @@ class EMRServerlessMetricExtractor(BaseMetricsExtractor):
 
         records = []
         for job_run in job_runs:
-            print(job_run)
             dimensions = [{"Name": "job_run_id", "Value": job_run.jobRunId}]
 
             metric_values = [
