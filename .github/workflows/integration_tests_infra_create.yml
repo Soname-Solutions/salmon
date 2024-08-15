@@ -3,7 +3,7 @@ env:
     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     AWS_DEFAULT_REGION: 'eu-central-1'
-    CDK_INTEGRATION_TESTS_FOLDER: integration_tests/cdk
+    CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
     CDK_TOOLING_ENV_FOLDER: infra_tooling_account
     CDK_MONITORED_ENV_FOLDER: infra_monitored_account      
     STAGE_NAME: devit

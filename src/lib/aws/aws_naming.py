@@ -23,6 +23,11 @@ class AWSNaming:
     def CfnOutput(cls, stack_obj: object, meaning: str) -> str:
         prefix = "output"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+    
+    @classmethod
+    def DynamoDBTable(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "dyntbl"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
     def EventBus(cls, stack_obj: object, meaning: str) -> str:

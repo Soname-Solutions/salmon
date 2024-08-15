@@ -1,9 +1,9 @@
 
-from inttest_lib.sqs_queue_reader import SqsMessage
+from inttest_lib.dynamo_db_reader import IntegrationTestMessage
 
 class MessagesChecker:
-    def __init__(self, messages: list[SqsMessage]):
-        self.messages: list[SqsMessage] = messages
+    def __init__(self, messages: list[IntegrationTestMessage]):
+        self.messages: list[IntegrationTestMessage] = messages
 
     def subject_contains_all(self, filters: list[str]):
         """

@@ -1,9 +1,11 @@
 from aws_cdk import (
+    RemovalPolicy,
     Stack,
     Tags,
     aws_glue_alpha as glue,
     aws_sns as sns,
     aws_sns_subscriptions as subs,
+    aws_dynamodb as dynamodb,
     aws_sqs as sqs,
     aws_lambda as _lambda,
 )
@@ -24,7 +26,7 @@ from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
 from lib.core.constants import SettingConfigResourceTypes
 
-SRC_FOLDER_NAME = "../src_testing_stand/"
+SRC_FOLDER_NAME = "../../integration_tests/src_testing_stand/"
 
 
 class TestingStandStack(Stack):
@@ -73,59 +75,69 @@ class TestingStandStack(Stack):
             self, "TargetSNSTopic", display_name=topic_name, topic_name=topic_name
         )
 
-        # Create an SQS queue
-        target_queue = sqs.Queue(
+        # Create target DynamoDB table
+        target_table_name = AWSNaming.DynamoDBTable(self, TARGET_MEANING)
+        messages_table = dynamodb.Table(
             self,
-            "TargetSQSQueue",
-            content_based_deduplication=True,
-            fifo=True,
-            queue_name=AWSNaming.SQSQueue(self, TARGET_MEANING),
-        )
+            "MessagesTable",
+            partition_key=dynamodb.Attribute(
+                name="MessageId", type=dynamodb.AttributeType.STRING
+            ),
+            sort_key=dynamodb.Attribute(
+                name="Timestamp", type=dynamodb.AttributeType.NUMBER
+            ),
+            table_name=target_table_name,
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=RemovalPolicy.DESTROY, 
+        )        
 
         # Create a Lambda function
         lambda_function = _lambda.Function(
             self,
             "LambdaForwardToSQS",
             runtime=_lambda.Runtime.PYTHON_3_11,
-            function_name=AWSNaming.LambdaFunction(self, "inttest-to-sqs"),
+            function_name=AWSNaming.LambdaFunction(self, "inttest-to-dynamo"),
             handler="index.handler",
             code=_lambda.Code.from_inline(
                 """
 import json
 import boto3
 import logging
+import time
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-sqs = boto3.client('sqs')
+dynamodb = boto3.client('dynamodb')
 
 def handler(event, context):
     logger.info(f"event = {event}")
-    queue_url = '"""
-                + target_queue.queue_url
+    table_name = '"""
+                + messages_table.table_name
                 + """'
     for record in event['Records']:
         sns_data = record['Sns']
         message_id = sns_data.get('MessageId','N/A')
         message_body = sns_data.get('Message','Message body is not found')
         subject = sns_data.get('Subject','No subject')
+        timestamp = int(time.time())*1000
+
         message = {
-            'Id': message_id,
-            'Subject': subject,
-            'MessageBody': message_body
+            'MessageId': {'S': message_id},
+            'Subject': {'S': subject},
+            'MessageBody': {'S': message_body},
+            'Timestamp': {'N': str(timestamp)}
         }
-        sqs.send_message(
-            QueueUrl=queue_url,
-            MessageBody=json.dumps(message),
-            MessageGroupId='integration-tests'
+
+        dynamodb.put_item(
+            TableName=table_name,
+            Item=message
         )
     return {"statusCode": 200, "body": json.dumps('Success')}
                 """
-            ),
+            ),            
         )
 
-        # Grant the Lambda function permissions to send messages to the SQS queue
-        target_queue.grant_send_messages(lambda_function)
+        messages_table.grant_write_data(lambda_function)        
 
         # Add the Lambda function as a subscription to the target SNS topic
         target_topic.add_subscription(subs.LambdaSubscription(lambda_function))
