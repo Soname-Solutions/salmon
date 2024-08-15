@@ -27,7 +27,6 @@ main_stack = TestingStandStack(
     tags=TAGS,
     stage_name=STAGE_NAME,
     project_name=PROJECT_NAME,
-    #settings=settings,
 )
 
 app.synth()
