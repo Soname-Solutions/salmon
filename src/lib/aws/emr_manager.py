@@ -60,7 +60,7 @@ class EMRJobRunData(BaseModel):
 
         # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
         if len(error_message) > msg.MAX_ERROR_MESSAGE_LENGTH:
-            error_message = error_message[: msg.MAX_ERROR_MESSAGE_LENGTH :] + "..."
+            error_message = error_message[: msg.MAX_ERROR_MESSAGE_LENGTH] + "..."
         return error_message
 
 
