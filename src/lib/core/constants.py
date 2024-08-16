@@ -104,3 +104,7 @@ class CDKResourceNames:
 class GrafanaDefaultSettings:
     INSTANCE_TYPE = "t3.micro"
     BITNAMI_IMAGE = "bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami"
+
+
+class MessageSettings:
+    MAX_ERROR_MESSAGE_LENGTH = 100
