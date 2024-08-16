@@ -150,7 +150,7 @@ class EMRManager:
             paginator = self.sf_client.get_paginator("list_job_runs")
 
             # paginate through results
-            results_per_response = 100
+            results_per_response = 50
             page_iterator = paginator.paginate(
                 applicationId=app_id,
                 createdAtAfter=since_time,
