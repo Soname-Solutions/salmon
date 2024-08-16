@@ -216,6 +216,7 @@ class InfraMonitoredStack(Stack):
         emr_serverless_policy_statement = iam.PolicyStatement(
             actions=[
                 "emr-serverless:ListApplications",
+                "emr-serverless:ListJobRuns",
                 "emr-serverless:GetJobRun",
                 "emr-serverless:GetApplication",
             ],

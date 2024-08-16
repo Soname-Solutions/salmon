@@ -45,6 +45,17 @@ class SettingConfigs:
         SettingConfigResourceTypes.EMR_SERVERLESS: "emr-serverless",
     }
 
+    RESOURCE_TYPE_DECORATED_NAMES = {
+        SettingConfigResourceTypes.GLUE_JOBS: "Glue Jobs",
+        SettingConfigResourceTypes.GLUE_WORKFLOWS: "Glue Workflows",
+        SettingConfigResourceTypes.GLUE_CRAWLERS: "Glue Crawlers",
+        SettingConfigResourceTypes.GLUE_DATA_CATALOGS: "Glue Data Catalogs",
+        SettingConfigResourceTypes.GLUE_DATA_QUALITY: "Glue Data Quality",
+        SettingConfigResourceTypes.LAMBDA_FUNCTIONS: "Lambda Functions",
+        SettingConfigResourceTypes.STEP_FUNCTIONS: "Step Functions",
+        SettingConfigResourceTypes.EMR_SERVERLESS: "EMR Serverless",
+    }
+
 
 class CloudWatchConfigs:
     QUERY_TIMEOUT_SECONDS = 60
@@ -72,6 +83,7 @@ class DigestSettings:
     STATUS_ERROR = "error"
     REPORT_PERIOD_HOURS = 24
     CRON_EXPRESSION = "cron(0 8 * * ? *)"
+    MAX_ERROR_MESSAGE_LENGTH = 100
 
 
 class CDKDeployExclusions:

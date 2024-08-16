@@ -176,6 +176,10 @@ class EMRServerlessDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        print("Calling a method which hasn't been implemented yet")
-        query = ""
+        query = (
+            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
+            f""" case when failed > 0 then job_run_id else '' end as job_run_id, execution, failed, """
+            f""" succeeded, execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
+        )
         return query

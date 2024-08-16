@@ -9,6 +9,7 @@ from lib.digest_service import (
     GlueDataQualityDigestDataExtractor,
     StepFunctionsDigestDataExtractor,
     LambdaFunctionsDigestDataExtractor,
+    EMRServerlessDigestDataExtractor,
     DigestDataExtractorProvider,
 )
 
@@ -46,6 +47,7 @@ def test_unregistered_resource_type():
         ("scen5", types.LAMBDA_FUNCTIONS, LambdaFunctionsDigestDataExtractor),
         ("scen6", types.STEP_FUNCTIONS, StepFunctionsDigestDataExtractor),
         ("scen7", types.GLUE_DATA_QUALITY, GlueDataQualityDigestDataExtractor),
+        ("scen8", types.EMR_SERVERLESS, EMRServerlessDigestDataExtractor),
     ],
 )
 def test_get_digest_provider(scenario, resource_type, expected_extractor):

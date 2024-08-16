@@ -33,6 +33,7 @@ END_TIME = datetime(2000, 1, 2, 0, 0, 0)
         ("scen3", types.LAMBDA_FUNCTIONS),
         ("scen4", types.STEP_FUNCTIONS),
         ("scen5", types.GLUE_DATA_QUALITY),
+        ("scen6", types.EMR_SERVERLESS),
         # Not yet implemented for Glue Crawlers and Data Catalogs
     ],
 )
@@ -49,7 +50,7 @@ def test_digest_extractor_get_query(scenario, resource_type):
     returned_query = returned_extractor.get_query(START_TIME, END_TIME)
     returned_column_names = re.findall(r"\b(\w+)\b", returned_query)
 
-    expected_columns = EXPECTED_QUERY_COLUMNS
+    expected_columns = list(EXPECTED_QUERY_COLUMNS)
     if resource_type == types.GLUE_DATA_QUALITY:
         expected_columns += EXTRA_DQ_COLUMNS
 
@@ -69,6 +70,7 @@ def test_digest_extractor_get_query(scenario, resource_type):
         ("scen5", types.LAMBDA_FUNCTIONS),
         ("scen6", types.STEP_FUNCTIONS),
         ("scen7", types.GLUE_DATA_QUALITY),
+        ("scen8", types.EMR_SERVERLESS),
     ],
 )
 @patch("lib.digest_service.digest_data_extractor.TimeStreamQueryRunner")
@@ -106,6 +108,7 @@ def test_digest_extract_runs_with_data(mock_query_runner, scenario, resource_typ
         ("scen5", types.LAMBDA_FUNCTIONS),
         ("scen6", types.STEP_FUNCTIONS),
         ("scen7", types.GLUE_DATA_QUALITY),
+        ("scen8", types.EMR_SERVERLESS),
     ],
 )
 @patch("lib.digest_service.digest_data_extractor.TimeStreamQueryRunner")
@@ -142,6 +145,7 @@ def test_digest_extract_runs_no_data(mock_query_runner, scenario, resource_type)
         ("scen5", types.LAMBDA_FUNCTIONS),
         ("scen6", types.STEP_FUNCTIONS),
         ("scen7", types.GLUE_DATA_QUALITY),
+        ("scen8", types.EMR_SERVERLESS),
     ],
 )
 @patch("lib.digest_service.digest_data_extractor.TimeStreamQueryRunner")

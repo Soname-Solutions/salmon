@@ -1,6 +1,10 @@
 from datetime import datetime
 from lib.digest_service import DigestMessageBuilder
-from lib.core.constants import SettingConfigResourceTypes as types, DigestSettings
+from lib.core.constants import (
+    SettingConfigResourceTypes as types,
+    DigestSettings,
+    SettingConfigs,
+)
 
 START_TIME = datetime(2000, 1, 1, 0, 0, 0)
 END_TIME = datetime(2000, 1, 2, 0, 0, 0)
@@ -77,7 +81,9 @@ def test_message_builder_get_summary_table():
                 {
                     "values": [
                         "monitoring_group_1",
-                        types.LAMBDA_FUNCTIONS,
+                        SettingConfigs.RESOURCE_TYPE_DECORATED_NAMES[
+                            types.LAMBDA_FUNCTIONS
+                        ],
                         2,
                         2,
                         0,
@@ -86,7 +92,14 @@ def test_message_builder_get_summary_table():
                     "style": DigestSettings.STATUS_OK,
                 },
                 {
-                    "values": ["monitoring_group_2", types.GLUE_JOBS, 1, 0, 1, 0],
+                    "values": [
+                        "monitoring_group_2",
+                        SettingConfigs.RESOURCE_TYPE_DECORATED_NAMES[types.GLUE_JOBS],
+                        1,
+                        0,
+                        1,
+                        0,
+                    ],
                     "style": DigestSettings.STATUS_ERROR,
                 },
             ],

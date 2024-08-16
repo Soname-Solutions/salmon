@@ -94,14 +94,17 @@ class DigestDataAggregator:
             )
 
             # construct error comment based on the job run URL and error message
+            error_message = resource_run.get("error_message", "Unknown errors")
             if job_run_url:
-                error_comment = f" - <a href={job_run_url}>ERROR: {resource_run['error_message'][:50]}</a>"
-            elif resource_run["error_message"]:
-                # if no job run, use the error message directly
-                error_comment = resource_run["error_message"]
+                # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
+                if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
+                    error_message = (
+                        error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
+                    )
+                error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
             else:
-                # default error message
-                error_comment = " - Unknown errors"
+                # Use error message directly if no job run URL (defaults to 'Unknown errors')
+                error_comment = f" - {error_message}"
 
             resource_values["Comments"].append(error_comment)
 
