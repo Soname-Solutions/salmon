@@ -1,4 +1,5 @@
 from datetime import datetime
+from lib.core.constants import SettingConfigs
 
 
 class DigestMessageBuilder:
@@ -24,7 +25,7 @@ class DigestMessageBuilder:
                     {
                         "values": [
                             group_name,
-                            resource_type,
+                            SettingConfigs.RESOURCE_TYPE_DECORATED_NAMES[resource_type],
                             item[group_name][resource_type]["summary"]["Executions"],
                             item[group_name][resource_type]["summary"]["Success"],
                             item[group_name][resource_type]["summary"]["Failures"],
@@ -81,11 +82,8 @@ class DigestMessageBuilder:
             for monitoring_group in item:
                 for resource_type in item[monitoring_group]:
                     runs_data = item[monitoring_group][resource_type]["runs"]
-                    resource_type_name = " ".join(
-                        x.capitalize() for x in resource_type.split("_")
-                    )
                     resource_report_header = {
-                        "text": f"{monitoring_group}: {resource_type_name}",
+                        "text": f"{monitoring_group}: {SettingConfigs.RESOURCE_TYPE_DECORATED_NAMES[resource_type]}",
                         "style": "header",
                     }
                     self.message_body.append(resource_report_header)
