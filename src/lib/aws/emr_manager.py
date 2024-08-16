@@ -3,8 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from lib.core.constants import MessageSettings as msg
-
 
 ################################################################
 class SparkSubmit(BaseModel):
@@ -58,10 +56,10 @@ class EMRJobRunData(BaseModel):
             "",
         ).strip()
 
-        # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
-        if len(error_message) > msg.MAX_ERROR_MESSAGE_LENGTH:
-            error_message = error_message[: msg.MAX_ERROR_MESSAGE_LENGTH] + "..."
-        return error_message
+        # trim the message to 200 chars, adding '...' if it exceeds this length
+        return (
+            (error_message[:200] + "...") if len(error_message) > 200 else error_message
+        )
 
 
 class EMRJobRunResponse(BaseModel):

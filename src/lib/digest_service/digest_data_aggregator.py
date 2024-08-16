@@ -1,5 +1,5 @@
 from collections import defaultdict
-from lib.core.constants import DigestSettings, MessageSettings as msg
+from lib.core.constants import DigestSettings
 from lib.event_mapper import ExecutionInfoUrlMixin
 
 
@@ -97,9 +97,9 @@ class DigestDataAggregator:
             error_message = resource_run.get("error_message", "Unknown errors")
             if job_run_url:
                 # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
-                if len(error_message) > msg.MAX_ERROR_MESSAGE_LENGTH:
+                if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
                     error_message = (
-                        error_message[: msg.MAX_ERROR_MESSAGE_LENGTH] + "..."
+                        error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
                     )
                 error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
             else:

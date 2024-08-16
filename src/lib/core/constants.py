@@ -83,6 +83,7 @@ class DigestSettings:
     STATUS_ERROR = "error"
     REPORT_PERIOD_HOURS = 24
     CRON_EXPRESSION = "cron(0 8 * * ? *)"
+    MAX_ERROR_MESSAGE_LENGTH = 100
 
 
 class CDKDeployExclusions:
@@ -104,7 +105,3 @@ class CDKResourceNames:
 class GrafanaDefaultSettings:
     INSTANCE_TYPE = "t3.micro"
     BITNAMI_IMAGE = "bitnami-grafana-10.2.2-1-r02-linux-debian-11-x86_64-hvm-ebs-nami"
-
-
-class MessageSettings:
-    MAX_ERROR_MESSAGE_LENGTH = 100
