@@ -7,6 +7,8 @@ from lib.core import json_utils as ju
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+GRAFANA_DASHBOARD_TEMPLATE_FOLDER = os.path.join("stacks", "grafana")
+
 
 def generate_cloudwatch_dashboard_model(
     cloudwatch_log_group_name: str, cloudwatch_log_group_arn: str, account_id: str
@@ -23,7 +25,7 @@ def generate_cloudwatch_dashboard_model(
         dashboard_data (dict): Dashboard json model.
     """
     dashboard_path = os.path.join(
-        "infra_tooling_account", "grafana", "cloudwatch_dashboard.template.json"
+        GRAFANA_DASHBOARD_TEMPLATE_FOLDER, "cloudwatch_dashboard.template.json"
     )
     with open(dashboard_path) as json_file:
         json_data = json.load(json_file)
@@ -52,7 +54,7 @@ def generate_timestream_dashboard_model(
         dashboard_data (dict): Dashboard json model.
     """
     dashboard_path = os.path.join(
-        "infra_tooling_account", "grafana", f"{resource_type}_dashboard.template.json"
+        GRAFANA_DASHBOARD_TEMPLATE_FOLDER, f"{resource_type}_dashboard.template.json"
     )
     try:
         with open(dashboard_path) as json_file:
@@ -122,8 +124,7 @@ def generate_dashboards_config(resource_types: list) -> dict:
     dashboards_sections = []
     for resource_type in resource_types:
         dashboard_path = os.path.join(
-            "infra_tooling_account",
-            "grafana",
+            GRAFANA_DASHBOARD_TEMPLATE_FOLDER,
             f"{resource_type}_dashboard.template.json",
         )
         if os.path.exists(dashboard_path):
@@ -166,7 +167,7 @@ def generate_user_data_script(
         user_data_content (str): User data with set of commands.
     """
     user_data_file_path = os.path.join(
-        "infra_tooling_account", "grafana", "grafana_user_data.template.sh"
+        GRAFANA_DASHBOARD_TEMPLATE_FOLDER, "grafana_user_data.template.sh"
     )
     with open(user_data_file_path, "r") as user_data_file:
         user_data_content = user_data_file.read()
