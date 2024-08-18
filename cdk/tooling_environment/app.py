@@ -5,12 +5,12 @@ import logging
 
 import aws_cdk as cdk
 
-sys.path.append("../src")
-from infra_tooling_account.infra_tooling_monitoring_stack import (
+sys.path.append("../../src")
+from stacks.infra_tooling_monitoring_stack import (
     InfraToolingMonitoringStack,
 )
-from infra_tooling_account.infra_tooling_main_stack import InfraToolingMainStack
-from infra_tooling_account.infra_tooling_grafana_stack import InfraToolingGrafanaStack
+from stacks.infra_tooling_main_stack import InfraToolingMainStack
+from stacks.infra_tooling_grafana_stack import InfraToolingGrafanaStack
 
 from lib.settings.settings import Settings
 from lib.settings.cdk import settings_validator
@@ -21,7 +21,7 @@ logger.setLevel(logging.INFO)
 
 ENV_NAME = "tooling_environment"
 
-settings = Settings.from_file_path("../config/settings")
+settings = Settings.from_file_path("../../config/settings")
 settings_validator.validate(settings)
 
 current_account = os.getenv("CDK_DEFAULT_ACCOUNT")

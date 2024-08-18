@@ -275,7 +275,7 @@ class InfraToolingMonitoringStack(NestedStack):
             ),
         )
 
-        extract_metrics_lambda_path = os.path.join("../src/")
+        extract_metrics_lambda_path = os.path.join("../../src/")
         extract_metrics_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsLambda",
@@ -309,7 +309,7 @@ class InfraToolingMonitoringStack(NestedStack):
             )
         )
 
-        extract_metrics_orch_lambda_path = os.path.join("../src/")
+        extract_metrics_orch_lambda_path = os.path.join("../../src/")
         extract_metrics_orch_lambda = lambda_.Function(
             self,
             "salmonExtractMetricsOrchLambda",
@@ -438,7 +438,7 @@ class InfraToolingMonitoringStack(NestedStack):
 
         digest_lambda_role.attach_inline_policy(monitored_assume_inline_policy)
 
-        digest_lambda_path = os.path.join("../src/")
+        digest_lambda_path = os.path.join("../../src/")
         digest_lambda = lambda_.Function(
             self,
             "salmonDigestLambda",
