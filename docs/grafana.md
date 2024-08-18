@@ -44,7 +44,7 @@ After logged in, under "Dashboards", you will find the default dashboards within
  - **CloudWatch Logs Dashboard with Alert Events**: This dashboard provides insights into CloudWatch logs with alert events.
  - **Timestream Metrics Dashboard**: This dashboard is based on the Timestream table with Metrics and implemented for each Resource type (Glue Jobs, Glue Workflows, Lambda Functions, Step Functions in the version 1.0).
 
-Grafana dashboards can be exported and imported as `JSON`. You can find SALMON dashboard templates [here](../infra_tooling_account/infra_tooling_account/grafana).
+Grafana dashboards can be exported and imported as `JSON`. You can find SALMON dashboard templates [here](../cdk/tooling_environment/stacks/grafana).
 
 The Grafana Admin can also create additional users and assign necessary permissions. Moreover, these pre-provisioned dashboards are customizable to meet specific customer requirements. Adjustments can be made and saved, and the dashboards can be easily re-created through the export and import of the required JSON dashboard model. 
 

@@ -12,7 +12,7 @@ Make sure the following software is installed on your system:
 - NodeJS
 - AWS CDK Toolkit. You can refer to [AWS Guide](https://docs.aws.amazon.com/cdk/v2/guide/getting_started.html) for installation.
 - AWS CLIv2. It's also recommended to set up AWS CLI profiles for AWS accounts where you tooling and monitored environments reside.
-- Python environment with installed packages from (/infra_monitored_account/requirements.txt) and (/infra_tooling_account/requirements.txt)
+- Python environment with installed packages from (/requirements.txt) and, (optional) if you intend to run unit tests and integration tests locally (/requirements-test.txt)
 
 ### AWS Accounts Setup
 
@@ -53,7 +53,7 @@ You can also refer to sample settings files in **/config/sample_settings/**.
 Once all prerequisites are met and the configuration is ready, it's time to deploy all artifacts to AWS.
 Deployment starts with the Tooling Environment:
 
-- browse into **infra_tooling_account** folder
+- browse into **cdk/tooling_environment** folder
 - run the following command  
 ```cdk deploy --context stage-name=<your_stage_name>```
 
@@ -73,7 +73,7 @@ What happens during *`cdk deploy`* of tooling environment:
 ## CDK Deploy: Monitoring Environments
 
 For each monitored environment you plan to control, you'll need to deploy resources into the respective AWS account and region with the following steps:
-- browse into **infra_monitored_account** folder
+- browse into **cdk/monitored_environment** folder
 - make sure you are using AWS credentials which have sufficient access to target AWS account
 - execute the command  
 ```cdk deploy --context stage-name=<your_stage_name>```
