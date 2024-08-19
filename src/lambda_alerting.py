@@ -61,6 +61,7 @@ def lambda_handler(event, context):
 
     event_result = mapper.get_event_result()
     resource_name = mapper.get_resource_name()
+
     event_status = mapper.get_resource_state()
     execution_info_url = mapper.get_execution_info_url(resource_name)
 
@@ -70,7 +71,7 @@ def lambda_handler(event, context):
     if event_is_alertable:
         message = mapper.to_message()
         delivery_options = DeliveryOptionsResolver.get_delivery_options(
-            settings, resource_name
+            settings, resource_type, resource_name
         )
 
         notification_messages = map_to_notification_messages(message, delivery_options)
@@ -110,5 +111,5 @@ def lambda_handler(event, context):
         "event_is_alertable": event_is_alertable,
         "event_is_monitorable": event_is_monitorable,
         "resource_type": resource_type,
-        "execution_info_url": execution_info_url
+        "execution_info_url": execution_info_url,
     }

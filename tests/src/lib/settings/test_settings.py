@@ -303,7 +303,9 @@ def test_monitoring_groups():
 
 # tests getting raw monitoring groups config
 def test_monitoring_groups_prop():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config2_wildcards/")
+    config_path = os.path.join(
+        CURRENT_FOLDER, "test_configs/config2_wildcards/scen1_one_resource_type/"
+    )
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -374,8 +376,10 @@ def test_monitoring_group_resource_properties():
 
 
 # testing how wildcard replacements work
-def test_monitoring_group_replace_wildcards():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config2_wildcards/")
+def test_monitoring_group_replace_wildcards_scen1():
+    config_path = os.path.join(
+        CURRENT_FOLDER, "test_configs/config2_wildcards/scen1_one_resource_type/"
+    )
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -419,6 +423,74 @@ def test_monitoring_group_replace_wildcards():
         assert "no-wild-card-job" in glue_job_names, f"no-wild-card-job not found"
 
 
+# testing the following scenario: there are at least two monitoring groups with different resource types
+# and there is "*" in the resource name for one group and particular resource type
+# {
+#     "monitoring_groups": [
+#         {
+#             "group_name": "group1",
+#             "glue_jobs": [{"name": "glue-job-*", "monitored_environment_name": "monitored1 [<<env>>]"},
+#                           {"name": "no-wild-card-job", "monitored_environment_name": "monitored1 [<<env>>]"}]
+#         },
+#         {
+#             "group_name": "group2",
+#             "glue_workflows": [{ "name": "*", "monitored_environment_name": "monitored1 [<<env>>]"}]
+#         }
+#     ]
+# }
+def test_get_monitoring_groups_wildcards():
+    config_path = os.path.join(
+        CURRENT_FOLDER, "test_configs/config2_wildcards/scen2_two_resource_types/"
+    )
+    settings = Settings.from_file_path(
+        config_path, iam_role_list_monitored_res="sample"
+    )
+
+    with patch(
+        "lib.settings.Settings._get_all_resource_names",
+        return_value={
+            "glue_jobs": {
+                "monitored1 [<<env>>]": [
+                    "glue-job-1",
+                    "glue-job-2",
+                ]
+            },
+            "glue_workflows": {
+                "monitored1 [<<env>>]": [
+                    "glue-workflow-1",
+                    "glue-workflow-2",
+                ]
+            },
+            "glue_crawlers": {},
+            "glue_catalogs": {},
+            "step_functions": {},
+            "lambda_functions": {},
+            "glue_data_quality": {},
+            "emr_serverless": {},
+        },
+    ):
+
+        def assert_group_results(resulting_groups, expected_groups):
+            assert len(resulting_groups) == len(expected_groups)
+            for group in expected_groups:
+                assert group in resulting_groups, f"group {group} not found"
+
+        resource_name = "glue-job-1"
+        expected_groups = ["group1"]
+        groups = settings.get_monitoring_groups([resource_name], "glue_jobs")
+        assert_group_results(groups, expected_groups)
+
+        resource_name = "glue-workflow-1"
+        expected_groups = ["group2"]
+        groups = settings.get_monitoring_groups([resource_name], "glue_workflows")
+        assert_group_results(groups, expected_groups)
+
+        resource_name = "glue-workflow-2"
+        expected_groups = ["group2"]
+        groups = settings.get_monitoring_groups([resource_name], "glue_workflows")
+        assert_group_results(groups, expected_groups)
+
+
 # test getting relevant groups by resource_name
 def test_get_monitoring_groups():
     config_path = os.path.join(CURRENT_FOLDER, "test_configs/config4_many_groups/")
@@ -457,12 +529,12 @@ def test_get_monitoring_groups():
 
         resource_name = "glue-job-1"
         expected_groups = ["group-all-glue", "group-glue-job-1"]
-        groups = settings.get_monitoring_groups([resource_name])
+        groups = settings.get_monitoring_groups([resource_name], "glue_jobs")
         assert_group_results(groups, expected_groups)
 
         resource_name = "glue-workflow-1"
         expected_groups = ["group-all-glue", "group-glue-workflow-1"]
-        groups = settings.get_monitoring_groups([resource_name])
+        groups = settings.get_monitoring_groups([resource_name], "glue_workflows")
         assert_group_results(groups, expected_groups)
 
 
