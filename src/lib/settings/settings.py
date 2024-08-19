@@ -383,14 +383,15 @@ class Settings:
                 return group
         return {}
 
-    def get_monitoring_groups(self, resources: list[str]) -> list[str]:
+    def get_monitoring_groups(
+        self, resource_type: str, resources: list[str]
+    ) -> list[str]:
         """Get monitoring groups by resources list."""
         matched_groups = set()  # Prevent duplicates
 
         for group in self.monitoring_groups.get("monitoring_groups", []):
             resource_groups = []
-            for monitored_resource in SettingConfigs.RESOURCE_TYPES:
-                resource_groups += group.get(monitored_resource, [])
+            resource_groups += group.get(resource_type, [])
 
             for resource in resources:
                 matched_groups.update(
