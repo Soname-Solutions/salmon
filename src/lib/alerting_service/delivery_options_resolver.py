@@ -20,7 +20,7 @@ class DeliveryOptionsResolver:
         delivery_options = []
         recipients = {}
         monitoring_groups = settings.get_monitoring_groups(
-            resources=[resource_name], resource_type=resource_type
+            resource_type=resource_type, resources=[resource_name]
         )
         recipients_settings = settings.get_recipients(
             monitoring_groups, NotificationType.ALERT

@@ -180,10 +180,6 @@ class Settings:
     def processed_monitoring_groups(self):
         """monitoring_groups with wildcards replacement"""
         self._process_monitoring_groups()
-        print(
-            "monitoring_groups with wildcards replacement: ",
-            self.processed_settings[SettingFileNames.MONITORING_GROUPS],
-        )
         return self.processed_settings[SettingFileNames.MONITORING_GROUPS]
 
     @property
@@ -388,7 +384,7 @@ class Settings:
         return {}
 
     def get_monitoring_groups(
-        self, resources: list[str], resource_type: str
+        self, resource_type: str, resources: list[str]
     ) -> list[str]:
         """Get monitoring groups by resources list."""
         matched_groups = set()  # Prevent duplicates

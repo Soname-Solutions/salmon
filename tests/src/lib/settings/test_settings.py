@@ -477,17 +477,26 @@ def test_get_monitoring_groups_wildcards():
 
         resource_name = "glue-job-1"
         expected_groups = ["group1"]
-        groups = settings.get_monitoring_groups([resource_name], "glue_jobs")
+        groups = settings.get_monitoring_groups(
+            resource_type=SettingConfigResourceTypes.GLUE_JOBS,
+            resources=[resource_name],
+        )
         assert_group_results(groups, expected_groups)
 
         resource_name = "glue-workflow-1"
         expected_groups = ["group2"]
-        groups = settings.get_monitoring_groups([resource_name], "glue_workflows")
+        groups = settings.get_monitoring_groups(
+            resource_type=SettingConfigResourceTypes.GLUE_WORKFLOWS,
+            resources=[resource_name],
+        )
         assert_group_results(groups, expected_groups)
 
         resource_name = "glue-workflow-2"
         expected_groups = ["group2"]
-        groups = settings.get_monitoring_groups([resource_name], "glue_workflows")
+        groups = settings.get_monitoring_groups(
+            resource_type=SettingConfigResourceTypes.GLUE_WORKFLOWS,
+            resources=[resource_name],
+        )
         assert_group_results(groups, expected_groups)
 
 
@@ -529,12 +538,18 @@ def test_get_monitoring_groups():
 
         resource_name = "glue-job-1"
         expected_groups = ["group-all-glue", "group-glue-job-1"]
-        groups = settings.get_monitoring_groups([resource_name], "glue_jobs")
+        groups = settings.get_monitoring_groups(
+            resource_type=SettingConfigResourceTypes.GLUE_JOBS,
+            resources=[resource_name],
+        )
         assert_group_results(groups, expected_groups)
 
         resource_name = "glue-workflow-1"
         expected_groups = ["group-all-glue", "group-glue-workflow-1"]
-        groups = settings.get_monitoring_groups([resource_name], "glue_workflows")
+        groups = settings.get_monitoring_groups(
+            resource_type=SettingConfigResourceTypes.GLUE_WORKFLOWS,
+            resources=[resource_name],
+        )
         assert_group_results(groups, expected_groups)
 
 
