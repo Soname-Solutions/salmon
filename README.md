@@ -50,7 +50,7 @@ Additionally, you can configure a daily digest to be sent out based on this metr
 
 ![High-Level Diagram](docs/images/high-level-diagram.svg "High-Level Diagram")
 
-For more details please refer to [Solution arhictecture description](docs/architecture.md)
+For more details please refer to [Solution architecture description](docs/architecture.md)
 
 ## Monitored services in scope
 
