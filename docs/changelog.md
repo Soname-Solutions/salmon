@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 1.2.0
 * Added integration with AWS Glue Data Quality (alerts, metrics, digest, optional Grafana dashboard).
 * Added integration with Amazon EMR Serverless (alerts, metrics, digest, optional Grafana dashboard).
+* Implemented automated integration tests in a form github workflow. It includes testing core components and glue jobs tests implementation.
+* Added automated deployment tests (github workflow).
 
 ## 1.1.0
 

@@ -95,7 +95,7 @@ class InfraToolingGrafanaStack(NestedStack):
         if not grafana_key_pair_name:
             grafana_key_pair_name = self.create_grafana_key_pair()
 
-        self.generate_grafana_configuration_files(
+        s3_deployments = self.generate_and_deploy_grafana_configuration_files(
             settings_bucket=settings_bucket,
             cloudwatch_log_group_arn=alert_events_log_group.log_group_arn,
             cloudwatch_log_group_name=alert_events_log_group.log_group_name,
@@ -115,6 +115,9 @@ class InfraToolingGrafanaStack(NestedStack):
             grafana_instance_type=grafana_instance_type,
             settings_bucket_name=settings_bucket.bucket_name,
         )
+        # Add dependencies so that the Grafana instance is created only after all S3 deployments
+        for deployment in s3_deployments:
+            self.grafana_instance.node.add_dependency(deployment)        
 
     def create_grafana_admin_secret(self) -> secretsmanager.Secret:
         """
@@ -154,12 +157,12 @@ class InfraToolingGrafanaStack(NestedStack):
 
         return grafana_key_pair.key_name
 
-    def generate_grafana_configuration_files(
+    def generate_and_deploy_grafana_configuration_files(
         self,
         settings_bucket: s3.Bucket,
         cloudwatch_log_group_name: str,
         cloudwatch_log_group_arn: str,
-    ) -> None:
+    ) -> list[s3deploy.BucketDeployment]:
         """
         Generates the following Grafana provisioning configuration files and uploads them to S3 bucket:
             - the dashboards for each Resource type based on the Timestream corresponding table
@@ -170,6 +173,8 @@ class InfraToolingGrafanaStack(NestedStack):
             settings_bucket (s3.Bucket): Settings S3 Bucket.
             cloudwatch_log_group_name (str): Alerts Events Log Group name in CloudWatch.
             cloudwatch_log_group_arn (str): Alerts Events Log Group ARN in CloudWatch.
+
+        Returns s3 bucket deployments
         """
         metric_table_names = {
             x: AWSNaming.TimestreamMetricsTable(None, x)
@@ -179,6 +184,8 @@ class InfraToolingGrafanaStack(NestedStack):
         timestream_database_name = AWSNaming.TimestreamDB(
             self, "metrics-events-storage"
         )
+
+        s3_deployments = []
 
         # Generate Timestream Dashboard JSON model for each Resource type and upload to S3
         for i, resource_type in enumerate(resource_types):
@@ -194,13 +201,14 @@ class InfraToolingGrafanaStack(NestedStack):
                         json.dumps(dashboard_data, sort_keys=False),
                     )
                 ]
-                self.upload_grafana_config_files_to_s3(
+                s3_deployment = self.upload_grafana_config_files_to_s3(
                     deployment_name=f"GrafanaTimestreamDashboardDeployment{i}",
                     sources=sources,
                     settings_bucket=settings_bucket,
                     destination_key_prefix="settings/grafana/dashboards",
                     prune_option=False,
                 )
+                s3_deployments.append(s3_deployment)
 
         # Generate CloudWatch Dashboard JSON model and upload to S3
         cw_dashboard_data = generate_cloudwatch_dashboard_model(
@@ -214,13 +222,14 @@ class InfraToolingGrafanaStack(NestedStack):
                 json.dumps(cw_dashboard_data, sort_keys=False),
             )
         ]
-        self.upload_grafana_config_files_to_s3(
+        s3_deployment = self.upload_grafana_config_files_to_s3(
             deployment_name=f"GrafanaCloudWatchDashboardDeployment",
             sources=sources,
             settings_bucket=settings_bucket,
             destination_key_prefix="settings/grafana/dashboards",
             prune_option=False,
         )
+        s3_deployments.append(s3_deployment)
 
         # Generate YAML provisioning config files and upload to S3
         datasources_config = generate_datasources_config(
@@ -240,13 +249,16 @@ class InfraToolingGrafanaStack(NestedStack):
                 yaml.dump(dashboards_config, default_flow_style=False, sort_keys=False),
             ),
         ]
-        self.upload_grafana_config_files_to_s3(
+        s3_deployment = self.upload_grafana_config_files_to_s3(
             deployment_name="GrafanaYamlConfigsDeployment",
             sources=sources,
             settings_bucket=settings_bucket,
             destination_key_prefix="settings/grafana/conf",
             prune_option=True,
         )
+        s3_deployments.append(s3_deployment)
+
+        return s3_deployments
 
     def upload_grafana_config_files_to_s3(
         self,
@@ -255,7 +267,7 @@ class InfraToolingGrafanaStack(NestedStack):
         settings_bucket: s3.Bucket,
         destination_key_prefix: str,
         prune_option: bool,
-    ) -> None:
+    ) -> s3deploy.BucketDeployment:  # Return the deployment
         """
         Uploads Grafana configuration files to settings/grafana dedicated folder in S3 bucket.
 
@@ -265,8 +277,10 @@ class InfraToolingGrafanaStack(NestedStack):
             settings_bucket (s3.Bucket): Settings S3 Bucket.
             destination_key_prefix (str): Key prefix in the destination bucket.
             prune_option (bool): Prune option.
+
+        Returns bucket deployment object
         """
-        s3deploy.BucketDeployment(
+        deployment = s3deploy.BucketDeployment(
             self,
             deployment_name,
             sources=sources,
@@ -274,6 +288,7 @@ class InfraToolingGrafanaStack(NestedStack):
             destination_key_prefix=destination_key_prefix,
             prune=prune_option,
         )
+        return deployment
 
     def create_grafana_instance(
         self,

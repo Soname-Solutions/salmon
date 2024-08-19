@@ -2,12 +2,12 @@ from aws_cdk import CfnOutput, Stack
 from constructs import Construct
 from lib.settings.settings import Settings
 
-from infra_tooling_account.infra_tooling_common_stack import InfraToolingCommonStack
-from infra_tooling_account.infra_tooling_alerting_stack import InfraToolingAlertingStack
-from infra_tooling_account.infra_tooling_monitoring_stack import (
+from stacks.infra_tooling_common_stack import InfraToolingCommonStack
+from stacks.infra_tooling_alerting_stack import InfraToolingAlertingStack
+from stacks.infra_tooling_monitoring_stack import (
     InfraToolingMonitoringStack,
 )
-from infra_tooling_account.infra_tooling_grafana_stack import InfraToolingGrafanaStack
+from stacks.infra_tooling_grafana_stack import InfraToolingGrafanaStack
 from lib.aws.aws_naming import AWSNaming
 
 from lib.git.version_history_helper import get_current_commit_and_latest_ver

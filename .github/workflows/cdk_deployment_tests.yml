@@ -3,8 +3,8 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: 'eu-central-1'
-  CDK_TOOLING_ENV_FOLDER: infra_tooling_account
-  CDK_MONITORED_ENV_FOLDER: infra_monitored_account  
+  CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
+  CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
   STAGE_NAME: devcdk
   SETTING_FOLDER_NAME: "tests/devcdk/settings"
 run-name: CDK Deployment Tests - Commit ${{ github.sha }}

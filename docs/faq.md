@@ -7,7 +7,7 @@ A: Typically this means your monitored environment artifacts were created earlie
 This could have happened due to either an incorrect order of deployment or due to, for example, upgrading a version of tooling environment scripts.  
 How to fix:  
 you will need to recreate IAM Role in your monitored environment which is done by the following steps:
-1. browse to *infra_monitored_account* folder.
+1. browse to *cdk/monitored_environment* folder.
 2. make sure you are using AWS credentials pointing to correct monitored environment (for example you can set AWS_DEFAULT_PROFILE & AWS_DEFAULT_REGION os variables).
 3. run ```cdk destroy --context stage-name={stage_name}*```
 4. run ```cdk deploy --context stage-name={stage_name}*```

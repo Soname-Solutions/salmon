@@ -123,7 +123,7 @@ class InfraToolingCommonStack(NestedStack):
         s3deploy.BucketDeployment(
             self,
             "salmonSettingsDeployment",
-            sources=[s3deploy.Source.asset("../config/settings")],
+            sources=[s3deploy.Source.asset("../../config/settings")],
             destination_bucket=settings_bucket,
             destination_key_prefix="settings",
             exclude=[".gitignore"],
@@ -226,7 +226,7 @@ class InfraToolingCommonStack(NestedStack):
             ),
         )
 
-        notification_lambda_path = os.path.join("../src/")
+        notification_lambda_path = os.path.join("../../src/")
         notification_lambda = lambda_.Function(
             self,
             "salmonNotificationLambda",

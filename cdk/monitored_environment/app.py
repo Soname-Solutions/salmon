@@ -5,8 +5,8 @@ import logging
 
 import aws_cdk as cdk
 
-sys.path.append("../src")
-from infra_monitored_account.infra_monitored_stack import InfraMonitoredStack
+sys.path.append("../../src")
+from stacks.infra_monitored_stack import InfraMonitoredStack
 
 from lib.settings import Settings
 from lib.settings.cdk import settings_validator
@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 ENV_NAME = "monitored_environment"
 
-settings = Settings.from_file_path("../config/settings")
+settings = Settings.from_file_path("../../config/settings")
 settings_validator.validate(settings)
 
 current_account = os.getenv("CDK_DEFAULT_ACCOUNT")

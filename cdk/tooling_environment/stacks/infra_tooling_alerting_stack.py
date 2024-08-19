@@ -230,7 +230,7 @@ class InfraToolingAlertingStack(NestedStack):
             ),
         )
 
-        alerting_lambda_path = "../src/"
+        alerting_lambda_path = "../../src/"
         alerting_lambda = lambda_.Function(
             self,
             "salmonAlertingLambda",

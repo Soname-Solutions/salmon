@@ -1,5 +1,9 @@
 # Soname ALerts and MONitoring (SALMON)
 
+[![Unit tests](https://github.com/Soname-Solutions/salmon/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/Soname-Solutions/salmon/actions/workflows/unit_tests.yml)
+[![Integration tests](https://github.com/Soname-Solutions/salmon/actions/workflows/integration_tests_full.yml/badge.svg)](https://github.com/Soname-Solutions/salmon/actions/workflows/integration_tests_full.yml)
+[![Deployment Tests](https://github.com/Soname-Solutions/salmon/actions/workflows/cdk_deployment_tests.yml/badge.svg)](https://github.com/Soname-Solutions/salmon/actions/workflows/cdk_deployment_tests.yml)
+
 - [Soname ALerts and MONitoring (SALMON)](#soname-alerts-and-monitoring-salmon)
   - [What is this project for?](#what-is-this-project-for)
   - [SALMON Key Features](#salmon-key-features)
@@ -50,7 +54,7 @@ Additionally, you can configure a daily digest to be sent out based on this metr
 
 ![High-Level Diagram](docs/images/high-level-diagram.svg "High-Level Diagram")
 
-For more details please refer to [Solution arhictecture description](docs/architecture.md)
+For more details please refer to [Solution architecture description](docs/architecture.md)
 
 ## Monitored services in scope
 
