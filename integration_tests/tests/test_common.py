@@ -1,10 +1,10 @@
 from inttest_lib.message_checker import MessagesChecker
 
-def test_digest_received(sqs_messages):
+def test_digest_received(test_results_messages):
     """
         Checking if correct notifications were sent
     """    
-    msqchk = MessagesChecker(sqs_messages)
+    msqchk = MessagesChecker(test_results_messages)
 
     cnt_digest_messages = len(msqchk.subject_contains_all(["Digest Report"]))
     
