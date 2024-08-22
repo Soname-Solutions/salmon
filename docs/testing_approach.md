@@ -92,11 +92,24 @@ Running test results analysis (which is done in a form of pytest tests):
 ```   
 3. When you are done - run `Integration Tests - Delete Infra` workflow to tear down resources.
 
-
 ## Deployment tests
-
-### How Deployment tests are designed
 
 ### Configuration and prerequisistes
 
+1. `IAM service user for github actions` is required. CDK Deployment workflow uses the same IAM user as Integrations test, so if you
+created it per instruction given in `prerequisites` section of Integration tests, no further actions needed.
+
+2. `SALMON configuration files` for deployment tests environment are stored in `tests/devcdk` folder.  
+You can customize these files (pushing changes to repository is needed).
+
 ### Running deployment tests
+
+Tests execution is done by triggering GitHub Workflow `CDK Deployment tests`.
+Pipeline comprises the following steps:
+1. Create `tooling` environment resource (here and below the default stage-name is `devcdk`).
+2. Create `monitoring` environment
+3. Delete `monitoring` environment
+4. Delete `tooling` environment
+
+This sequence ensure the main CDK flow is executed without errors.
+
