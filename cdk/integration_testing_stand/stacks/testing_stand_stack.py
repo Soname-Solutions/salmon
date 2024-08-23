@@ -106,40 +106,40 @@ class TestingStandStack(Stack):
             handler="index.handler",
             code=_lambda.Code.from_inline(
                 """
-    import json
-    import boto3
-    import logging
-    import time
+import json
+import boto3
+import logging
+import time
 
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    dynamodb = boto3.client('dynamodb')
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+dynamodb = boto3.client('dynamodb')
 
-    def handler(event, context):
-        logger.info(f"event = {event}")
-        table_name = '"""
+def handler(event, context):
+    logger.info(f"event = {event}")
+    table_name = '"""
                 + messages_table.table_name
                 + """'
-        for record in event['Records']:
-            sns_data = record['Sns']
-            message_id = sns_data.get('MessageId','N/A')
-            message_body = sns_data.get('Message','Message body is not found')
-            subject = sns_data.get('Subject','No subject')
-            timestamp = int(time.time())*1000
+    for record in event['Records']:
+        sns_data = record['Sns']
+        message_id = sns_data.get('MessageId','N/A')
+        message_body = sns_data.get('Message','Message body is not found')
+        subject = sns_data.get('Subject','No subject')
+        timestamp = int(time.time())*1000
 
-            message = {
-                'MessageId': {'S': message_id},
-                'Subject': {'S': subject},
-                'MessageBody': {'S': message_body},
-                'Timestamp': {'N': str(timestamp)}
-            }
+        message = {
+            'MessageId': {'S': message_id},
+            'Subject': {'S': subject},
+            'MessageBody': {'S': message_body},
+            'Timestamp': {'N': str(timestamp)}
+        }
 
-            dynamodb.put_item(
-                TableName=table_name,
-                Item=message
-            )
-        return {"statusCode": 200, "body": json.dumps('Success')}
-                    """
+        dynamodb.put_item(
+            TableName=table_name,
+            Item=message
+        )
+    return {"statusCode": 200, "body": json.dumps('Success')}
+                """
             ),
         )
 
