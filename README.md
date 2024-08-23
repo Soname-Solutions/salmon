@@ -94,7 +94,7 @@ SALMON project has the following types of automated tests developed:
 - Integration Tests
 - Deployment Tests
 
-If you plan to contribute to the project, please refer to [tests overview article](/docs/testing_approach.md) and run aforementioned tests before.
+If you plan to contribute to the project, please refer to [tests overview article](/docs/testing_approach.md) and run the aforementioned tests to verify your Pull Request.
 
 
 ## Other useful links

@@ -8,7 +8,7 @@ The SALMON project employs the following types of tests:
 
 Tests are automatically executed when merging into the `main` branch and on various other occasions. Running these tests on pull request merges ensures that the application functions correctly and that no breaking changes are introduced.
 
-If you plan to contribute to the SALMON project, you mayb choose to run the tests mentioned above before creating a pull request. This article provides an overview of how to configure, prepare, and execute these tests, whether through GitHub Actions workflows or locally.
+If you plan to contribute to the SALMON project, you may choose to run the tests mentioned above before creating a pull request. This article provides an overview of how to configure, prepare, and execute these tests, whether through GitHub Actions workflows or locally.
 
 ## Unit Tests
 
