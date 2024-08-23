@@ -9,7 +9,6 @@ sys.path.append(lib_path)
 from inttest_lib.common import (
     get_stack_obj_for_naming,
     get_testing_stand_resource_names,
-    get_resource_name_meanings,
 )
 from inttest_lib.runners.glue_job_runner import GlueJobRunner
 from inttest_lib.runners.glue_dq_runner import GlueDQRunner
