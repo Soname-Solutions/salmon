@@ -168,9 +168,9 @@ def handler(event, context):
         )
 
     def create_glue_dq_resources(self):
-        """Creates Glue DQ related resources with Glue Data Catalog and Glue job context type)"""
+        """Creates Glue DQ related resources with Glue Data Catalog and Glue job context type"""
 
-        # create GLUE DQ IAM role
+        # create Glue DQ IAM role
         glue_dq_role_name = AWSNaming.IAMRole(self, DQ_MEANING)
         glue_dq_role = iam_helper.create_glue_iam_role(
             scope=self,
@@ -193,7 +193,7 @@ def handler(event, context):
             "DQBucketDeployment",
             sources=[
                 s3deploy.Source.asset(
-                    os.path.join(SRC_FOLDER_NAME, f"dq-data/"),
+                    os.path.join(SRC_FOLDER_NAME, "glue_data_quality", "dq-data/"),
                 )
             ],
             destination_bucket=dq_bucket,
@@ -201,6 +201,7 @@ def handler(event, context):
         )
 
         # 1. create DQ Rulesets with GLUE_JOB context
+        # in this case the rulesets will be run during the Glue job execution
         dq_job_rulesets_meanings = get_resource_name_meanings(
             resource_type=SettingConfigResourceTypes.GLUE_DATA_QUALITY,
             context=GlueManager.DQ_Job_Context_Type,
@@ -214,7 +215,11 @@ def handler(event, context):
                 job_name=glue_job_name,
                 role=glue_dq_role,
                 script=glue.Code.from_asset(
-                    os.path.join(SRC_FOLDER_NAME, f"{dq_job_ruleset_meaning}.py")
+                    os.path.join(
+                        SRC_FOLDER_NAME,
+                        "glue_data_quality",
+                        f"{dq_job_ruleset_meaning}.py",
+                    )
                 ),
                 default_arguments={
                     "--S3_BUCKET_NAME": bucket_name,
