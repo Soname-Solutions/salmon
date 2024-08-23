@@ -28,7 +28,7 @@ from inttest_lib.runners.glue_dq_runner import DQ_MEANING
 
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
-from lib.core.constants import SettingConfigResourceTypes
+from lib.core.constants import SettingConfigResourceTypes as types
 
 SRC_FOLDER_NAME = "../../integration_tests/src_testing_stand/"
 
@@ -55,9 +55,7 @@ class TestingStandStack(Stack):
         )
 
         # Creating sample glue jobs (list - in from ../config.json)
-        glue_job_meanings = get_resource_name_meanings(
-            SettingConfigResourceTypes.GLUE_JOBS
-        )
+        glue_job_meanings = get_resource_name_meanings(types.GLUE_JOBS)
         glue_jobs = []
         for glue_job_meaning in glue_job_meanings:
             job_id = f"GlueJob{glue_job_meaning.capitalize()}"
@@ -193,7 +191,7 @@ def handler(event, context):
             "DQBucketDeployment",
             sources=[
                 s3deploy.Source.asset(
-                    os.path.join(SRC_FOLDER_NAME, "glue_data_quality", "dq-data/"),
+                    os.path.join(SRC_FOLDER_NAME, types.GLUE_DATA_QUALITY, "dq-data/"),
                 )
             ],
             destination_bucket=dq_bucket,
@@ -203,7 +201,7 @@ def handler(event, context):
         # 1. create DQ Rulesets with GLUE_JOB context
         # in this case the rulesets will be run during the Glue job execution
         dq_job_rulesets_meanings = get_resource_name_meanings(
-            resource_type=SettingConfigResourceTypes.GLUE_DATA_QUALITY,
+            resource_type=types.GLUE_DATA_QUALITY,
             context=GlueManager.DQ_Job_Context_Type,
         )
 
@@ -217,7 +215,7 @@ def handler(event, context):
                 script=glue.Code.from_asset(
                     os.path.join(
                         SRC_FOLDER_NAME,
-                        "glue_data_quality",
+                        types.GLUE_DATA_QUALITY,
                         f"{dq_job_ruleset_meaning}.py",
                     )
                 ),
@@ -265,7 +263,7 @@ def handler(event, context):
 
         dq_ruleset_names_list = list()
         dq_rulesets_meanings = get_resource_name_meanings(
-            resource_type=SettingConfigResourceTypes.GLUE_DATA_QUALITY,
+            resource_type=types.GLUE_DATA_QUALITY,
             context=GlueManager.DQ_Catalog_Context_Type,
         )
         for i, ruleset_meaning in enumerate(dq_rulesets_meanings):

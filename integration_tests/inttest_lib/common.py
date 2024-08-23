@@ -26,11 +26,12 @@ def get_resource_name_meanings(resource_type: str, context: str = None) -> list[
     with open(config_filename, "r") as config_file:
         config_data = json.load(config_file)
         resources = config_data.get("scoped_resource_meanings", {})
+        resource_name_meanings = resources.get(resource_type, [])
 
         if context:
-            return resources.get(resource_type, []).get(context, [])
+            return resource_name_meanings.get(context, [])
 
-        return resources.get(resource_type, [])
+        return resource_name_meanings
 
 
 def get_stack_obj_for_naming(stage_name):
@@ -55,6 +56,7 @@ def get_testing_stand_resource_names(stage_name, stack_obj_for_naming=None):
                     resource_type=glue_dq, context=GlueManager.DQ_Catalog_Context_Type
                 )
             ],
+            # here Glue DQ job will be triggered and Rulesets will be run within this job
             GlueManager.DQ_Job_Context_Type: [
                 AWSNaming.GlueJob(stack_obj_for_naming, meaning)
                 for meaning in get_resource_name_meanings(
