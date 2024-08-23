@@ -104,9 +104,9 @@ class GitHubActionsResourcesStack(Stack):
                 iam.PolicyStatement(
                     actions=["glue:GetTable"],
                     resources=[
-                        f"arn:aws:glue:*:*:catalog",
+                        "arn:aws:glue:*:*:catalog",
                         "arn:aws:glue:*:*:database/*salmon*",
-                        "arn:aws:glue:*:*:table/database name/*salmon*",
+                        "arn:aws:glue:*:*:table/*/*salmon*",
                     ],
                 ),
             ],
