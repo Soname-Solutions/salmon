@@ -2,32 +2,53 @@ import boto3
 import time
 
 from inttest_lib.runners.base_resource_runner import BaseResourceRunner
+from lib.aws.aws_naming import AWSNaming
 
-from lib.aws.glue_manager import GlueManager
+DQ_MEANING = "dq"
 
 
 class GlueDQRunner(BaseResourceRunner):
-    def __init__(self, resource_names, region_name):
+    def __init__(self, resource_names, region_name, started_after):
         super().__init__(resource_names, region_name)
         self.client = boto3.client("glue", region_name=region_name)
-        self.job_runs = {}
+        self.started_after = started_after
 
     def initiate(self):
-        for job_name in self.resource_names:
-            response = self.client.start_job_run(JobName=job_name)
-            self.job_runs[job_name] = response["JobRunId"]
-            print(f"Started Glue job {job_name} with run ID {response['JobRunId']}")
+        for ruleset__name in self.resource_names:
+            response = self.client.start_data_quality_ruleset_evaluation_run(
+                DataSource={
+                    "GlueTable": {
+                        "DatabaseName": AWSNaming.GlueDB(self, DQ_MEANING),
+                        "TableName": AWSNaming.GlueTable(self, DQ_MEANING),
+                    }
+                },
+                Role=AWSNaming.IAMRole(self, DQ_MEANING),
+                RulesetNames=[ruleset__name],
+            )
+            print(
+                f"Started Glue DQ Ruleset {ruleset__name} with run ID {response['RunId']}"
+            )
 
     def await_completion(self, poll_interval=10):
         while True:
             all_completed = True
-            for job_name, run_id in self.job_runs.items():
-                response = self.client.get_job_run(JobName=job_name, RunId=run_id)
-                status = response["JobRun"]["JobRunState"]
-                print(f"Job {job_name} with run ID {run_id} is in state {status}")
-                if not GlueManager.is_job_final_state(status):
-                    #                if status not in ['SUCCEEDED', 'FAILED', 'STOPPED']:
-                    all_completed = False
+
+            response_1 = self.client.list_data_quality_results(
+                Filter={"StartedAfter": self.started_after}
+            )
+            result_ids = [x["ResultId"] for x in response_1["Results"]]
+            response_2 = self.client.batch_get_data_quality_result(ResultIds=result_ids)
+            ruleset_names = [
+                result["RulesetName"] for result in response_2.get("Results", [])
+            ]
+
+            # check if the all rulesetes monitored are finished
+            incomplete_rulesets = [
+                name for name in self.resource_names if name not in ruleset_names
+            ]
+
+            if incomplete_rulesets:
+                all_completed = False
 
             if all_completed:
                 break
@@ -36,4 +57,4 @@ class GlueDQRunner(BaseResourceRunner):
                 poll_interval
             )  # Wait for the specified poll interval before checking again
 
-        print("All Glue jobs have completed.")
+        print("All Glue Rulesets have completed.")

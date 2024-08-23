@@ -24,6 +24,7 @@ from inttest_lib.common import (
     get_target_sns_topic_name,
     get_resource_name_meanings,
 )
+from inttest_lib.runners.glue_dq_runner import DQ_MEANING
 
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
@@ -75,7 +76,7 @@ class TestingStandStack(Stack):
             )
             glue_jobs.append(glue_job_tmp)
 
-        dq_ruleset_names_list = self.create_glue_dq_resources()
+        self.create_glue_dq_resources()
 
         topic_name = get_target_sns_topic_name(self.stage_name)
         target_topic = sns.Topic(
@@ -167,10 +168,10 @@ def handler(event, context):
         )
 
     def create_glue_dq_resources(self):
-        data_quality_meaning = "dq"
+        """Creates Glue DQ related resources with Glue Data Catalog and Glue job context type)"""
 
         # create GLUE DQ IAM role
-        glue_dq_role_name = AWSNaming.IAMRole(self, data_quality_meaning)
+        glue_dq_role_name = AWSNaming.IAMRole(self, DQ_MEANING)
         glue_dq_role = iam_helper.create_glue_iam_role(
             scope=self,
             role_id="GlueDQIAMRole",
@@ -178,7 +179,7 @@ def handler(event, context):
         )
 
         # create S3 Bucket with test data for Glue table
-        bucket_name = AWSNaming.S3Bucket(self, data_quality_meaning)
+        bucket_name = AWSNaming.S3Bucket(self, DQ_MEANING)
         dq_bucket = s3.Bucket(
             self,
             "DQBucket",
@@ -199,7 +200,7 @@ def handler(event, context):
             exclude=[".gitignore"],
         )
 
-        # 1. create DQ Rulesest with GLUE_JOB context
+        # 1. create DQ Rulesets with GLUE_JOB context
         dq_job_rulesets_meanings = get_resource_name_meanings(
             resource_type=SettingConfigResourceTypes.GLUE_DATA_QUALITY,
             context=GlueManager.DQ_Job_Context_Type,
@@ -225,12 +226,12 @@ def handler(event, context):
 
         # 2. create DQ Rulesest with GLUE_DATA_CATALOG context
         # create Glue DQ database and table as a source for DQ rules
-        glue_database_name = AWSNaming.GlueDB(self, data_quality_meaning)
+        glue_database_name = AWSNaming.GlueDB(self, DQ_MEANING)
         glue_database = glue.Database(
             self, "DQDatabase", database_name=glue_database_name
         )
 
-        glue_table_name = AWSNaming.GlueTable(self, data_quality_meaning)
+        glue_table_name = AWSNaming.GlueTable(self, DQ_MEANING)
         glue_table = glue.Table(
             self,
             "DQTable",
@@ -278,5 +279,3 @@ def handler(event, context):
             # add dependency so to create Rulesets after Glue DB and table
             glue_dq_ruleset.node.add_dependency(glue_database)
             glue_dq_ruleset.node.add_dependency(glue_table)
-
-        return dq_ruleset_names_list

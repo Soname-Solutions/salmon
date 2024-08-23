@@ -19,6 +19,8 @@ from lib.core.constants import SettingConfigResourceTypes
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.glue_manager import GlueManager
 
+from inttest_lib.runners.glue_dq_runner import DQ_MEANING
+
 
 def main():
     # for local debugging purposes
@@ -42,16 +44,13 @@ def main():
 
     TESTING_STAND_RESOURCES = get_testing_stand_resource_names(stage_name)
 
-    # # 2. run testing stand resources
-    # # 2.1 Glue Jobs
-    glue_job_names = TESTING_STAND_RESOURCES[SettingConfigResourceTypes.GLUE_JOBS]
-    glue_dq_names = TESTING_STAND_RESOURCES[
-        SettingConfigResourceTypes.GLUE_DATA_QUALITY
-    ]
-    runner = GlueJobRunner(resource_names=glue_job_names, region_name=region)
+    # # # 2. run testing stand resources
+    # # # 2.1 Glue Jobs
+    # glue_job_names = TESTING_STAND_RESOURCES[SettingConfigResourceTypes.GLUE_JOBS]
+    # runner = GlueJobRunner(resource_names=glue_job_names, region_name=region)
 
-    runner.initiate()
-    runner.await_completion()
+    # runner.initiate()
+    # runner.await_completion()
 
     # 2.2 Glue Data Quality
     # run Rulesets with GLUE_JOB context by triggering Glue DQ job
@@ -67,7 +66,11 @@ def main():
     glue_dq_ruleset_names = TESTING_STAND_RESOURCES[
         SettingConfigResourceTypes.GLUE_DATA_QUALITY
     ][GlueManager.DQ_Catalog_Context_Type]
-    runner = GlueDQRunner(resource_names=glue_dq_ruleset_names, region_name=region)
+    runner = GlueDQRunner(
+        resource_names=glue_dq_ruleset_names,
+        region_name=region,
+        started_after=current_epoch_seconds,
+    )
 
     runner.initiate()
     runner.await_completion()
@@ -75,24 +78,24 @@ def main():
     # 2.3 ... TBD other resource types
 
     # 3. execute extract-metrics-orch lambda (in async mode, so if failure - destination would work)
-    LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(
-        stack_obj_for_naming, "extract-metrics-orch"
-    )
-    lambda_orch_runner = LambdaFunctionRunner([LAMBDA_METRICS_ORCH_NAME], region)
+    # LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(
+    #     stack_obj_for_naming, "extract-metrics-orch"
+    # )
+    # lambda_orch_runner = LambdaFunctionRunner([LAMBDA_METRICS_ORCH_NAME], region)
 
-    lambda_orch_runner.initiate()
-    lambda_orch_runner.await_completion()
+    # lambda_orch_runner.initiate()
+    # lambda_orch_runner.await_completion()
 
-    # 4. execute digest lambda
-    time.sleep(
-        30
-    )  # give some time for extract-metrics lambdas to complete and write metrics into timestream
+    # # 4. execute digest lambda
+    # time.sleep(
+    #     30
+    # )  # give some time for extract-metrics lambdas to complete and write metrics into timestream
 
-    LAMBDA_DIGEST = AWSNaming.LambdaFunction(stack_obj_for_naming, "digest")
-    lambda_digest_runner = LambdaFunctionRunner([LAMBDA_DIGEST], region)
+    # LAMBDA_DIGEST = AWSNaming.LambdaFunction(stack_obj_for_naming, "digest")
+    # lambda_digest_runner = LambdaFunctionRunner([LAMBDA_DIGEST], region)
 
-    lambda_digest_runner.initiate()
-    lambda_digest_runner.await_completion()
+    # lambda_digest_runner.initiate()
+    # lambda_digest_runner.await_completion()
 
 
 if __name__ == "__main__":
