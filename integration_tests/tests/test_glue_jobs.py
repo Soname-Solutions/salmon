@@ -31,11 +31,11 @@ def glue_execution_timestream_metrics_summary(region, start_epochtimemsec, stack
     return result[0] # returning the first record (it's only 1 record in resultset by query design)
 
 #######################################################################################################################
-def test_sqs_messages(sqs_messages):
+def test_sqs_messages(test_results_messages):
     """
         Checking if correct notifications were sent
     """    
-    msqchk = MessagesChecker(sqs_messages)
+    msqchk = MessagesChecker(test_results_messages)
 
     cnt_glue_error_messages = len(msqchk.subject_contains_all(["glue_jobs :", "FAILED"]))
     cnt_glue_all_messages = len(msqchk.subject_contains_all(["glue_jobs :"]))
@@ -55,11 +55,11 @@ def test_timestream_records(glue_execution_timestream_metrics_summary):
     assert succeeded == '1', "There should be exactly 1 successful execution."
     assert failed == '1', "There should be exactly 1 failed execution."
 
-def test_digest_message(sqs_messages, testing_stand_resource_names):
+def test_digest_message(test_results_messages, testing_stand_resource_names):
     """
         Checking if digest contains expected information
     """    
-    msqchk = MessagesChecker(sqs_messages)
+    msqchk = MessagesChecker(test_results_messages)
 
     digest_messages: list[IntegrationTestMessage] = msqchk.subject_contains_all(["Digest Report"])
 

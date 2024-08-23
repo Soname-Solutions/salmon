@@ -10,7 +10,6 @@ sys.path.append(parent_folder)
 
 # adding main lib
 project_root = str(Path(__file__).resolve().parent.parent.parent)
-#os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
@@ -50,7 +49,7 @@ def testing_stand_resource_names(stage_name):
     return get_testing_stand_resource_names(stage_name=stage_name)
 
 @pytest.fixture(scope='session')
-def sqs_messages(start_epochtimemsec, stack_obj_for_naming, stage_name, region) -> list[IntegrationTestMessage]:
+def test_results_messages(start_epochtimemsec, stack_obj_for_naming) -> list[IntegrationTestMessage]:
     table_name = AWSNaming.DynamoDBTable(stack_obj_for_naming, TARGET_MEANING)
     reader = DynamoDBReader(table_name)
     messages: list[IntegrationTestMessage] = reader.get_all_messages()

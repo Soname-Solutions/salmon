@@ -11,6 +11,7 @@
   - [Monitored services in scope](#monitored-services-in-scope)
   - [How to start](#how-to-start)
   - [Contributing](#contributing)
+  - [Tests coverage](#tests-coverage)
   - [Other useful links](#other-useful-links)
 
 
@@ -85,6 +86,16 @@ Looking to contribute to SALMON? We’d love your help in making this project ev
 1. **Report Bugs**: Found something that’s not working right? Open an issue and let us know. 
 2. **Share Your Ideas**: Have thoughts on new functionalities or AWS Services that SALMON should cover?
 3. **Contribute Code**: If you’ve got something great to add, create a pull request. Your contributions can make a big difference.
+
+## Tests coverage
+
+SALMON project has the following types of automated tests developed:
+- Unit Tests
+- Integration Tests
+- Deployment Tests
+
+If you plan to contribute to the project, please refer to [tests overview article](/docs/testing_approach.md) and run the aforementioned tests to verify your Pull Request.
+
 
 ## Other useful links
 
