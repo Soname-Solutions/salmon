@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 
 from inttest_lib.runners.base_resource_runner import BaseResourceRunner
+from inttest_lib.time_helper import epoch_seconds_to_utc_datetime
 from lib.aws.aws_naming import AWSNaming
 
 DQ_MEANING = "dq"
@@ -14,9 +15,7 @@ class GlueDQRunner(BaseResourceRunner):
     ):
         super().__init__(resource_names, region_name)
         self.client = boto3.client("glue", region_name=region_name)
-        self.started_after = datetime.fromtimestamp(started_after_epoch_msec/1000).strftime(
-            "%Y-%m-%d %H:%M:%S.%f"
-        )
+        self.started_after = epoch_seconds_to_utc_datetime(started_after_epoch_msec/1000-1)
         self.stack_obj_for_naming = stack_obj_for_naming
 
     def initiate(self):
@@ -46,19 +45,21 @@ class GlueDQRunner(BaseResourceRunner):
             response_1 = self.client.list_data_quality_results(
                 Filter={"StartedAfter": self.started_after}
             )
+
             result_ids = [x["ResultId"] for x in response_1["Results"]]
-            response_2 = self.client.batch_get_data_quality_result(ResultIds=result_ids)
-            ruleset_names = [
-                result["RulesetName"] for result in response_2.get("Results", [])
-            ]
+            ruleset_names = []
+            if result_ids:
+                response_2 = self.client.batch_get_data_quality_result(ResultIds=result_ids)
+                ruleset_names = [
+                    result["RulesetName"] for result in response_2.get("Results", [])
+                ]
 
             # check if the results of all monitored rulesetes are returned
             incomplete_rulesets = [
                 name for name in self.resource_names if name not in ruleset_names
             ]
 
-            if incomplete_rulesets:
-                all_completed = False
+            all_completed = not(incomplete_rulesets)
 
             if all_completed:
                 break
@@ -66,5 +67,6 @@ class GlueDQRunner(BaseResourceRunner):
             time.sleep(
                 poll_interval
             )  # Wait for the specified poll interval before checking again
+            print(f"Awaiting for DQ rulesets completion: {incomplete_rulesets}")
 
         print("All Glue DQ Rulesets have completed.")

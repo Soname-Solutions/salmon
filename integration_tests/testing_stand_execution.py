@@ -43,13 +43,13 @@ def main():
 
     TESTING_STAND_RESOURCES = get_testing_stand_resource_names(stage_name)
 
-    # # # 2. run testing stand resources
-    # # # 2.1 Glue Jobs
-    # glue_job_names = TESTING_STAND_RESOURCES[types.GLUE_JOBS]
-    # runner = GlueJobRunner(resource_names=glue_job_names, region_name=region)
+    # 2. run testing stand resources
+    # 2.1 Glue Jobs
+    glue_job_names = TESTING_STAND_RESOURCES[types.GLUE_JOBS]
+    runner = GlueJobRunner(resource_names=glue_job_names, region_name=region)
 
-    # runner.initiate()
-    # runner.await_completion()
+    runner.initiate()
+    runner.await_completion()
 
     # 2.2 Glue Data Quality
     # run Rulesets with GLUE_JOB context by triggering Glue DQ job

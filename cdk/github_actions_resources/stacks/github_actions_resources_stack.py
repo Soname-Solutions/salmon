@@ -94,7 +94,7 @@ class GitHubActionsResourcesStack(Stack):
             policy_name="GlueDQRunnerPolicy",
             statements=[
                 iam.PolicyStatement(
-                    actions=["glue:StartDataQualityRulesetEvaluationRun"],
+                    actions=["glue:StartDataQualityRulesetEvaluationRun", "glue:GetDataQualityResult"],
                     resources=["arn:aws:glue:*:*:dataQualityRuleset/*salmon*"],
                 ),
                 iam.PolicyStatement(
