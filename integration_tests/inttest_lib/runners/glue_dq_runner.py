@@ -10,11 +10,11 @@ DQ_MEANING = "dq"
 
 class GlueDQRunner(BaseResourceRunner):
     def __init__(
-        self, resource_names, region_name, started_after, stack_obj_for_naming
+        self, resource_names, region_name, started_after_epoch_msec, stack_obj_for_naming
     ):
         super().__init__(resource_names, region_name)
         self.client = boto3.client("glue", region_name=region_name)
-        self.started_after = datetime.fromtimestamp(started_after).strftime(
+        self.started_after = datetime.fromtimestamp(started_after_epoch_msec/1000).strftime(
             "%Y-%m-%d %H:%M:%S.%f"
         )
         self.stack_obj_for_naming = stack_obj_for_naming
