@@ -98,6 +98,10 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["arn:aws:glue:*:*:dataQualityRuleset/*salmon*"],
                 ),
                 iam.PolicyStatement(
+                    actions=["glue:ListDataQualityResults"],
+                    resources=["arn:aws:glue:*:*:dataQualityRuleset/*"], # '*' is required, can't limit to *salmon*
+                ),                
+                iam.PolicyStatement(
                     actions=["iam:PassRole"],
                     resources=["arn:aws:iam::*:role/*salmon*"],
                 ),
