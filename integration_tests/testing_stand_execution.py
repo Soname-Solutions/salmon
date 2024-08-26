@@ -2,22 +2,31 @@ import argparse
 import os
 import sys
 
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-lib_path = os.path.join(project_root, 'src')
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
-from inttest_lib.common import get_stack_obj_for_naming, get_testing_stand_resource_names
+from inttest_lib.common import (
+    get_stack_obj_for_naming,
+    get_testing_stand_resource_names,
+)
 from inttest_lib.runners.glue_job_runner import GlueJobRunner
+from inttest_lib.runners.glue_dq_runner import GlueDQRunner
 from inttest_lib.runners.lambda_function_runner import LambdaFunctionRunner
 
-from lib.core.constants import SettingConfigResourceTypes
+from lib.core.constants import SettingConfigResourceTypes as types
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.glue_manager import GlueManager
+
+from inttest_lib.runners.glue_dq_runner import DQ_MEANING
+
 
 def main():
     # for local debugging purposes
     import time
-    current_epoch_seconds = int(time.time())*1000
-    print(f"Current time in epoch seconds: {current_epoch_seconds}")
+
+    current_epoch_msec = int(time.time()) * 1000
+    print(f"Current time in epoch milliseconds: {current_epoch_msec}")
 
     # 1. prepare
     parser = argparse.ArgumentParser(description="Process some settings.")
@@ -36,30 +45,58 @@ def main():
 
     # 2. run testing stand resources
     # 2.1 Glue Jobs
-    glue_job_names = TESTING_STAND_RESOURCES[SettingConfigResourceTypes.GLUE_JOBS]
-    runner = GlueJobRunner(resource_names = glue_job_names, region_name = region)
+    glue_job_names = TESTING_STAND_RESOURCES[types.GLUE_JOBS]
+    runner = GlueJobRunner(resource_names=glue_job_names, region_name=region)
 
     runner.initiate()
     runner.await_completion()
 
-    # 2.2 ... TBD other resource types
+    # 2.2 Glue Data Quality
+    # run Rulesets with GLUE_JOB context by triggering Glue DQ job
+    glue_dq_job_names = TESTING_STAND_RESOURCES[types.GLUE_DATA_QUALITY][
+        GlueManager.DQ_Job_Context_Type
+    ]
+    runner = GlueJobRunner(resource_names=glue_dq_job_names, region_name=region)
+
+    runner.initiate()
+    runner.await_completion()
+
+    # run Rulesets with GLUE_DATA_CATALOG context
+    glue_dq_ruleset_names = TESTING_STAND_RESOURCES[types.GLUE_DATA_QUALITY][
+        GlueManager.DQ_Catalog_Context_Type
+    ]
+    runner = GlueDQRunner(
+        resource_names=glue_dq_ruleset_names,
+        region_name=region,
+        started_after_epoch_msec=current_epoch_msec,
+        stack_obj_for_naming=stack_obj_for_naming,
+    )
+
+    runner.initiate()
+    runner.await_completion()
+
+    # 2.3 ... TBD other resource types
 
     # 3. execute extract-metrics-orch lambda (in async mode, so if failure - destination would work)
-    LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(stack_obj_for_naming, "extract-metrics-orch")
+    LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(
+        stack_obj_for_naming, "extract-metrics-orch"
+    )
     lambda_orch_runner = LambdaFunctionRunner([LAMBDA_METRICS_ORCH_NAME], region)
 
     lambda_orch_runner.initiate()
     lambda_orch_runner.await_completion()
 
     # 4. execute digest lambda
-    time.sleep(30) # give some time for extract-metrics lambdas to complete and write metrics into timestream
+    time.sleep(
+        30
+    )  # give some time for extract-metrics lambdas to complete and write metrics into timestream
 
     LAMBDA_DIGEST = AWSNaming.LambdaFunction(stack_obj_for_naming, "digest")
     lambda_digest_runner = LambdaFunctionRunner([LAMBDA_DIGEST], region)
 
     lambda_digest_runner.initiate()
     lambda_digest_runner.await_completion()
-   
+
 
 if __name__ == "__main__":
     main()

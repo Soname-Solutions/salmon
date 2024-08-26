@@ -23,7 +23,7 @@ class AWSNaming:
     def CfnOutput(cls, stack_obj: object, meaning: str) -> str:
         prefix = "output"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
-    
+
     @classmethod
     def DynamoDBTable(cls, stack_obj: object, meaning: str) -> str:
         prefix = "dyntbl"
@@ -38,10 +38,25 @@ class AWSNaming:
     def EventBusRule(cls, stack_obj: object, meaning: str) -> str:
         prefix = "eventbusrule"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
-    
+
     @classmethod
     def GlueJob(cls, stack_obj: object, meaning: str) -> str:
         prefix = "glue"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
+    @classmethod
+    def GlueDB(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "gluedb"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
+    @classmethod
+    def GlueTable(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "gluetable"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
+    @classmethod
+    def GlueRuleset(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "glueruleset"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
@@ -77,7 +92,7 @@ class AWSNaming:
     @classmethod
     def SQSQueue(cls, stack_obj: object, meaning: str) -> str:
         prefix = "queue"
-        ending = ".fifo" # FIFO queue names must end in '.fifo'
+        ending = ".fifo"  # FIFO queue names must end in '.fifo'
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning) + ending
 
     @classmethod

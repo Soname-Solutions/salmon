@@ -42,8 +42,9 @@ class GitHubActionsResourcesStack(Stack):
         # Attach policies to the IAM user
         self.attach_assume_role_policy(iam_user)
         self.attach_glue_job_runner_policy(iam_user)
+        self.attach_glue_dq_runner_policy(iam_user)
         self.attach_lambda_runner_policy(iam_user)
-        self.attach_dynamodb_reader_policy(iam_user)        
+        self.attach_dynamodb_reader_policy(iam_user)
         self.attach_timestream_query_runner_policy(iam_user)
 
     def attach_assume_role_policy(self, iam_user):
@@ -84,6 +85,37 @@ class GitHubActionsResourcesStack(Stack):
             ],
         )
         iam_user.attach_inline_policy(glue_policy)
+
+    def attach_glue_dq_runner_policy(self, iam_user):
+        # Policy for Integration Tests (Glue Data Quality)
+        glue_dq_policy = iam.Policy(
+            self,
+            "GlueDQRunnerPolicy",
+            policy_name="GlueDQRunnerPolicy",
+            statements=[
+                iam.PolicyStatement(
+                    actions=["glue:StartDataQualityRulesetEvaluationRun", "glue:GetDataQualityResult"],
+                    resources=["arn:aws:glue:*:*:dataQualityRuleset/*salmon*"],
+                ),
+                iam.PolicyStatement(
+                    actions=["glue:ListDataQualityResults"],
+                    resources=["arn:aws:glue:*:*:dataQualityRuleset/*"], # '*' is required, can't limit to *salmon*
+                ),                
+                iam.PolicyStatement(
+                    actions=["iam:PassRole"],
+                    resources=["arn:aws:iam::*:role/*salmon*"],
+                ),
+                iam.PolicyStatement(
+                    actions=["glue:GetTable"],
+                    resources=[
+                        "arn:aws:glue:*:*:catalog",
+                        "arn:aws:glue:*:*:database/*salmon*",
+                        "arn:aws:glue:*:*:table/*/*salmon*",
+                    ],
+                ),
+            ],
+        )
+        iam_user.attach_inline_policy(glue_dq_policy)
 
     def attach_lambda_runner_policy(self, iam_user):
         # Policy for Integration Tests (Lambda Functions)
@@ -139,15 +171,13 @@ class GitHubActionsResourcesStack(Stack):
                     actions=[
                         "kms:Decrypt",
                     ],
-                    resources=[
-                        "*"
-                    ],
-                    conditions={ # Restriction is implemented on KMS key alias level
+                    resources=["*"],
+                    conditions={  # Restriction is implemented on KMS key alias level
                         "ForAnyValue:StringLike": {
                             "kms:ResourceAliases": "alias/*salmon*"
                         }
-                    }
-                ),                
+                    },
+                ),
             ],
         )
         iam_user.attach_inline_policy(timestream_query_runner_policy)
