@@ -211,8 +211,8 @@ def handler(event, context):
         )
 
         for dq_job_ruleset_meaning in dq_job_rulesets_meanings:
-            glue_job_name = AWSNaming.GlueJob(self, dq_job_ruleset_meaning)
-            glue_job_name = glue_job_name.replace("ts-","aux-") # turning Glue Job into "Auxiliary", so Job Run itself won't count in testing stats
+            glue_job_meaning = dq_job_ruleset_meaning.replace("ts-","aux-") # turning Glue Job into "Auxiliary", so Job Run itself won't count in testing stats
+            glue_job_name = AWSNaming.GlueJob(self, glue_job_meaning)            
             glue_dq_job = glue_helper.create_pyspark_glue_job(
                 scope=self,
                 job_id=f"GlueDQJob{dq_job_ruleset_meaning.capitalize()}",
@@ -222,7 +222,7 @@ def handler(event, context):
                     os.path.join(
                         SRC_FOLDER_NAME,
                         types.GLUE_DATA_QUALITY,
-                        f"{dq_job_ruleset_meaning}.py",
+                        f"{glue_job_meaning}.py",
                     )
                 ),
                 default_arguments={
