@@ -15,7 +15,7 @@
             "group_name": "it_ts_gluedq",
             "glue_data_quality": [
                 {
-                    "name": "*",
+                    "name": "glueruleset-salmon-ts-*",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0

@@ -212,6 +212,7 @@ def handler(event, context):
 
         for dq_job_ruleset_meaning in dq_job_rulesets_meanings:
             glue_job_name = AWSNaming.GlueJob(self, dq_job_ruleset_meaning)
+            glue_job_name = glue_job_name.replace("ts-","aux-") # turning Glue Job into "Auxiliary", so Job Run itself won't count in testing stats
             glue_dq_job = glue_helper.create_pyspark_glue_job(
                 scope=self,
                 job_id=f"GlueDQJob{dq_job_ruleset_meaning.capitalize()}",

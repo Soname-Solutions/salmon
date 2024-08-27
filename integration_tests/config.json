@@ -2,7 +2,7 @@
     "scoped_resource_meanings": {
         "glue_jobs": ["ts-pyjob-success", "ts-pyjob-fail"],
         "glue_data_quality": {
-            "GLUE_JOB": ["aux-dq-job-success", "aux-dq-job-fail"],
+            "GLUE_JOB": ["ts-dq-job-success", "ts-dq-job-fail"],
             "GLUE_DATA_CATALOG": ["ts-dq-catalog-success", "ts-dq-catalog-fail"]
         }
     }
