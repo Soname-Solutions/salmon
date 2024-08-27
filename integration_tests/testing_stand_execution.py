@@ -26,7 +26,7 @@ def main():
     import time
 
     current_epoch_msec = int(time.time()) * 1000
-    print(f"Current time in epoch milliseconds: {current_epoch_msec}")
+    print(f"Current time in epoch milliseconds: {current_epoch_msec}. Pytest param: --start-epochtimemsec={current_epoch_msec}")
 
     # 1. prepare
     parser = argparse.ArgumentParser(description="Process some settings.")

@@ -46,36 +46,13 @@ class TestingStandStack(Stack):
         self.project_name = kwargs.pop("project_name", None)
         self.stage_name = kwargs.pop("stage_name", None)
         super().__init__(scope, id, **kwargs)
+    
+        self.create_glue_resources() # GlueJobs testing stand
+        self.create_glue_dq_resources() # GlueDQ testing stand + auxiliary resources (Glue Jobs triggering DQ)
 
-        # IAM Role
-        glue_iam_role = iam_helper.create_glue_iam_role(
-            scope=self,
-            role_id="GlueIAMRole",
-            role_name=AWSNaming.IAMRole(self, "glue-role"),
-        )
+        self.create_test_results_resources() # Commonly-used resources (catch execution results, analyze)
 
-        # Creating sample glue jobs (list - in from ../config.json)
-        glue_job_meanings = get_resource_name_meanings(types.GLUE_JOBS)
-        glue_jobs = []
-        for glue_job_meaning in glue_job_meanings:
-            job_id = f"GlueJob{glue_job_meaning.capitalize()}"
-            job_name = AWSNaming.GlueJob(self, glue_job_meaning)
-            job_script = glue.Code.from_asset(
-                os.path.join(SRC_FOLDER_NAME, "glue_jobs", f"{glue_job_meaning}.py")
-            )
-            # calling helper to create a job
-            glue_job_tmp = glue_helper.create_pyspark_glue_job(
-                scope=self,
-                job_id=job_id,
-                job_name=job_name,
-                role=glue_iam_role,
-                script=job_script,
-                default_arguments={},
-            )
-            glue_jobs.append(glue_job_tmp)
-
-        self.create_glue_dq_resources()
-
+    def create_test_results_resources(self):
         topic_name = get_target_sns_topic_name(self.stage_name)
         target_topic = sns.Topic(
             self, "TargetSNSTopic", display_name=topic_name, topic_name=topic_name
@@ -165,6 +142,34 @@ def handler(event, context):
             subs.LambdaSubscription(lambda_function)
         )
 
+    def create_glue_resources(self):
+        # IAM Role
+        glue_iam_role = iam_helper.create_glue_iam_role(
+            scope=self,
+            role_id="GlueIAMRole",
+            role_name=AWSNaming.IAMRole(self, "glue-role"),
+        )
+
+        # Creating sample glue jobs (list - in from ../config.json)
+        glue_job_meanings = get_resource_name_meanings(types.GLUE_JOBS)
+        glue_jobs = []
+        for glue_job_meaning in glue_job_meanings:
+            job_id = f"GlueJob{glue_job_meaning.capitalize()}"
+            job_name = AWSNaming.GlueJob(self, glue_job_meaning)
+            job_script = glue.Code.from_asset(
+                os.path.join(SRC_FOLDER_NAME, "glue_jobs", f"{glue_job_meaning}.py")
+            )
+            # calling helper to create a job
+            glue_job_tmp = glue_helper.create_pyspark_glue_job(
+                scope=self,
+                job_id=job_id,
+                job_name=job_name,
+                role=glue_iam_role,
+                script=job_script,
+                default_arguments={},
+            )
+            glue_jobs.append(glue_job_tmp)
+
     def create_glue_dq_resources(self):
         """Creates Glue DQ related resources with Glue Data Catalog and Glue job context type"""
 
@@ -177,7 +182,7 @@ def handler(event, context):
         )
 
         # create S3 Bucket with test data for Glue table
-        bucket_name = AWSNaming.S3Bucket(self, DQ_MEANING)
+        bucket_name = AWSNaming.S3Bucket(self, f"{DQ_MEANING}-{Stack.of(self).account}")
         dq_bucket = s3.Bucket(
             self,
             "DQBucket",
