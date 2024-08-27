@@ -8,8 +8,29 @@
                     "monitoring_group": "it_ts_gluejobs",
                     "alerts": true,
                     "digest": true
+                },
+                {
+                    "monitoring_group": "it_ts_gluedq",
+                    "alerts": true,
+                    "digest": true
                 }
             ]
-        }         
+        },
+        {
+            "recipient": "anatolii.maslov@soname.de",
+            "delivery_method": "aws_ses",            
+            "subscriptions": [
+                {
+                    "monitoring_group": "it_ts_gluejobs",
+                    "alerts": true,
+                    "digest": true
+                },
+                {
+                    "monitoring_group": "it_ts_gluedq",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        } 
     ]
 }
