@@ -22,8 +22,8 @@ from lib.aws.glue_manager import GlueManager
 from inttest_lib.common import (
     TARGET_MEANING,
     get_target_sns_topic_name,
-    get_resource_name_meanings,
 )
+from inttest_lib.inttests_config_reader import IntTests_Config_reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
 
 from lib.aws.aws_naming import AWSNaming
@@ -46,9 +46,11 @@ class TestingStandStack(Stack):
         self.project_name = kwargs.pop("project_name", None)
         self.stage_name = kwargs.pop("stage_name", None)
         super().__init__(scope, id, **kwargs)
+
+        cfg_reader = IntTests_Config_reader()
     
-        self.create_glue_resources() # GlueJobs testing stand
-        self.create_glue_dq_resources() # GlueDQ testing stand + auxiliary resources (Glue Jobs triggering DQ)
+        self.create_glue_resources(cfg_reader) # GlueJobs testing stand
+        self.create_glue_dq_resources(cfg_reader) # GlueDQ testing stand + auxiliary resources (Glue Jobs triggering DQ)
 
         self.create_test_results_resources() # Commonly-used resources (catch execution results, analyze)
 
@@ -142,7 +144,7 @@ def handler(event, context):
             subs.LambdaSubscription(lambda_function)
         )
 
-    def create_glue_resources(self):
+    def create_glue_resources(self, cfg_reader):
         # IAM Role
         glue_iam_role = iam_helper.create_glue_iam_role(
             scope=self,
@@ -151,7 +153,7 @@ def handler(event, context):
         )
 
         # Creating sample glue jobs (list - in from ../config.json)
-        glue_job_meanings = get_resource_name_meanings(types.GLUE_JOBS)
+        glue_job_meanings = cfg_reader.get_meanings_by_resource_type(types.GLUE_JOBS)
         glue_jobs = []
         for glue_job_meaning in glue_job_meanings:
             job_id = f"GlueJob{glue_job_meaning.capitalize()}"
@@ -170,9 +172,10 @@ def handler(event, context):
             )
             glue_jobs.append(glue_job_tmp)
 
-    def create_glue_dq_resources(self):
+    def create_glue_dq_resources(self, cfg_reader):
         """Creates Glue DQ related resources with Glue Data Catalog and Glue job context type"""
 
+        # 1. prerequisite resources
         # create Glue DQ IAM role
         glue_dq_role_name = AWSNaming.IAMRole(self, DQ_MEANING)
         glue_dq_role = iam_helper.create_glue_iam_role(
@@ -203,43 +206,12 @@ def handler(event, context):
             exclude=[".gitignore"],
         )
 
-        # 1. create DQ Rulesets with GLUE_JOB context
-        # in this case the rulesets will be run during the Glue job execution
-        dq_job_rulesets_meanings = get_resource_name_meanings(
-            resource_type=types.GLUE_DATA_QUALITY,
-            context=GlueManager.DQ_Job_Context_Type,
-        )
 
-        for dq_job_ruleset_meaning in dq_job_rulesets_meanings:
-            glue_job_meaning = dq_job_ruleset_meaning.replace("ts-","aux-") # turning Glue Job into "Auxiliary", so Job Run itself won't count in testing stats
-            glue_job_name = AWSNaming.GlueJob(self, glue_job_meaning)            
-            glue_dq_job = glue_helper.create_pyspark_glue_job(
-                scope=self,
-                job_id=f"GlueDQJob{dq_job_ruleset_meaning.capitalize()}",
-                job_name=glue_job_name,
-                role=glue_dq_role,
-                script=glue.Code.from_asset(
-                    os.path.join(
-                        SRC_FOLDER_NAME,
-                        types.GLUE_DATA_QUALITY,
-                        f"{glue_job_meaning}.py",
-                    )
-                ),
-                default_arguments={
-                    "--S3_BUCKET_NAME": bucket_name,
-                    "--RULESET_NAME": AWSNaming.GlueRuleset(
-                        self, dq_job_ruleset_meaning
-                    ),
-                },
-            )
-
-        # 2. create DQ Rulesest with GLUE_DATA_CATALOG context
-        # create Glue DQ database and table as a source for DQ rules
+        # 2. create Glue DQ database and table as a source for DQ rules
         glue_database_name = AWSNaming.GlueDB(self, DQ_MEANING)
         glue_database = glue.Database(
             self, "DQDatabase", database_name=glue_database_name
         )
-
         glue_table_name = AWSNaming.GlueTable(self, DQ_MEANING)
         glue_table = glue.Table(
             self,
@@ -261,18 +233,45 @@ def handler(event, context):
             data_format=glue.DataFormat.JSON,
         )
 
+        # 3. create DQ Rulesets with GLUE_JOB context
+        # in this case the rulesets will be run during the Glue job execution
+        ruleset_meanings, job_meanings = cfg_reader.get_glue_dq_meanings(GlueManager.DQ_Job_Context_Type)
+        meanings = list(zip(ruleset_meanings, job_meanings))
+        for item in meanings:
+            glue_job_meaning = item[1]
+            glue_ruleset_meaning = item[0]
+                        
+            glue_job_name = AWSNaming.GlueJob(self, glue_job_meaning)
+            glue_dq_job = glue_helper.create_pyspark_glue_job(
+                scope=self,
+                job_id=f"GlueDQJob{glue_ruleset_meaning.capitalize()}",
+                job_name=glue_job_name,
+                role=glue_dq_role,
+                script=glue.Code.from_asset(
+                    os.path.join(
+                        SRC_FOLDER_NAME,
+                        types.GLUE_DATA_QUALITY,
+                        f"{glue_job_meaning}.py",
+                    )
+                ),
+                default_arguments={
+                    "--S3_BUCKET_NAME": bucket_name,
+                    "--RULESET_NAME": AWSNaming.GlueRuleset(
+                        self, glue_ruleset_meaning
+                    ),
+                },
+            )
+
+        # 4. create DQ Rulesest with GLUE_DATA_CATALOG context
         # create DQ Rulesets (fail + success)
         dq_rulesets = [
             '[IsComplete "userId"]',  # should pass
             '[IsComplete "employeeCode", RowCount > 50]',  # should fail
         ]
 
+        ruleset_meanings, job_meanings = cfg_reader.get_glue_dq_meanings(GlueManager.DQ_Catalog_Context_Type)
         dq_ruleset_names_list = list()
-        dq_rulesets_meanings = get_resource_name_meanings(
-            resource_type=types.GLUE_DATA_QUALITY,
-            context=GlueManager.DQ_Catalog_Context_Type,
-        )
-        for i, ruleset_meaning in enumerate(dq_rulesets_meanings):
+        for i, ruleset_meaning in enumerate(ruleset_meanings):
             dq_ruleset_name = AWSNaming.GlueRuleset(self, ruleset_meaning)
             glue_dq_ruleset = glue.DataQualityRuleset(
                 self,

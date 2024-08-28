@@ -55,7 +55,7 @@ def test_timestream_records(glue_execution_timestream_metrics_summary):
     assert succeeded == '1', "There should be exactly 1 successful execution."
     assert failed == '1', "There should be exactly 1 failed execution."
 
-def test_digest_message(test_results_messages, testing_stand_resource_names):
+def test_digest_message(test_results_messages, config_reader, stack_obj_for_naming):
     """
         Checking if digest contains expected information
     """    
@@ -66,7 +66,7 @@ def test_digest_message(test_results_messages, testing_stand_resource_names):
     message_body = digest_messages[0].MessageBody
     
     # checking if there are mentions of testing stand glue jobs in the digest
-    glue_job_names = testing_stand_resource_names.get(SettingConfigResourceTypes.GLUE_JOBS,[])
+    glue_job_names = config_reader.get_names_by_resource_type(SettingConfigResourceTypes.GLUE_JOBS, stack_obj_for_naming)
 
     assert len(glue_job_names) > 0, "There should be glue jobs in testing scope"
 
