@@ -9,6 +9,10 @@
             {"meaning" : "ts-dq-catalog-fail"},
             {"meaning" : "ts-dq-job-success", "containing_glue_job_meaning" : "aux-dq-job-success"},
             {"meaning" : "ts-dq-job-fail", "containing_glue_job_meaning" : "aux-dq-job-fail"}
+        ],
+        "lambda_functions" : [
+            {"meaning" : "ts-lambda-success"},
+            {"meaning" : "ts-lambda-fail"}
         ]
     }
 }
