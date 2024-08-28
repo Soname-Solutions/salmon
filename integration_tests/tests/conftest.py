@@ -14,7 +14,8 @@ lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
 from inttest_lib.dynamo_db_reader import IntegrationTestMessage, DynamoDBReader
-from inttest_lib.common import get_stack_obj_for_naming, get_testing_stand_resource_names, TARGET_MEANING
+from inttest_lib.common import get_stack_obj_for_naming, TARGET_MEANING
+from inttest_lib.inttests_config_reader import IntTests_Config_reader
 from lib.aws.aws_naming import AWSNaming
 
 def pytest_addoption(parser):
@@ -45,8 +46,8 @@ def stack_obj_for_naming(stage_name):
     return get_stack_obj_for_naming(stage_name=stage_name)
 
 @pytest.fixture(scope='session')
-def testing_stand_resource_names(stage_name):
-    return get_testing_stand_resource_names(stage_name=stage_name)
+def config_reader():
+    return IntTests_Config_reader()
 
 @pytest.fixture(scope='session')
 def test_results_messages(start_epochtimemsec, stack_obj_for_naming) -> list[IntegrationTestMessage]:

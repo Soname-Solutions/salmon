@@ -1,9 +1,14 @@
 {
-    "scoped_resource_meanings": {
-        "glue_jobs": ["pyjob-success", "pyjob-fail"],
-        "glue_data_quality": {
-            "GLUE_JOB": ["dq-job-success", "dq-job-fail"],
-            "GLUE_DATA_CATALOG": ["dq-catalog-success", "dq-catalog-fail"]
-        }
+    "scoped_resources": {
+        "glue_jobs": [
+            {"meaning" : "ts-pyjob-success"},
+            {"meaning" : "ts-pyjob-fail"} 
+        ],
+        "glue_data_quality": [
+            {"meaning" : "ts-dq-catalog-success"},
+            {"meaning" : "ts-dq-catalog-fail"},
+            {"meaning" : "ts-dq-job-success", "containing_glue_job_meaning" : "aux-dq-job-success"},
+            {"meaning" : "ts-dq-job-fail", "containing_glue_job_meaning" : "aux-dq-job-fail"}
+        ]
     }
 }
