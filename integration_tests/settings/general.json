@@ -3,26 +3,21 @@
         "name": "Tooling Account [<<stage_name>>]",
         "account_id": "<<main_account_id>>",
         "region": "<<region>>",
-        "digest_report_period_hours" : 24, 
-        "digest_cron_expression" : "cron(0 8 * * ? 2199)", 
+        "digest_report_period_hours": 24,
+        "digest_cron_expression": "cron(0 8 * * ? 2199)",
         "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)"
     },
-    "monitored_environments": [    
+    "monitored_environments": [
         {
             "name": "Account1 [<<stage_name>>]",
             "account_id": "<<main_account_id>>",
             "region": "<<region>>"
-        }    
+        }
     ],
     "delivery_methods": [
         {
             "name": "sns",
             "delivery_method_type": "AWS_SNS"
-        },
-        {
-            "name": "aws_ses",
-            "delivery_method_type": "AWS_SES",
-            "sender_email" : "anatolii.maslov@soname.de"
-        }        
+        }
     ]
 }

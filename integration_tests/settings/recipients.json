@@ -1,8 +1,8 @@
 {
-    "recipients": [   
+    "recipients": [
         {
             "recipient": "arn:aws:sns:<<region>>:<<main_account_id>>:<<target_topic_name>>",
-            "delivery_method": "sns",            
+            "delivery_method": "sns",
             "subscriptions": [
                 {
                     "monitoring_group": "it_ts_gluejobs",
@@ -15,22 +15,6 @@
                     "digest": true
                 }
             ]
-        },
-        {
-            "recipient": "anatolii.maslov@soname.de",
-            "delivery_method": "aws_ses",            
-            "subscriptions": [
-                {
-                    "monitoring_group": "it_ts_gluejobs",
-                    "alerts": true,
-                    "digest": true
-                },
-                {
-                    "monitoring_group": "it_ts_gluedq",
-                    "alerts": true,
-                    "digest": true
-                }
-            ]
-        } 
+        }
     ]
 }
