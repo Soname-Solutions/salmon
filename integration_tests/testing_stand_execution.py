@@ -23,8 +23,8 @@ from inttest_lib.runners.glue_dq_runner import DQ_MEANING
 
 def is_active(resource_type):
     settings = {
-        types.GLUE_JOBS: False,
-        types.GLUE_DATA_QUALITY: False,
+        types.GLUE_JOBS: True,
+        types.GLUE_DATA_QUALITY: True,
         types.LAMBDA_FUNCTIONS: True,
     }
     return settings.get(resource_type, False)
