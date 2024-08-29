@@ -24,7 +24,7 @@
         },
         {
             "group_name": "it_ts_lambda_functions",
-            "glue_data_quality": [
+            "lambda_functions": [
                 {
                     "name": "lambda-salmon-ts-*",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
