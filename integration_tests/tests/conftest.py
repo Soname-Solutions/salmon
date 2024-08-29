@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 import pytest
 import os
 import sys

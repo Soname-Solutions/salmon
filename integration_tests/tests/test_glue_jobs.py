@@ -1,4 +1,3 @@
-from types import SimpleNamespace
 import pytest
 import boto3
 from inttest_lib.dynamo_db_reader import IntegrationTestMessage

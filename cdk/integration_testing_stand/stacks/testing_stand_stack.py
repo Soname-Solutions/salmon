@@ -1,4 +1,5 @@
 from aws_cdk import (
+    Duration,
     RemovalPolicy,
     Stack,
     Tags,
@@ -10,6 +11,8 @@ from aws_cdk import (
     aws_lambda as _lambda,
     aws_s3 as s3,
     aws_s3_deployment as s3deploy,
+    aws_iam as iam,
+    aws_lambda as lambda_,
 )
 from aws_cdk.aws_s3_assets import Asset
 from constructs import Construct
@@ -51,6 +54,7 @@ class TestingStandStack(Stack):
     
         self.create_glue_resources(cfg_reader) # GlueJobs testing stand
         self.create_glue_dq_resources(cfg_reader) # GlueDQ testing stand + auxiliary resources (Glue Jobs triggering DQ)
+        self.create_lambda_functions_resources(cfg_reader) # Lambda Functions testing stand
 
         self.create_test_results_resources() # Commonly-used resources (catch execution results, analyze)
 
@@ -287,3 +291,32 @@ def handler(event, context):
             # add dependency so to create Rulesets after Glue DB and table
             glue_dq_ruleset.node.add_dependency(glue_database)
             glue_dq_ruleset.node.add_dependency(glue_table)
+
+    def create_lambda_functions_resources(self, cfg_reader):
+        # IAM Role
+        lambda_role = iam.Role(
+            self,
+            "lambdaRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            role_name=AWSNaming.IAMRole(self, "ts-lambda-role"),
+        )
+
+        lambda_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "service-role/AWSLambdaBasicExecutionRole"
+            )
+        )
+
+        lambda_meanings = cfg_reader.get_meanings_by_resource_type(types.LAMBDA_FUNCTIONS)
+        for lambda_meaning in lambda_meanings:
+            lmb = lambda_.Function(
+                self,
+                f"Lambda{lambda_meaning.capitalize()}",
+                function_name=AWSNaming.LambdaFunction(self, lambda_meaning),
+                code=lambda_.Code.from_asset(os.path.join(SRC_FOLDER_NAME, "lambda_functions")),
+                handler=f"{lambda_meaning}.lambda_handler",
+                timeout=Duration.seconds(30),
+                runtime=lambda_.Runtime.PYTHON_3_11,
+                role=lambda_role,
+            )
+           
