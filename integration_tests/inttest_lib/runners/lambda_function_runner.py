@@ -72,7 +72,6 @@ class LambdaFunctionRunner(BaseResourceRunner):
     def _is_lambda_completed(self, lambda_function_name, request_id, start_time):
         log_group_name = f"/aws/lambda/{lambda_function_name}"
         query_string = f"fields @timestamp, @message | filter @message like /END RequestId: {request_id}/"
-        print(query_string)
 
         try:
             results = self.logs_manager.query_logs(
