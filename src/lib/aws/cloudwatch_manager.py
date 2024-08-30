@@ -90,8 +90,6 @@ class CloudWatchManager:
         start_time: datetime,
         end_time: datetime,
     ):
-        print("start query") # debug
-        print(log_group_name, query_string, start_time, end_time)
         start_query_response = self.cloudwatch_client.start_query(
             logGroupName=log_group_name,
             startTime=int(start_time.timestamp()),
@@ -114,5 +112,4 @@ class CloudWatchManager:
             time.sleep(1)
 
         results = response["results"]
-        print(f"request results: {results}")
         return results
