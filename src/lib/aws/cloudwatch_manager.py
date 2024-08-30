@@ -1,3 +1,4 @@
+import json
 import boto3
 import time
 from datetime import datetime
@@ -104,7 +105,7 @@ class CloudWatchManager:
                 raise CloudWatchManagerException(error_msg)
 
             response = self.cloudwatch_client.get_query_results(queryId=query_id)
-
+            
             if response["status"] != "Running":
                 break
 
