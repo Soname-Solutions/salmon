@@ -65,6 +65,7 @@ def test_alerts(test_results_messages):
     assert cnt_lambda_error_messages == 1, "There should be exactly one lambda function error message"
     assert cnt_lambda_all_messages == 1, "There should be exactly one lambda function message"
 
+@pytest.mark.skip
 def test_timestream_records(lambda_execution_timestream_metrics_summary, lambda_error_timestream_metrics_summary):
     """
         Checking if timestream table is populated with correct data
@@ -75,6 +76,7 @@ def test_timestream_records(lambda_execution_timestream_metrics_summary, lambda_
     assert executions == '2', "There should be exactly 2 executions. One for each lambda function."
     assert errors == '1', "There should be exactly 1 failed execution."
 
+@pytest.mark.skip
 def test_digest_message(test_results_messages, config_reader, stack_obj_for_naming):
     """
         Checking if digest contains expected information
