@@ -11,6 +11,7 @@ from inttest_lib.common import get_stack_obj_for_naming
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_job_runner import GlueJobRunner
 from inttest_lib.runners.glue_dq_runner import GlueDQRunner
+from inttest_lib.runners.glue_workflow_runner import GlueWorkflowRunner
 from inttest_lib.runners.lambda_function_runner import LambdaFunctionRunner
 from lib.core.constants import SettingConfigResourceTypes as types, SettingConfigs
 from lib.aws.aws_naming import AWSNaming
@@ -88,6 +89,17 @@ class TestingStandExecutor:
             )
             glue_dq_runner.initiate()
             self.runners.append(glue_dq_runner)
+
+        # Glue Jobs
+        if types.GLUE_WORKFLOWS in self.resource_types_to_run:
+            glue_workflow_names = self.cfg_reader.get_names_by_resource_type(
+                types.GLUE_WORKFLOWS, self.stack_obj_for_naming
+            )
+            glue_workflow_runner = GlueWorkflowRunner(
+                resource_names=glue_workflow_names, region_name=self.region
+            )
+            glue_workflow_runner.initiate()
+            self.runners.append(glue_workflow_runner)
 
         # Lambda Functions
         if types.LAMBDA_FUNCTIONS in self.resource_types_to_run:
