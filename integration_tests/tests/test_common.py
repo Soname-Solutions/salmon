@@ -10,12 +10,13 @@ def test_digest_received(test_results_messages):
     
     assert cnt_digest_messages == 1, "There should be exactly one digest message"
 
-def test_internal_errors_from_async_lambdas(test_results_messages):
+def test_internal_errors_from_salmon_lambdas(test_results_messages):
     """
-        Most of the SALMON lambdas (such as extract-metrics, extract-metrics-orch) run in async
-        mode, so failure notifications are sent via Lambda destination.
-        Message markers - there is no subject.
-        For SALMON lambda(s) running in sync mode (e.g. notifications) - see the next test
+        internal SALMON lambdas (such as extract-metrics, extract-metrics-orch) are designed to
+        send message to internal errors SNS topic upon failure.
+        Messages from internal error topic are (as others) collected into target inttest topic.
+
+        For internal error Message markers - there is no subject.
     """    
     msqchk = MessagesChecker(test_results_messages)
 
