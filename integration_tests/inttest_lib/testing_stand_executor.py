@@ -8,7 +8,7 @@ lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
 from inttest_lib.common import get_stack_obj_for_naming
-from inttest_lib.inttests_config_reader import IntTests_Config_reader
+from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_job_runner import GlueJobRunner
 from inttest_lib.runners.glue_dq_runner import GlueDQRunner
 from inttest_lib.runners.lambda_function_runner import LambdaFunctionRunner
@@ -21,7 +21,7 @@ class TestingStandExecutor:
     def __init__(self, stage_name, region, resource_types=None):
         self.stage_name = stage_name
         self.region = region
-        self.cfg_reader = IntTests_Config_reader()
+        self.cfg_reader = IntTests_Config_Reader()
         self.stack_obj_for_naming = get_stack_obj_for_naming(stage_name)
         self.runners = []
 
