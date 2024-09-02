@@ -23,6 +23,17 @@
             ]
         },
         {
+            "group_name": "it_ts_glue_workflows",
+            "glue_workflows": [
+                {
+                    "name": "gluewf-salmon-ts-*",
+                    "monitored_environment_name": "Account1 [<<stage_name>>]",
+                    "sla_seconds": 0,
+                    "minimum_number_of_runs": 0
+                }
+            ]
+        },        
+        {
             "group_name": "it_ts_lambda_functions",
             "lambda_functions": [
                 {
@@ -32,6 +43,6 @@
                     "minimum_number_of_runs": 0
                 }
             ]
-        }       
+        }
     ]
 }

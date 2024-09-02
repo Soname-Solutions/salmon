@@ -357,6 +357,7 @@ def handler(event, context):
             glue_job_meanings = cfg_reader.get_glue_workflow_child_glue_jobs_meanings(
                 gluewf_meaning
             )
+            prev_job_name = None # for sequencing jobs in workflow (via trigger dependencies)
             for glue_job_meaning in glue_job_meanings:
                 job_id = f"GlueJob{glue_job_meaning.capitalize()}"
                 job_name = AWSNaming.GlueJob(self, glue_job_meaning)
@@ -371,3 +372,37 @@ def handler(event, context):
                     role=glue_iam_role,
                     script=job_script,
                 )
+
+                if not(prev_job_name): # the first job in workflow
+                    trigger_job_one = glue_old.CfnTrigger(
+                        self,
+                        f"TriggerJob{job_name.capitalize()}",
+                        name=AWSNaming.GlueTrigger(self,glue_job_meaning),
+                        actions=[
+                            glue_old.CfnTrigger.ActionProperty(job_name=job_name),
+                        ],
+                        workflow_name=workflow.name,
+                        type="ON_DEMAND",
+                    )
+                    prev_job_name = job_name
+                else: # second and other jobs in workflow
+                    trigger_job_two = glue_old.CfnTrigger(
+                        self,
+                        f"TriggerJob{job_name.capitalize()}",
+                        name=AWSNaming.GlueTrigger(self,glue_job_meaning),
+                        actions=[
+                            glue_old.CfnTrigger.ActionProperty(job_name=job_name),
+                        ],
+                        workflow_name=workflow.name,
+                        type="CONDITIONAL",
+                        predicate=glue_old.CfnTrigger.PredicateProperty(
+                            conditions=[
+                                glue_old.CfnTrigger.ConditionProperty(
+                                    logical_operator="EQUALS",
+                                    job_name=prev_job_name,
+                                    state="SUCCEEDED",
+                                )
+                            ]
+                        ),
+                        start_on_creation=True,
+                    )

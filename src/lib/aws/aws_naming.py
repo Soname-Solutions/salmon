@@ -49,6 +49,11 @@ class AWSNaming:
         prefix = "gluewf"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
+    @classmethod
+    def GlueTrigger(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "gluetr"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
 
     @classmethod
     def GlueDB(cls, stack_obj: object, meaning: str) -> str:
