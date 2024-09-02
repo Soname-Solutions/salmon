@@ -107,7 +107,9 @@ def handler(event, context):
         sns_data = record['Sns']
         message_id = sns_data.get('MessageId','N/A')
         message_body = sns_data.get('Message','Message body is not found')
-        subject = sns_data.get('Subject','No subject')
+        subject = sns_data.get('Subject', None)
+        if subject is None: # also for the case when SNS gives None as Subject explicitly
+            subject = 'No subject'
         timestamp = int(time.time())*1000
 
         message = {
