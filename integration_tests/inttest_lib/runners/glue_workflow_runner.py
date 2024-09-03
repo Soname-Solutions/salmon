@@ -22,8 +22,8 @@ class GlueWorkflowRunner(BaseResourceRunner):
             all_completed = True
             for workflow_name, run_id in self.workflow_runs.items():
                 response = self.client.get_workflow_run(Name=workflow_name, RunId=run_id)
-                status = response['JobRun']['JobRunState']
-                print(f"Job {workflow_name} with run ID {run_id} is in state {status}")
+                status = response['Run']['Status']
+                print(f"Workflow {workflow_name} with run ID {run_id} is in state {status}")
                 if not GlueManager.is_workflow_final_state(status):
                     all_completed = False
 

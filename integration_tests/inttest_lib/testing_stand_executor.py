@@ -90,7 +90,7 @@ class TestingStandExecutor:
             glue_dq_runner.initiate()
             self.runners.append(glue_dq_runner)
 
-        # Glue Jobs
+        # Glue Workflows
         if types.GLUE_WORKFLOWS in self.resource_types_to_run:
             glue_workflow_names = self.cfg_reader.get_names_by_resource_type(
                 types.GLUE_WORKFLOWS, self.stack_obj_for_naming
