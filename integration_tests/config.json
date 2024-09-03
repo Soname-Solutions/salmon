@@ -1,18 +1,57 @@
 {
     "scoped_resources": {
         "glue_jobs": [
-            {"meaning" : "ts-pyjob-success"},
-            {"meaning" : "ts-pyjob-fail"} 
+            {
+                "meaning": "ts-pyjob-success"
+            },
+            {
+                "meaning": "ts-pyjob-fail"
+            }
         ],
         "glue_data_quality": [
-            {"meaning" : "ts-dq-catalog-success"},
-            {"meaning" : "ts-dq-catalog-fail"},
-            {"meaning" : "ts-dq-job-success", "containing_glue_job_meaning" : "aux-dq-job-success"},
-            {"meaning" : "ts-dq-job-fail", "containing_glue_job_meaning" : "aux-dq-job-fail"}
+            {
+                "meaning": "ts-dq-catalog-success"
+            },
+            {
+                "meaning": "ts-dq-catalog-fail"
+            },
+            {
+                "meaning": "ts-dq-job-success",
+                "containing_glue_job_meaning": "aux-dq-job-success"
+            },
+            {
+                "meaning": "ts-dq-job-fail",
+                "containing_glue_job_meaning": "aux-dq-job-fail"
+            }
         ],
-        "lambda_functions" : [
-            {"meaning" : "ts-lambda-success"},
-            {"meaning" : "ts-lambda-fail"}
+        "glue_workflows": [
+            {
+                "meaning": "ts-gluewf-success",
+                "glue_jobs": [
+                    {
+                        "meaning": "aux-wf-job-success1"
+                    },
+                    {
+                        "meaning": "aux-wf-job-success2"
+                    }
+                ]
+            },
+            {
+                "meaning": "ts-gluewf-fail",
+                "glue_jobs": [
+                    {
+                        "meaning": "aux-wf-job-fail1"
+                    }
+                ]                
+            }
+        ],
+        "lambda_functions": [
+            {
+                "meaning": "ts-lambda-success"
+            },
+            {
+                "meaning": "ts-lambda-fail"
+            }
         ]
     }
 }

@@ -43,6 +43,7 @@ class GitHubActionsResourcesStack(Stack):
         self.attach_assume_role_policy(iam_user)
         self.attach_glue_job_runner_policy(iam_user)
         self.attach_glue_dq_runner_policy(iam_user)
+        self.attach_glue_workflow_runner_policy(iam_user)
         self.attach_lambda_runner_policy(iam_user)
         self.attach_dynamodb_reader_policy(iam_user)
         self.attach_timestream_query_runner_policy(iam_user)
@@ -85,6 +86,26 @@ class GitHubActionsResourcesStack(Stack):
             ],
         )
         iam_user.attach_inline_policy(glue_policy)
+
+    def attach_glue_workflow_runner_policy(self, iam_user):
+        # Policy for Integration Tests (Glue Workflows)
+        glue_workflow_policy = iam.Policy(
+            self,
+            "GlueWorkflowRunnerPolicy",
+            policy_name="GlueWorkflowRunnerPolicy",
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "glue:StartWorkflowRun",  
+                        "glue:GetWorkflowRun",
+                        "glue:GetWorkflow",
+                        "glue:ListWorkflows",
+                    ],
+                    resources=["arn:aws:glue:*:*:workflow/*salmon*"],
+                )
+            ],
+        )
+        iam_user.attach_inline_policy(glue_workflow_policy)        
 
     def attach_glue_dq_runner_policy(self, iam_user):
         # Policy for Integration Tests (Glue Data Quality)

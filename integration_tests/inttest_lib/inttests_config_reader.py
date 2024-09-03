@@ -6,12 +6,12 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
-from lib.core.constants import SettingConfigResourceTypes as rt
+from lib.core.constants import SettingConfigResourceTypes as types
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.glue_manager import GlueManager
 
 
-class IntTests_Config_reader:
+class IntTests_Config_Reader:
     def __init__(self, config_filename=None) -> None:
         if config_filename is None:
             config_filename = os.path.join(
@@ -34,8 +34,9 @@ class IntTests_Config_reader:
         resource_meanings = self.get_meanings_by_resource_type(resource_type)
 
         matches = {
-            rt.GLUE_JOBS: AWSNaming.GlueJob,
-            rt.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
+            types.GLUE_JOBS: AWSNaming.GlueJob,
+            types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
+            types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
             # todo: fill in the list
         }
         naming_func = matches[resource_type]
@@ -55,7 +56,7 @@ class IntTests_Config_reader:
         returns two list (for glue_ruleset and glue_jobs meanings)
         if glue_jobs are not applicable - returns empty list
         """
-        resource_type = rt.GLUE_DATA_QUALITY
+        resource_type = types.GLUE_DATA_QUALITY
         need_job_attr = context == GlueManager.DQ_Job_Context_Type
 
         resource_items = self.config_data.get(resource_type, [])
@@ -85,3 +86,11 @@ class IntTests_Config_reader:
             ],
             [AWSNaming.GlueJob(stack_obj_for_naming, meaning) for meaning in glue_jobs]
         )
+    
+    def get_glue_workflow_child_glue_jobs_meanings(self, glue_workflow_meaning):
+        gluewf_config = self.config_data.get(types.GLUE_WORKFLOWS,{})
+        for gluewf in gluewf_config:
+            if gluewf.get("meaning","") == glue_workflow_meaning:
+                return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
+            
+        return []

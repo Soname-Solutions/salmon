@@ -88,7 +88,7 @@ class WorkflowRun(BaseModel):
 
 class WorkflowRunsData(BaseModel):
     Runs: list[WorkflowRun]
-    NextToken: str
+    NextToken: Optional[str]
     ResponseMetadata: dict
 
 

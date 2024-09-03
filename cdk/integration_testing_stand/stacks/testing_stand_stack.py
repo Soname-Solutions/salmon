@@ -4,6 +4,7 @@ from aws_cdk import (
     Stack,
     Tags,
     aws_glue_alpha as glue,
+    aws_glue as glue_old,
     aws_sns as sns,
     aws_sns_subscriptions as subs,
     aws_dynamodb as dynamodb,
@@ -26,7 +27,7 @@ from inttest_lib.common import (
     TARGET_MEANING,
     get_target_sns_topic_name,
 )
-from inttest_lib.inttests_config_reader import IntTests_Config_reader
+from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
 
 from lib.aws.aws_naming import AWSNaming
@@ -50,13 +51,22 @@ class TestingStandStack(Stack):
         self.stage_name = kwargs.pop("stage_name", None)
         super().__init__(scope, id, **kwargs)
 
-        cfg_reader = IntTests_Config_reader()
-    
-        self.create_glue_resources(cfg_reader) # GlueJobs testing stand
-        self.create_glue_dq_resources(cfg_reader) # GlueDQ testing stand + auxiliary resources (Glue Jobs triggering DQ)
-        self.create_lambda_functions_resources(cfg_reader) # Lambda Functions testing stand
+        cfg_reader = IntTests_Config_Reader()
 
-        self.create_test_results_resources() # Commonly-used resources (catch execution results, analyze)
+        # GlueJobs testing stand
+        self.create_glue_resources(cfg_reader)
+
+        # GlueDQ testing stand + auxiliary resources (Glue Jobs triggering DQ)
+        self.create_glue_dq_resources(cfg_reader)
+
+        # Glue Workflows + auxiliary resources (Glue Jobs, Triggers)
+        self.create_glue_workflows_resources(cfg_reader)
+
+        # Lambda Functions testing stand
+        self.create_lambda_functions_resources(cfg_reader)
+
+        # Commonly-used resources (catch execution results, analyze)
+        self.create_test_results_resources()
 
     def create_test_results_resources(self):
         topic_name = get_target_sns_topic_name(self.stage_name)
@@ -212,7 +222,6 @@ def handler(event, context):
             exclude=[".gitignore"],
         )
 
-
         # 2. create Glue DQ database and table as a source for DQ rules
         glue_database_name = AWSNaming.GlueDB(self, DQ_MEANING)
         glue_database = glue.Database(
@@ -241,12 +250,14 @@ def handler(event, context):
 
         # 3. create DQ Rulesets with GLUE_JOB context
         # in this case the rulesets will be run during the Glue job execution
-        ruleset_meanings, job_meanings = cfg_reader.get_glue_dq_meanings(GlueManager.DQ_Job_Context_Type)
+        ruleset_meanings, job_meanings = cfg_reader.get_glue_dq_meanings(
+            GlueManager.DQ_Job_Context_Type
+        )
         meanings = list(zip(ruleset_meanings, job_meanings))
         for item in meanings:
             glue_job_meaning = item[1]
             glue_ruleset_meaning = item[0]
-                        
+
             glue_job_name = AWSNaming.GlueJob(self, glue_job_meaning)
             glue_dq_job = glue_helper.create_pyspark_glue_job(
                 scope=self,
@@ -262,9 +273,7 @@ def handler(event, context):
                 ),
                 default_arguments={
                     "--S3_BUCKET_NAME": bucket_name,
-                    "--RULESET_NAME": AWSNaming.GlueRuleset(
-                        self, glue_ruleset_meaning
-                    ),
+                    "--RULESET_NAME": AWSNaming.GlueRuleset(self, glue_ruleset_meaning),
                 },
             )
 
@@ -275,7 +284,9 @@ def handler(event, context):
             '[IsComplete "employeeCode", RowCount > 50]',  # should fail
         ]
 
-        ruleset_meanings, job_meanings = cfg_reader.get_glue_dq_meanings(GlueManager.DQ_Catalog_Context_Type)
+        ruleset_meanings, job_meanings = cfg_reader.get_glue_dq_meanings(
+            GlueManager.DQ_Catalog_Context_Type
+        )
         dq_ruleset_names_list = list()
         for i, ruleset_meaning in enumerate(ruleset_meanings):
             dq_ruleset_name = AWSNaming.GlueRuleset(self, ruleset_meaning)
@@ -309,16 +320,89 @@ def handler(event, context):
             )
         )
 
-        lambda_meanings = cfg_reader.get_meanings_by_resource_type(types.LAMBDA_FUNCTIONS)
+        lambda_meanings = cfg_reader.get_meanings_by_resource_type(
+            types.LAMBDA_FUNCTIONS
+        )
         for lambda_meaning in lambda_meanings:
             lmb = lambda_.Function(
                 self,
                 f"Lambda{lambda_meaning.capitalize()}",
                 function_name=AWSNaming.LambdaFunction(self, lambda_meaning),
-                code=lambda_.Code.from_asset(os.path.join(SRC_FOLDER_NAME, "lambda_functions")),
+                code=lambda_.Code.from_asset(
+                    os.path.join(SRC_FOLDER_NAME, "lambda_functions")
+                ),
                 handler=f"{lambda_meaning}.lambda_handler",
                 timeout=Duration.seconds(30),
                 runtime=lambda_.Runtime.PYTHON_3_11,
                 role=lambda_role,
             )
-           
+
+    def create_glue_workflows_resources(self, cfg_reader):
+        gluewf_meanings = cfg_reader.get_meanings_by_resource_type(types.GLUE_WORKFLOWS)
+
+        # IAM Role
+        glue_iam_role = iam_helper.create_glue_iam_role(
+            scope=self,
+            role_id="GlueIAMRoleWF",
+            role_name=AWSNaming.IAMRole(self, "gluewf-role"),
+        )
+
+        for gluewf_meaning in gluewf_meanings:
+            workflow = glue_old.CfnWorkflow(
+                self,
+                f"GlueWorkflow{gluewf_meaning.capitalize()}",
+                name=AWSNaming.GlueWorkflow(self, gluewf_meaning),
+            )
+
+            glue_job_meanings = cfg_reader.get_glue_workflow_child_glue_jobs_meanings(
+                gluewf_meaning
+            )
+            prev_job_name = None # for sequencing jobs in workflow (via trigger dependencies)
+            for glue_job_meaning in glue_job_meanings:
+                job_id = f"GlueJob{glue_job_meaning.capitalize()}"
+                job_name = AWSNaming.GlueJob(self, glue_job_meaning)
+                job_script = glue.Code.from_asset(
+                    os.path.join(SRC_FOLDER_NAME, "glue_jobs", f"{glue_job_meaning}.py")
+                )
+                # calling helper to create a job
+                glue_job_tmp = glue_helper.create_python_shell_glue_job(
+                    scope=self,
+                    job_id=job_id,
+                    job_name=job_name,
+                    role=glue_iam_role,
+                    script=job_script,
+                )
+
+                if not(prev_job_name): # the first job in workflow
+                    trigger_job_one = glue_old.CfnTrigger(
+                        self,
+                        f"TriggerJob{job_name.capitalize()}",
+                        name=AWSNaming.GlueTrigger(self,glue_job_meaning),
+                        actions=[
+                            glue_old.CfnTrigger.ActionProperty(job_name=job_name),
+                        ],
+                        workflow_name=workflow.name,
+                        type="ON_DEMAND",
+                    )
+                    prev_job_name = job_name
+                else: # second and other jobs in workflow
+                    trigger_job_two = glue_old.CfnTrigger(
+                        self,
+                        f"TriggerJob{job_name.capitalize()}",
+                        name=AWSNaming.GlueTrigger(self,glue_job_meaning),
+                        actions=[
+                            glue_old.CfnTrigger.ActionProperty(job_name=job_name),
+                        ],
+                        workflow_name=workflow.name,
+                        type="CONDITIONAL",
+                        predicate=glue_old.CfnTrigger.PredicateProperty(
+                            conditions=[
+                                glue_old.CfnTrigger.ConditionProperty(
+                                    logical_operator="EQUALS",
+                                    job_name=prev_job_name,
+                                    state="SUCCEEDED",
+                                )
+                            ]
+                        ),
+                        start_on_creation=True,
+                    )

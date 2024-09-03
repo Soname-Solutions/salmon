@@ -25,7 +25,6 @@ class GlueJobRunner(BaseResourceRunner):
                 status = response['JobRun']['JobRunState']
                 print(f"Job {job_name} with run ID {run_id} is in state {status}")
                 if not GlueManager.is_job_final_state(status):
-#                if status not in ['SUCCEEDED', 'FAILED', 'STOPPED']:
                     all_completed = False
 
             if all_completed:
