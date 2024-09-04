@@ -45,6 +45,27 @@
                 ]                
             }
         ],
+        "step_functions": [
+            {
+                "meaning": "ts-stepf-success",
+                "glue_jobs": [
+                    {
+                        "meaning": "aux-stepf-job-success1"
+                    },
+                    {
+                        "meaning": "aux-stepf-job-success2"
+                    }
+                ]
+            },
+            {
+                "meaning": "ts-stepf-fail",
+                "glue_jobs": [
+                    {
+                        "meaning": "aux-stepf-job-fail1"
+                    }
+                ]                
+            }
+        ],        
         "lambda_functions": [
             {
                 "meaning": "ts-lambda-success"
