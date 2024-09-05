@@ -94,3 +94,11 @@ class IntTests_Config_Reader:
                 return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
             
         return []
+
+    def get_step_function_child_glue_jobs_meanings(self, step_function_meaning):
+        gluewf_config = self.config_data.get(types.STEP_FUNCTIONS,{})
+        for gluewf in gluewf_config:
+            if gluewf.get("meaning","") == step_function_meaning:
+                return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
+            
+        return []

@@ -47,21 +47,21 @@
         ],
         "step_functions": [
             {
-                "meaning": "ts-stepf-success",
+                "meaning": "ts-sfn-success",
                 "glue_jobs": [
                     {
-                        "meaning": "aux-stepf-job-success1"
+                        "meaning": "aux-sfn-job-success1"
                     },
                     {
-                        "meaning": "aux-stepf-job-success2"
+                        "meaning": "aux-sfn-job-success2"
                     }
                 ]
             },
             {
-                "meaning": "ts-stepf-fail",
+                "meaning": "ts-sfn-fail",
                 "glue_jobs": [
                     {
-                        "meaning": "aux-stepf-job-fail1"
+                        "meaning": "aux-sfn-job-fail1"
                     }
                 ]                
             }
