@@ -45,6 +45,27 @@
                 ]                
             }
         ],
+        "step_functions": [
+            {
+                "meaning": "ts-sfn-success",
+                "glue_jobs": [
+                    {
+                        "meaning": "aux-sfn-job-success1"
+                    },
+                    {
+                        "meaning": "aux-sfn-job-success2"
+                    }
+                ]
+            },
+            {
+                "meaning": "ts-sfn-fail",
+                "glue_jobs": [
+                    {
+                        "meaning": "aux-sfn-job-fail1"
+                    }
+                ]                
+            }
+        ],        
         "lambda_functions": [
             {
                 "meaning": "ts-lambda-success"

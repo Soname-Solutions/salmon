@@ -20,6 +20,11 @@
                     "digest": true
                 },
                 {
+                    "monitoring_group": "it_ts_step_functions",
+                    "alerts": true,
+                    "digest": true
+                },
+                {
                     "monitoring_group": "it_ts_lambda_functions",
                     "alerts": true,
                     "digest": true

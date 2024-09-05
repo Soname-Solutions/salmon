@@ -101,6 +101,11 @@ class AWSNaming:
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
+    def StepFunction(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "stepfunction"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
+    @classmethod
     def SQSQueue(cls, stack_obj: object, meaning: str) -> str:
         prefix = "queue"
         ending = ".fifo"  # FIFO queue names must end in '.fifo'

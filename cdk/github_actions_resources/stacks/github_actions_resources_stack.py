@@ -8,9 +8,13 @@ from aws_cdk import (
 )
 from constructs import Construct
 
+from lib.aws.aws_naming import AWSNaming
+
 
 class GitHubActionsResourcesStack(Stack):
     def __init__(self, scope: Construct, id: str, **kwargs) -> None:
+        self.project_name = kwargs.pop("project_name", None)
+        self.stage_name = kwargs.pop("stage_name", None)
         super().__init__(scope, id, **kwargs)
 
         iam_user = iam.User(
@@ -44,6 +48,7 @@ class GitHubActionsResourcesStack(Stack):
         self.attach_glue_job_runner_policy(iam_user)
         self.attach_glue_dq_runner_policy(iam_user)
         self.attach_glue_workflow_runner_policy(iam_user)
+        self.attach_step_function_runner_policy(iam_user)
         self.attach_lambda_runner_policy(iam_user)
         self.attach_dynamodb_reader_policy(iam_user)
         self.attach_timestream_query_runner_policy(iam_user)
@@ -64,15 +69,15 @@ class GitHubActionsResourcesStack(Stack):
                     ],
                 )
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(assume_role_policy)
 
     def attach_glue_job_runner_policy(self, iam_user):
         # Policy for Integration Tests (Glue Jobs)
-        glue_policy = iam.Policy(
+        glue_policy = iam.ManagedPolicy(
             self,
             "GlueJobRunnerPolicy",
-            policy_name="GlueJobRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "GlueJobRunnerPolicy"),
             statements=[
                 iam.PolicyStatement(
                     actions=[
@@ -84,19 +89,19 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["arn:aws:glue:*:*:job/*salmon*"],
                 )
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(glue_policy)
 
     def attach_glue_workflow_runner_policy(self, iam_user):
         # Policy for Integration Tests (Glue Workflows)
-        glue_workflow_policy = iam.Policy(
+        glue_workflow_policy = iam.ManagedPolicy(
             self,
             "GlueWorkflowRunnerPolicy",
-            policy_name="GlueWorkflowRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "GlueWorkflowRunnerPolicy"),
             statements=[
                 iam.PolicyStatement(
                     actions=[
-                        "glue:StartWorkflowRun",  
+                        "glue:StartWorkflowRun",
                         "glue:GetWorkflowRun",
                         "glue:GetWorkflow",
                         "glue:ListWorkflows",
@@ -104,24 +109,55 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["arn:aws:glue:*:*:workflow/*salmon*"],
                 )
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(glue_workflow_policy)        
+
+    def attach_step_function_runner_policy(self, iam_user):
+        # Policy for Integration Tests (Step Functions)
+        step_function_policy = iam.ManagedPolicy(
+            self,
+            "StepFunctionRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "StepFunctionRunnerPolicy"),
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "states:StartExecution",
+                        "states:ListExecutions"
+                    ],
+                    resources=["arn:aws:states:*:*:stateMachine:*salmon*"],
+                ),
+                iam.PolicyStatement(
+                    actions=["states:DescribeExecution"],
+                    resources=["arn:aws:states:*:*:execution:*salmon*"],
+                ),                
+                iam.PolicyStatement(
+                    actions=["states:ListStateMachines"],
+                    resources=["*"],
+                ),
+            ],
+            users=[iam_user],
+        )
 
     def attach_glue_dq_runner_policy(self, iam_user):
         # Policy for Integration Tests (Glue Data Quality)
-        glue_dq_policy = iam.Policy(
+        glue_dq_policy = iam.ManagedPolicy(
             self,
             "GlueDQRunnerPolicy",
-            policy_name="GlueDQRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "GlueDQRunnerPolicy"),
             statements=[
                 iam.PolicyStatement(
-                    actions=["glue:StartDataQualityRulesetEvaluationRun", "glue:GetDataQualityResult"],
+                    actions=[
+                        "glue:StartDataQualityRulesetEvaluationRun",
+                        "glue:GetDataQualityResult",
+                    ],
                     resources=["arn:aws:glue:*:*:dataQualityRuleset/*salmon*"],
                 ),
                 iam.PolicyStatement(
                     actions=["glue:ListDataQualityResults"],
-                    resources=["arn:aws:glue:*:*:dataQualityRuleset/*"], # '*' is required, can't limit to *salmon*
-                ),                
+                    resources=[
+                        "arn:aws:glue:*:*:dataQualityRuleset/*"
+                    ],  # '*' is required, can't limit to *salmon*
+                ),
                 iam.PolicyStatement(
                     actions=["iam:PassRole"],
                     resources=["arn:aws:iam::*:role/*salmon*"],
@@ -135,15 +171,15 @@ class GitHubActionsResourcesStack(Stack):
                     ],
                 ),
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(glue_dq_policy)
 
     def attach_lambda_runner_policy(self, iam_user):
         # Policy for Integration Tests (Lambda Functions)
-        lambda_runner_policy = iam.Policy(
+        lambda_runner_policy = iam.ManagedPolicy(
             self,
             "LambdaRunnerPolicy",
-            policy_name="LambdaRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "LambdaRunnerPolicy"),
             statements=[
                 # Lambda actions
                 iam.PolicyStatement(
@@ -162,14 +198,14 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["arn:aws:logs:*:*:log-group:*salmon*"],
                 ),
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(lambda_runner_policy)
 
     def attach_timestream_query_runner_policy(self, iam_user):
-        timestream_query_runner_policy = iam.Policy(
+        timestream_query_runner_policy = iam.ManagedPolicy(
             self,
             "TimestreamQueryRunnerPolicy",
-            policy_name="TimestreamQueryRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "TimestreamQueryRunnerPolicy"),
             statements=[
                 iam.PolicyStatement(
                     actions=[
@@ -200,15 +236,15 @@ class GitHubActionsResourcesStack(Stack):
                     },
                 ),
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(timestream_query_runner_policy)
 
     def attach_dynamodb_reader_policy(self, iam_user):
         # Policy for reading from DynamoDB
-        dynamodb_reader_policy = iam.Policy(
+        dynamodb_reader_policy = iam.ManagedPolicy(
             self,
             "DynamoDBReaderPolicy",
-            policy_name="DynamoDBReaderPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "DynamoDBReaderPolicy"),
             statements=[
                 iam.PolicyStatement(
                     actions=[
@@ -219,5 +255,5 @@ class GitHubActionsResourcesStack(Stack):
                     ],
                 )
             ],
+            users=[iam_user],
         )
-        iam_user.attach_inline_policy(dynamodb_reader_policy)

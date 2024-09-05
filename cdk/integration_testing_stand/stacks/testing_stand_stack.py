@@ -14,6 +14,8 @@ from aws_cdk import (
     aws_s3_deployment as s3deploy,
     aws_iam as iam,
     aws_lambda as lambda_,
+    aws_stepfunctions as sfn,
+    aws_stepfunctions_tasks as tasks,
 )
 from aws_cdk.aws_s3_assets import Asset
 from constructs import Construct
@@ -64,6 +66,9 @@ class TestingStandStack(Stack):
 
         # Lambda Functions testing stand
         self.create_lambda_functions_resources(cfg_reader)
+
+        # Step Functions testing stand
+        self.create_step_functions_resources(cfg_reader)
 
         # Commonly-used resources (catch execution results, analyze)
         self.create_test_results_resources()
@@ -406,3 +411,67 @@ def handler(event, context):
                         ),
                         start_on_creation=True,
                     )
+
+    def create_step_functions_resources(self, cfg_reader):
+        # IAM Role for the State Machine
+        state_machine_role = iam.Role(
+            self,
+            "SampleStateMachineRole",
+            assumed_by=iam.ServicePrincipal("states.amazonaws.com"),
+            description="Role for the state machine to access resources",
+            role_name=AWSNaming.IAMRole(self, "stepfunctions-role"),
+        )
+
+        # IAM Role
+        glue_iam_role = iam_helper.create_glue_iam_role(
+            scope=self,
+            role_id="GlueIAMRoleSFN",
+            role_name=AWSNaming.IAMRole(self, "gluesfn-role"),
+        )
+
+        sfn_meanings = cfg_reader.get_meanings_by_resource_type(types.STEP_FUNCTIONS)
+        for sfn_meaning in sfn_meanings:
+            glue_job_meanings = cfg_reader.get_step_function_child_glue_jobs_meanings(
+                sfn_meaning
+            )
+
+            child_glue_jobs = []
+            for glue_job_meaning in glue_job_meanings:                
+                job_id = f"GlueJob{glue_job_meaning.capitalize()}"
+                job_name = AWSNaming.GlueJob(self, glue_job_meaning)
+                job_script = glue.Code.from_asset(
+                    os.path.join(SRC_FOLDER_NAME, "glue_jobs", f"{glue_job_meaning}.py")
+                )
+                # calling helper to create a job
+                glue_job_tmp = glue_helper.create_python_shell_glue_job(
+                    scope=self,
+                    job_id=job_id,
+                    job_name=job_name,
+                    role=glue_iam_role,
+                    script=job_script,
+                )
+
+                glue_job_task = tasks.GlueStartJobRun(
+                    self, 
+                    f"{job_name}Task",
+                    glue_job_name=job_name,
+                    integration_pattern=sfn.IntegrationPattern.RUN_JOB,  # Sync execution
+                    result_path="$.glueResult"
+                )                
+
+                if not(child_glue_jobs): # First in sequence
+                    definition = sfn.Chain.start(glue_job_task)
+                else: # Sequential jobs
+                    definition = definition.next(glue_job_task)
+
+                child_glue_jobs.append(glue_job_tmp)
+
+            # Create the State Machine
+            state_machine = sfn.StateMachine(
+                self,
+                f"StepFunction{sfn_meaning.capitalize()}",
+                state_machine_name=AWSNaming.StepFunction(self, sfn_meaning),
+                definition_body=sfn.DefinitionBody.from_chainable(definition),
+                timeout=Duration.minutes(15),
+                role=state_machine_role,
+            )
