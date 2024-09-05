@@ -37,6 +37,7 @@ class IntTests_Config_Reader:
             types.GLUE_JOBS: AWSNaming.GlueJob,
             types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
             types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
+            types.STEP_FUNCTIONS: AWSNaming.StepFunction,
             # todo: fill in the list
         }
         naming_func = matches[resource_type]
