@@ -169,3 +169,14 @@ class EMRManager:
         except Exception as e:
             error_message = f"Error getting a list of Job IDs submitted to the EMR application {app_id}: {e}"
             raise EMRManagerException(error_message)
+
+    def get_application_id_by_name(self, app_name):
+        try:
+            response = self.sf_client.list_applications()
+            for application in response['applications']:
+                if application['name'] == app_name:
+                    return application['id']
+            raise ValueError(f"Application with name {app_name} not found.")
+        except Exception as e:
+            error_message = f"Error retrieving application ID for {app_name}: {e}"
+            raise Exception(error_message)

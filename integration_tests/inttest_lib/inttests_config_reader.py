@@ -38,7 +38,7 @@ class IntTests_Config_Reader:
             types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
             types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
             types.STEP_FUNCTIONS: AWSNaming.StepFunction,
-            # todo: fill in the list
+            types.EMR_SERVERLESS: AWSNaming.EMRApplication,
         }
         naming_func = matches[resource_type]
 
@@ -103,3 +103,13 @@ class IntTests_Config_Reader:
                 return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
             
         return []
+    
+    def get_emr_serverless_apps_with_scripts(self, stack_obj_for_naming): # ! N.B. here name, not meaning!
+        outp = {}
+        emrs_config = self.config_data.get(types.EMR_SERVERLESS,{})
+        for emr_app in emrs_config:
+            app_name = AWSNaming.EMRApplication(stack_obj_for_naming,emr_app.get("meaning",""))
+            script_paths = [x["path"] for x in emr_app.get("scripts",[])]
+            outp[app_name] = script_paths
+
+        return outp

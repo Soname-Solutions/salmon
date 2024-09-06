@@ -30,6 +30,12 @@ class AWSNaming:
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
 
     @classmethod
+    def EMRApplication(cls, stack_obj: object, meaning: str) -> str:
+        prefix = "emrapp"
+        return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)
+
+
+    @classmethod
     def EventBus(cls, stack_obj: object, meaning: str) -> str:
         prefix = "eventbus"
         return AWSNaming.__resource_name_with_check(stack_obj, prefix, meaning)

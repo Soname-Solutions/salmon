@@ -14,9 +14,12 @@ from inttest_lib.runners.glue_dq_runner import GlueDQRunner
 from inttest_lib.runners.glue_workflow_runner import GlueWorkflowRunner
 from inttest_lib.runners.step_function_runner import StepFunctionRunner
 from inttest_lib.runners.lambda_function_runner import LambdaFunctionRunner
+from inttest_lib.runners.emr_serverless_runner import EMRServerlessJobRunner, get_scripts_s3_bucket_meaning, EXEC_IAM_ROLE_MEANING
 from lib.core.constants import SettingConfigResourceTypes as types, SettingConfigs
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.glue_manager import GlueManager
+from lib.aws.emr_manager import EMRManager
+from lib.aws.sts_manager import StsManager
 
 
 class TestingStandExecutor:
@@ -123,6 +126,23 @@ class TestingStandExecutor:
             )
             lambda_runner.initiate()
             self.runners.append(lambda_runner)
+
+        # EMR Serverless
+        if types.EMR_SERVERLESS in self.resource_types_to_run:
+            # get dict { app : [script_paths]}
+            emr_resources_data = self.cfg_reader.get_emr_serverless_apps_with_scripts(self.stack_obj_for_naming)
+
+            account_id = StsManager().get_account_id()
+            # get scripts s3 bucket name
+            scripts_s3_bucket = AWSNaming.S3Bucket(self.stack_obj_for_naming, get_scripts_s3_bucket_meaning(account_id))
+
+            # get EMR exec role arn
+            emr_exec_role_name = AWSNaming.IAMRole(self.stack_obj_for_naming, EXEC_IAM_ROLE_MEANING)
+            emr_exec_role_arn = AWSNaming.Arn_IAMRole(self.stack_obj_for_naming, account_id, emr_exec_role_name)
+
+            runner = EMRServerlessJobRunner(emr_resources_data, self.region, emr_exec_role_arn, scripts_s3_bucket)
+            runner.initiate()     
+            self.runners.append(runner)       
 
     def await_workloads(self):
         for runner in self.runners:

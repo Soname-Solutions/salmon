@@ -50,6 +50,7 @@ class GitHubActionsResourcesStack(Stack):
         self.attach_glue_workflow_runner_policy(iam_user)
         self.attach_step_function_runner_policy(iam_user)
         self.attach_lambda_runner_policy(iam_user)
+        self.attach_emr_serverless_runner_policy(iam_user)
         self.attach_dynamodb_reader_policy(iam_user)
         self.attach_timestream_query_runner_policy(iam_user)
 
@@ -120,18 +121,47 @@ class GitHubActionsResourcesStack(Stack):
             managed_policy_name=AWSNaming.IAMPolicy(self, "StepFunctionRunnerPolicy"),
             statements=[
                 iam.PolicyStatement(
-                    actions=[
-                        "states:StartExecution",
-                        "states:ListExecutions"
-                    ],
+                    actions=["states:StartExecution", "states:ListExecutions"],
                     resources=["arn:aws:states:*:*:stateMachine:*salmon*"],
                 ),
                 iam.PolicyStatement(
                     actions=["states:DescribeExecution"],
                     resources=["arn:aws:states:*:*:execution:*salmon*"],
-                ),                
+                ),
                 iam.PolicyStatement(
                     actions=["states:ListStateMachines"],
+                    resources=["*"],
+                ),
+            ],
+            users=[iam_user],
+        )
+
+    def attach_emr_serverless_runner_policy(self, iam_user):
+        # Policy for Integration Tests (EMR Serverless)
+        step_function_policy = iam.ManagedPolicy(
+            self,
+            "EMRServerlessRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "EMRServerlessRunnerPolicy"),
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "emr-serverless:StartJobRun",
+                        "emr-serverless:GetJobRun",
+                        "emr-serverless:ListJobRuns",
+                        "emr-serverless:CancelJobRun",
+                    ],
+                    # can't filter by application_name, because policy allows only application_id, which is unusable
+                    resources=["*"],
+                    # limiting scope by requiring tag "salmon"
+                    conditions={
+                        "StringLike": {f"aws:ResourceTag/{self.project_name}": "*"}
+                    },
+                ),
+                iam.PolicyStatement(
+                    actions=[
+                        "emr-serverless:ListApplications",
+                        "emr-serverless:TagResource",
+                    ],
                     resources=["*"],
                 ),
             ],
@@ -205,7 +235,9 @@ class GitHubActionsResourcesStack(Stack):
         timestream_query_runner_policy = iam.ManagedPolicy(
             self,
             "TimestreamQueryRunnerPolicy",
-            managed_policy_name=AWSNaming.IAMPolicy(self, "TimestreamQueryRunnerPolicy"),
+            managed_policy_name=AWSNaming.IAMPolicy(
+                self, "TimestreamQueryRunnerPolicy"
+            ),
             statements=[
                 iam.PolicyStatement(
                     actions=[

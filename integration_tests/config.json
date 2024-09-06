@@ -42,7 +42,7 @@
                     {
                         "meaning": "aux-wf-job-fail1"
                     }
-                ]                
+                ]
             }
         ],
         "step_functions": [
@@ -63,15 +63,28 @@
                     {
                         "meaning": "aux-sfn-job-fail1"
                     }
-                ]                
+                ]
             }
-        ],        
+        ],
         "lambda_functions": [
             {
                 "meaning": "ts-lambda-success"
             },
             {
                 "meaning": "ts-lambda-fail"
+            }
+        ],
+        "emr_serverless": [
+            {
+                "meaning": "ts-inttests",
+                "scripts": [
+                    {
+                        "path": "aux-emrs-job-success1.py"
+                    },
+                    {
+                        "path": "aux-emrs-job-fail1.py"
+                    }
+                ]
             }
         ]
     }
