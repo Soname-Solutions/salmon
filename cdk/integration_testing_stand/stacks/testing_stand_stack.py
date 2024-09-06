@@ -2,6 +2,7 @@ from aws_cdk import (
     Duration,
     RemovalPolicy,
     Stack,
+    CfnTag,
     Tags,
     aws_glue_alpha as glue,
     aws_glue as glue_old,
@@ -32,7 +33,11 @@ from inttest_lib.common import (
 )
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
-from inttest_lib.runners.emr_serverless_runner import get_scripts_s3_bucket_meaning, EXEC_IAM_ROLE_MEANING
+from inttest_lib.runners.emr_serverless_runner import (
+    get_scripts_s3_bucket_meaning,
+    EXEC_IAM_ROLE_MEANING,
+    EMRS_TAG_FOR_PERMISSION_JSON
+)
 
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
@@ -484,12 +489,16 @@ def handler(event, context):
             )
 
     def create_emr_serverless_resources(self, cfg_reader):
-        emr_app_meanings = cfg_reader.get_meanings_by_resource_type(types.EMR_SERVERLESS)
+        emr_app_meanings = cfg_reader.get_meanings_by_resource_type(
+            types.EMR_SERVERLESS
+        )
 
         emr_scripts_bucket = s3.Bucket(
             self,
             "emrScriptsBucket",
-            bucket_name=AWSNaming.S3Bucket(self, get_scripts_s3_bucket_meaning(Stack.of(self).account)),
+            bucket_name=AWSNaming.S3Bucket(
+                self, get_scripts_s3_bucket_meaning(Stack.of(self).account)
+            ),
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
@@ -512,7 +521,7 @@ def handler(event, context):
                     ]
                 )
             },
-        )  
+        )
 
         s3deploy.BucketDeployment(
             self,
@@ -524,9 +533,10 @@ def handler(event, context):
             ],
             destination_bucket=emr_scripts_bucket,
             exclude=[".gitignore"],
-        )              
+        )
 
         for emr_app_meaning in emr_app_meanings:
+            tags = [CfnTag(key=key, value=value) for key, value in EMRS_TAG_FOR_PERMISSION_JSON.items()]
             serverless_app = emrs.CfnApplication(
                 self,
                 f"EmrApp{emr_app_meaning.capitalize()}",
@@ -542,6 +552,5 @@ def handler(event, context):
                 maximum_capacity=emrs.CfnApplication.MaximumAllowedResourcesProperty(
                     cpu="40 vCPU", memory="3000 GB", disk="20000 GB"
                 ),
-            )        
-
-   
+                tags=tags,
+            )

@@ -150,14 +150,20 @@ class GitHubActionsResourcesStack(Stack):
                         "emr-serverless:ListJobRuns",
                         "emr-serverless:CancelJobRun",
                     ],
-                    resources=["arn:aws:emr-serverless:*:*:application/*salmon*"],
+                    # can't filter by application_name, because policy allows only application_id, which is unusable
+                    resources=["*"],
+                    # limiting scope by requiring tag "salmon"
+                    conditions={
+                        "StringLike": {f"aws:ResourceTag/{self.project_name}": "*"}
+                    },
                 ),
                 iam.PolicyStatement(
                     actions=[
                         "emr-serverless:ListApplications",
+                        "emr-serverless:TagResource",
                     ],
                     resources=["*"],
-                )                
+                ),
             ],
             users=[iam_user],
         )

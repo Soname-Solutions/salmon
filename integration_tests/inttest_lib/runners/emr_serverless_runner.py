@@ -6,8 +6,8 @@ from inttest_lib.runners.base_resource_runner import BaseResourceRunner
 from lib.aws.emr_manager import EMRManager, EMRJobRunData
 
 SCRIPTS_S3_BUCKET_PREFIX = "emr-scripts"
-
 EXEC_IAM_ROLE_MEANING = "emr-serverless-exec"
+EMRS_TAG_FOR_PERMISSION_JSON = {"salmon" : "for permissions"}
 
 def get_scripts_s3_bucket_meaning(aws_account_id):
     return f"{SCRIPTS_S3_BUCKET_PREFIX}-{aws_account_id}"
@@ -35,6 +35,8 @@ class EMRServerlessJobRunner(BaseResourceRunner):
                 response = self.client.start_job_run(
                     applicationId=app_id,
                     executionRoleArn=self.execution_role_arn,
+                    # required for permissions
+                    tags=EMRS_TAG_FOR_PERMISSION_JSON,
                     jobDriver={
                         'sparkSubmit': {
                             'entryPoint': f's3://{self.scripts_s3_bucket}/{script_path}',
