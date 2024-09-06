@@ -32,7 +32,7 @@ from inttest_lib.common import (
 )
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
-from inttest_lib.runners.emr_serverless_runner import SCRIPTS_S3_BUCKET_PREFIX
+from inttest_lib.runners.emr_serverless_runner import get_scripts_s3_bucket_meaning, EXEC_IAM_ROLE_MEANING
 
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
@@ -489,13 +489,13 @@ def handler(event, context):
         emr_scripts_bucket = s3.Bucket(
             self,
             "emrScriptsBucket",
-            bucket_name=AWSNaming.S3Bucket(self, f"{SCRIPTS_S3_BUCKET_PREFIX}-{Stack.of(self).account}"),
+            bucket_name=AWSNaming.S3Bucket(self, get_scripts_s3_bucket_meaning(Stack.of(self).account)),
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
 
         # IAM role for EMR execution
-        emr_exec_role_name = AWSNaming.IAMRole(self, "emr-serverless-exec")
+        emr_exec_role_name = AWSNaming.IAMRole(self, EXEC_IAM_ROLE_MEANING)
         emr_exec_role = iam.Role(
             self,
             "EMRServerlessExecRole",
