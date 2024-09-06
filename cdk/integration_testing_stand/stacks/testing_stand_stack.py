@@ -32,6 +32,7 @@ from inttest_lib.common import (
 )
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
+from inttest_lib.runners.emr_serverless_runner import SCRIPTS_S3_BUCKET_PREFIX
 
 from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
@@ -488,7 +489,7 @@ def handler(event, context):
         emr_scripts_bucket = s3.Bucket(
             self,
             "emrScriptsBucket",
-            bucket_name=AWSNaming.S3Bucket(self, f"emr-scripts-{Stack.of(self).account}"),
+            bucket_name=AWSNaming.S3Bucket(self, f"{SCRIPTS_S3_BUCKET_PREFIX}-{Stack.of(self).account}"),
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
@@ -511,38 +512,36 @@ def handler(event, context):
                     ]
                 )
             },
-        )        
+        )  
 
-        # for emr_app_meaning in emr_app_meanings:
-        #     script_paths = cfg_reader.get_emr_serverless_app_scripts(emr_app_meaning)
-        #     for script_path in script_paths:
-        #         s3deploy.BucketDeployment(
-        #             self,
-        #             "emrScriptsBucketDeployment",
-        #             sources=[
-        #                 s3deploy.Source.asset(
-        #                     os.path.join(SRC_FOLDER_NAME, script_path),
-        #                 )
-        #             ],
-        #             destination_bucket=emr_scripts_bucket,
-        #             exclude=[".gitignore"],
-        #         )
+        s3deploy.BucketDeployment(
+            self,
+            "emrScriptsBucketDeployment",
+            sources=[
+                s3deploy.Source.asset(
+                    os.path.join(SRC_FOLDER_NAME, types.EMR_SERVERLESS),
+                )
+            ],
+            destination_bucket=emr_scripts_bucket,
+            exclude=[".gitignore"],
+        )              
 
-        #     serverless_app = emrs.CfnApplication(
-        #         self,
-        #         f"EmrApp{emr_app_meaning.capitalize()}",
-        #         release_label="emr-7.1.0",
-        #         type="SPARK",
-        #         name=AWSNaming.EMRApplication(self, emr_app_meaning),
-        #         auto_start_configuration=emrs.CfnApplication.AutoStartConfigurationProperty(
-        #             enabled=True
-        #         ),
-        #         auto_stop_configuration=emrs.CfnApplication.AutoStopConfigurationProperty(
-        #             enabled=True, idle_timeout_minutes=5
-        #         ),
-        #         maximum_capacity=emrs.CfnApplication.MaximumAllowedResourcesProperty(
-        #             cpu="40 vCPU", memory="3000 GB", disk="20000 GB"
-        #         ),
-        #     )        
+        for emr_app_meaning in emr_app_meanings:
+            serverless_app = emrs.CfnApplication(
+                self,
+                f"EmrApp{emr_app_meaning.capitalize()}",
+                release_label="emr-7.1.0",
+                type="SPARK",
+                name=AWSNaming.EMRApplication(self, emr_app_meaning),
+                auto_start_configuration=emrs.CfnApplication.AutoStartConfigurationProperty(
+                    enabled=True
+                ),
+                auto_stop_configuration=emrs.CfnApplication.AutoStopConfigurationProperty(
+                    enabled=True, idle_timeout_minutes=5
+                ),
+                maximum_capacity=emrs.CfnApplication.MaximumAllowedResourcesProperty(
+                    cpu="40 vCPU", memory="3000 GB", disk="20000 GB"
+                ),
+            )        
 
    

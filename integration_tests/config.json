@@ -79,10 +79,10 @@
                 "meaning": "ts-inttests",
                 "scripts": [
                     {
-                        "path": "emr_serverless/aux-emrs-job-success1.py"
+                        "path": "aux-emrs-job-success1.py"
                     },
                     {
-                        "path": "emr_serverless/aux-emrs-job-fail1.py"
+                        "path": "aux-emrs-job-fail1.py"
                     }
                 ]
             }

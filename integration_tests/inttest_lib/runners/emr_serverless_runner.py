@@ -1,0 +1,2 @@
+
+SCRIPTS_S3_BUCKET_PREFIX = "emr-scripts"
