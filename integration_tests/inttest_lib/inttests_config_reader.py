@@ -103,3 +103,9 @@ class IntTests_Config_Reader:
                 return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
             
         return []
+    
+    def get_emr_serverless_app_scripts(self, emr_serverless_app_meaning):
+        emrs_config = self.config_data.get(types.EMR_SERVERLESS,{})
+        for emr_app in emrs_config:
+            if emr_app.get("meaning","") == emr_serverless_app_meaning:
+                return [x["path"] for x in emr_app.get("scripts",[])]

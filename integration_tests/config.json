@@ -76,13 +76,13 @@
         ],
         "emr_serverless": [
             {
-                "meaning": "<<app_name>>",
+                "meaning": "ts-inttests",
                 "scripts": [
                     {
-                        "meaning": "ts-emrs-success"
+                        "path": "emr_serverless/aux-emrs-job-success1.py"
                     },
                     {
-                        "meaning": "ts-emrs-fail"
+                        "path": "emr_serverless/aux-emrs-job-fail1.py"
                     }
                 ]
             }

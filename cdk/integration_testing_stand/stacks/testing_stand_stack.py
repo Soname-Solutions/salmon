@@ -16,6 +16,7 @@ from aws_cdk import (
     aws_lambda as lambda_,
     aws_stepfunctions as sfn,
     aws_stepfunctions_tasks as tasks,
+    aws_emrserverless as emrs,
 )
 from aws_cdk.aws_s3_assets import Asset
 from constructs import Construct
@@ -69,6 +70,9 @@ class TestingStandStack(Stack):
 
         # Step Functions testing stand
         self.create_step_functions_resources(cfg_reader)
+
+        # EMR Serverless testing stand
+        self.create_emr_serverless_resources(cfg_reader)
 
         # Commonly-used resources (catch execution results, analyze)
         self.create_test_results_resources()
@@ -362,7 +366,9 @@ def handler(event, context):
             glue_job_meanings = cfg_reader.get_glue_workflow_child_glue_jobs_meanings(
                 gluewf_meaning
             )
-            prev_job_name = None # for sequencing jobs in workflow (via trigger dependencies)
+            prev_job_name = (
+                None  # for sequencing jobs in workflow (via trigger dependencies)
+            )
             for glue_job_meaning in glue_job_meanings:
                 job_id = f"GlueJob{glue_job_meaning.capitalize()}"
                 job_name = AWSNaming.GlueJob(self, glue_job_meaning)
@@ -378,11 +384,11 @@ def handler(event, context):
                     script=job_script,
                 )
 
-                if not(prev_job_name): # the first job in workflow
+                if not (prev_job_name):  # the first job in workflow
                     trigger_job_one = glue_old.CfnTrigger(
                         self,
                         f"TriggerJob{job_name.capitalize()}",
-                        name=AWSNaming.GlueTrigger(self,glue_job_meaning),
+                        name=AWSNaming.GlueTrigger(self, glue_job_meaning),
                         actions=[
                             glue_old.CfnTrigger.ActionProperty(job_name=job_name),
                         ],
@@ -390,11 +396,11 @@ def handler(event, context):
                         type="ON_DEMAND",
                     )
                     prev_job_name = job_name
-                else: # second and other jobs in workflow
+                else:  # second and other jobs in workflow
                     trigger_job_two = glue_old.CfnTrigger(
                         self,
                         f"TriggerJob{job_name.capitalize()}",
-                        name=AWSNaming.GlueTrigger(self,glue_job_meaning),
+                        name=AWSNaming.GlueTrigger(self, glue_job_meaning),
                         actions=[
                             glue_old.CfnTrigger.ActionProperty(job_name=job_name),
                         ],
@@ -436,7 +442,7 @@ def handler(event, context):
             )
 
             child_glue_jobs = []
-            for glue_job_meaning in glue_job_meanings:                
+            for glue_job_meaning in glue_job_meanings:
                 job_id = f"GlueJob{glue_job_meaning.capitalize()}"
                 job_name = AWSNaming.GlueJob(self, glue_job_meaning)
                 job_script = glue.Code.from_asset(
@@ -452,16 +458,16 @@ def handler(event, context):
                 )
 
                 glue_job_task = tasks.GlueStartJobRun(
-                    self, 
+                    self,
                     f"{job_name}Task",
                     glue_job_name=job_name,
                     integration_pattern=sfn.IntegrationPattern.RUN_JOB,  # Sync execution
-                    result_path="$.glueResult"
-                )                
+                    result_path="$.glueResult",
+                )
 
-                if not(child_glue_jobs): # First in sequence
+                if not (child_glue_jobs):  # First in sequence
                     definition = sfn.Chain.start(glue_job_task)
-                else: # Sequential jobs
+                else:  # Sequential jobs
                     definition = definition.next(glue_job_task)
 
                 child_glue_jobs.append(glue_job_tmp)
@@ -475,3 +481,68 @@ def handler(event, context):
                 timeout=Duration.minutes(15),
                 role=state_machine_role,
             )
+
+    def create_emr_serverless_resources(self, cfg_reader):
+        emr_app_meanings = cfg_reader.get_meanings_by_resource_type(types.EMR_SERVERLESS)
+
+        emr_scripts_bucket = s3.Bucket(
+            self,
+            "emrScriptsBucket",
+            bucket_name=AWSNaming.S3Bucket(self, f"emr-scripts-{Stack.of(self).account}"),
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
+
+        # IAM role for EMR execution
+        emr_exec_role_name = AWSNaming.IAMRole(self, "emr-serverless-exec")
+        emr_exec_role = iam.Role(
+            self,
+            "EMRServerlessExecRole",
+            role_name=emr_exec_role_name,
+            assumed_by=iam.ServicePrincipal("emr-serverless.amazonaws.com"),
+            inline_policies={
+                "EMRServerlessPolicy": iam.PolicyDocument(
+                    statements=[
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=["s3:*", "logs:*"],
+                            resources=["*"],
+                        )
+                    ]
+                )
+            },
+        )        
+
+        # for emr_app_meaning in emr_app_meanings:
+        #     script_paths = cfg_reader.get_emr_serverless_app_scripts(emr_app_meaning)
+        #     for script_path in script_paths:
+        #         s3deploy.BucketDeployment(
+        #             self,
+        #             "emrScriptsBucketDeployment",
+        #             sources=[
+        #                 s3deploy.Source.asset(
+        #                     os.path.join(SRC_FOLDER_NAME, script_path),
+        #                 )
+        #             ],
+        #             destination_bucket=emr_scripts_bucket,
+        #             exclude=[".gitignore"],
+        #         )
+
+        #     serverless_app = emrs.CfnApplication(
+        #         self,
+        #         f"EmrApp{emr_app_meaning.capitalize()}",
+        #         release_label="emr-7.1.0",
+        #         type="SPARK",
+        #         name=AWSNaming.EMRApplication(self, emr_app_meaning),
+        #         auto_start_configuration=emrs.CfnApplication.AutoStartConfigurationProperty(
+        #             enabled=True
+        #         ),
+        #         auto_stop_configuration=emrs.CfnApplication.AutoStopConfigurationProperty(
+        #             enabled=True, idle_timeout_minutes=5
+        #         ),
+        #         maximum_capacity=emrs.CfnApplication.MaximumAllowedResourcesProperty(
+        #             cpu="40 vCPU", memory="3000 GB", disk="20000 GB"
+        #         ),
+        #     )        
+
+   
