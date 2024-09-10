@@ -83,7 +83,14 @@ class GitHubActionsResourcesStack(Stack):
             statements=[
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
-                    actions=["ec2:DescribeVpcs", "ec2:DescribeSecurityGroups"],
+                    actions=[
+                        "ec2:DescribeVpcs",
+                        "ec2:DescribeSecurityGroups",
+                        "ec2:DescribeImages",
+                        "ec2:DescribeSubnets",
+                        "ec2:DescribeRouteTables",
+                        "ec2:DescribeVpnGateways",
+                    ],
                     resources=["*"],
                 )
             ],
