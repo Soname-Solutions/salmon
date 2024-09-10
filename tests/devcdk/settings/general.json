@@ -4,7 +4,11 @@
         "account_id": "<<main_account_id>>",
         "region": "eu-central-1",
         "digest_report_period_hours" : 72, 
-        "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)"
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? 2199)",
+        "grafana_instance": {
+            "grafana_vpc_id": "<<grafana_vpc_id>>",
+            "grafana_security_group_id": "<<grafana_security_group_id>>"
+        }
     },
     "monitored_environments": [    
         {
