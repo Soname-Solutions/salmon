@@ -437,6 +437,18 @@ def handler(event, context):
             auto_delete_objects=True,
         )
 
+        s3deploy.BucketDeployment(
+            self,
+            "crawlerDataBucketDeployment",
+            sources=[
+                s3deploy.Source.asset(
+                    os.path.join(SRC_FOLDER_NAME, types.GLUE_CRAWLERS),
+                )
+            ],
+            destination_bucket=crawler_bucket,
+            exclude=[".gitignore"],
+        )        
+
         # IAM Role
         glue_iam_role = iam_helper.create_glue_iam_role(
             scope=self,
