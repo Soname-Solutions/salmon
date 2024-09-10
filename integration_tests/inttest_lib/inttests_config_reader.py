@@ -95,6 +95,16 @@ class IntTests_Config_Reader:
                 return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
             
         return []
+    
+    def get_glue_crawlers_with_crawler_path(self):
+        outp = {}
+        gluecr_config = self.config_data.get(types.GLUE_CRAWLERS,{})
+        for gluecr in gluecr_config:
+            meaning = gluecr.get("meaning","")
+            crawler_path = gluecr.get("crawler_path","")
+            outp[meaning] = crawler_path
+            
+        return outp
 
     def get_step_function_child_glue_jobs_meanings(self, step_function_meaning):
         gluewf_config = self.config_data.get(types.STEP_FUNCTIONS,{})
