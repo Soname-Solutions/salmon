@@ -207,8 +207,7 @@ Within each section, list the resources of the corresponding resource type along
 
         > **NOTE:** Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards).
         
-        > If you are using AWS Glue Data Quality in your Glue Jobs, the name of the Ruleset can be found in your Glue script (look for the `dataQualityEvaluationContext` parameter which is part of the publishing_options dictionary passed to the `EvaluateDataQuality` class). \
-        For example:
+        > If you are using AWS Glue Data Quality in your Glue Jobs, the name of the Ruleset can be found in your Glue script (look for the `dataQualityEvaluationContext` parameter which is part of the `publishing_options` dictionary passed to the `EvaluateDataQuality` class). For example:
         ```python
         EvaluateDataQualityMultiframe_fail = EvaluateDataQuality().process_rows(
             frame=AmazonS3_node,
