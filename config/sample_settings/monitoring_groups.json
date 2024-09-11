@@ -58,6 +58,21 @@
                     "minimum_number_of_runs": 40
                 }
             ]
+        },
+        {
+            "group_name": "pipeline_DQ",
+            "glue_data_quality":[
+                {
+                    "name": "glue-dq-ruleset-source1-*",
+                    "monitored_environment_name": "Data Lake Account [<<env>>]",
+                    "sla_seconds": 600
+                },
+                {
+                    "name": "glue-dq-ruleset-source2-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]",
+                    "minimum_number_of_runs": 1
+                }
+            ]
         }
     ]
 }
