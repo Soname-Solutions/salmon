@@ -49,6 +49,7 @@ class GitHubActionsResourcesStack(Stack):
         self.attach_glue_job_runner_policy(iam_user)
         self.attach_glue_dq_runner_policy(iam_user)
         self.attach_glue_workflow_runner_policy(iam_user)
+        self.attach_glue_crawler_runner_policy(iam_user)
         self.attach_step_function_runner_policy(iam_user)
         self.attach_lambda_runner_policy(iam_user)
         self.attach_emr_serverless_runner_policy(iam_user)
@@ -132,6 +133,27 @@ class GitHubActionsResourcesStack(Stack):
                         "glue:ListWorkflows",
                     ],
                     resources=["arn:aws:glue:*:*:workflow/*salmon*"],
+                )
+            ],
+            users=[iam_user],
+        )
+
+    def attach_glue_crawler_runner_policy(self, iam_user):
+        # Policy for Integration Tests (Glue Crawlers)
+        glue_crawler_policy = iam.ManagedPolicy(
+            self,
+            "GlueCrawlerRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "GlueCrawlerRunnerPolicy"),
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "glue:StartCrawler",
+                        "glue:GetCrawler",
+                        "glue:GetCrawlerMetrics",
+                        "glue:ListCrawlers",
+                        "glue:StopCrawler",
+                    ],
+                    resources=["arn:aws:glue:*:*:crawler/*salmon*"],
                 )
             ],
             users=[iam_user],
