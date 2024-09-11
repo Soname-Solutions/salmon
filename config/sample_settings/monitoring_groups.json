@@ -42,19 +42,19 @@
             ],
             "glue_workflows": [
                 {
-                    "name": "glue-wf-ds-source1-*",
+                    "name": "glue-wf-source1-*",
                     "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ],
             "glue_crawlers": [
                 {
-                    "name": "glue-crawler-ds-source1-*",
+                    "name": "glue-crawler-source1-*",
                     "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ],
             "glue_catalogs": [
                 {
-                    "name": "glue-catalog-ds-source1-*",
+                    "name": "glue-catalog-source1-*",
                     "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ]
@@ -78,7 +78,7 @@
             ],
             "step_functions": [
                 {
-                    "name": "ds-sourceABC-*",
+                    "name": "step-function-sourceABC-*",
                     "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ]
@@ -97,7 +97,7 @@
                     "minimum_number_of_runs": 1
                 },
                 {
-                    "name": "data-quality-evaluation-context",
+                    "name": "data-quality-evaluation-context-name",
                     "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ]

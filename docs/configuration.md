@@ -203,8 +203,24 @@ Within each section, list the resources of the corresponding resource type along
 
     - `name` - specify the resource name to be monitored.
 
-        >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`. \
-        > **NOTE:** Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards). If you are using AWS Glue Data Quality for your Glue Jobs, the name of the ruleset can be found in your Glue script. Look for the `dataQualityEvaluationContext` parameter, which is passed to the EvaluateDataQuality class.
+        >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`. 
+
+        > **NOTE:** Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards).
+        
+        > If you are using AWS Glue Data Quality in your Glue Jobs, the name of the Ruleset can be found in your Glue script (look for the `dataQualityEvaluationContext` parameter which is part of the publishing_options dictionary passed to the `EvaluateDataQuality` class). \
+        For example:
+        ```python
+        EvaluateDataQualityMultiframe_fail = EvaluateDataQuality().process_rows(
+            frame=AmazonS3_node,
+            ruleset=ruleset_fail,
+            publishing_options={
+                "dataQualityEvaluationContext": ruleset_name,  # This is where the ruleset name is set
+                "enableDataQualityCloudWatchMetrics": True,
+                "enableDataQualityResultsPublishing": True,
+            },
+            additional_options={"performanceTuning.caching": "CACHE_NOTHING"},
+        )
+        ```
 
         > For EMR Serverless resource type, please specify a name of the EMR Serverless application.
 
