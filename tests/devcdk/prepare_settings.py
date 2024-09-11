@@ -35,11 +35,13 @@ def get_vpc_id():
         raise PrepareSettingsException(f"Error while getting default VPC ID: {str(ex)}")
 
 
-def get_security_group_id():
+def get_security_group_id(vpc_id):
     """Required for the deployment of Grafana stack"""
     session = boto3.Session()
     ec2_client = session.client("ec2")
-    response = ec2_client.describe_security_groups(GroupNames=["default"])
+    response = ec2_client.describe_security_groups(
+        Filters=[{"Name": "vpc-id", "Values": [vpc_id]}], GroupNames=["default"]
+    )
 
     try:
         security_group_id = response["SecurityGroups"][0]["GroupId"]
@@ -72,7 +74,7 @@ def main():
 
     aws_account_id = get_aws_account_id()
     vpc_id = get_vpc_id()
-    security_group_id = get_security_group_id()
+    security_group_id = get_security_group_id(vpc_id)
     update_replacements_file(file_path, aws_account_id, vpc_id, security_group_id)
     print(f"Updated replacements.json with AWS Account ID: {aws_account_id}")
 
