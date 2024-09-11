@@ -45,6 +45,7 @@ class GitHubActionsResourcesStack(Stack):
 
         # Attach policies to the IAM user
         self.attach_assume_role_policy(iam_user)
+        self.attach_ec2_role_policy(iam_user)
         self.attach_glue_job_runner_policy(iam_user)
         self.attach_glue_dq_runner_policy(iam_user)
         self.attach_glue_workflow_runner_policy(iam_user)
@@ -69,6 +70,29 @@ class GitHubActionsResourcesStack(Stack):
                         "arn:aws:iam::*:role/cdk-*-deploy-role-*",
                         "arn:aws:iam::*:role/cdk-*-file-publishing-role-*",
                     ],
+                )
+            ],
+            users=[iam_user],
+        )
+
+    def attach_ec2_role_policy(self, iam_user):
+        # Permissions needed to CDK deploy/destroy of Grafana stack
+        ec2_role_policy = iam.Policy(
+            self,
+            "EC2RolePolicy",
+            policy_name="EC2RolePolicy",
+            statements=[
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=[
+                        "ec2:DescribeVpcs",
+                        "ec2:DescribeSecurityGroups",
+                        "ec2:DescribeImages",
+                        "ec2:DescribeSubnets",
+                        "ec2:DescribeRouteTables",
+                        "ec2:DescribeVpnGateways",
+                    ],
+                    resources=["*"],
                 )
             ],
             users=[iam_user],
