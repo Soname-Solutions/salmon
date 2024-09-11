@@ -209,11 +209,11 @@ Within each section, list the resources of the corresponding resource type along
         
         > If you are using AWS Glue Data Quality in your Glue Jobs, the name of the Ruleset can be found in your Glue script (look for the `dataQualityEvaluationContext` parameter which is part of the `publishing_options` dictionary passed to the `EvaluateDataQuality` class). For example:
         ```python
-        EvaluateDataQualityMultiframe_fail = EvaluateDataQuality().process_rows(
+        EvaluateDataQualityMultiframe = EvaluateDataQuality().process_rows(
             frame=AmazonS3_node,
-            ruleset=ruleset_fail,
+            ruleset=EvaluateDataQuality_ruleset,
             publishing_options={
-                "dataQualityEvaluationContext": ruleset_name,  # This is where the ruleset name is set
+                "dataQualityEvaluationContext": "dq-ruleset-name",  # This is where the ruleset name is set
                 "enableDataQualityCloudWatchMetrics": True,
                 "enableDataQualityResultsPublishing": True,
             },
