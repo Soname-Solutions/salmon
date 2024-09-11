@@ -1,3 +1,5 @@
 {
-    "<<main_account_id>>": "to be replaced"
+    "<<main_account_id>>": "to be replaced",
+    "<<grafana_vpc_id>>": "to be replaced", 
+    "<<grafana_security_group_id>>": "to be replaced"
 }
