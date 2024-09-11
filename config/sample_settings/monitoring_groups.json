@@ -39,6 +39,24 @@
                     "monitored_environment_name": "Dept1 Account [<<env>>]",
                     "minimum_number_of_runs": 2
                 }
+            ],
+            "glue_workflows": [
+                {
+                    "name": "glue-wf-ds-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
+            ],
+            "glue_crawlers": [
+                {
+                    "name": "glue-crawler-ds-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
+            ],
+            "glue_catalogs": [
+                {
+                    "name": "glue-catalog-ds-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
             ]
         },
         {
@@ -57,6 +75,12 @@
                     "monitored_environment_name": "Dept1 Account [<<env>>]",
                     "minimum_number_of_runs": 40
                 }
+            ],
+            "step_functions": [
+                {
+                    "name": "ds-sourceABC-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
             ]
         },
         {
@@ -71,6 +95,10 @@
                     "name": "glue-dq-ruleset-source2-*",
                     "monitored_environment_name": "Dept1 Account [<<env>>]",
                     "minimum_number_of_runs": 1
+                },
+                {
+                    "name": "data-quality-evaluation-context",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ]
         }

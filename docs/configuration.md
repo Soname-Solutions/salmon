@@ -204,7 +204,7 @@ Within each section, list the resources of the corresponding resource type along
     - `name` - specify the resource name to be monitored.
 
         >  If you would like to monitor the resources with a common pattern in their names (e.g., glue-pipeline1-ingest, glue-pipeline1-cleanse, glue-pipeline1-staging), use wildcards: glue-pipeline1`-*`. \
-        > **NOTE:** Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards). 
+        > **NOTE:** Glue Data Quality wildcards are supported only for Rulesets applied to AWS Glue table. For other Rulesets (i.e., executed within AWS Glue job) please specify an exact name (without wildcards). If you are using AWS Glue Data Quality for your Glue Jobs, the name of the ruleset can be found in your Glue script. Look for the `dataQualityEvaluationContext` parameter, which is passed to the EvaluateDataQuality class.
 
         > For EMR Serverless resource type, please specify a name of the EMR Serverless application.
 
