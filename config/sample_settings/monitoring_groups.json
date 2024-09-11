@@ -39,6 +39,24 @@
                     "monitored_environment_name": "Dept1 Account [<<env>>]",
                     "minimum_number_of_runs": 2
                 }
+            ],
+            "glue_workflows": [
+                {
+                    "name": "glue-wf-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
+            ],
+            "glue_crawlers": [
+                {
+                    "name": "glue-crawler-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
+            ],
+            "glue_catalogs": [
+                {
+                    "name": "glue-catalog-source1-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
             ]
         },
         {
@@ -56,6 +74,31 @@
                     "name": "validate_transfer_s3object_DEV",
                     "monitored_environment_name": "Dept1 Account [<<env>>]",
                     "minimum_number_of_runs": 40
+                }
+            ],
+            "step_functions": [
+                {
+                    "name": "step-function-sourceABC-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
+                }
+            ]
+        },
+        {
+            "group_name": "pipeline_DQ",
+            "glue_data_quality":[
+                {
+                    "name": "glue-dq-ruleset-source1-*",
+                    "monitored_environment_name": "Data Lake Account [<<env>>]",
+                    "sla_seconds": 600
+                },
+                {
+                    "name": "glue-dq-ruleset-source2-*",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]",
+                    "minimum_number_of_runs": 1
+                },
+                {
+                    "name": "data-quality-evaluation-context-name",
+                    "monitored_environment_name": "Dept1 Account [<<env>>]"
                 }
             ]
         }
