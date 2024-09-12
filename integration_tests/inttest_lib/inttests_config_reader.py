@@ -34,11 +34,12 @@ class IntTests_Config_Reader:
         resource_meanings = self.get_meanings_by_resource_type(resource_type)
 
         matches = {
-            types.GLUE_JOBS: AWSNaming.GlueJob,
-            types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
-            types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
-            types.STEP_FUNCTIONS: AWSNaming.StepFunction,
             types.EMR_SERVERLESS: AWSNaming.EMRApplication,
+            types.GLUE_CRAWLERS: AWSNaming.GlueCrawler,
+            types.GLUE_JOBS: AWSNaming.GlueJob,
+            types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
+            types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
+            types.STEP_FUNCTIONS: AWSNaming.StepFunction,
         }
         naming_func = matches[resource_type]
 
@@ -64,16 +65,16 @@ class IntTests_Config_Reader:
 
         job_attr = "containing_glue_job_meaning"
         glue_rulesets = [
-                x["meaning"]
-                for x in resource_items
-                if bool(x.get(job_attr, "")) == need_job_attr
-            ]
-        
+            x["meaning"]
+            for x in resource_items
+            if bool(x.get(job_attr, "")) == need_job_attr
+        ]
+
         glue_jobs = [
-                x.get(job_attr, "")
-                for x in resource_items
-                if bool(x.get(job_attr, "")) == need_job_attr and x.get(job_attr, "")
-            ]
+            x.get(job_attr, "")
+            for x in resource_items
+            if bool(x.get(job_attr, "")) == need_job_attr and x.get(job_attr, "")
+        ]
 
         return list(glue_rulesets), list(glue_jobs)
 
@@ -85,31 +86,45 @@ class IntTests_Config_Reader:
                 AWSNaming.GlueRuleset(stack_obj_for_naming, meaning)
                 for meaning in glue_rulesets
             ],
-            [AWSNaming.GlueJob(stack_obj_for_naming, meaning) for meaning in glue_jobs]
+            [AWSNaming.GlueJob(stack_obj_for_naming, meaning) for meaning in glue_jobs],
         )
-    
+
     def get_glue_workflow_child_glue_jobs_meanings(self, glue_workflow_meaning):
-        gluewf_config = self.config_data.get(types.GLUE_WORKFLOWS,{})
+        gluewf_config = self.config_data.get(types.GLUE_WORKFLOWS, {})
         for gluewf in gluewf_config:
-            if gluewf.get("meaning","") == glue_workflow_meaning:
-                return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
-            
+            if gluewf.get("meaning", "") == glue_workflow_meaning:
+                return [x["meaning"] for x in gluewf.get("glue_jobs", [])]
+
         return []
 
-    def get_step_function_child_glue_jobs_meanings(self, step_function_meaning):
-        gluewf_config = self.config_data.get(types.STEP_FUNCTIONS,{})
-        for gluewf in gluewf_config:
-            if gluewf.get("meaning","") == step_function_meaning:
-                return [x["meaning"] for x in gluewf.get("glue_jobs",[])]
-            
-        return []
-    
-    def get_emr_serverless_apps_with_scripts(self, stack_obj_for_naming): # ! N.B. here name, not meaning!
+    def get_glue_crawlers_with_crawler_path(self):
         outp = {}
-        emrs_config = self.config_data.get(types.EMR_SERVERLESS,{})
+        gluecr_config = self.config_data.get(types.GLUE_CRAWLERS, {})
+        for gluecr in gluecr_config:
+            meaning = gluecr.get("meaning", "")
+            crawler_path = gluecr.get("crawler_path", "")
+            outp[meaning] = crawler_path
+
+        return outp
+
+    def get_step_function_child_glue_jobs_meanings(self, step_function_meaning):
+        gluewf_config = self.config_data.get(types.STEP_FUNCTIONS, {})
+        for gluewf in gluewf_config:
+            if gluewf.get("meaning", "") == step_function_meaning:
+                return [x["meaning"] for x in gluewf.get("glue_jobs", [])]
+
+        return []
+
+    def get_emr_serverless_apps_with_scripts(
+        self, stack_obj_for_naming
+    ):  # ! N.B. here name, not meaning!
+        outp = {}
+        emrs_config = self.config_data.get(types.EMR_SERVERLESS, {})
         for emr_app in emrs_config:
-            app_name = AWSNaming.EMRApplication(stack_obj_for_naming,emr_app.get("meaning",""))
-            script_paths = [x["path"] for x in emr_app.get("scripts",[])]
+            app_name = AWSNaming.EMRApplication(
+                stack_obj_for_naming, emr_app.get("meaning", "")
+            )
+            script_paths = [x["path"] for x in emr_app.get("scripts", [])]
             outp[app_name] = script_paths
 
         return outp

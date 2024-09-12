@@ -124,7 +124,7 @@ class EMRManager:
             raise ValueError(f"Application with name {app_name} not found.")
         except Exception as e:
             error_message = f"Error retrieving application ID for {app_name}: {e}"
-            raise Exception(error_message)
+            raise EMRManagerException(error_message)
 
     def get_job_run(self, app_id: str, run_id: str) -> str:
         """Get detailed information about a job run submitted to the EMR Serverless application"""

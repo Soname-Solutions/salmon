@@ -33,6 +33,11 @@
                     "monitoring_group": "it_ts_emr_serverless",
                     "alerts": true,
                     "digest": true
+                },
+                {
+                    "monitoring_group": "it_ts_glue_crawlers",
+                    "alerts": true,
+                    "digest": true
                 }
             ]
         }

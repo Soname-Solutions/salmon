@@ -86,6 +86,16 @@
                     }
                 ]
             }
+        ],
+        "glue_crawlers": [
+            {
+                "meaning": "ts-crawler-success",
+                "crawler_path": "success/"
+            },
+            {
+                "meaning": "ts-crawler-failure",
+                "crawler_path": "failure/"
+            }
         ]
     }
 }
