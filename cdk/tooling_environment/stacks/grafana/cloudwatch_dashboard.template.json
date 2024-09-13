@@ -581,9 +581,19 @@
             "selected": false,
             "text": "step_functions",
             "value": "step_functions"
+          },
+          {
+            "selected": false,
+            "text": "emr_serverless",
+            "value": "emr_serverless"
+          },
+          {
+            "selected": false,
+            "text": "glue_data_quality",
+            "value": "glue_data_quality"
           }
         ],
-        "query": "glue_jobs,glue_workflows,glue_crawlers,glue_catalogs,lambda_functions,step_functions",
+        "query": "glue_jobs,glue_workflows,glue_crawlers,glue_catalogs,lambda_functions,step_functions,emr_serverless,glue_data_quality",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
