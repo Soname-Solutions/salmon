@@ -428,6 +428,38 @@ def handler(event, context):
                     )
 
     def create_glue_crawlers_resources(self, cfg_reader):
+        def create_iam_role(meaning, flg_deny_create_table):
+            # IAM Role
+            glue_iam_role = iam_helper.create_glue_iam_role(
+                scope=self,
+                role_id=f"GlueCrawlerIAMRole{meaning.capitalize()}",
+                role_name=AWSNaming.IAMRole(self, f"gluecr-{meaning}"),
+            )
+
+            glue_policy = iam.Policy(
+                self,
+                f"GlueCrawlerRolePolicy{meaning.capitalize()}",
+                policy_name=AWSNaming.IAMPolicy(self, f"gluecr-{meaning}"),
+            )
+            glue_policy.add_statements(
+                iam.PolicyStatement(
+                    actions=["s3:GetObject", "s3:ListObjects"],
+                    effect=iam.Effect.ALLOW,
+                    resources=[f"{crawler_bucket.bucket_arn}/*"], 
+                )
+            )
+
+            if flg_deny_create_table:
+                glue_policy.add_statements(
+                    iam.PolicyStatement(
+                        actions=["glue:CreateTable"],
+                        effect=iam.Effect.DENY,
+                        resources=["*"],
+                    )
+                )                  
+            glue_iam_role.attach_inline_policy(glue_policy)            
+            return glue_iam_role
+
         # Crawler Bucket
         crawler_bucket = s3.Bucket(
             self,
@@ -449,33 +481,7 @@ def handler(event, context):
             exclude=[".gitignore"],
         )        
 
-        # IAM Role
-        glue_iam_role = iam_helper.create_glue_iam_role(
-            scope=self,
-            role_id="GlueCrawlerIAMRole",
-            role_name=AWSNaming.IAMRole(self, "glue-crawler-role"),
-        )
 
-        glue_policy = iam.Policy(
-            self,
-            "GlueCrawlerRolePolicy",
-            policy_name=AWSNaming.IAMPolicy(self, "glue-crawler"),
-        )
-        glue_policy.add_statements(
-            iam.PolicyStatement(
-                actions=["s3:GetObject", "s3:ListObjects"],
-                effect=iam.Effect.ALLOW,
-                resources=[f"{crawler_bucket.bucket_arn}/*"], 
-            )
-        )
-        glue_policy.add_statements(
-            iam.PolicyStatement(
-                actions=["s3:GetObject", "s3:ListObjects"],
-                effect=iam.Effect.DENY,
-                resources=[f"{crawler_bucket.bucket_arn}/failure/*"], # N.B. DENY for failure folder
-            )
-        )                  
-        glue_iam_role.attach_inline_policy(glue_policy)
 
         glue_database_name = AWSNaming.GlueDB(self, "crawler-db")
         glue_database = glue.Database(
@@ -483,6 +489,8 @@ def handler(event, context):
         )
 
         for meaning, crawler_path in cfg_reader.get_glue_crawlers_with_crawler_path().items():
+            flg_deny_create_table = cfg_reader.get_glue_crawlers_deny_create_table(meaning)
+            glue_iam_role = create_iam_role(meaning, flg_deny_create_table)
             glue_old.CfnCrawler(
                 self,
                 f"Crawler{meaning.capitalize()}",

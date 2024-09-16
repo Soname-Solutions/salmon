@@ -94,7 +94,8 @@
             },
             {
                 "meaning": "ts-crawler-failure",
-                "crawler_path": "failure/"
+                "crawler_path": "failure/",
+                "deny_create_table": true
             }
         ]
     }
