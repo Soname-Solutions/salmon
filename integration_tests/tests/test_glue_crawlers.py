@@ -13,7 +13,7 @@ def test_alerts(test_results_messages):
     """    
     msqchk = MessagesChecker(test_results_messages)
 
-    cnt_glue_error_messages = len(msqchk.subject_contains_all(["glue_crawlers :", "FAILED"]))
+    cnt_glue_error_messages = len(msqchk.subject_contains_all(["glue_crawlers :", "Failed"]))
     cnt_glue_all_messages = len(msqchk.subject_contains_all(["glue_crawlers :"]))
     
     assert cnt_glue_error_messages == 1, "There should be exactly one glue crawler error message"
