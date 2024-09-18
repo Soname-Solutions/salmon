@@ -1,7 +1,5 @@
-import json
 import boto3
 import time
-from datetime import datetime
 
 from ..core.constants import CloudWatchConfigs
 
@@ -87,13 +85,25 @@ class CloudWatchManager:
         self,
         log_group_name: str,
         query_string: str,
-        start_time: datetime,
-        end_time: datetime,
+        start_time: int,
+        end_time: int,
     ):
+        """
+        Streams the results of a single query execution using CloudWatch Logs Insights.
+
+        Args:
+            log_group_name (str): The log group on which to perform the query.
+            query_string (str): The query string to use.
+            start_time (int): The beginning of the time range to query (the range is inclusive). The epoch time in milliseconds as an int.
+            end_time (int): The end of the time range to query (the range is inclusive). The epoch time in milliseconds as an int.
+
+        Returns:
+            The results of the query execution.
+        """
         start_query_response = self.cloudwatch_client.start_query(
             logGroupName=log_group_name,
-            startTime=int(start_time.timestamp()),
-            endTime=int(end_time.timestamp()),
+            startTime=start_time,
+            endTime=end_time,
             queryString=query_string,
         )
         query_id = start_query_response["queryId"]
@@ -105,7 +115,7 @@ class CloudWatchManager:
                 raise CloudWatchManagerException(error_msg)
 
             response = self.cloudwatch_client.get_query_results(queryId=query_id)
-            
+
             if response["status"] != "Running":
                 break
 

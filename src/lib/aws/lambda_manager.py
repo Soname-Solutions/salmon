@@ -1,12 +1,15 @@
 import re
 import boto3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pydantic import BaseModel
 from typing import Optional
 
 from .cloudwatch_manager import CloudWatchManager
-from lib.core.datetime_utils import str_utc_datetime_to_datetime
+from lib.core.datetime_utils import (
+    datetime_to_epoch_milliseconds,
+    str_utc_datetime_to_datetime,
+)
 
 
 ###########################################################
@@ -114,11 +117,16 @@ class LambdaManager:
         """
 
         try:
+            query_start_time = int(
+                datetime_to_epoch_milliseconds(since_time + timedelta(milliseconds=1))
+            )  # add 1ms to query start time to make since_time non-inclusive
+            query_end_time = int(datetime_to_epoch_milliseconds(datetime.now()))
+
             lambda_logs = cloudwatch_manager.query_logs(
                 log_group_name=self.get_log_group(function_name),
                 query_string=query_string,
-                start_time=since_time,
-                end_time=datetime.now(),
+                start_time=query_start_time,
+                end_time=query_end_time,
             )
             lambda_function_log_data = []
             for log_entry_data in lambda_logs:
