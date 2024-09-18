@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from inttest_lib.runners.base_resource_runner import BaseResourceRunner
 
 from lib.aws.cloudwatch_manager import CloudWatchManager, CloudWatchManagerException
+from lib.core.datetime_utils import datetime_to_epoch_milliseconds
 
 
 class LambdaFunctionRunnerException(Exception):
@@ -74,8 +75,10 @@ class LambdaFunctionRunner(BaseResourceRunner):
         query_string = f"fields @timestamp, @message | filter @message like /END RequestId: {request_id}/"
 
         try:
+            query_start_time = int(datetime_to_epoch_milliseconds(start_time))
+            query_end_time = int(datetime_to_epoch_milliseconds(datetime.now()))
             results = self.logs_manager.query_logs(
-                log_group_name, query_string, start_time, datetime.now()
+                log_group_name, query_string, query_start_time, query_end_time
             )
             if results:
                 print(
