@@ -197,8 +197,10 @@ class RulesetRun(BaseModel):
 class RulesetRunsData(BaseModel):
     Results: list[RulesetRun]
 
+
 ###########################################################
 # Crawler-related pydantic classes
+
 
 class CrawlerMetricsList(BaseModel):
     CrawlerName: str
@@ -210,8 +212,9 @@ class CrawlerMetricsList(BaseModel):
     TablesUpdated: Optional[int]
     TablesDeleted: Optional[int]
 
+
 class CrawlerLastCrawl(BaseModel):
-    Status: str # 'SUCCEEDED'|'CANCELLED'|'FAILED'
+    Status: str  # 'SUCCEEDED'|'CANCELLED'|'FAILED'
 
     LogGroup: Optional[str] = None
     LogStream: Optional[str] = None
@@ -225,18 +228,27 @@ class CrawlerLastCrawl(BaseModel):
             return self.StartTime.astimezone(timezone.utc)
         else:
             return None
-    
+
     @property
-    def StartTimeEpochSeconds(self) -> Optional[int]:
+    def StartTimeEpochMilliseconds(self) -> Optional[int]:
         if self.StartTime:
-            return self.StartTime.timestamp()
+            return int(self.StartTime.timestamp()*1000)
         else:
             return None
+        
+    @property
+    def IsSuccess(self) -> bool:
+        return self.Status in GlueManager.LastCrawl_Status_Success
+
+    @property
+    def IsFailure(self) -> bool:
+        return self.Status in GlueManager.LastCrawl_Status_Failure
+
 
 
 class CrawlerData(BaseModel):
     Name: str
-    State: str # 'READY'|'RUNNING'|'STOPPING'
+    State: str  # 'READY'|'RUNNING'|'STOPPING'
     LastCrawl: Optional[CrawlerLastCrawl] = None
 
 
@@ -259,8 +271,16 @@ class GlueManager:
     # FAILURE is an artificial State introduced in Salmon, so we can override "false positive" state COMPLETED even
     # when there was a failure in underlying Glue Job
 
+    # those two are used in event_mapper to handle the event coming from EventBridge
     Crawlers_States_Success = ["Succeeded"]
     Crawlers_States_Failure = ["Failed"]
+
+    # used in extract metrics - show what state crawl is currently in
+    Crawl_States_Final = ["READY"]  # out of 'READY'|'RUNNING'|'STOPPING'
+
+    # used in extract metrics - Outcome of the last crawl
+    LastCrawl_Status_Success = ["SUCCEEDED"]  # out of 'SUCCEEDED'|'CANCELLED'|'FAILED'
+    LastCrawl_Status_Failure = ["CANCELLED", "FAILED"]
 
     Catalog_State_Success = "SUCCESS"
 
@@ -289,11 +309,9 @@ class GlueManager:
         )
 
     @classmethod
-    def is_crawler_final_state(cls, state: str) -> bool:
-        return (
-            state in cls.Crawlers_States_Success or state in cls.Crawlers_States_Failure
-        )
-
+    def is_crawl_final_state(cls, state: str) -> bool:
+        return state in cls.Crawl_States_Final
+    
     def _get_all_job_names(self):
         try:
             response = self.glue_client.list_jobs()
@@ -472,19 +490,23 @@ class GlueManager:
             error_message = f"Error getting glue workflow error message: {e}"
             raise GlueManagerException(error_message)
 
-
     def get_crawler_data(self, crawler_name: str) -> CrawlerData:
         """
         Get's data about the crawler: Name, State (to identify if it's running or completed)
         Additionally, provides info about the last run (there's no runs history available via AWS API, only the latest one)
         """
-        response = self.glue_client.get_crawler(Name=crawler_name)   
-        
-        return CrawlerData(**response['Crawler'])
-        
+        response = self.glue_client.get_crawler(Name=crawler_name)
+
+        return CrawlerData(**response["Crawler"])
+
     def get_crawler_metrics(self, crawler_name: str) -> CrawlerData:
-        response = self.glue_client.get_crawler_metrics(CrawlerNameList=[crawler_name])   
-        if "CrawlerMetricsList" in response and type(response["CrawlerMetricsList"]) == list:
-            return CrawlerMetricsList(**response["CrawlerMetricsList"][0]) # as we query one Crawler at a time
+        response = self.glue_client.get_crawler_metrics(CrawlerNameList=[crawler_name])
+        if (
+            "CrawlerMetricsList" in response
+            and type(response["CrawlerMetricsList"]) == list
+        ):
+            return CrawlerMetricsList(
+                **response["CrawlerMetricsList"][0]
+            )  # as we query one Crawler at a time
         else:
             return None
