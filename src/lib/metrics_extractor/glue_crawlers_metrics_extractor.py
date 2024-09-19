@@ -61,7 +61,7 @@ class GlueCrawlersMetricExtractor(BaseMetricsExtractor):
                 for metric_name, metric_value, metric_type in metric_values
             ]
 
-            record_time = crawler_data.LastCrawl.StartTimeEpochMilliseconds
+            record_time = str(crawler_data.LastCrawl.StartTimeEpochMilliseconds)
 
             records.append(
                 {
