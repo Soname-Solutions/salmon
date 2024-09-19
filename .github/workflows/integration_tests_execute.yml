@@ -3,7 +3,7 @@ env:
     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     AWS_DEFAULT_REGION: 'eu-central-1'    
-    STAGE_NAME: devit
+    STAGE_NAME: devitam
 run-name: integration tests - execute tests
 on: 
   workflow_dispatch:
