@@ -1,5 +1,5 @@
 import boto3
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel
 from typing import Optional, Union
@@ -196,6 +196,48 @@ class RulesetRun(BaseModel):
 
 class RulesetRunsData(BaseModel):
     Results: list[RulesetRun]
+
+###########################################################
+# Crawler-related pydantic classes
+
+class CrawlerMetricsList(BaseModel):
+    CrawlerName: str
+    TimeLeftSeconds: Optional[float]
+    StillEstimating: bool
+    LastRuntimeSeconds: Optional[float]
+    MedianRuntimeSeconds: Optional[float]
+    TablesCreated: Optional[int]
+    TablesUpdated: Optional[int]
+    TablesDeleted: Optional[int]
+
+class CrawlerLastCrawl(BaseModel):
+    Status: str # 'SUCCEEDED'|'CANCELLED'|'FAILED'
+
+    LogGroup: Optional[str] = None
+    LogStream: Optional[str] = None
+    MessagePrefix: Optional[str] = None
+    ErrorMessage: Optional[str] = None
+    StartTime: Optional[datetime] = None
+
+    @property
+    def StartTimeUTC(self) -> Optional[datetime]:
+        if self.StartTime:
+            return self.StartTime.astimezone(timezone.utc)
+        else:
+            return None
+    
+    @property
+    def StartTimeEpochSeconds(self) -> Optional[int]:
+        if self.StartTime:
+            return self.StartTime.timestamp()
+        else:
+            return None
+
+
+class CrawlerData(BaseModel):
+    Name: str
+    State: str # 'READY'|'RUNNING'|'STOPPING'
+    LastCrawl: Optional[CrawlerLastCrawl] = None
 
 
 ###########################################################
@@ -429,3 +471,20 @@ class GlueManager:
         except Exception as e:
             error_message = f"Error getting glue workflow error message: {e}"
             raise GlueManagerException(error_message)
+
+
+    def get_crawler_data(self, crawler_name: str) -> CrawlerData:
+        """
+        Get's data about the crawler: Name, State (to identify if it's running or completed)
+        Additionally, provides info about the last run (there's no runs history available via AWS API, only the latest one)
+        """
+        response = self.glue_client.get_crawler(Name=crawler_name)   
+        
+        return CrawlerData(**response['Crawler'])
+        
+    def get_crawler_metrics(self, crawler_name: str) -> CrawlerData:
+        response = self.glue_client.get_crawler_metrics(CrawlerNameList=[crawler_name])   
+        if "CrawlerMetricsList" in response and type(response["CrawlerMetricsList"]) == list:
+            return CrawlerMetricsList(**response["CrawlerMetricsList"][0]) # as we query one Crawler at a time
+        else:
+            return None
