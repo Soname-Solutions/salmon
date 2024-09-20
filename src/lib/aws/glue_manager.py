@@ -223,19 +223,12 @@ class CrawlerLastCrawl(BaseModel):
     StartTime: Optional[datetime] = None
 
     @property
-    def StartTimeUTC(self) -> Optional[datetime]:
+    def StartTimeEpochMilliseconds(self) -> Optional[int]:
         if self.StartTime:
-            return self.StartTime.astimezone(timezone.utc)
+            return int(self.StartTime.timestamp() * 1000)
         else:
             return None
 
-    @property
-    def StartTimeEpochMilliseconds(self) -> Optional[int]:
-        if self.StartTime:
-            return int(self.StartTime.timestamp()*1000)
-        else:
-            return None
-        
     @property
     def IsSuccess(self) -> bool:
         return self.Status in GlueManager.LastCrawl_Status_Success
@@ -243,7 +236,6 @@ class CrawlerLastCrawl(BaseModel):
     @property
     def IsFailure(self) -> bool:
         return self.Status in GlueManager.LastCrawl_Status_Failure
-
 
 
 class CrawlerData(BaseModel):
@@ -311,7 +303,7 @@ class GlueManager:
     @classmethod
     def is_crawl_final_state(cls, state: str) -> bool:
         return state in cls.Crawl_States_Final
-    
+
     def _get_all_job_names(self):
         try:
             response = self.glue_client.list_jobs()

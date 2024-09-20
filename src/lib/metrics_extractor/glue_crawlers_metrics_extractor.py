@@ -3,8 +3,6 @@ from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 
 from lib.aws.glue_manager import GlueManager, CrawlerData, CrawlerMetricsList
 
-from pydantic import BaseModel
-
 
 class GlueCrawlersMetricExtractor(BaseMetricsExtractor):
     """
@@ -70,6 +68,7 @@ class GlueCrawlersMetricExtractor(BaseMetricsExtractor):
                     "MeasureValueType": "MULTI",
                     "MeasureValues": measure_values,
                     "Time": record_time,
+                    "TimeUnit": "MILLISECONDS",
                 }
             )
 
