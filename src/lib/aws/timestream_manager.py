@@ -1,6 +1,7 @@
 import boto3
 
 from datetime import datetime, timedelta, timezone
+import dateutil
 from ..core import datetime_utils
 
 from pydantic import BaseModel

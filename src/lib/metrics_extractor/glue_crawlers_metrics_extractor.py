@@ -45,9 +45,12 @@ class GlueCrawlersMetricExtractor(BaseMetricsExtractor):
                 ("succeeded", int(crawler_data.LastCrawl.IsSuccess), "BIGINT"),
                 ("failed", int(crawler_data.LastCrawl.IsFailure), "BIGINT"),
                 ("error_message", crawler_data.LastCrawl.ErrorMessage, "VARCHAR"),
-                ("tables_created", crawler_metrics.TablesCreated, "BIGINT"),
-                ("tables_updated", crawler_metrics.TablesUpdated, "BIGINT"),
-                ("tables_deleted", crawler_metrics.TablesDeleted, "BIGINT"),
+                ("tables_created_total", crawler_metrics.TablesCreated, "BIGINT"),
+                ("tables_updated_total", crawler_metrics.TablesUpdated, "BIGINT"),
+                ("tables_deleted_total", crawler_metrics.TablesDeleted, "BIGINT"),
+                ("tables_created_delta", 0, "BIGINT"), #todo:
+                ("tables_updated_delta", 0, "BIGINT"),
+                ("tables_deleted_delta", 0, "BIGINT"),                
             ]
 
             measure_values = [
