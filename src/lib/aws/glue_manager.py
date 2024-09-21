@@ -1,4 +1,5 @@
 import boto3
+import json
 from datetime import datetime, timezone
 
 from pydantic import BaseModel
@@ -202,25 +203,70 @@ class RulesetRunsData(BaseModel):
 # Crawler-related pydantic classes
 
 
-class CrawlerMetricsList(BaseModel):
-    CrawlerName: str
-    TimeLeftSeconds: Optional[float]
-    StillEstimating: bool
-    LastRuntimeSeconds: Optional[float]
-    MedianRuntimeSeconds: Optional[float]
-    TablesCreated: Optional[int]
-    TablesUpdated: Optional[int]
-    TablesDeleted: Optional[int]
+class CrawlSummary(BaseModel):
+    TablesAdded: Optional[int] = 0
+    TablesUpdated: Optional[int] = 0
+    TablesDeleted: Optional[int] = 0
+    PartitionsAdded: Optional[int] = 0
+    PartitionsUpdated: Optional[int] = 0
+    PartitionsDeleted: Optional[int] = 0
 
 
-class CrawlerLastCrawl(BaseModel):
-    Status: str  # 'SUCCEEDED'|'CANCELLED'|'FAILED'
+class Crawl(BaseModel):
+    CrawlId: str
+    State: str  # 'RUNNING'|'COMPLETED'|'FAILED'|'STOPPED'
+    StartTime: datetime
+    EndTime: datetime
+    DPUHour: float
+    Summary: Optional[str] = "{}"
 
-    LogGroup: Optional[str] = None
-    LogStream: Optional[str] = None
-    MessagePrefix: Optional[str] = None
-    ErrorMessage: Optional[str] = None
-    StartTime: Optional[datetime] = None
+    def parse_crawl_summary(self) -> CrawlSummary:
+        summary = CrawlSummary()
+        if not self.Summary or self.Summary == "{}":
+            return summary  # Return default summary with zeros
+
+        try:
+            # Parse the top-level Summary JSON string
+            summary_dict = json.loads(self.Summary)
+        except json.JSONDecodeError:
+            # If parsing fails, return default summary
+            return summary
+
+        # Iterate over each entity type in the summary (e.g., "TABLE", "PARTITION")
+        for entity_type, operations in summary_dict.items():
+            # operations is a dict with operation types as keys (e.g., "ADD", "UPDATE")
+            for operation, data_str in operations.items():
+                try:
+                    # Each operation's data is another JSON-encoded string
+                    data = json.loads(data_str)
+                    count = data.get("Count", 0)
+                except json.JSONDecodeError:
+                    count = 0  # If parsing fails, default count to 0
+
+                # Map the counts to the appropriate fields in CrawlSummary
+                if entity_type.upper() == "TABLE":
+                    if operation.upper() == "ADD":
+                        summary.TablesAdded += count
+                    elif operation.upper() == "UPDATE":
+                        summary.TablesUpdated += count
+                    elif operation.upper() == "DELETE":
+                        summary.TablesDeleted += count
+                elif entity_type.upper() == "PARTITION":
+                    if operation.upper() == "ADD":
+                        summary.PartitionsAdded += count
+                    elif operation.upper() == "UPDATE":
+                        summary.PartitionsUpdated += count
+                    elif operation.upper() == "DELETE":
+                        summary.PartitionsDeleted += count
+        return summary
+
+    @property
+    def SummaryParsed(self) -> CrawlSummary:
+        return self.parse_crawl_summary()
+
+    @property
+    def Duration(self) -> float:
+        return (self.EndTime - self.StartTime).total_seconds()
 
     @property
     def StartTimeEpochMilliseconds(self) -> Optional[int]:
@@ -231,17 +277,27 @@ class CrawlerLastCrawl(BaseModel):
 
     @property
     def IsSuccess(self) -> bool:
-        return self.Status in GlueManager.LastCrawl_Status_Success
+        return self.Status in GlueManager.Crawl_States_Success
 
     @property
     def IsFailure(self) -> bool:
-        return self.Status in GlueManager.LastCrawl_Status_Failure
+        return self.Status in GlueManager.Crawl_States_Failure
+
+    @property
+    def IsCompleted(self) -> bool:
+        return (
+            self.State in GlueManager.Crawl_States_Success
+            or self.State in GlueManager.Crawl_States_Failure
+        )
 
 
 class CrawlerData(BaseModel):
     Name: str
     State: str  # 'READY'|'RUNNING'|'STOPPING'
-    LastCrawl: Optional[CrawlerLastCrawl] = None
+
+    @property
+    def IsCompleted(self) -> bool:
+        return self.State in GlueManager.Crawler_States_Final
 
 
 ###########################################################
@@ -267,12 +323,13 @@ class GlueManager:
     Crawlers_States_Success = ["Succeeded"]
     Crawlers_States_Failure = ["Failed"]
 
-    # used in extract metrics - show what state crawl is currently in
-    Crawl_States_Final = ["READY"]  # out of 'READY'|'RUNNING'|'STOPPING'
+    # used to check if Crawler is running or completed
+    Crawler_States_Final = ["READY"]  # out of 'READY'|'RUNNING'|'STOPPING'
 
-    # used in extract metrics - Outcome of the last crawl
-    LastCrawl_Status_Success = ["SUCCEEDED"]  # out of 'SUCCEEDED'|'CANCELLED'|'FAILED'
-    LastCrawl_Status_Failure = ["CANCELLED", "FAILED"]
+    # used in extract metrics - show what state crawl is currently in
+    # out of 'RUNNING'|'COMPLETED'|'FAILED'|'STOPPED'
+    Crawl_States_Success = ["COMPLETED"]
+    Crawl_States_Failure = ["FAILED", "STOPPED"]
 
     Catalog_State_Success = "SUCCESS"
 
@@ -299,10 +356,6 @@ class GlueManager:
         return (
             state in cls.Workflow_States_Success or state in cls.Workflow_States_Failure
         )
-
-    @classmethod
-    def is_crawl_final_state(cls, state: str) -> bool:
-        return state in cls.Crawl_States_Final
 
     def _get_all_job_names(self):
         try:
@@ -491,14 +544,3 @@ class GlueManager:
 
         return CrawlerData(**response["Crawler"])
 
-    def get_crawler_metrics(self, crawler_name: str) -> CrawlerData:
-        response = self.glue_client.get_crawler_metrics(CrawlerNameList=[crawler_name])
-        if (
-            "CrawlerMetricsList" in response
-            and type(response["CrawlerMetricsList"]) == list
-        ):
-            return CrawlerMetricsList(
-                **response["CrawlerMetricsList"][0]
-            )  # as we query one Crawler at a time
-        else:
-            return None

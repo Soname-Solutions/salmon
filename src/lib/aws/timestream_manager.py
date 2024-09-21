@@ -65,6 +65,30 @@ class QueryResponse(BaseModel):
 
 #################################################
 
+def convert_timestream_datetime_str(datetime_str: str) -> datetime:
+    """
+    Parses and converts datetime string extracted from Timestream DB, adds UTC timezone.
+    In timestream it is stored as "2024-09-20 16:39:05.000000000" (tz-naive), but by design it's UTC time
+    """
+    try:
+        if "." in datetime_str:
+            date_part, fractional_part = datetime_str.split(".")
+            fractional_part = fractional_part.ljust(6, "0")[:6]
+            s_adjusted = f"{date_part}.{fractional_part}"
+            dt = datetime.strptime(s_adjusted, "%Y-%m-%d %H:%M:%S.%f")
+        else:
+            dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(tzinfo=timezone.utc)
+
+        return dt  
+    except Exception as e:
+        error_message = f"Error converting result to datetime: {e}"
+        raise TimestreamQueryException(error_message)  
+
+
+
+#################################################
+
 
 class TimestreamTableWriter:
     """
@@ -306,21 +330,10 @@ class TimeStreamQueryRunner:
 
         if result_str is None:
             return None
+        else:
+            return convert_timestream_datetime_str(result_str)
 
-        try:
-            if "." in result_str:
-                date_part, fractional_part = result_str.split(".")
-                fractional_part = fractional_part.ljust(6, "0")[:6]
-                s_adjusted = f"{date_part}.{fractional_part}"
-                dt = datetime.strptime(s_adjusted, "%Y-%m-%d %H:%M:%S.%f")
-            else:
-                dt = datetime.strptime(result_str, "%Y-%m-%d %H:%M:%S")
-            dt = dt.replace(tzinfo=timezone.utc)
-
-            return dt
-        except Exception as e:
-            error_message = f"Error converting result to datetime: {e}"
-            raise TimestreamQueryException(error_message)
+        
 
     def execute_query(self, query):
         """

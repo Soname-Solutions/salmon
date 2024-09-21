@@ -10,11 +10,12 @@ class GlueCrawlerRunner(BaseResourceRunner):
         super().__init__(resource_names, region_name)
         self.client = boto3.client("glue", region_name=region_name)
         self.crawler_runs = {}
+        self.glue_manager = GlueManager(self.client)
 
     # Method to start the crawlers
     def initiate(self):
         for crawler_name in self.resource_names:
-            response = self.client.start_crawler(Name=crawler_name)
+            _ = self.client.start_crawler(Name=crawler_name)
             self.crawler_runs[crawler_name] = "STARTED"
             print(f"Started Glue Crawler {crawler_name}")
 
@@ -23,17 +24,15 @@ class GlueCrawlerRunner(BaseResourceRunner):
         while True:
             all_completed = True
             for crawler_name in self.crawler_runs.keys():
-                response = self.client.get_crawler(Name=crawler_name)
-                state = response["Crawler"]["State"]
-                print(f"Crawler {crawler_name} is in state {state}")
-                if not GlueManager.is_crawl_final_state(state):
+                crawler_data = self.glue_manager.get_crawler_data(crawler_name)
+                print(f"Crawler {crawler_name} is in state {crawler_data.State}")
+                if not crawler_data.IsCompleted:
                     all_completed = False
 
             if all_completed:
                 break
 
-            time.sleep(
-                poll_interval
-            )  # Wait for the specified poll interval before checking again
+            # Wait for the specified poll interval before checking again
+            time.sleep(poll_interval)
 
         print("All Glue Crawlers have completed.")
