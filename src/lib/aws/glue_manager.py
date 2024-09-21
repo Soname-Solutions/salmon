@@ -217,6 +217,7 @@ class Crawl(BaseModel):
     State: str  # 'RUNNING'|'COMPLETED'|'FAILED'|'STOPPED'
     StartTime: datetime
     EndTime: datetime
+    ErrorMessage: Optional[str] = None
     DPUHour: float
     Summary: Optional[str] = "{}"
 
@@ -277,11 +278,11 @@ class Crawl(BaseModel):
 
     @property
     def IsSuccess(self) -> bool:
-        return self.Status in GlueManager.Crawl_States_Success
+        return self.State in GlueManager.Crawl_States_Success
 
     @property
     def IsFailure(self) -> bool:
-        return self.Status in GlueManager.Crawl_States_Failure
+        return self.State in GlueManager.Crawl_States_Failure
 
     @property
     def IsCompleted(self) -> bool:
@@ -544,3 +545,25 @@ class GlueManager:
 
         return CrawlerData(**response["Crawler"])
 
+    def get_crawls(
+        self, crawler_name: str, since_epoch_milliseconds: int = None
+    ) -> list[Crawl]:
+        filters = []
+        if since_epoch_milliseconds:
+            filters.append(
+                {
+                    "FieldName": "START_TIME",
+                    "FilterOperator": "GT",
+                    "FieldValue": str(since_epoch_milliseconds),
+                }
+            )
+
+        response = self.glue_client.list_crawls(
+            CrawlerName=crawler_name, Filters=filters
+        )
+
+        if "Crawls" in response:
+            crawls = [Crawl(**x) for x in response["Crawls"]]
+            return crawls
+        else:
+            return []
