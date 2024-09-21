@@ -7,15 +7,6 @@ from pydantic import BaseModel
 from lib.aws.glue_manager import GlueManager, Crawl
 
 
-class CrawlerLatestRecord(BaseModel):
-    start_time_utc: Optional[datetime] = datetime(1970, 1, 1).replace(
-        tzinfo=timezone.utc
-    )
-    tables_created_total: Optional[int] = 0
-    tables_updated_total: Optional[int] = 0
-    tables_deleted_total: Optional[int] = 0
-
-
 class GlueCrawlersMetricExtractor(BaseMetricsExtractor):
     """
     Class is responsible for extracting glue crawlers metrics
