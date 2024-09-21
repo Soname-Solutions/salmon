@@ -158,6 +158,7 @@ class InfraMonitoredStack(Stack):
                 "glue:ListWorkflows",
                 "glue:GetCrawler",
                 "glue:ListCrawlers",
+                "glue:ListCrawls",
                 "glue:GetCrawlerMetrics",
                 "glue:GetDatabases",
                 "glue:GetJob",
