@@ -18,11 +18,6 @@
         {
             "name": "sns",
             "delivery_method_type": "AWS_SNS"
-        },
-        {
-            "name": "aws_ses",
-            "delivery_method_type": "AWS_SES",
-            "sender_email" : "anatolii.maslov@soname.de"
         }
     ]
 }

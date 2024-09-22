@@ -1,17 +1,6 @@
 {
     "recipients": [
         {
-            "recipient": "anatolii.maslov@soname.de",
-            "delivery_method": "aws_ses",            
-            "subscriptions": [
-                {
-                    "monitoring_group": "it_ts_glue_crawlers",
-                    "alerts": true,
-                    "digest": true
-                }
-            ]
-        },
-        {
             "recipient": "arn:aws:sns:<<region>>:<<main_account_id>>:<<target_topic_name>>",
             "delivery_method": "sns",
             "subscriptions": [

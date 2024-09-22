@@ -6,7 +6,7 @@ env:
     CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
     CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
     CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
-    STAGE_NAME: devitam
+    STAGE_NAME: devit
     SETTING_FOLDER_NAME: "integration_tests/settings"
 run-name: integration tests - delete infra
 on: 
