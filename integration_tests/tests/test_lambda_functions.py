@@ -56,9 +56,8 @@ def lambda_error_timestream_metrics_summary(
     """
     result = query_runner.execute_query(query=query)
 
-    return result[
-        0
-    ]  # returning the first record (it's only 1 record in resultset by query design)
+    # returning the first record (it's only 1 record in resultset by query design)
+    return result[0]
 
 
 #######################################################################################################################
