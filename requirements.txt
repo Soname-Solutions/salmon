@@ -5,3 +5,4 @@ boto3
 pydantic
 aws-cdk.aws-glue-alpha
 pyyaml
+pre-commit
