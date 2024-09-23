@@ -1,5 +1,6 @@
 import boto3
-from datetime import datetime
+import json
+from datetime import datetime, timezone
 
 from pydantic import BaseModel
 from typing import Optional, Union
@@ -199,6 +200,108 @@ class RulesetRunsData(BaseModel):
 
 
 ###########################################################
+# Crawler-related pydantic classes
+
+
+class CrawlSummary(BaseModel):
+    TablesAdded: Optional[int] = 0
+    TablesUpdated: Optional[int] = 0
+    TablesDeleted: Optional[int] = 0
+    PartitionsAdded: Optional[int] = 0
+    PartitionsUpdated: Optional[int] = 0
+    PartitionsDeleted: Optional[int] = 0
+
+
+class Crawl(BaseModel):
+    CrawlId: str
+    State: str  # 'RUNNING'|'COMPLETED'|'FAILED'|'STOPPED'
+    StartTime: datetime
+    EndTime: datetime
+    ErrorMessage: Optional[str] = None
+    DPUHour: float
+    Summary: Optional[str] = "{}"
+
+    def parse_crawl_summary(self) -> CrawlSummary:
+        summary = CrawlSummary()
+        if not self.Summary or self.Summary == "{}":
+            return summary  # Return default summary with zeros
+
+        try:
+            # Parse the top-level Summary JSON string
+            summary_dict = json.loads(self.Summary)
+        except json.JSONDecodeError:
+            # If parsing fails, return default summary
+            return summary
+
+        # Iterate over each entity type in the summary (e.g., "TABLE", "PARTITION")
+        for entity_type, operations in summary_dict.items():
+            # operations is a dict with operation types as keys (e.g., "ADD", "UPDATE")
+            for operation, data_str in operations.items():
+                try:
+                    # Each operation's data is another JSON-encoded string
+                    data = json.loads(data_str)
+                    count = data.get("Count", 0)
+                except json.JSONDecodeError:
+                    count = 0  # If parsing fails, default count to 0
+
+                # Map the counts to the appropriate fields in CrawlSummary
+                if entity_type.upper() == "TABLE":
+                    if operation.upper() == "ADD":
+                        summary.TablesAdded += count
+                    elif operation.upper() == "UPDATE":
+                        summary.TablesUpdated += count
+                    elif operation.upper() == "DELETE":
+                        summary.TablesDeleted += count
+                elif entity_type.upper() == "PARTITION":
+                    if operation.upper() == "ADD":
+                        summary.PartitionsAdded += count
+                    elif operation.upper() == "UPDATE":
+                        summary.PartitionsUpdated += count
+                    elif operation.upper() == "DELETE":
+                        summary.PartitionsDeleted += count
+        return summary
+
+    @property
+    def SummaryParsed(self) -> CrawlSummary:
+        return self.parse_crawl_summary()
+
+    @property
+    def Duration(self) -> float:
+        return (self.EndTime - self.StartTime).total_seconds()
+
+    @property
+    def StartTimeEpochMilliseconds(self) -> Optional[int]:
+        if self.StartTime:
+            return int(self.StartTime.timestamp() * 1000)
+        else:
+            return None
+
+    @property
+    def IsSuccess(self) -> bool:
+        return self.State in GlueManager.Crawl_States_Success
+
+    @property
+    def IsFailure(self) -> bool:
+        return self.State in GlueManager.Crawl_States_Failure
+
+    @property
+    def IsCompleted(self) -> bool:
+        return (
+            self.State in GlueManager.Crawl_States_Success
+            or self.State in GlueManager.Crawl_States_Failure
+        )
+
+
+class CrawlerData(BaseModel):
+    Name: str
+    State: str  # 'READY'|'RUNNING'|'STOPPING'
+
+    @property
+    def IsCompleted(self) -> bool:
+        return self.State in GlueManager.Crawler_States_Final
+
+
+###########################################################
 # Glue manager classes
 
 
@@ -217,8 +320,17 @@ class GlueManager:
     # FAILURE is an artificial State introduced in Salmon, so we can override "false positive" state COMPLETED even
     # when there was a failure in underlying Glue Job
 
+    # those two are used in event_mapper to handle the event coming from EventBridge
     Crawlers_States_Success = ["Succeeded"]
     Crawlers_States_Failure = ["Failed"]
+
+    # used to check if Crawler is running or completed
+    Crawler_States_Final = ["READY"]  # out of 'READY'|'RUNNING'|'STOPPING'
+
+    # used in extract metrics - show what state crawl is currently in
+    # out of 'RUNNING'|'COMPLETED'|'FAILED'|'STOPPED'
+    Crawl_States_Success = ["COMPLETED"]
+    Crawl_States_Failure = ["FAILED", "STOPPED"]
 
     Catalog_State_Success = "SUCCESS"
 
@@ -244,12 +356,6 @@ class GlueManager:
     def is_workflow_final_state(cls, state: str) -> bool:
         return (
             state in cls.Workflow_States_Success or state in cls.Workflow_States_Failure
-        )
-
-    @classmethod
-    def is_crawler_final_state(cls, state: str) -> bool:
-        return (
-            state in cls.Crawlers_States_Success or state in cls.Crawlers_States_Failure
         )
 
     def _get_all_job_names(self):
@@ -429,3 +535,35 @@ class GlueManager:
         except Exception as e:
             error_message = f"Error getting glue workflow error message: {e}"
             raise GlueManagerException(error_message)
+
+    def get_crawler_data(self, crawler_name: str) -> CrawlerData:
+        """
+        Get's data about the crawler: Name, State (to identify if it's running or completed)
+        Additionally, provides info about the last run (there's no runs history available via AWS API, only the latest one)
+        """
+        response = self.glue_client.get_crawler(Name=crawler_name)
+
+        return CrawlerData(**response["Crawler"])
+
+    def get_crawls(
+        self, crawler_name: str, since_epoch_milliseconds: int = None
+    ) -> list[Crawl]:
+        filters = []
+        if since_epoch_milliseconds:
+            filters.append(
+                {
+                    "FieldName": "START_TIME",
+                    "FilterOperator": "GT",
+                    "FieldValue": str(since_epoch_milliseconds),
+                }
+            )
+
+        response = self.glue_client.list_crawls(
+            CrawlerName=crawler_name, Filters=filters
+        )
+
+        if "Crawls" in response:
+            crawls = [Crawl(**x) for x in response["Crawls"]]
+            return crawls
+        else:
+            return []

@@ -1,13 +1,14 @@
 import boto3
 
-from datetime import datetime, timedelta
-import dateutil.tz
+from datetime import datetime, timedelta, timezone
+import dateutil
 from ..core import datetime_utils
 
 from pydantic import BaseModel
 from typing import List, Optional
 
 #################################################
+
 
 class TimestreamTableWriterException(Exception):
     """Exception raised for errors encountered while interacting with TimeStream DB."""
@@ -20,31 +21,39 @@ class TimestreamQueryException(Exception):
 
     pass
 
+
 #################################################
 # Query Response Pydantic classes
 
+
 class ScalarType(BaseModel):
-    ScalarValue: Optional[str] 
+    ScalarValue: Optional[str]
+
 
 class Data(BaseModel):
     Data: List[ScalarType]
 
+
 class ColumnType(BaseModel):
     ScalarType: str
+
 
 class ColumnInfo(BaseModel):
     Name: str
     Type: ColumnType
+
 
 class QueryStatus(BaseModel):
     ProgressPercentage: float
     CumulativeBytesScanned: int
     CumulativeBytesMetered: int
 
+
 class ResponseMetadata(BaseModel):
     RequestId: str
     HTTPStatusCode: int
     RetryAttempts: int
+
 
 class QueryResponse(BaseModel):
     QueryId: str
@@ -53,7 +62,33 @@ class QueryResponse(BaseModel):
     QueryStatus: QueryStatus
     ResponseMetadata: ResponseMetadata
 
+
 #################################################
+
+def convert_timestream_datetime_str(datetime_str: str) -> datetime:
+    """
+    Parses and converts datetime string extracted from Timestream DB, adds UTC timezone.
+    In timestream it is stored as "2024-09-20 16:39:05.000000000" (tz-naive), but by design it's UTC time
+    """
+    try:
+        if "." in datetime_str:
+            date_part, fractional_part = datetime_str.split(".")
+            fractional_part = fractional_part.ljust(6, "0")[:6]
+            s_adjusted = f"{date_part}.{fractional_part}"
+            dt = datetime.strptime(s_adjusted, "%Y-%m-%d %H:%M:%S.%f")
+        else:
+            dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+        dt = dt.replace(tzinfo=timezone.utc)
+
+        return dt  
+    except Exception as e:
+        error_message = f"Error converting result to datetime: {e}"
+        raise TimestreamQueryException(error_message)  
+
+
+
+#################################################
+
 
 class TimestreamTableWriter:
     """
@@ -256,8 +291,7 @@ class TimeStreamQueryRunner:
             return response["Rows"] == []
         except Exception as e:
             error_message = f"Error checking table is empty: {e}"
-            raise (TimestreamQueryException(error_message))        
-
+            raise (TimestreamQueryException(error_message))
 
     def execute_scalar_query(self, query):
         """
@@ -296,17 +330,10 @@ class TimeStreamQueryRunner:
 
         if result_str is None:
             return None
+        else:
+            return convert_timestream_datetime_str(result_str)
 
-        try:
-            result_datetime = datetime.strptime(
-                result_str.rstrip("0"), "%Y-%m-%d %H:%M:%S.%f"
-            )
-            utc_tz = dateutil.tz.gettz("UTC")
-            result_datetime = result_datetime.replace(tzinfo=utc_tz)
-            return result_datetime
-        except Exception as e:
-            error_message = f"Error converting result to datetime: {e}"
-            raise TimestreamQueryException(error_message)
+        
 
     def execute_query(self, query):
         """
@@ -327,7 +354,7 @@ class TimeStreamQueryRunner:
             result_rows = []
             for row in result.Rows:
                 values = [x.ScalarValue for x in row.Data]
-                data_row = dict(zip(column_names, values))   
+                data_row = dict(zip(column_names, values))
                 result_rows.append(data_row)
 
             return result_rows

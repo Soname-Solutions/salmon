@@ -149,12 +149,17 @@ class GitHubActionsResourcesStack(Stack):
                     actions=[
                         "glue:StartCrawler",
                         "glue:GetCrawler",
-                        "glue:GetCrawlerMetrics",
                         "glue:ListCrawlers",
                         "glue:StopCrawler",
                     ],
                     resources=["arn:aws:glue:*:*:crawler/*salmon*"],
-                )
+                ),                
+                iam.PolicyStatement(
+                    actions=[
+                        "glue:GetCrawlerMetrics"
+                    ],
+                    resources=["*"], # the only way how GetCrawlerMetrics works
+                ),                
             ],
             users=[iam_user],
         )

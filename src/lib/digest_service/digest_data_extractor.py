@@ -32,6 +32,10 @@ class BaseDigestDataExtractor(ABC):
         pass
 
     def extract_runs(self, query: str) -> dict:
+        # safety precautions for services where queries are not yet implemented
+        if not (query):
+            return {}
+
         timestream_query_client = boto3.client("timestream-query")
         query_runner = TimeStreamQueryRunner(
             timestream_query_client=timestream_query_client
@@ -95,8 +99,13 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        print("Calling a method which hasn't been implemented yet")
-        query = ""
+        query = f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name
+                         , CASE WHEN failed > 0 THEN crawl_id ELSE '' END as job_run_id
+                         , execution, failed, succeeded, duration_sec as execution_time_sec
+                         , CASE WHEN failed > 0 THEN error_message ELSE '' END as error_message 
+                      FROM "{self.timestream_db_name}"."{self.timestream_table_name}" 
+                     WHERE time BETWEEN '{start_time}' AND '{end_time}' 
+            """
         return query
 
 

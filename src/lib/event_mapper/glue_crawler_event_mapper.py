@@ -51,8 +51,14 @@ class GlueCrawlerEventMapper(GeneralAwsEventMapper):
                 ]
             )
         )
+
+        details = self.event["detail"]
+        message = details.get("errorMessage","")
+        if not(message):
+            message = details.get("message","Missing execution details message")
+
         rows.append(
-            super().create_table_row(["Message", self.event["detail"]["message"]])
+            super().create_table_row(["Message", message])
         )
 
         return message_body
