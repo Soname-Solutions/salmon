@@ -15,9 +15,8 @@ jobs:
         id: get_stage_name
         shell: bash
         run: |
-          sanitized_name=$(echo "${GITHUB_REF_NAME}" | tr '/' '-' | tr -dc 'a-zA-Z0-9-' | cut -c1-10)
-          echo ${sanitized_name}
-          hash=$(echo -n "${GITHUB_REF_NAME}" | sha1sum | cut -c1-8)
-          echo ${hash}
-          echo "STAGE_NAME=devit-${sanitized_name}-${hash}" >> $GITHUB_ENV
-          echo $GITHUB_ENV
+            echo ${GITHUB_ACTOR}
+            STAGE_NAME="devit${GITHUB_ACTOR:0:3}"
+            echo "STAGE_NAME=$STAGE_NAME" >> $GITHUB_ENV
+            # Output the resulting STAGE_NAME to the console
+            echo "STAGE_NAME is $STAGE_NAME"
