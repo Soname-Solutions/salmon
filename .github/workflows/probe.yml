@@ -11,12 +11,9 @@ jobs:
   testing:
     runs-on: ubuntu-latest
     steps:
-      - name: Get sanitized STAGE_NAME
-        id: get_stage_name
-        shell: bash
-        run: |
-            echo ${GITHUB_ACTOR}
-            STAGE_NAME="devit${GITHUB_ACTOR:0:3}"
-            echo "STAGE_NAME=$STAGE_NAME" >> $GITHUB_ENV
-            # Output the resulting STAGE_NAME to the console
-            echo "STAGE_NAME is $STAGE_NAME"
+      - name: Assign STAGE_NAME
+        id: assign_stage_name
+        uses: ./.github/actions/assign-stage-name
+
+      - name: Output STAGE_NAME
+        run: echo "STAGE_NAME is ${{ steps.assign_stage_name.outputs.STAGE_NAME }}"
