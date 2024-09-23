@@ -6,7 +6,6 @@ env:
     CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
     CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
     CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
-    STAGE_NAME: devit
     SETTING_FOLDER_NAME: "integration_tests/settings"
 run-name: integration tests - delete infra
 on: 
@@ -17,14 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - name: Check out repository code
-          uses: actions/checkout@v4        
+          uses: actions/checkout@v4
+          
+        - name: Assign STAGE_NAME
+          id: assign_stage_name
+          uses: ./.github/actions/assign-inttest-stage-name          
 
         - name: prepare CDK
           uses: ./.github/actions/cdk-prepare
           with:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
-            stage-name: ${{ env.STAGE_NAME }}
+            stage-name: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}
             region: ${{ env.AWS_DEFAULT_REGION }}
 
         # 1. Destroy Monitored env
@@ -32,21 +35,21 @@ jobs:
           uses: ./.github/actions/cdk-destroy
           with:
             cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
-            stage-name: ${{ env.STAGE_NAME }}                 
+            stage-name: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}                 
 
         # 2. Destroy IntegrTests stack
         - name: destroy integration tests infra via CDK
           uses: ./.github/actions/cdk-destroy
           with:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
-            stage-name: ${{ env.STAGE_NAME }}
+            stage-name: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}
               
         # 3. Destroy Tooling env
         - name: destroy tooling infra via CDK
           uses: ./.github/actions/cdk-destroy
           with:
             cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
-            stage-name: ${{ env.STAGE_NAME }}            
+            stage-name: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}            
 
 
 
