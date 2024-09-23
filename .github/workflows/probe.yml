@@ -16,7 +16,7 @@ jobs:
 
       - name: Assign STAGE_NAME
         id: assign_stage_name
-        uses: ./.github/actions/assign-stage-name
+        uses: ./.github/actions/assign-inttest-stage-name
 
       - name: Output STAGE_NAME
         run: echo "STAGE_NAME is ${{ steps.assign_stage_name.outputs.STAGE_NAME }}"
