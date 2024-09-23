@@ -1,0 +1,21 @@
+name: Testing stage name
+env:
+    AWS_ACCESS_KEY_ID: dummy_value
+    AWS_SECRET_ACCESS_KEY: dummy_value
+    AWS_DEFAULT_REGION: 'eu-central-1'    
+    TESTS_FOLDER: tests
+run-name: Testing stage name
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get sanitized STAGE_NAME
+        id: get_stage_name
+        shell: bash
+        run: |
+          sanitized_name=$(echo "${GITHUB_REF_NAME}" | tr '/' '-' | tr -dc 'a-zA-Z0-9-' | cut -c1-10)
+          hash=$(echo -n "${GITHUB_REF_NAME}" | sha1sum | cut -c1-8)
+          echo "STAGE_NAME=devit-${sanitized_name}-${hash}" >> $GITHUB_ENV
