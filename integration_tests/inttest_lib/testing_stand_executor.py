@@ -55,10 +55,6 @@ class TestingStandExecutor:
                     f"Valid types are: {', '.join(SettingConfigs.RESOURCE_TYPES)}"
                 )
 
-        # Explicitly remove LAMBDA_FUNCTIONS until tests are stable
-        if types.LAMBDA_FUNCTIONS in self.resource_types_to_run:
-            self.resource_types_to_run.remove(types.LAMBDA_FUNCTIONS)
-
         print(
             f"Testing stand execution for resources: {','.join(self.resource_types_to_run)}"
         )

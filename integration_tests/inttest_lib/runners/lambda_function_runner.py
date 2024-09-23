@@ -1,10 +1,8 @@
 import boto3
 import time
 import json
-from datetime import datetime, timedelta
 
 from inttest_lib.runners.base_resource_runner import BaseResourceRunner
-
 from lib.aws.cloudwatch_manager import CloudWatchManager, CloudWatchManagerException
 
 
@@ -22,6 +20,7 @@ class LambdaFunctionRunner(BaseResourceRunner):
         self.function_runs = {}
 
     def initiate(self):
+        self.start_time = int(time.time() * 1000)
         for lambda_function_name in self.resource_names:
             request_id = self._invoke_lambda_async(lambda_function_name)
             self.function_runs[lambda_function_name] = request_id
@@ -52,16 +51,11 @@ class LambdaFunctionRunner(BaseResourceRunner):
             raise LambdaFunctionRunnerException(error_message)
 
     def await_completion(self, poll_interval=10):
-        start_time = datetime.now() - timedelta(
-            seconds=poll_interval
-        )  # - poll_sec for safety (if lambda executes too quickly)
         while True:
             time.sleep(poll_interval)
             all_completed = True
             for lambda_function_name, request_id in self.function_runs.items():
-                if not self._is_lambda_completed(
-                    lambda_function_name, request_id, start_time
-                ):
+                if not self._is_lambda_completed(lambda_function_name, request_id):
                     all_completed = False
                     break
             if all_completed:
@@ -69,13 +63,16 @@ class LambdaFunctionRunner(BaseResourceRunner):
                 return
             print("Waiting for Lambda functions to complete...")
 
-    def _is_lambda_completed(self, lambda_function_name, request_id, start_time):
+    def _is_lambda_completed(self, lambda_function_name, request_id):
         log_group_name = f"/aws/lambda/{lambda_function_name}"
         query_string = f"fields @timestamp, @message | filter @message like /END RequestId: {request_id}/"
 
         try:
             results = self.logs_manager.query_logs(
-                log_group_name, query_string, start_time, datetime.now()
+                log_group_name=log_group_name,
+                query_string=query_string,
+                start_time=self.start_time,
+                end_time=int(time.time() * 1000),
             )
             if results:
                 print(

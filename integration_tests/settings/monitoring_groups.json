@@ -15,7 +15,7 @@
             "group_name": "it_ts_gluedq",
             "glue_data_quality": [
                 {
-                    "name": "glueruleset-salmon-ts-*",
+                    "name": "glueruleset-salmon-ts-*-<<stage_name>>",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0
@@ -26,7 +26,7 @@
             "group_name": "it_ts_glue_workflows",
             "glue_workflows": [
                 {
-                    "name": "gluewf-salmon-ts-*",
+                    "name": "gluewf-salmon-ts-*-<<stage_name>>",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0
@@ -37,7 +37,7 @@
             "group_name": "it_ts_step_functions",
             "step_functions": [
                 {
-                    "name": "stepfunction-salmon-ts-*",
+                    "name": "stepfunction-salmon-ts-*-<<stage_name>>",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0
@@ -48,7 +48,7 @@
             "group_name": "it_ts_lambda_functions",
             "lambda_functions": [
                 {
-                    "name": "lambda-salmon-ts-*",
+                    "name": "lambda-salmon-ts-*-<<stage_name>>",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0
@@ -59,7 +59,7 @@
             "group_name": "it_ts_emr_serverless",
             "emr_serverless": [
                 {
-                    "name": "emrapp-salmon-ts-*",
+                    "name": "emrapp-salmon-ts-*-<<stage_name>>",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0
@@ -70,7 +70,7 @@
             "group_name": "it_ts_glue_crawlers",
             "glue_crawlers": [
                 {
-                    "name": "gluecr-salmon-ts-*",
+                    "name": "gluecr-salmon-ts-*-<<stage_name>>",
                     "monitored_environment_name": "Account1 [<<stage_name>>]",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0
