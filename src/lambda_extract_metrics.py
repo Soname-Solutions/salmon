@@ -92,13 +92,18 @@ def process_individual_resource(
             timestream_query_client=timestream_query_client
         )
 
-    if since_time is None:
-        # if still there is no last_update_time - extract since time which Timestream is able to accept
+    # get the earliest time that Timestream can accept for writing
+    earliest_time = timestream_writer.get_earliest_writeable_time_for_table()
+
+    # if since_time is not defined or earlier than the earliest acceptable time, extract since time which Timestream is able to accept
+    if since_time is None or since_time < earliest_time:
         logger.info(
-            f"No last_update_time for {resource_type}[{resource_name}] - querying from Timestream"
+            f"No last_update_time for {resource_type}[{resource_name}] or it's earlier than the earliest writeable time - querying from {earliest_time}."
         )
-        since_time = timestream_writer.get_earliest_writeable_time_for_table()
-    logger.info(f"Extracting metrics since {since_time}")
+        since_time = earliest_time
+    logger.info(
+        f"Extracting metrics since {since_time} for resource {resource_type}[{resource_name}]"
+    )
 
     # # 3. Set Result IDs for Glue Data Quality resources
     if resource_type == types.GLUE_DATA_QUALITY:
