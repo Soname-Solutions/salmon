@@ -11,6 +11,7 @@
   - [Monitored services in scope](#monitored-services-in-scope)
   - [How to start](#how-to-start)
   - [Contributing](#contributing)
+      - [Before You Submit a Pull Request:](#before-you-submit-a-pull-request)
   - [Tests coverage](#tests-coverage)
   - [Other useful links](#other-useful-links)
 
@@ -87,6 +88,25 @@ Looking to contribute to SALMON? We’d love your help in making this project ev
 2. **Share Your Ideas**: Have thoughts on new functionalities or AWS Services that SALMON should cover?
 3. **Contribute Code**: If you’ve got something great to add, create a pull request. Your contributions can make a big difference.
 
+Note: Before submitting your Pull Request please make sure Black formatter rules are applied to the code. Those are prerequisites for automatic formatting:
+1. Install pre-commit (it's installed alongside with other dependencies when running `pip install -r requirements.txt`).
+2. Run `pre-commit install` afterwards.
+3. Make sure you have `.pre-commit-config.yaml` file (it is already a part of repository).
+
+#### Before You Submit a Pull Request:
+To make things easy and keep our codebase clean, we use Black for code formatting. Here are steps to set it up:
+1. Install the required packages (including pre-commit) by running:
+```bash
+pip install -r requirements.txt
+```
+2. Install the pre-commit hooks to automatically format your code before each commit:
+```bash
+pre-commit install
+```
+3. You're All Set: The `.pre-commit-config.yaml` file is already in the repository, so you don't need to do anything else. 
+
+🤗 **Thank you for contributing!** Together, we can make SALMON better for everyone.
+
 ## Tests coverage
 
 SALMON project has the following types of automated tests developed:
@@ -95,7 +115,6 @@ SALMON project has the following types of automated tests developed:
 - Deployment Tests
 
 If you plan to contribute to the project, please refer to [tests overview article](/docs/testing_approach.md) and run the aforementioned tests to verify your Pull Request.
-
 
 ## Other useful links
 
