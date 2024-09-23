@@ -11,6 +11,9 @@ jobs:
   testing:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Assign STAGE_NAME
         id: assign_stage_name
         uses: ./.github/actions/assign-stage-name
