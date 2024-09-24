@@ -15,7 +15,7 @@ runs:
         if [ "${GITHUB_REF_NAME}" = "main" ]; then
           STAGE_NAME="itmain"
         else
-          STAGE_NAME="it${GITHUB_ACTOR:0:3}"
+          STAGE_NAME="it${GITHUB_ACTOR:0:3}2"
         fi
         echo "STAGE_NAME is $STAGE_NAME"
         echo "STAGE_NAME=$STAGE_NAME" >> $GITHUB_OUTPUT
