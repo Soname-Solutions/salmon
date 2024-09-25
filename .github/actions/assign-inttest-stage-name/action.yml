@@ -1,0 +1,21 @@
+name: 'Assign STAGE_NAME Based on Branch Author'
+description: 'Assigns STAGE_NAME based on the first three letters of the branch author.'
+inputs: {}
+outputs:
+  STAGE_NAME:
+    description: 'The assigned STAGE_NAME.'
+    value: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Assign STAGE_NAME
+      id: assign_stage_name
+      shell: bash
+      run: |
+        if [ "${GITHUB_REF_NAME}" = "main" ]; then
+          STAGE_NAME="itmain"
+        else
+          STAGE_NAME="it${GITHUB_ACTOR:0:3}"
+        fi
+        echo "STAGE_NAME is $STAGE_NAME"
+        echo "STAGE_NAME=$STAGE_NAME" >> $GITHUB_OUTPUT
