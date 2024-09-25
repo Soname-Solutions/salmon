@@ -331,7 +331,7 @@ def test_process_individual_resource_no_last_upd_time(
 
 # testing successful flow when we last_update_time olrder the earliest writable time to Timestream
 # testing for "resource_name": "step-function1" with "last_update_time": "2024-04-15 12:05:11.275000000"
-def test_process_individual_resource_last_upd_time_earlier_writeable(
+def test_process_individual_resource_last_upd_time_earlier_writeable_time(
     os_vars_values,
     mock_settings,
     mock_metrics_extractor_from_provider,
