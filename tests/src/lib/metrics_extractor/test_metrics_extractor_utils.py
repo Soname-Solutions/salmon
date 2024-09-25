@@ -5,7 +5,7 @@ import pytest
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 from lib.metrics_extractor import (
     retrieve_last_update_time_for_all_resources,
-    get_last_update_time,
+    get_resource_last_update_time,
     get_earliest_last_update_time_for_resource_set,
     MetricsExtractorException,
 )
@@ -152,16 +152,16 @@ def test_retrieve_last_update_time_db_error():
 
 
 def test_get_last_update_time_none_input():
-    assert get_last_update_time(None, "glue_jobs", "glue-job-1") is None
+    assert get_resource_last_update_time(None, "glue_jobs", "glue-job-1") is None
 
 
 def test_get_last_update_time_empty_input():
-    assert get_last_update_time({}, "glue_jobs", "glue-job-1") is None
+    assert get_resource_last_update_time({}, "glue_jobs", "glue-job-1") is None
 
 
 def test_get_last_update_time_no_resource_type(last_update_time_sample_data):
     assert (
-        get_last_update_time(
+        get_resource_last_update_time(
             last_update_time_sample_data, "step_functions", "step-function-1"
         )
         is None
@@ -170,7 +170,7 @@ def test_get_last_update_time_no_resource_type(last_update_time_sample_data):
 
 def test_get_last_update_time_no_resource_name(last_update_time_sample_data):
     assert (
-        get_last_update_time(
+        get_resource_last_update_time(
             last_update_time_sample_data, "glue_jobs", "nonexistent-job"
         )
         is None
@@ -179,7 +179,7 @@ def test_get_last_update_time_no_resource_name(last_update_time_sample_data):
 
 def test_get_last_update_time_valid_input(last_update_time_sample_data):
     expected_datetime = str_utc_datetime_to_datetime("2024-01-09 11:00:40.911000000")
-    actual_datetime = get_last_update_time(
+    actual_datetime = get_resource_last_update_time(
         last_update_time_sample_data, "glue_jobs", "glue-job-1"
     )
     assert actual_datetime == expected_datetime

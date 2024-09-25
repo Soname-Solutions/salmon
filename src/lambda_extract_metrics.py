@@ -56,16 +56,18 @@ def get_since_time_for_individual_resource(
     metrics_extractor: BaseMetricsExtractor,
     timestream_writer: TimestreamTableWriter,
 ) -> datetime:
+    # retrieve the last update time from the provided payload
     since_time = get_resource_last_update_time(
-        last_update_times, resource_type, resource_name
+        last_update_time_json=last_update_times,
+        resource_type=resource_type,
+        resource_name=resource_name,
     )
-    print(f"Type since time {type(since_time)}")
     logger.info(
         f"Last update time (from payload) for {resource_type}[{resource_name}] = {since_time}"
     )
 
+    # if last_update_time was not given or missing - query for specific resource directly from table
     if since_time is None:
-        # if last_update_time was not given or missing - query for specific resource directly from table
         logger.info(
             f"No last_update_time for {resource_type}[{resource_name}] - querying directly from table"
         )
@@ -73,20 +75,16 @@ def get_since_time_for_individual_resource(
             timestream_query_client=timestream_query_client
         )
 
-    # get the earliest time that Timestream can accept for writing
+    # fetch the earliest time that Timestream can accept for writing
     earliest_time = timestream_writer.get_earliest_writeable_time_for_table()
 
     # if since_time is still not defined or older than the earliest acceptable time,
-    # then extract since time which Timestream is able to accept
+    # then extract since time which Timestream is able to accept so to prevent RejectedRecords Timestream error
     if since_time is None or since_time < earliest_time:
         logger.info(
-            f"No last_update_time for {resource_type}[{resource_name}] or it's earlier than the earliest writeable time - querying from {earliest_time}."
+            f"No last_update_time for {resource_type}[{resource_name}] or it's older than the earliest writeable time - querying from {earliest_time}."
         )
-        since_time = earliest_time
-
-    logger.info(
-        f"Extracting metrics since {since_time} for resource {resource_type}[{resource_name}]"
-    )
+        return earliest_time
 
     return since_time
 
@@ -127,6 +125,9 @@ def process_individual_resource(
         resource_name=resource_name,
         metrics_extractor=metrics_extractor,
         timestream_writer=timestream_writer,
+    )
+    logger.info(
+        f"Extracting metrics since {since_time} for resource {resource_type}[{resource_name}]"
     )
 
     # # 3. Set Result IDs for Glue Data Quality resources

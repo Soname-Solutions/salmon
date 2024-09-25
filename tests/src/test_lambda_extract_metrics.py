@@ -368,12 +368,12 @@ def test_process_individual_resource_last_upd_time_earlier_writeable(
         result_ids=[],
     )
 
-    mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
-    mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
-
     # since returned last_update_time is older then earlist writable time,
     # the earliest writable time should be used for metrics extraction
+    mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
+    mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
     assert result["since_time"] == EARLIEST_WRITEABLE_TIME
+
     # no alerts sent (glue uses eventbridge for alerts)
     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
