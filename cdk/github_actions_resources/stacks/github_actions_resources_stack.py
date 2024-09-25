@@ -262,7 +262,7 @@ class GitHubActionsResourcesStack(Stack):
             statements=[
                 # Lambda actions
                 iam.PolicyStatement(
-                    actions=["lambda:InvokeFunction"],
+                    actions=["lambda:InvokeFunction", "lambda:GetFunction"],
                     resources=["arn:aws:lambda:*:*:function:*salmon*"],
                 ),
                 # CloudWatch Logs actions
