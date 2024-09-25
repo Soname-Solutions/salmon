@@ -331,6 +331,7 @@ def test_process_individual_resource_no_last_upd_time(
 
 # testing successful flow when we last_update_time olrder the earliest writable time to Timestream
 # testing for "resource_name": "step-function1" with "last_update_time": "2024-04-15 12:05:11.275000000"
+# where the earliest writeable time is datetime(2024, 4, 16, 0, 0, 0, 000, tzinfo=timezone.utc)
 def test_process_individual_resource_last_upd_time_earlier_writeable_time(
     os_vars_values,
     mock_settings,
@@ -346,7 +347,7 @@ def test_process_individual_resource_last_upd_time_earlier_writeable_time(
     ) = os_vars_values
     monitored_environment_name = "env1"
     resource_type = types.STEP_FUNCTIONS
-    resource_name = "step-function1"  # we have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
+    resource_name = "step-function1"  # we have upd time for this resource in LAST_UPDATE_TIMES_SAMPLE
 
     boto3_client_creator = mock_boto3_client_creator
     timestream_writer = mock_timestream_writer
