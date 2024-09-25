@@ -153,13 +153,11 @@ class GitHubActionsResourcesStack(Stack):
                         "glue:StopCrawler",
                     ],
                     resources=["arn:aws:glue:*:*:crawler/*salmon*"],
-                ),                
+                ),
                 iam.PolicyStatement(
-                    actions=[
-                        "glue:GetCrawlerMetrics"
-                    ],
-                    resources=["*"], # the only way how GetCrawlerMetrics works
-                ),                
+                    actions=["glue:GetCrawlerMetrics"],
+                    resources=["*"],  # the only way how GetCrawlerMetrics works
+                ),
             ],
             users=[iam_user],
         )
@@ -274,6 +272,7 @@ class GitHubActionsResourcesStack(Stack):
                         "logs:GetLogEvents",
                         "logs:StartQuery",
                         "logs:GetQueryResults",
+                        "logs:CreateLogGroup",
                         "logs:DescribeLogGroups",
                     ],
                     resources=["arn:aws:logs:*:*:log-group:*salmon*"],
