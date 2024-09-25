@@ -273,9 +273,13 @@ class GitHubActionsResourcesStack(Stack):
                         "logs:StartQuery",
                         "logs:GetQueryResults",
                         "logs:CreateLogGroup",
-                        "logs:DescribeLogGroups",
                     ],
                     resources=["arn:aws:logs:*:*:log-group:*salmon*"],
+                ),
+                # CloudWatch Logs actions
+                iam.PolicyStatement(
+                    actions=["logs:DescribeLogGroups"],
+                    resources=["*"],
                 ),
             ],
             users=[iam_user],
