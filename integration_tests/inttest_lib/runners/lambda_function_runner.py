@@ -4,6 +4,7 @@ import json
 
 from inttest_lib.runners.base_resource_runner import BaseResourceRunner
 from lib.aws.cloudwatch_manager import CloudWatchManager, CloudWatchManagerException
+from lib.aws.lambda_manager import LambdaManager
 
 
 class LambdaFunctionRunnerException(Exception):
@@ -14,6 +15,9 @@ class LambdaFunctionRunner(BaseResourceRunner):
     def __init__(self, resource_names, region_name):
         super().__init__(resource_names, region_name)
         self.client = boto3.client("lambda", region_name=region_name)
+        self.lambda_manager = LambdaManager(
+            boto3.client("lambda", region_name=region_name)
+        )
         self.logs_manager = CloudWatchManager(
             boto3.client("logs", region_name=region_name)
         )
@@ -22,6 +26,17 @@ class LambdaFunctionRunner(BaseResourceRunner):
     def initiate(self):
         self.start_time = int(time.time() * 1000)
         for lambda_function_name in self.resource_names:
+            # Walkaround for the case when LambdaFunction is launched for the first time, CW LogGroup
+            # might be created with timestamp later than first CW first records
+            # it prevent "await" method to find run INIT and, potentially, END records in logs
+            # so we create log group explicitly beforehand
+            log_group_name = self.lambda_manager.get_log_group(lambda_function_name)
+            if not (self.logs_manager.log_group_exists(log_group_name)):
+                print(
+                    f"Creating log group {log_group_name} as it hasn't been created yet."
+                )
+                self.logs_manager.create_log_group(log_group_name)
+
             request_id = self._invoke_lambda_async(lambda_function_name)
             self.function_runs[lambda_function_name] = request_id
             print(

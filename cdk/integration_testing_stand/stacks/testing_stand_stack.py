@@ -36,7 +36,7 @@ from inttest_lib.runners.glue_dq_runner import DQ_MEANING
 from inttest_lib.runners.emr_serverless_runner import (
     get_scripts_s3_bucket_meaning,
     EXEC_IAM_ROLE_MEANING,
-    EMRS_TAG_FOR_PERMISSION_JSON
+    EMRS_TAG_FOR_PERMISSION_JSON,
 )
 
 from lib.aws.aws_naming import AWSNaming
@@ -445,7 +445,7 @@ def handler(event, context):
                 iam.PolicyStatement(
                     actions=["s3:GetObject", "s3:ListObjects"],
                     effect=iam.Effect.ALLOW,
-                    resources=[f"{crawler_bucket.bucket_arn}/*"], 
+                    resources=[f"{crawler_bucket.bucket_arn}/*"],
                 )
             )
 
@@ -456,15 +456,17 @@ def handler(event, context):
                         effect=iam.Effect.DENY,
                         resources=["*"],
                     )
-                )                  
-            glue_iam_role.attach_inline_policy(glue_policy)            
+                )
+            glue_iam_role.attach_inline_policy(glue_policy)
             return glue_iam_role
 
         # Crawler Bucket
         crawler_bucket = s3.Bucket(
             self,
             "CrawlerBucket",
-            bucket_name=AWSNaming.S3Bucket(self, f"crawler-data-{Stack.of(self).account}"),
+            bucket_name=AWSNaming.S3Bucket(
+                self, f"crawler-data-{Stack.of(self).account}"
+            ),
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
@@ -479,17 +481,20 @@ def handler(event, context):
             ],
             destination_bucket=crawler_bucket,
             exclude=[".gitignore"],
-        )        
-
-
+        )
 
         glue_database_name = AWSNaming.GlueDB(self, "crawler-db")
         glue_database = glue.Database(
             self, "CrawlerDB", database_name=glue_database_name
         )
 
-        for meaning, crawler_path in cfg_reader.get_glue_crawlers_with_crawler_path().items():
-            flg_deny_create_table = cfg_reader.get_glue_crawlers_deny_create_table(meaning)
+        for (
+            meaning,
+            crawler_path,
+        ) in cfg_reader.get_glue_crawlers_with_crawler_path().items():
+            flg_deny_create_table = cfg_reader.get_glue_crawlers_deny_create_table(
+                meaning
+            )
             glue_iam_role = create_iam_role(meaning, flg_deny_create_table)
             glue_old.CfnCrawler(
                 self,
@@ -504,9 +509,7 @@ def handler(event, context):
                         )
                     ]
                 ),
-            )        
-       
-
+            )
 
     def create_step_functions_resources(self, cfg_reader):
         # IAM Role for the State Machine
@@ -620,7 +623,10 @@ def handler(event, context):
         )
 
         for emr_app_meaning in emr_app_meanings:
-            tags = [CfnTag(key=key, value=value) for key, value in EMRS_TAG_FOR_PERMISSION_JSON.items()]
+            tags = [
+                CfnTag(key=key, value=value)
+                for key, value in EMRS_TAG_FOR_PERMISSION_JSON.items()
+            ]
             serverless_app = emrs.CfnApplication(
                 self,
                 f"EmrApp{emr_app_meaning.capitalize()}",

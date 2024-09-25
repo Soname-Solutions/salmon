@@ -153,13 +153,11 @@ class GitHubActionsResourcesStack(Stack):
                         "glue:StopCrawler",
                     ],
                     resources=["arn:aws:glue:*:*:crawler/*salmon*"],
-                ),                
+                ),
                 iam.PolicyStatement(
-                    actions=[
-                        "glue:GetCrawlerMetrics"
-                    ],
-                    resources=["*"], # the only way how GetCrawlerMetrics works
-                ),                
+                    actions=["glue:GetCrawlerMetrics"],
+                    resources=["*"],  # the only way how GetCrawlerMetrics works
+                ),
             ],
             users=[iam_user],
         )
@@ -264,7 +262,7 @@ class GitHubActionsResourcesStack(Stack):
             statements=[
                 # Lambda actions
                 iam.PolicyStatement(
-                    actions=["lambda:InvokeFunction"],
+                    actions=["lambda:InvokeFunction", "lambda:GetFunction"],
                     resources=["arn:aws:lambda:*:*:function:*salmon*"],
                 ),
                 # CloudWatch Logs actions
@@ -274,9 +272,14 @@ class GitHubActionsResourcesStack(Stack):
                         "logs:GetLogEvents",
                         "logs:StartQuery",
                         "logs:GetQueryResults",
-                        "logs:DescribeLogGroups",
+                        "logs:CreateLogGroup",
                     ],
                     resources=["arn:aws:logs:*:*:log-group:*salmon*"],
+                ),
+                # CloudWatch Logs actions
+                iam.PolicyStatement(
+                    actions=["logs:DescribeLogGroups"],
+                    resources=["*"],
                 ),
             ],
             users=[iam_user],
