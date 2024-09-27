@@ -229,11 +229,10 @@ class TimestreamTableWriter:
         Returns:
             int: The retention period of the Memory Store in hours.
         """
-        table_props = self._get_table_props()
 
         try:
             value = (
-                table_props.get("Table")
+                self._get_table_props.get("Table")
                 .get("RetentionProperties")
                 .get("MemoryStoreRetentionPeriodInHours")
             )
@@ -250,11 +249,9 @@ class TimestreamTableWriter:
             int: The retention period of the Magnetic Store in days.
         """
 
-        table_props = self._get_table_props()
-
         try:
             value = (
-                table_props.get("Table")
+                self._get_table_props.get("Table")
                 .get("RetentionProperties")
                 .get("MagneticStoreRetentionPeriodInDays")
             )
