@@ -2,7 +2,7 @@ import boto3
 
 from datetime import datetime, timedelta, timezone
 import dateutil
-from ..core import datetime_utils
+from functools import cached_property
 
 from pydantic import BaseModel
 from typing import List, Optional
@@ -65,6 +65,7 @@ class QueryResponse(BaseModel):
 
 #################################################
 
+
 def convert_timestream_datetime_str(datetime_str: str) -> datetime:
     """
     Parses and converts datetime string extracted from Timestream DB, adds UTC timezone.
@@ -80,11 +81,10 @@ def convert_timestream_datetime_str(datetime_str: str) -> datetime:
             dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
         dt = dt.replace(tzinfo=timezone.utc)
 
-        return dt  
+        return dt
     except Exception as e:
         error_message = f"Error converting result to datetime: {e}"
-        raise TimestreamQueryException(error_message)  
-
+        raise TimestreamQueryException(error_message)
 
 
 #################################################
@@ -203,6 +203,7 @@ class TimestreamTableWriter:
 
         return responses
 
+    @cached_property
     def _get_table_props(self):
         """
         Retrieves the properties of the specified Timestream table. For internal use.
@@ -332,8 +333,6 @@ class TimeStreamQueryRunner:
             return None
         else:
             return convert_timestream_datetime_str(result_str)
-
-        
 
     def execute_query(self, query):
         """
