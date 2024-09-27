@@ -87,7 +87,7 @@ class CloudWatchManager:
         query_string: str,
         start_time: int,
         end_time: int,
-    ):
+    ) -> list:
         """
         Streams the results of a single query execution using CloudWatch Logs Insights.
 
@@ -98,28 +98,35 @@ class CloudWatchManager:
             end_time (int): The end of the time range to query (the range is inclusive). The epoch time in milliseconds as an int.
 
         Returns:
-            The results of the query execution.
+            The results of the query execution or empty list if the log group does not exist.
         """
-        start_query_response = self.cloudwatch_client.start_query(
-            logGroupName=log_group_name,
-            startTime=start_time,
-            endTime=end_time,
-            queryString=query_string,
-        )
-        query_id = start_query_response["queryId"]
+        try:
+            start_query_response = self.cloudwatch_client.start_query(
+                logGroupName=log_group_name,
+                startTime=start_time,
+                endTime=end_time,
+                queryString=query_string,
+            )
+            query_id = start_query_response["queryId"]
 
-        start_time = time.time()
-        while True:
-            if time.time() - start_time > CloudWatchConfigs.QUERY_TIMEOUT_SECONDS:
-                error_msg = f"Query timeout: The query {query_string} for {log_group_name} is taking too long to execute."
-                raise CloudWatchManagerException(error_msg)
+            start_time = time.time()
+            while True:
+                if time.time() - start_time > CloudWatchConfigs.QUERY_TIMEOUT_SECONDS:
+                    error_msg = f"Query timeout: The query {query_string} for {log_group_name} is taking too long to execute."
+                    raise CloudWatchManagerException(error_msg)
 
-            response = self.cloudwatch_client.get_query_results(queryId=query_id)
+                response = self.cloudwatch_client.get_query_results(queryId=query_id)
 
-            if response["status"] != "Running":
-                break
+                if response["status"] != "Running":
+                    break
 
-            time.sleep(1)
+                time.sleep(1)
 
-        results = response["results"]
-        return results
+            results = response["results"]
+            return results
+
+        except self.cloudwatch_client.exceptions.ResourceNotFoundException:
+            print(
+                f"Log group {log_group_name} does not exist in this account or region."
+            )
+            return []
