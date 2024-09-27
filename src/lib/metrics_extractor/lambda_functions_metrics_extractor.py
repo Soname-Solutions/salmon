@@ -7,11 +7,9 @@ from lib.aws import (
     LogEntry,
     LambdaManager,
     CloudWatchManager,
-    TimestreamTableWriter,
-    TimeStreamQueryRunner,
 )
 from lib.aws.lambda_manager import LambdaManager, LogEntry
-from lib.core.constants import SettingConfigs, EventResult
+from lib.core.constants import EventResult
 from lib.core.datetime_utils import datetime_to_epoch_milliseconds
 from lib.aws.events_manager import EventsManager
 
@@ -60,14 +58,17 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
                     ("memory_size_mb", lambda_log.MemorySize, "DOUBLE"),
                     ("GB_seconds", GB_seconds, "DOUBLE"),
                     ("max_memory_used_mb", lambda_log.MaxMemoryUsed, "DOUBLE"),
+                    ("error_message", None, "VARCHAR"),
                 ]
             else:
                 metric_values = [
-                    (
-                        "error_message",
-                        lambda_log.message,
-                        "VARCHAR",
-                    ),
+                    ("execution", None, "BIGINT"),
+                    ("duration_ms", None, "DOUBLE"),
+                    ("billed_duration_ms", None, "DOUBLE"),
+                    ("memory_size_mb", None, "DOUBLE"),
+                    ("GB_seconds", None, "DOUBLE"),
+                    ("max_memory_used_mb", None, "DOUBLE"),
+                    ("error_message", lambda_log.message, "VARCHAR"),
                 ]
 
             measure_values = [
