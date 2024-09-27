@@ -2,8 +2,7 @@ name: Integration tests - Execute Tests
 env:
     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    AWS_DEFAULT_REGION: 'eu-central-1'    
-    STAGE_NAME: devit
+    AWS_DEFAULT_REGION: 'eu-central-1'
 run-name: integration tests - execute tests
 on: 
   workflow_dispatch:
@@ -13,7 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - name: Check out repository code
-          uses: actions/checkout@v4     
+          uses: actions/checkout@v4
+          
+        - name: Assign STAGE_NAME
+          id: assign_stage_name
+          uses: ./.github/actions/assign-inttest-stage-name
 
         - name: Install Python Test requirements
           shell: bash
@@ -27,7 +30,7 @@ jobs:
         - name: Testing stand executions
           shell: bash
           run: |
-            python integration_tests/testing_stand_execution.py --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+            python integration_tests/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
 
         # Making sure alerts have enough time to arrive
         - name: Pause for 2 minutes
@@ -36,4 +39,4 @@ jobs:
         - name: Run tests
           shell: bash
           run: |
-            pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ env.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
+            pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            

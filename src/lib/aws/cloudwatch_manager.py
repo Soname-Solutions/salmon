@@ -130,3 +130,31 @@ class CloudWatchManager:
                 f"Log group {log_group_name} does not exist in this account or region."
             )
             return []
+
+    def log_group_exists(self, log_group_name: str) -> bool:
+        """
+        Checks if log_group_name already exists
+        """
+        try:
+            response = self.cloudwatch_client.describe_log_groups(
+                logGroupNamePrefix=log_group_name
+            )
+            if not ("logGroups" in response):
+                return False
+
+            for log_group in response["logGroups"]:
+                if log_group["logGroupName"] == log_group_name:
+                    return True
+
+            return False
+
+        except Exception as e:
+            error_message = f"Can't create log group {log_group_name} : {e}"
+            raise CloudWatchManagerException(error_message)
+
+    def create_log_group(self, log_group_name: str):
+        try:
+            self.cloudwatch_client.create_log_group(logGroupName=log_group_name)
+        except Exception as e:
+            error_message = f"Can't create log group {log_group_name} : {e}"
+            raise CloudWatchManagerException(error_message)
