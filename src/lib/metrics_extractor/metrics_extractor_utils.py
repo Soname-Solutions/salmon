@@ -89,9 +89,9 @@ def retrieve_last_update_time_for_all_resources(
         raise MetricsExtractorException(error_message)
 
 
-def get_last_update_time(
+def get_resource_last_update_time(
     last_update_time_json: dict, resource_type: str, resource_name: str
-) -> str:
+) -> datetime:
     """
     Returns last update time for the given resource type and resource name
     """

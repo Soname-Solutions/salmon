@@ -10,7 +10,7 @@ from .emr_serverless_metrics_extractor import EMRServerlessMetricExtractor
 from .metrics_extractor_provider import MetricsExtractorProvider
 from .metrics_extractor_utils import (
     retrieve_last_update_time_for_all_resources,
-    get_last_update_time,
+    get_resource_last_update_time,
     get_earliest_last_update_time_for_resource_set,
     MetricsExtractorException,
 )

@@ -78,6 +78,10 @@ class LambdaManager:
             raise LambdaManagerException(error_message)
 
     def get_log_group(self, lambda_function_name: str) -> str:
+        """
+        Retrieves the associated CloudWatch Log Group for a given Lambda function.
+        If no specific log group is configured, it defaults to '/aws/lambda/{lambda_function_name}'.
+        """
         response = self.lambda_client.get_function(FunctionName=lambda_function_name)[
             "Configuration"
         ]

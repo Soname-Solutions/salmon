@@ -2,15 +2,16 @@ import os
 import boto3
 import logging
 from itertools import groupby
+from datetime import datetime
 
 from lib.aws import AWSNaming, Boto3ClientCreator, TimestreamTableWriter
 from lib.aws.glue_manager import GlueManager
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
-from lib.metrics_extractor import MetricsExtractorProvider
+from lib.metrics_extractor import MetricsExtractorProvider, BaseMetricsExtractor
 from lib.metrics_extractor.metrics_extractor_utils import (
-    get_last_update_time,
+    get_resource_last_update_time,
     get_earliest_last_update_time_for_resource_set,
 )
 from lib.core.constants import SettingConfigResourceTypes as types
@@ -48,6 +49,46 @@ def collect_glue_data_quality_result_ids(
     return result_ids
 
 
+def get_since_time_for_individual_resource(
+    last_update_times: dict,
+    resource_type: str,
+    resource_name: str,
+    metrics_extractor: BaseMetricsExtractor,
+    timestream_writer: TimestreamTableWriter,
+) -> datetime:
+    # retrieve the last update time from the provided payload
+    since_time = get_resource_last_update_time(
+        last_update_time_json=last_update_times,
+        resource_type=resource_type,
+        resource_name=resource_name,
+    )
+    logger.info(
+        f"Last update time (from payload) for {resource_type}[{resource_name}] = {since_time}"
+    )
+
+    # if last_update_time was not given or missing - query for specific resource directly from table
+    if since_time is None:
+        logger.info(
+            f"No last_update_time for {resource_type}[{resource_name}] - querying directly from table"
+        )
+        since_time = metrics_extractor.get_last_update_time(
+            timestream_query_client=timestream_query_client
+        )
+
+    # fetch the earliest time that Timestream can accept for writing
+    earliest_time = timestream_writer.get_earliest_writeable_time_for_table()
+
+    # if since_time is still not defined or older than the earliest acceptable time,
+    # then extract since time which Timestream is able to accept so to prevent RejectedRecords Timestream error
+    if since_time is None or since_time < earliest_time:
+        logger.info(
+            f"No last_update_time for {resource_type}[{resource_name}] or it's older than the earliest writeable time - querying from {earliest_time}."
+        )
+        return earliest_time
+
+    return since_time
+
+
 def process_individual_resource(
     monitored_environment_name: str,
     resource_type: str,
@@ -78,27 +119,16 @@ def process_individual_resource(
     logger.info(f"Created metrics extractor of type {type(metrics_extractor)}")
 
     # 2. Get time of this entity's data latest update (we append data since that time only)
-    since_time = get_last_update_time(last_update_times, resource_type, resource_name)
-    logger.info(
-        f"Last update time (from payload) for {resource_type}[{resource_name}] = {since_time}"
+    since_time = get_since_time_for_individual_resource(
+        last_update_times=last_update_times,
+        resource_type=resource_type,
+        resource_name=resource_name,
+        metrics_extractor=metrics_extractor,
+        timestream_writer=timestream_writer,
     )
-
-    if since_time is None:
-        # if last_update_time was not given or missing - query for specific resource directly from table
-        logger.info(
-            f"No last_update_time for {resource_type}[{resource_name}] - querying directly from table"
-        )
-        since_time = metrics_extractor.get_last_update_time(
-            timestream_query_client=timestream_query_client
-        )
-
-    if since_time is None:
-        # if still there is no last_update_time - extract since time which Timestream is able to accept
-        logger.info(
-            f"No last_update_time for {resource_type}[{resource_name}] - querying from Timestream"
-        )
-        since_time = timestream_writer.get_earliest_writeable_time_for_table()
-    logger.info(f"Extracting metrics since {since_time}")
+    logger.info(
+        f"Extracting metrics since {since_time} for resource {resource_type}[{resource_name}]"
+    )
 
     # # 3. Set Result IDs for Glue Data Quality resources
     if resource_type == types.GLUE_DATA_QUALITY:
@@ -129,7 +159,11 @@ def process_individual_resource(
         logger.info(f"Alerts have been sent successfully")
         alerts_send = True
 
-    return {"metrics_records_written": metrics_record_count, "alerts_sent": alerts_send}
+    return {
+        "metrics_records_written": metrics_record_count,
+        "alerts_sent": alerts_send,
+        "since_time": since_time,
+    }
 
 
 def process_all_resources_by_env_and_type(

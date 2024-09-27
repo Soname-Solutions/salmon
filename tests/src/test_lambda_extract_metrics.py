@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import pytest
 import os
 
@@ -34,7 +34,7 @@ LAST_UPDATE_TIMES_SAMPLE = {
     "step_functions": [
         {
             "resource_name": "step-function1",
-            "last_update_time": "2024-04-16 12:05:11.275000000",
+            "last_update_time": "2024-04-15 12:05:11.275000000",
         },
         {
             "resource_name": "step-function2",
@@ -49,6 +49,8 @@ LAST_UPDATE_TIMES_SAMPLE = {
     ],
 }
 TEST_DQ_RESULT_IDS = ["result-id-1", "result-id-2"]
+EARLIEST_WRITEABLE_TIME = datetime(2024, 4, 16, 0, 0, 0, 000, tzinfo=timezone.utc)
+MOCKED_LAST_UPDATE_TIME = datetime(2024, 4, 16, 15, 5, 11, 200, tzinfo=timezone.utc)
 #########################################################################################
 
 
@@ -134,10 +136,7 @@ def mock_metrics_extractor_from_provider(request):
 
         mocked_extractor = MagicMock(spec=methods)
 
-        mocked_extractor.get_last_update_time.return_value = (
-            "2024-04-16 12:05:11.275000000"
-        )
-
+        mocked_extractor.get_last_update_time.return_value = MOCKED_LAST_UPDATE_TIME
         mocked_extractor.prepare_metrics_data.return_value = (
             ["record1", "record2"],
             ["common_attr1", "common_attr2"],
@@ -155,7 +154,7 @@ def mock_metrics_extractor_from_provider(request):
 def mock_timestream_writer():
     mocked_timestream_writer = MagicMock()
     mocked_timestream_writer.get_earliest_writeable_time_for_table.return_value = (
-        datetime(2000, 1, 1, 0, 0, 0)
+        EARLIEST_WRITEABLE_TIME
     )
 
     with patch(
@@ -180,6 +179,7 @@ def mock_boto3_client_creator():
 
 
 # testing successful flow when we have last_update_time for the resource coming from orchestrator lambda
+# testing "glue-job1" with "last_update_time": "2024-04-16 12:05:11.275000000"
 def test_process_individual_resource_with_last_upd_time(
     os_vars_values,
     mock_settings,
@@ -219,11 +219,12 @@ def test_process_individual_resource_with_last_upd_time(
         result_ids=[],
     )
 
-    # Assert last_update_time is taken directly from arguments
+    # last_update_time will be taken from LAST_UPDATE_TIMES_SAMPLE in this case
     # not from: metrics_extractor.get_last_update_time
-    # not from: timestream_writer.get_earliest_writeable_time_for_table
     mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
-    mock_timestream_writer.get_earliest_writeable_time_for_table.assert_not_called()
+    assert result["since_time"] == str_utc_datetime_to_datetime(
+        "2024-04-16 12:05:11.275000000"
+    )
 
     # no alerts sent (glue uses eventbridge for alerts)
     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
@@ -268,11 +269,9 @@ def test_process_individual_resource_last_upd_time_from_timestream(
         result_ids=[],
     )
 
-    # Assert last_update_time is taken directly from arguments
-    # not from: metrics_extractor.get_last_update_time
-    # not from: timestream_writer.get_earliest_writeable_time_for_table
+    # last_update_time will be taken from Timestream corresponding table
     mock_metrics_extractor_from_provider.get_last_update_time.assert_called_once()
-    mock_timestream_writer.get_earliest_writeable_time_for_table.assert_not_called()
+    assert result["since_time"] == MOCKED_LAST_UPDATE_TIME
 
     # no alerts sent (glue uses eventbridge for alerts)
     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
@@ -321,14 +320,63 @@ def test_process_individual_resource_no_last_upd_time(
             result_ids=[],
         )
 
-        # Assert last_update_time is taken directly from arguments
-        # not from: metrics_extractor.get_last_update_time
-        # not from: timestream_writer.get_earliest_writeable_time_for_table
+        # no last_update_time returned, the earliest writeable time should be used in this case
         mock_metrics_extractor_from_provider.get_last_update_time.assert_called_once()
         mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
+        assert result["since_time"] == EARLIEST_WRITEABLE_TIME
 
         # no alerts sent (glue uses eventbridge for alerts)
         assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
+
+
+# testing successful flow when we last_update_time olrder the earliest writable time to Timestream
+# testing for "resource_name": "step-function1" with "last_update_time": "2024-04-15 12:05:11.275000000"
+# where the earliest writeable time is datetime(2024, 4, 16, 0, 0, 0, 000, tzinfo=timezone.utc)
+def test_process_individual_resource_last_upd_time_earlier_writeable_time(
+    os_vars_values,
+    mock_settings,
+    mock_metrics_extractor_from_provider,
+    mock_timestream_writer,
+    mock_boto3_client_creator,
+):
+    (
+        settings_s3_path,
+        iam_role_name,
+        timestream_metrics_db_name,
+        alerts_event_bus_name,
+    ) = os_vars_values
+    monitored_environment_name = "env1"
+    resource_type = types.STEP_FUNCTIONS
+    resource_name = "step-function1"  # we have upd time for this resource in LAST_UPDATE_TIMES_SAMPLE
+
+    boto3_client_creator = mock_boto3_client_creator
+    timestream_writer = mock_timestream_writer
+    timestream_metrics_table_name = "test_table_name"
+
+    result = process_individual_resource(
+        monitored_environment_name=monitored_environment_name,
+        resource_type=resource_type,
+        resource_name=resource_name,
+        boto3_client_creator=boto3_client_creator,
+        aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+            resource_type
+        ],
+        timestream_writer=timestream_writer,
+        timestream_metrics_db_name=timestream_metrics_db_name,
+        timestream_metrics_table_name=timestream_metrics_table_name,
+        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+        alerts_event_bus_name=alerts_event_bus_name,
+        result_ids=[],
+    )
+
+    # since returned last_update_time is older then earlist writable time,
+    # the earliest writable time should be used for metrics extraction
+    mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
+    mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
+    assert result["since_time"] == EARLIEST_WRITEABLE_TIME
+
+    # no alerts sent (glue uses eventbridge for alerts)
+    assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
 
 # testing flow when specific resource type requires sending alerts
