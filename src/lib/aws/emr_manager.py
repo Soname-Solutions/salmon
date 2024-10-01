@@ -46,6 +46,20 @@ class EMRJobRunData(BaseModel):
         return self.state in EMRManager.STATES_FAILURE
 
     @property
+    def is_ResourceUtilization_populated(self) -> bool:
+        return (
+            self.totalResourceUtilization.vCPUHour is not None
+            and self.billedResourceUtilization.vCPUHour is not None
+        )
+
+    @property
+    def is_final_state(self) -> bool:
+        return (
+            self.state in EMRManager.STATES_SUCCESS
+            or self.state in EMRManager.STATES_FAILURE
+        ) and self.is_ResourceUtilization_populated
+
+    @property
     def ErrorMessage(self) -> Optional[str]:
         if not self.stateDetails:
             return None
@@ -84,10 +98,6 @@ class EMRManager:
         self.sf_client = (
             boto3.client("emr-serverless") if sf_client is None else sf_client
         )
-
-    @classmethod
-    def is_final_state(cls, state: str) -> bool:
-        return state in cls.STATES_SUCCESS or state in cls.STATES_FAILURE
 
     def get_all_names(self, **kwargs):
         """Get all EMR Serverless application names"""
