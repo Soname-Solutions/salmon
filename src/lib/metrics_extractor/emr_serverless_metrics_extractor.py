@@ -38,73 +38,74 @@ class EMRServerlessMetricExtractor(BaseMetricsExtractor):
 
         records = []
         for job_run in job_runs:
-            dimensions = [{"Name": "job_run_id", "Value": job_run.jobRunId}]
+            if job_run.is_final_state:
+                dimensions = [{"Name": "job_run_id", "Value": job_run.jobRunId}]
 
-            metric_values = [
-                ("job_run_name", job_run.name, "VARCHAR"),
-                ("app_id", job_run.applicationId, "VARCHAR"),
-                ("execution", 1, "BIGINT"),
-                ("succeeded", int(job_run.IsSuccess), "BIGINT"),
-                ("failed", int(job_run.IsFailure), "BIGINT"),
-                (
-                    "execution_time_sec",
-                    job_run.totalExecutionDurationSeconds,
-                    "DOUBLE",
-                ),
-                ("error_message", job_run.ErrorMessage, "VARCHAR"),
-                (
-                    "total_vCPU_hour",
-                    job_run.totalResourceUtilization.vCPUHour,
-                    "DOUBLE",
-                ),
-                (
-                    "total_memory_GB_hour",
-                    job_run.totalResourceUtilization.memoryGBHour,
-                    "DOUBLE",
-                ),
-                (
-                    "total_storage_GB_hour",
-                    job_run.totalResourceUtilization.storageGBHour,
-                    "DOUBLE",
-                ),
-                (
-                    "billed_vCPU_hour",
-                    job_run.billedResourceUtilization.vCPUHour,
-                    "DOUBLE",
-                ),
-                (
-                    "billed_memory_GB_hour",
-                    job_run.billedResourceUtilization.memoryGBHour,
-                    "DOUBLE",
-                ),
-                (
-                    "billed_storage_GB_hour",
-                    job_run.billedResourceUtilization.storageGBHour,
-                    "DOUBLE",
-                ),
-            ]
-            measure_values = [
-                {
-                    "Name": metric_name,
-                    "Value": str(metric_value),
-                    "Type": metric_type,
-                }
-                for metric_name, metric_value, metric_type in metric_values
-            ]
+                metric_values = [
+                    ("job_run_name", job_run.name, "VARCHAR"),
+                    ("app_id", job_run.applicationId, "VARCHAR"),
+                    ("execution", 1, "BIGINT"),
+                    ("succeeded", int(job_run.IsSuccess), "BIGINT"),
+                    ("failed", int(job_run.IsFailure), "BIGINT"),
+                    (
+                        "execution_time_sec",
+                        job_run.totalExecutionDurationSeconds,
+                        "DOUBLE",
+                    ),
+                    ("error_message", job_run.ErrorMessage, "VARCHAR"),
+                    (
+                        "total_vCPU_hour",
+                        job_run.totalResourceUtilization.vCPUHour,
+                        "DOUBLE",
+                    ),
+                    (
+                        "total_memory_GB_hour",
+                        job_run.totalResourceUtilization.memoryGBHour,
+                        "DOUBLE",
+                    ),
+                    (
+                        "total_storage_GB_hour",
+                        job_run.totalResourceUtilization.storageGBHour,
+                        "DOUBLE",
+                    ),
+                    (
+                        "billed_vCPU_hour",
+                        job_run.billedResourceUtilization.vCPUHour,
+                        "DOUBLE",
+                    ),
+                    (
+                        "billed_memory_GB_hour",
+                        job_run.billedResourceUtilization.memoryGBHour,
+                        "DOUBLE",
+                    ),
+                    (
+                        "billed_storage_GB_hour",
+                        job_run.billedResourceUtilization.storageGBHour,
+                        "DOUBLE",
+                    ),
+                ]
+                measure_values = [
+                    {
+                        "Name": metric_name,
+                        "Value": str(metric_value),
+                        "Type": metric_type,
+                    }
+                    for metric_name, metric_value, metric_type in metric_values
+                ]
 
-            record_time = datetime_utils.datetime_to_epoch_milliseconds(
-                job_run.createdAt
-            )
+                record_time = datetime_utils.datetime_to_epoch_milliseconds(
+                    job_run.createdAt
+                )
 
-            records.append(
-                {
-                    "Dimensions": dimensions,
-                    "MeasureName": self.EXECUTION_MEASURE_NAME,
-                    "MeasureValueType": "MULTI",
-                    "MeasureValues": measure_values,
-                    "Time": record_time,
-                }
-            )
+                records.append(
+                    {
+                        "Dimensions": dimensions,
+                        "MeasureName": self.EXECUTION_MEASURE_NAME,
+                        "MeasureValueType": "MULTI",
+                        "MeasureValues": measure_values,
+                        "Time": record_time,
+                    }
+                )
 
         return records, common_attributes
 
