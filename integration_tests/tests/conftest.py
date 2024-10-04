@@ -1,6 +1,8 @@
+import time
 import pytest
 import os
 import sys
+import json
 from pathlib import Path
 
 # adding inttest_lib
@@ -13,9 +15,14 @@ lib_path = os.path.join(project_root, "src")
 sys.path.append(lib_path)
 
 from inttest_lib.dynamo_db_reader import IntegrationTestMessage, DynamoDBReader
-from inttest_lib.common import get_stack_obj_for_naming, TARGET_MEANING
+from inttest_lib.common import (
+    get_stack_obj_for_naming,
+    TARGET_MEANING,
+    CLOUDWATCH_ALERT_EVENTS_LOG_GROUP_MEANING,
+)
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from lib.aws.aws_naming import AWSNaming
+from lib.aws.cloudwatch_manager import CloudWatchManager
 
 
 def pytest_addoption(parser):
@@ -73,3 +80,40 @@ def test_results_messages(
     messages: list[IntegrationTestMessage] = reader.get_all_messages()
     filtered_messages = [x for x in messages if x.SentTimestamp > start_epochtimemsec]
     return filtered_messages
+
+
+@pytest.fixture(scope="session")
+def cloudwatch_alerts_events(start_epochtimemsec, stack_obj_for_naming) -> list[str]:
+    """
+    Returns list of alert events
+    (each record: { "message" : <str>, "resource_name" : "glue_job1", "resource_type" : "glue_jobs })
+    """
+    log_group_name = AWSNaming.LogGroupName(
+        stack_obj_for_naming, CLOUDWATCH_ALERT_EVENTS_LOG_GROUP_MEANING
+    )
+    mgr = CloudWatchManager()
+    cur_time = int(time.time() * 1000)
+    query_string = "fields @message, @resource_name, @resource_type"
+
+    records = mgr.query_logs(
+        log_group_name=log_group_name,
+        query_string=query_string,
+        start_time=start_epochtimemsec,
+        end_time=cur_time,
+    )
+
+    outp = []
+    for record in records:
+        item = {}
+        for field in record:
+            field_name = str(field["field"]).lstrip("@")
+            field_value = field["value"]
+            item[field_name] = field_value
+
+        outp.extend(
+            json.loads(fields["value"])["event"]
+            for fields in record
+            if fields["field"] == "@message"
+        )
+
+    return outp

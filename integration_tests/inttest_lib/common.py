@@ -10,10 +10,13 @@ sys.path.append(lib_path)
 from lib.aws.aws_naming import AWSNaming
 
 TARGET_MEANING = "inttest-target"
+CLOUDWATCH_ALERT_EVENTS_LOG_GROUP_MEANING = "alert-events"
 PROJECT_NAME = "salmon"
+
 
 def get_stack_obj_for_naming(stage_name):
     return SimpleNamespace(project_name=PROJECT_NAME, stage_name=stage_name)
+
 
 def get_target_sns_topic_name(stage_name: str) -> str:
     return AWSNaming.SNSTopic(

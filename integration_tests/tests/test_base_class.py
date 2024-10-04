@@ -16,8 +16,10 @@ class TestBaseClass:
     @classmethod
     def setup_class(cls):
         raise NotImplementedError("Subclasses must implement set_resource_type method")
-        # 1. set resource_type, e.g.:
-        # self.resource_type = SettingConfigResourceTypes.GLUE_JOBS
+        # 1. set resource_type
+        # 2. set detail-type for CloudWatch alerts event entry, e.g.:
+        # cls.resource_type = SettingConfigResourceTypes.GLUE_JOBS
+        # cls.cloudwatch_detail_type = "Glue Job State Change"
 
     @pytest.fixture
     def execution_timestream_metrics_summary(
@@ -105,3 +107,40 @@ class TestBaseClass:
             assert (
                 resource_name in message_body
             ), f"There should be mention of {resource_name} [{self.resource_type}]"
+
+    def filter_relevant_cloudwatch_events(self, cloudwatch_alerts_events) -> list[dict]:
+        if (
+            not hasattr(self, "cloudwatch_detail_type")
+            or not self.cloudwatch_detail_type
+        ):
+            raise NotImplementedError(
+                "self.cloudwatch_detail_type should be defined in Test Class"
+            )
+
+        return [
+            x
+            for x in cloudwatch_alerts_events
+            if x["detail-type"] == self.cloudwatch_detail_type
+        ]
+
+    def test_cloudwatch_alert_events(
+        self, cloudwatch_alerts_events, config_reader, stack_obj_for_naming
+    ):
+        relevant_events = self.filter_relevant_cloudwatch_events(
+            cloudwatch_alerts_events
+        )
+
+        # checking events count
+        assert (
+            len(relevant_events) == 2
+        ), "There should be 2 events, one for each execution"
+
+        # checking if
+        events_body = "".join([str(x) for x in relevant_events])
+        resource_names = config_reader.get_names_by_resource_type(
+            self.resource_type, stack_obj_for_naming
+        )
+        for resource_name in resource_names:
+            assert (
+                resource_name in events_body
+            ), f"There should be mention of {resource_name} [{self.resource_type}] in CloudWatch alert logs"

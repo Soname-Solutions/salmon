@@ -9,3 +9,4 @@ class TestEMRServerless(TestBaseClass):
     @classmethod
     def setup_class(cls):
         cls.resource_type = SettingConfigResourceTypes.EMR_SERVERLESS
+        cls.cloudwatch_detail_type = "EMR Serverless Job Run State Change"
