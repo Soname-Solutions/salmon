@@ -86,14 +86,14 @@ def test_results_messages(
 def cloudwatch_alerts_events(start_epochtimemsec, stack_obj_for_naming) -> list[str]:
     """
     Returns list of alert events
-    (each record: { "message" : <str>, "resource_name" : "glue_job1", "resource_type" : "glue_jobs })
+    (each record: { "event" : <json>, .. , "resource_name" : "glue_job1", "resource_type" : "glue_jobs })
     """
     log_group_name = AWSNaming.LogGroupName(
         stack_obj_for_naming, CLOUDWATCH_ALERT_EVENTS_LOG_GROUP_MEANING
     )
     mgr = CloudWatchManager()
     cur_time = int(time.time() * 1000)
-    query_string = "fields @message, @resource_name, @resource_type"
+    query_string = "fields @message"
 
     records = mgr.query_logs(
         log_group_name=log_group_name,
@@ -104,16 +104,9 @@ def cloudwatch_alerts_events(start_epochtimemsec, stack_obj_for_naming) -> list[
 
     outp = []
     for record in records:
-        item = {}
         for field in record:
-            field_name = str(field["field"]).lstrip("@")
-            field_value = field["value"]
-            item[field_name] = field_value
-
-        outp.extend(
-            json.loads(fields["value"])["event"]
-            for fields in record
-            if fields["field"] == "@message"
-        )
+            if field["field"] == "@message":
+                item = json.loads(field["value"])
+                outp.append(item)
 
     return outp

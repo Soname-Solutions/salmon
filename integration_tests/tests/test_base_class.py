@@ -46,6 +46,14 @@ class TestBaseClass:
         # returning the first record (it's only 1 record in resultset by query design)
         return result[0]
 
+    @pytest.fixture
+    def relevant_cloudwatch_events(self, cloudwatch_alerts_events) -> list[dict]:
+        return [
+            x
+            for x in cloudwatch_alerts_events
+            if x["resource_type"] == self.resource_type
+        ]
+
     def test_alerts(self, test_results_messages):
         """
         Checking if correct notifications were sent
@@ -108,39 +116,23 @@ class TestBaseClass:
                 resource_name in message_body
             ), f"There should be mention of {resource_name} [{self.resource_type}]"
 
-    def filter_relevant_cloudwatch_events(self, cloudwatch_alerts_events) -> list[dict]:
-        if (
-            not hasattr(self, "cloudwatch_detail_type")
-            or not self.cloudwatch_detail_type
-        ):
-            raise NotImplementedError(
-                "self.cloudwatch_detail_type should be defined in Test Class"
-            )
-
-        return [
-            x
-            for x in cloudwatch_alerts_events
-            if x["detail-type"] == self.cloudwatch_detail_type
-        ]
-
     def test_cloudwatch_alert_events(
-        self, cloudwatch_alerts_events, config_reader, stack_obj_for_naming
+        self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming
     ):
-        relevant_events = self.filter_relevant_cloudwatch_events(
-            cloudwatch_alerts_events
-        )
-
         # checking events count
         assert (
-            len(relevant_events) == 2
+            len(relevant_cloudwatch_events) == 2
         ), "There should be 2 events, one for each execution"
 
-        # checking if
-        events_body = "".join([str(x) for x in relevant_events])
-        resource_names = config_reader.get_names_by_resource_type(
+        # checking all resources are mentioned
+        resource_names_in_events = [
+            x["resource_name"] for x in relevant_cloudwatch_events
+        ]
+
+        resource_names_in_config = config_reader.get_names_by_resource_type(
             self.resource_type, stack_obj_for_naming
         )
-        for resource_name in resource_names:
+        for resource_name in resource_names_in_config:
             assert (
-                resource_name in events_body
+                resource_name in resource_names_in_events
             ), f"There should be mention of {resource_name} [{self.resource_type}] in CloudWatch alert logs"

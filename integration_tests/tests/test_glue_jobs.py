@@ -9,4 +9,3 @@ class TestGlueJobs(TestBaseClass):
     @classmethod
     def setup_class(cls):
         cls.resource_type = SettingConfigResourceTypes.GLUE_JOBS
-        cls.cloudwatch_detail_type = "Glue Job State Change"
