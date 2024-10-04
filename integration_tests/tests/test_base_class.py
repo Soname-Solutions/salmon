@@ -102,7 +102,7 @@ class TestBaseClass:
 
         message_body = digest_messages[0].MessageBody
 
-        # checking if there are mentions of testing stand glue jobs in the digest
+        # checking if there are mentions of testing stand resource in the digest
         resource_names = config_reader.get_names_by_resource_type(
             self.resource_type, stack_obj_for_naming
         )
