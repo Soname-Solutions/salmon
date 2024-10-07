@@ -1,0 +1,27 @@
+{
+    "tooling_environment": {
+        "name": "Tooling Account [dev]",
+        "account_id": "123457890123",
+        "region": "eu-central-1",
+        "digest_report_period_hours" : 24, 
+        "metrics_collection_cron_expression": "cron(*/5 * * * ? *)"
+    },
+    "monitored_environments": [   
+        {
+            "name": "Account2 [dev]",
+            "account_id": "234578901230",
+            "region": "eu-central-1"
+        },        
+        {
+            "name": "Account1 [dev]",
+            "account_id": "123457890123",
+            "region": "eu-central-1"
+        }
+    ],
+    "delivery_methods": [
+        {
+            "name": "sns_test",
+            "delivery_method_type": "AWS_SNS"
+        }
+    ]
+}

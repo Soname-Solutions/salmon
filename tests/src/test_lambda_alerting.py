@@ -377,6 +377,9 @@ def test_glue_crawler2(os_vars_init, event_dyn_props_init):
 ################################################################################################################################
 # GLUE Data Catalog Database tests
 
+GLUE_DB_NAME = "salmonts-testdb1"
+GLUE_TABLE_NAME = "salmonts-table1"
+
 
 # Utility function to generate a Glue Catalog (Database) event with dynamic properties.
 def get_glue_catalog_database_event(event_dyn_props):
@@ -390,9 +393,9 @@ def get_glue_catalog_database_event(event_dyn_props):
         "account": account_id,
         "time": time_str,
         "region": region,
-        "resources": [f"arn:aws:glue:{region}:{account_id}:database/testdb1"],
+        "resources": [f"arn:aws:glue:{region}:{account_id}:database/{GLUE_DB_NAME}"],
         "detail": {
-            "databaseName": "testdb1",
+            "databaseName": GLUE_DB_NAME,
             "typeOfChange": "CreateDatabase",
             "changedTables": [],
         },
@@ -428,11 +431,13 @@ def get_glue_catalog_table_event(event_dyn_props):
         "account": account_id,
         "time": time_str,
         "region": region,
-        "resources": [f"arn:aws:glue:{region}:{account_id}:table/testdb1/tbl1"],
+        "resources": [
+            f"arn:aws:glue:{region}:{account_id}:table/{GLUE_DB_NAME}/{GLUE_TABLE_NAME}"
+        ],
         "detail": {
-            "databaseName": "testdb1",
+            "databaseName": GLUE_DB_NAME,
             "typeOfChange": "CreateTable",
-            "changedTables": ["tbl1"],
+            "changedTables": [GLUE_TABLE_NAME],
         },
     }
 
@@ -466,12 +471,14 @@ def get_glue_catalog_column_event(event_dyn_props):
         "account": account_id,
         "time": time_str,
         "region": region,
-        "resources": [f"arn:aws:glue:{region}:{account_id}:table/testdb1/tbl1"],
+        "resources": [
+            f"arn:aws:glue:{region}:{account_id}:table/{GLUE_DB_NAME}/{GLUE_TABLE_NAME}"
+        ],
         "detail": {
-            "databaseName": "testdb1",
+            "databaseName": GLUE_DB_NAME,
             "changedPartitions": [],
             "typeOfChange": "UpdateTable",
-            "tableName": "tbl1",
+            "tableName": GLUE_TABLE_NAME,
         },
     }
 
