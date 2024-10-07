@@ -46,10 +46,8 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             ]
 
             if lambda_log.IsReportEvent:
-                GB_seconds = (
-                    (lambda_log.MemorySize / 1024) * (lambda_log.BilledDuration / 1000)
-                    if lambda_log.MemorySize and lambda_log.BilledDuration
-                    else None
+                GB_seconds = (lambda_log.MemorySize / 1024) * (
+                    lambda_log.BilledDuration / 1000
                 )
                 metric_values = [
                     ("execution", 1, "BIGINT"),
@@ -62,12 +60,6 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
                 ]
             else:
                 metric_values = [
-                    ("execution", None, "BIGINT"),
-                    ("duration_ms", None, "DOUBLE"),
-                    ("billed_duration_ms", None, "DOUBLE"),
-                    ("memory_size_mb", None, "DOUBLE"),
-                    ("GB_seconds", None, "DOUBLE"),
-                    ("max_memory_used_mb", None, "DOUBLE"),
                     ("error_message", lambda_log.message, "VARCHAR"),
                 ]
 

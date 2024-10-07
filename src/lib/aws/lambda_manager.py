@@ -3,7 +3,7 @@ import boto3
 from datetime import datetime, timedelta
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Dict, Optional
 
 from .cloudwatch_manager import CloudWatchManager
 from lib.core.datetime_utils import (
@@ -13,39 +13,60 @@ from lib.core.datetime_utils import (
 
 
 ###########################################################
+
+
 class LogEntry(BaseModel):
-    lambdaName: str
-    timestamp: datetime
-    message: str
-    requestId: Optional[str]
+    LambdaName: str
+    LogStream: str
+    RequestId: str
+    Status: Optional[str] = None
+    Report: Optional[str] = None
+    Errors: Optional[List[str]] = []
+    StartedOn: Optional[datetime] = None
+    CompletedOn: Optional[datetime] = None
 
     @property
-    def IsReportEvent(self) -> bool:
-        return LambdaManager.MESSAGE_PART_REPORT in self.message
+    def IsFinalState(self) -> bool:
+        return bool(self.StartedOn and self.Report)
 
     @property
-    def IsErrorEvent(self) -> bool:
-        return LambdaManager.MESSAGE_PART_ERROR in self.message
+    def IsSuccess(self) -> bool:
+        return self.Status in LambdaManager.LAMBDA_SUCCESS_STATE
+
+    @property
+    def IsFailure(self) -> bool:
+        return not self.IsSuccess
+
+    def _extract_value(self, pattern: str) -> float:
+        if self.Report:
+            match = re.search(pattern, self.Report)
+            if match:
+                return float(match.group(1))
+        return 0.0
 
     @property
     def Duration(self) -> float:
-        duration_match = re.search(r"Duration: ([0-9.]+) ms", self.message)
-        return float(duration_match.group(1)) if duration_match else 0
+        return self._extract_value(r"Duration: ([0-9.]+) ms")
 
     @property
     def BilledDuration(self) -> float:
-        billed_duration_match = re.search(r"Billed Duration: (\d+) ms", self.message)
-        return float(billed_duration_match.group(1)) if billed_duration_match else 0
+        return self._extract_value(r"Billed Duration: (\d+) ms")
 
     @property
     def MemorySize(self) -> float:
-        memory_size_match = re.search(r"Memory Size: (\d+) MB", self.message)
-        return float(memory_size_match.group(1)) if memory_size_match else 0
+        return self._extract_value(r"Memory Size: (\d+) MB")
 
     @property
     def MaxMemoryUsed(self) -> float:
-        max_memory_used_match = re.search(r"Max Memory Used: (\d+) MB", self.message)
-        return float(max_memory_used_match.group(1)) if max_memory_used_match else 0
+        return self._extract_value(r"Max Memory Used: (\d+) MB")
+
+    @property
+    def ErrorString(self) -> str:
+        if not self.Errors:
+            return None
+
+        error_string = "; ".join(self.Errors)
+        return error_string[:100] + "..." if len(error_string) > 100 else error_string
 
 
 ###########################################################
@@ -58,10 +79,13 @@ class LambdaManagerException(Exception):
 
 
 class LambdaManager:
+    MESSAGE_PART_START = "START"
+    MESSAGE_PART_END = "END"
     MESSAGE_PART_REPORT = "REPORT RequestId:"
     MESSAGE_PART_ERROR = "[ERROR]"
     LAMBDA_SUCCESS_STATE = "SUCCEEDED"
     LAMBDA_FAILURE_STATE = "FAILED"
+    LAMBDA_RUNNING_STATE = "RUNNING"
 
     def __init__(self, lambda_client=None):
         self.lambda_client = (
@@ -115,15 +139,20 @@ class LambdaManager:
         """
 
         query_string = f"""
-            fields @timestamp, @message, @requestId
-            | filter @message like '{self.MESSAGE_PART_REPORT}' or @message like '{self.MESSAGE_PART_ERROR}'
-            | sort @timestamp desc
+            fields @timestamp, @logStream, @message, @requestId
+            | filter (@message like '{self.MESSAGE_PART_START}'
+                   or @message like '{self.MESSAGE_PART_ERROR}'
+                   or @message like '{self.MESSAGE_PART_END}'
+                   or @message like '{self.MESSAGE_PART_REPORT}')
+                  and @message not like 'INIT_START'
+            | sort @timestamp
         """
 
         try:
+            # add 1ms to query start time to make since_time non-inclusive
             query_start_time = int(
                 datetime_to_epoch_milliseconds(since_time + timedelta(milliseconds=1))
-            )  # add 1ms to query start time to make since_time non-inclusive
+            )
             query_end_time = int(datetime_to_epoch_milliseconds(datetime.now()))
 
             lambda_logs = cloudwatch_manager.query_logs(
@@ -132,18 +161,75 @@ class LambdaManager:
                 start_time=query_start_time,
                 end_time=query_end_time,
             )
-            lambda_function_log_data = []
+            print("LAMBDA_LOGS, ", lambda_logs)
+
+            log_processor = LambdaLogProcessor(function_name)
             for log_entry_data in lambda_logs:
-                log_entry = LogEntry(
-                    lambdaName=function_name,
-                    timestamp=str_utc_datetime_to_datetime(log_entry_data[0]["value"]),
-                    message=log_entry_data[1]["value"],
-                    requestId=log_entry_data[2]["value"]
-                    if log_entry_data[2]["field"] == "@requestId"
-                    else None,
-                )
-                lambda_function_log_data.append(log_entry)
-            return lambda_function_log_data
+                log_processor.process_log_entry(log_entry_data)
+            return log_processor.generate_results()
+
         except Exception as e:
             error_message = f"Error getting lambda function log data: {e}"
             raise LambdaManagerException(error_message)
+
+
+class LambdaLogProcessor:
+    def __init__(self, function_name):
+        self.function_name = function_name
+        self.results: Dict[tuple, LogEntry] = {}
+        self.active_requests: Dict[str, str] = {}
+
+    def _extract_field(
+        self, log_entry: List[Dict[str, str]], field_name: str
+    ) -> Optional[str]:
+        return next(
+            (item["value"] for item in log_entry if item["field"] == field_name), None
+        )
+
+    def process_log_entry(self, log_entry: List[Dict[str, str]]):
+        log_timestamp = str_utc_datetime_to_datetime(
+            self._extract_field(log_entry, "@timestamp")
+        )
+        log_stream = self._extract_field(log_entry, "@logStream")
+        request_id = self._extract_field(log_entry, "@requestId")
+        message = self._extract_field(log_entry, "@message")
+
+        if not log_stream or not message:
+            return
+
+        if not request_id and LambdaManager.MESSAGE_PART_ERROR in message:
+            request_id = self.active_requests.get(log_stream)
+
+        key = (log_stream, request_id)
+
+        if LambdaManager.MESSAGE_PART_START in message:
+            log_entry_obj = LogEntry(
+                LambdaName=self.function_name,
+                LogStream=log_stream,
+                RequestId=request_id,
+                Status=LambdaManager.LAMBDA_RUNNING_STATE,
+                StartedOn=log_timestamp,
+            )
+            self.active_requests[log_stream] = request_id
+            self.results[key] = log_entry_obj
+
+        elif LambdaManager.MESSAGE_PART_ERROR in message:
+            if key in self.results:
+                log_entry_obj = self.results[key]
+                log_entry_obj.Status = LambdaManager.LAMBDA_FAILURE_STATE
+                log_entry_obj.Errors.append(message)
+
+        elif LambdaManager.MESSAGE_PART_END in message:
+            if key in self.results:
+                log_entry_obj = self.results[key]
+                if log_entry_obj.Status != LambdaManager.LAMBDA_FAILURE_STATE:
+                    log_entry_obj.Status = LambdaManager.LAMBDA_SUCCESS_STATE
+                log_entry_obj.CompletedOn = log_timestamp
+
+        elif LambdaManager.MESSAGE_PART_REPORT in message:
+            if key in self.results:
+                log_entry_obj = self.results[key]
+                log_entry_obj.Report = message
+
+    def generate_results(self) -> list[LogEntry]:
+        return list(self.results.values())

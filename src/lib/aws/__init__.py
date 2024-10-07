@@ -14,7 +14,12 @@ from .glue_manager import (
     GlueManagerException,
     RulesetRun,
 )
-from .lambda_manager import LogEntry, LambdaManager, LambdaManagerException
+from .lambda_manager import (
+    LogEntry,
+    LambdaManager,
+    LambdaManagerException,
+    LambdaLogProcessor,
+)
 from .s3_manager import S3Manager, S3ManagerReadException
 from .ses_manager import AwsSesManager, AwsSesRawEmailSenderException
 from .sns_manager import SnsTopicPublisher, SNSTopicPublisherException
