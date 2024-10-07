@@ -17,9 +17,7 @@ class TestBaseClass:
     def setup_class(cls):
         raise NotImplementedError("Subclasses must implement set_resource_type method")
         # 1. set resource_type
-        # 2. set detail-type for CloudWatch alerts event entry, e.g.:
         # cls.resource_type = SettingConfigResourceTypes.GLUE_JOBS
-        # cls.cloudwatch_detail_type = "Glue Job State Change"
 
     @pytest.fixture
     def execution_timestream_metrics_summary(
