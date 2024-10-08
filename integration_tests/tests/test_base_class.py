@@ -16,8 +16,8 @@ class TestBaseClass:
     @classmethod
     def setup_class(cls):
         raise NotImplementedError("Subclasses must implement set_resource_type method")
-        # 1. set resource_type, e.g.:
-        # self.resource_type = SettingConfigResourceTypes.GLUE_JOBS
+        # 1. set resource_type
+        # cls.resource_type = SettingConfigResourceTypes.GLUE_JOBS
 
     @pytest.fixture
     def execution_timestream_metrics_summary(
@@ -43,6 +43,14 @@ class TestBaseClass:
 
         # returning the first record (it's only 1 record in resultset by query design)
         return result[0]
+
+    @pytest.fixture
+    def relevant_cloudwatch_events(self, cloudwatch_alerts_events) -> list[dict]:
+        return [
+            x
+            for x in cloudwatch_alerts_events
+            if x["resource_type"] == self.resource_type
+        ]
 
     def test_alerts(self, test_results_messages):
         """
@@ -92,7 +100,7 @@ class TestBaseClass:
 
         message_body = digest_messages[0].MessageBody
 
-        # checking if there are mentions of testing stand glue jobs in the digest
+        # checking if there are mentions of testing stand resource in the digest
         resource_names = config_reader.get_names_by_resource_type(
             self.resource_type, stack_obj_for_naming
         )
@@ -105,3 +113,24 @@ class TestBaseClass:
             assert (
                 resource_name in message_body
             ), f"There should be mention of {resource_name} [{self.resource_type}]"
+
+    def test_cloudwatch_alert_events(
+        self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming
+    ):
+        # checking events count
+        assert (
+            len(relevant_cloudwatch_events) == 2
+        ), "There should be 2 events, one for each execution"
+
+        # checking all resources are mentioned
+        resource_names_in_events = [
+            x["resource_name"] for x in relevant_cloudwatch_events
+        ]
+
+        resource_names_in_config = config_reader.get_names_by_resource_type(
+            self.resource_type, stack_obj_for_naming
+        )
+        for resource_name in resource_names_in_config:
+            assert (
+                resource_name in resource_names_in_events
+            ), f"There should be mention of {resource_name} [{self.resource_type}] in CloudWatch alert logs"

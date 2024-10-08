@@ -65,7 +65,7 @@ class TestGlueDQ(TestBaseClass):
 
         message_body = digest_messages[0].MessageBody
 
-        # checking if there are mentions of testing stand glue jobs in the digest
+        # extract expected resource names differently for GlueDQ
         glue_ruleset_names, _ = config_reader.get_glue_dq_names(
             GlueManager.DQ_Catalog_Context_Type, stack_obj_for_naming
         )
@@ -78,3 +78,26 @@ class TestGlueDQ(TestBaseClass):
             assert (
                 glue_ruleset_name in message_body
             ), f"There should be mention of {glue_ruleset_name} glue ruleset"
+
+    # different number of executions (2 independent, 2 from glue jobs)
+    def test_cloudwatch_alert_events(
+        self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming
+    ):
+        # checking events count
+        assert (
+            len(relevant_cloudwatch_events) == 4
+        ), "There should be 4 events (2 from data catalog, 2 from glue jobs)"
+
+        # checking all resources are mentioned
+        resource_names_in_events = [
+            x["resource_name"] for x in relevant_cloudwatch_events
+        ]
+
+        # extract expected resource names differently for GlueDQ
+        glue_ruleset_names, _ = config_reader.get_glue_dq_names(
+            GlueManager.DQ_Catalog_Context_Type, stack_obj_for_naming
+        )
+        for resource_name in glue_ruleset_names:
+            assert (
+                resource_name in resource_names_in_events
+            ), f"There should be mention of {resource_name} [{self.resource_type}] in CloudWatch alert logs"

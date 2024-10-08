@@ -62,54 +62,76 @@ def lambda_handler(event, context):
     event_result = mapper.get_event_result()
     resource_name = mapper.get_resource_name()
 
-    event_status = mapper.get_resource_state()
-    execution_info_url = mapper.get_execution_info_url(resource_name)
-
-    notification_messages = []
-
-    event_is_alertable = event_result in EVENT_RESULTS_ALERTABLE
-    if event_is_alertable:
-        message = mapper.to_message()
-        delivery_options = DeliveryOptionsResolver.get_delivery_options(
-            settings, resource_type, resource_name
+    # do alerts / CW notification only if resource is in any monitoring group
+    resource_in_scope: bool = (
+        len(
+            settings.get_monitoring_groups(
+                resource_type=resource_type, resources=[resource_name]
+            )
         )
+        > 0
+    )
 
-        notification_messages = map_to_notification_messages(message, delivery_options)
-
-        logger.info(f"Notification messages: {notification_messages}")
-
-        queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
-        send_messages_to_sqs(
-            queue_url=queue_url,
-            message_group_id=resource_name,
-            messages=notification_messages,
-        )
-
+    if not (resource_in_scope):
+        return {
+            "messages": [],
+            "event_is_alertable": False,
+            "event_is_monitorable": False,
+            "resource_type": resource_type,
+            "execution_info_url": "",
+        }
     else:
-        logger.info(f"Event result is not alertable: {event_result}")
+        event_status = mapper.get_resource_state()
+        execution_info_url = mapper.get_execution_info_url(resource_name)
 
-    event_is_monitorable = event_result in EVENT_RESULTS_MONITORABLE
-    if event_is_monitorable:
-        log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
-        log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
-        CloudWatchAlertWriter.write_event_to_cloudwatch(
-            log_group_name,
-            log_stream_name,
-            mapper.monitored_env_name,
-            resource_name,
-            resource_type,
-            event_status,
-            event_result,
-            event,
-            execution_info_url,
-        )
-    else:
-        logger.info(f"Event result is not monitorable: {event_result}")
+        notification_messages = []
 
-    return {
-        "messages": notification_messages,
-        "event_is_alertable": event_is_alertable,
-        "event_is_monitorable": event_is_monitorable,
-        "resource_type": resource_type,
-        "execution_info_url": execution_info_url,
-    }
+        event_is_alertable = event_result in EVENT_RESULTS_ALERTABLE
+        if event_is_alertable:
+            message = mapper.to_message()
+            delivery_options = DeliveryOptionsResolver.get_delivery_options(
+                settings, resource_type, resource_name
+            )
+
+            notification_messages = map_to_notification_messages(
+                message, delivery_options
+            )
+
+            logger.info(f"Notification messages: {notification_messages}")
+
+            queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
+            send_messages_to_sqs(
+                queue_url=queue_url,
+                message_group_id=resource_name,
+                messages=notification_messages,
+            )
+
+        else:
+            logger.info(f"Event result is not alertable: {event_result}")
+
+        event_is_monitorable = event_result in EVENT_RESULTS_MONITORABLE
+
+        if event_is_monitorable:
+            log_group_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_GROUP_NAME"]
+            log_stream_name = os.environ["ALERT_EVENTS_CLOUDWATCH_LOG_STREAM_NAME"]
+            CloudWatchAlertWriter.write_event_to_cloudwatch(
+                log_group_name,
+                log_stream_name,
+                mapper.monitored_env_name,
+                resource_name,
+                resource_type,
+                event_status,
+                event_result,
+                event,
+                execution_info_url,
+            )
+        else:
+            logger.info(f"Event result is not monitorable: {event_result}")
+
+        return {
+            "messages": notification_messages,
+            "event_is_alertable": event_is_alertable,
+            "event_is_monitorable": event_is_monitorable,
+            "resource_type": resource_type,
+            "execution_info_url": execution_info_url,
+        }
