@@ -9,7 +9,6 @@ from lib.aws import (
     CloudWatchManager,
 )
 from lib.aws.lambda_manager import LambdaManager, LogEntry
-from lib.core.constants import EventResult
 from lib.core.datetime_utils import datetime_to_epoch_milliseconds
 from lib.aws.events_manager import EventsManager
 
@@ -38,55 +37,51 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         records = []
 
         for lambda_log in lambda_logs:
-            dimensions = [
-                {
-                    "Name": "lambda_function_request_id",
-                    "Value": lambda_log.requestId if lambda_log.requestId else "n/a",
-                }
-            ]
+            if lambda_log.IsFinalState:
+                dimensions = [
+                    {
+                        "Name": "lambda_function_request_id",
+                        "Value": lambda_log.RequestId,
+                    }
+                ]
 
-            if lambda_log.IsReportEvent:
+                # calculate GB_seconds metric
                 GB_seconds = (lambda_log.MemorySize / 1024) * (
                     lambda_log.BilledDuration / 1000
                 )
                 metric_values = [
+                    ("log_stream", lambda_log.LogStream, "VARCHAR"),
                     ("execution", 1, "BIGINT"),
+                    ("succeeded", int(lambda_log.IsSuccess), "BIGINT"),
+                    ("failed", int(lambda_log.IsFailure), "BIGINT"),
+                    ("status", lambda_log.Status, "VARCHAR"),
                     ("duration_ms", lambda_log.Duration, "DOUBLE"),
                     ("billed_duration_ms", lambda_log.BilledDuration, "DOUBLE"),
                     ("memory_size_mb", lambda_log.MemorySize, "DOUBLE"),
                     ("GB_seconds", GB_seconds, "DOUBLE"),
                     ("max_memory_used_mb", lambda_log.MaxMemoryUsed, "DOUBLE"),
-                    ("error_message", None, "VARCHAR"),
+                    ("error_message", lambda_log.ErrorString, "VARCHAR"),
                 ]
-            else:
-                metric_values = [
-                    ("error_message", lambda_log.message, "VARCHAR"),
+                measure_values = [
+                    {
+                        "Name": metric_name,
+                        "Value": str(metric_value),
+                        "Type": metric_type,
+                    }
+                    for metric_name, metric_value, metric_type in metric_values
                 ]
 
-            measure_values = [
-                {
-                    "Name": metric_name,
-                    "Value": str(metric_value),
-                    "Type": metric_type,
-                }
-                for metric_name, metric_value, metric_type in metric_values
-            ]
+                record_time = datetime_to_epoch_milliseconds(lambda_log.StartedOn)
 
-            record_time = datetime_to_epoch_milliseconds(lambda_log.timestamp)
-
-            records.append(
-                {
-                    "Dimensions": dimensions,
-                    "MeasureName": (
-                        self.EXECUTION_MEASURE_NAME
-                        if lambda_log.IsReportEvent
-                        else self.ERROR_MEASURE_NAME
-                    ),
-                    "MeasureValueType": "MULTI",
-                    "MeasureValues": measure_values,
-                    "Time": record_time,
-                }
-            )
+                records.append(
+                    {
+                        "Dimensions": dimensions,
+                        "MeasureName": self.EXECUTION_MEASURE_NAME,
+                        "MeasureValueType": "MULTI",
+                        "MeasureValues": measure_values,
+                        "Time": record_time,
+                    }
+                )
 
         return records, common_attributes
 
@@ -107,29 +102,20 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         Generates json in a form which can be sent to EventBus
         """
 
-        event_result = (
-            EventResult.FAILURE if lambdaLogEntry.IsErrorEvent else EventResult.SUCCESS
-        )
-        event_state = (
-            LambdaManager.LAMBDA_FAILURE_STATE
-            if lambdaLogEntry.IsErrorEvent
-            else "COMPLETED"
-        )
-
         event = {
-            "Time": lambdaLogEntry.timestamp,
+            "Time": lambdaLogEntry.CompletedOn,
             "Source": "salmon.lambda",
             "Resources": [],
             "DetailType": f"Lambda Function Execution State Change",
             "Detail": json.dumps(
                 {
-                    "lambdaName": lambdaLogEntry.lambdaName,
-                    "state": event_state,
-                    "event_result": event_result,
-                    "message": lambdaLogEntry.message,
+                    "lambdaName": lambdaLogEntry.LambdaName,
+                    "state": lambdaLogEntry.Status,
+                    "message": lambdaLogEntry.ErrorString,
                     "origin_account": lambda_aws_account,
                     "origin_region": lambda_aws_region,
-                    "request_id": lambdaLogEntry.requestId,
+                    "request_id": lambdaLogEntry.RequestId,
+                    "log_stream": lambdaLogEntry.LogStream,
                 }
             ),
             "EventBusName": event_bus_name,

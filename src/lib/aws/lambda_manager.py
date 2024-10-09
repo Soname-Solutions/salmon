@@ -18,7 +18,7 @@ from lib.core.datetime_utils import (
 class LogEntry(BaseModel):
     LambdaName: str
     LogStream: str
-    RequestId: str
+    RequestId: Optional[str]
     Status: Optional[str] = None
     Report: Optional[str] = None
     Errors: Optional[List[str]] = []
@@ -35,7 +35,7 @@ class LogEntry(BaseModel):
 
     @property
     def IsFailure(self) -> bool:
-        return not self.IsSuccess
+        return self.Status in LambdaManager.LAMBDA_FAILURE_STATE
 
     def _extract_value(self, pattern: str) -> float:
         if self.Report:
@@ -161,7 +161,6 @@ class LambdaManager:
                 start_time=query_start_time,
                 end_time=query_end_time,
             )
-            print("LAMBDA_LOGS, ", lambda_logs)
 
             log_processor = LambdaLogProcessor(function_name)
             for log_entry_data in lambda_logs:
@@ -197,11 +196,13 @@ class LambdaLogProcessor:
         if not log_stream or not message:
             return
 
+        # handle some ERROR entries which not assigned with Request ID
         if not request_id and LambdaManager.MESSAGE_PART_ERROR in message:
             request_id = self.active_requests.get(log_stream)
 
         key = (log_stream, request_id)
 
+        # handle START entry
         if LambdaManager.MESSAGE_PART_START in message:
             log_entry_obj = LogEntry(
                 LambdaName=self.function_name,
@@ -213,12 +214,14 @@ class LambdaLogProcessor:
             self.active_requests[log_stream] = request_id
             self.results[key] = log_entry_obj
 
+        # handle ERROR entry
         elif LambdaManager.MESSAGE_PART_ERROR in message:
             if key in self.results:
                 log_entry_obj = self.results[key]
                 log_entry_obj.Status = LambdaManager.LAMBDA_FAILURE_STATE
                 log_entry_obj.Errors.append(message)
 
+        # handle END entry
         elif LambdaManager.MESSAGE_PART_END in message:
             if key in self.results:
                 log_entry_obj = self.results[key]
@@ -226,6 +229,7 @@ class LambdaLogProcessor:
                     log_entry_obj.Status = LambdaManager.LAMBDA_SUCCESS_STATE
                 log_entry_obj.CompletedOn = log_timestamp
 
+        # handle REPORT entry
         elif LambdaManager.MESSAGE_PART_REPORT in message:
             if key in self.results:
                 log_entry_obj = self.results[key]
