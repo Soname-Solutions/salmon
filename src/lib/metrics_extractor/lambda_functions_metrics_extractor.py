@@ -106,7 +106,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             "Time": lambdaLogEntry.CompletedOn,
             "Source": "salmon.lambda",
             "Resources": [],
-            "DetailType": f"Lambda Function Execution State Change",
+            "DetailType": "Lambda Function Execution State Change",
             "Detail": json.dumps(
                 {
                     "lambdaName": lambdaLogEntry.LambdaName,
