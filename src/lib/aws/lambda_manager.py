@@ -15,7 +15,7 @@ from lib.core.datetime_utils import (
 ###########################################################
 
 
-class LogEntry(BaseModel):
+class LambdaExecution(BaseModel):
     LambdaName: str
     LogStream: str
     RequestId: Optional[str]
@@ -118,7 +118,7 @@ class LambdaManager:
         cloudwatch_manager: CloudWatchManager,
         function_name: str,
         since_time: datetime,
-    ) -> list[LogEntry]:
+    ) -> list[LambdaExecution]:
         """Get lambda logs from CloudWatch
 
         Example response from CloudWatch:
@@ -145,7 +145,7 @@ class LambdaManager:
                    or @message like '{self.MESSAGE_PART_END}'
                    or @message like '{self.MESSAGE_PART_REPORT}')
                   and @message not like 'INIT_START'
-            | sort @timestamp
+            | sort @logStream, @timestamp
         """
 
         try:
@@ -175,17 +175,20 @@ class LambdaManager:
 class LambdaLogProcessor:
     def __init__(self, function_name):
         self.function_name = function_name
-        self.results: Dict[tuple, LogEntry] = {}
+        self.results: Dict[tuple, LambdaExecution] = {}
         self.active_requests: Dict[str, str] = {}
 
     def _extract_field(
         self, log_entry: List[Dict[str, str]], field_name: str
     ) -> Optional[str]:
+        """Extracts the value of a given field from a log entry."""
         return next(
             (item["value"] for item in log_entry if item["field"] == field_name), None
         )
 
     def process_log_entry(self, log_entry: List[Dict[str, str]]):
+        """Processes a single log entry and updates the Lambda execution results accordingly."""
+
         log_timestamp = str_utc_datetime_to_datetime(
             self._extract_field(log_entry, "@timestamp")
         )
@@ -201,10 +204,11 @@ class LambdaLogProcessor:
             request_id = self.active_requests.get(log_stream)
 
         key = (log_stream, request_id)
+        execution_record = self.results.get(key)
 
         # handle START entry
         if LambdaManager.MESSAGE_PART_START in message:
-            log_entry_obj = LogEntry(
+            execution_record = LambdaExecution(
                 LambdaName=self.function_name,
                 LogStream=log_stream,
                 RequestId=request_id,
@@ -212,28 +216,26 @@ class LambdaLogProcessor:
                 StartedOn=log_timestamp,
             )
             self.active_requests[log_stream] = request_id
-            self.results[key] = log_entry_obj
+            self.results[key] = execution_record
 
         # handle ERROR entry
         elif LambdaManager.MESSAGE_PART_ERROR in message:
-            if key in self.results:
-                log_entry_obj = self.results[key]
-                log_entry_obj.Status = LambdaManager.LAMBDA_FAILURE_STATE
-                log_entry_obj.Errors.append(message)
+            if execution_record:
+                execution_record.Status = LambdaManager.LAMBDA_FAILURE_STATE
+                execution_record.Errors.append(message)
 
         # handle END entry
         elif LambdaManager.MESSAGE_PART_END in message:
-            if key in self.results:
-                log_entry_obj = self.results[key]
-                if log_entry_obj.Status != LambdaManager.LAMBDA_FAILURE_STATE:
-                    log_entry_obj.Status = LambdaManager.LAMBDA_SUCCESS_STATE
-                log_entry_obj.CompletedOn = log_timestamp
+            if execution_record:
+                if execution_record.Status != LambdaManager.LAMBDA_FAILURE_STATE:
+                    execution_record.Status = LambdaManager.LAMBDA_SUCCESS_STATE
+                execution_record.CompletedOn = log_timestamp
 
         # handle REPORT entry
         elif LambdaManager.MESSAGE_PART_REPORT in message:
-            if key in self.results:
-                log_entry_obj = self.results[key]
-                log_entry_obj.Report = message
+            if execution_record:
+                execution_record.Report = message
 
-    def generate_results(self) -> list[LogEntry]:
+    def generate_results(self) -> list[LambdaExecution]:
+        """Returns a list of all Lambda executions."""
         return list(self.results.values())

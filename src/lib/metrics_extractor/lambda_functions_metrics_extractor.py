@@ -4,11 +4,11 @@ from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 import json
 
 from lib.aws import (
-    LogEntry,
+    LambdaExecution,
     LambdaManager,
     CloudWatchManager,
 )
-from lib.aws.lambda_manager import LambdaManager, LogEntry
+from lib.aws.lambda_manager import LambdaManager, LambdaExecution
 from lib.core.datetime_utils import datetime_to_epoch_milliseconds
 from lib.aws.events_manager import EventsManager
 
@@ -18,7 +18,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
     Class is responsible for extracting lambda function metrics
     """
 
-    def _extract_metrics_data(self, since_time: datetime) -> list[LogEntry]:
+    def _extract_metrics_data(self, since_time: datetime) -> list[LambdaExecution]:
         cloudwatch_man = CloudWatchManager(super().get_aws_service_client("logs"))
         lambda_man = LambdaManager(super().get_aws_service_client())
         lambda_logs = lambda_man.get_lambda_logs(
@@ -26,7 +26,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         )
         return lambda_logs
 
-    def _data_to_timestream_records(self, lambda_logs: list[LogEntry]) -> list:
+    def _data_to_timestream_records(self, lambda_logs: list[LambdaExecution]) -> list:
         common_dimensions = [
             {"Name": "monitored_environment", "Value": self.monitored_environment_name},
             {"Name": self.RESOURCE_NAME_COLUMN_NAME, "Value": self.resource_name},
@@ -93,7 +93,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
     ###########################################################################################
     def generate_event(
         self,
-        lambdaLogEntry: LogEntry,
+        lambdaLogEntry: LambdaExecution,
         event_bus_name: str,
         lambda_aws_account: str,  # region and account where lambda is deployed
         lambda_aws_region: str,

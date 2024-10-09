@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from lib.metrics_extractor import LambdaFunctionsMetricExtractor
-from lib.aws.lambda_manager import LambdaManager, LogEntry
+from lib.aws.lambda_manager import LambdaManager, LambdaExecution
 
 from common import (
     boto3_client_creator,
@@ -26,7 +26,7 @@ EVENTS_MANAGER_CLASS_NAME = (
 )
 PUT_EVENTS_METHOD_NAME = f"{EVENTS_MANAGER_CLASS_NAME}.put_events"
 
-EXEC_SUCCESS1 = LogEntry(
+EXEC_SUCCESS1 = LambdaExecution(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_SUCCESS_STATE,
@@ -37,7 +37,7 @@ EXEC_SUCCESS1 = LogEntry(
     Report="REPORT details",
 )
 
-EXEC_SUCCESS2 = LogEntry(
+EXEC_SUCCESS2 = LambdaExecution(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_SUCCESS_STATE,
@@ -48,7 +48,7 @@ EXEC_SUCCESS2 = LogEntry(
     Report="REPORT details",
 )
 
-EXEC_ERROR1_WITH_REQUEST_ID = LogEntry(
+EXEC_ERROR1_WITH_REQUEST_ID = LambdaExecution(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_FAILURE_STATE,
@@ -59,7 +59,7 @@ EXEC_ERROR1_WITH_REQUEST_ID = LogEntry(
     Report="REPORT details",
 )
 
-EXEC_ERROR1_NO_REQUEST_ID = LogEntry(
+EXEC_ERROR1_NO_REQUEST_ID = LambdaExecution(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_FAILURE_STATE,

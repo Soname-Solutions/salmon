@@ -126,16 +126,16 @@ class GlueDataQualityDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        query = f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name
-                     , case when failed > 0 and context_type = '{GlueManager.DQ_Catalog_Context_Type}' then ruleset_run_id 
-                     , when failed > 0 and context_type = '{GlueManager.DQ_Job_Context_Type}' then glue_job_run_id 
-                     , else '' end as job_run_id, execution, failed, succeeded, execution_time_sec 
-                     , case when failed > 0 then error_message else '' end as error_message
-                       # additional attributes required for the DQ execution link
-                     , context_type, glue_table_name, glue_db_name, glue_job_name 
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}" 
-                WHERE time BETWEEN '{start_time}' AND '{end_time}' 
-            """
+        query = (
+            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
+            f""" case when failed > 0 and context_type = '{GlueManager.DQ_Catalog_Context_Type}' then ruleset_run_id  """
+            f"""      when failed > 0 and context_type = '{GlueManager.DQ_Job_Context_Type}' then glue_job_run_id  """
+            f""" else '' end as job_run_id, execution, failed, succeeded, execution_time_sec, """
+            f""" case when failed > 0 then error_message else '' end as error_message, """
+            # additional attributes required for the DQ execution link
+            f""" context_type, glue_table_name, glue_db_name, glue_job_name """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
+        )
         return query
 
 
@@ -145,12 +145,12 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        query = f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name
-                     , case when failed > 0 then step_function_run_id else '' end as job_run_id, execution, failed
-                     , succeeded, duration_sec as execution_time_sec, case when failed > 0 then error_message else '' end as error_message
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
-                WHERE time BETWEEN '{start_time}' AND '{end_time}'
-            """
+        query = (
+            f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, """
+            f""" case when failed > 0 then step_function_run_id else '' end as job_run_id, execution, failed, """
+            f""" succeeded, duration_sec as execution_time_sec, case when failed > 0 then error_message else '' end as error_message """
+            f"""FROM "{self.timestream_db_name}"."{self.timestream_table_name}" WHERE time BETWEEN '{start_time}' AND '{end_time}' """
+        )
         return query
 
 
