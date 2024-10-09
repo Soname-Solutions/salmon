@@ -113,7 +113,7 @@ class LambdaManager:
             "LogGroup", f"/aws/lambda/{lambda_function_name}"
         )
 
-    def get_lambda_logs(
+    def get_lambda_runs(
         self,
         cloudwatch_manager: CloudWatchManager,
         function_name: str,

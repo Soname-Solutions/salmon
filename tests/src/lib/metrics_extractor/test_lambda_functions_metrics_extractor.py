@@ -19,7 +19,7 @@ LOG_STREAM = "test-log-stream"
 LAMBDA_MANAGER_CLASS_NAME = (
     "lib.metrics_extractor.lambda_functions_metrics_extractor.LambdaManager"
 )
-GET_EXECUTIONS_METHOD_NAME = f"{LAMBDA_MANAGER_CLASS_NAME}.get_lambda_logs"
+GET_EXECUTIONS_METHOD_NAME = f"{LAMBDA_MANAGER_CLASS_NAME}.get_lambda_runs"
 
 EVENTS_MANAGER_CLASS_NAME = (
     "lib.metrics_extractor.glue_workflows_metrics_extractor.EventsManager"

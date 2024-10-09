@@ -21,12 +21,12 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
     def _extract_metrics_data(self, since_time: datetime) -> list[LambdaExecution]:
         cloudwatch_man = CloudWatchManager(super().get_aws_service_client("logs"))
         lambda_man = LambdaManager(super().get_aws_service_client())
-        lambda_logs = lambda_man.get_lambda_logs(
+        lambda_runs = lambda_man.get_lambda_runs(
             cloudwatch_man, self.resource_name, since_time
         )
-        return lambda_logs
+        return lambda_runs
 
-    def _data_to_timestream_records(self, lambda_logs: list[LambdaExecution]) -> list:
+    def _data_to_timestream_records(self, lambda_runs: list[LambdaExecution]) -> list:
         common_dimensions = [
             {"Name": "monitored_environment", "Value": self.monitored_environment_name},
             {"Name": self.RESOURCE_NAME_COLUMN_NAME, "Value": self.resource_name},
@@ -36,31 +36,31 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
 
         records = []
 
-        for lambda_log in lambda_logs:
-            if lambda_log.IsFinalState:
+        for lambda_run in lambda_runs:
+            if lambda_run.IsFinalState:
                 dimensions = [
                     {
                         "Name": "lambda_function_request_id",
-                        "Value": lambda_log.RequestId,
+                        "Value": lambda_run.RequestId,
                     }
                 ]
 
                 # calculate GB_seconds metric
-                GB_seconds = (lambda_log.MemorySize / 1024) * (
-                    lambda_log.BilledDuration / 1000
+                GB_seconds = (lambda_run.MemorySize / 1024) * (
+                    lambda_run.BilledDuration / 1000
                 )
                 metric_values = [
-                    ("log_stream", lambda_log.LogStream, "VARCHAR"),
+                    ("log_stream", lambda_run.LogStream, "VARCHAR"),
                     ("execution", 1, "BIGINT"),
-                    ("succeeded", int(lambda_log.IsSuccess), "BIGINT"),
-                    ("failed", int(lambda_log.IsFailure), "BIGINT"),
-                    ("status", lambda_log.Status, "VARCHAR"),
-                    ("duration_ms", lambda_log.Duration, "DOUBLE"),
-                    ("billed_duration_ms", lambda_log.BilledDuration, "DOUBLE"),
-                    ("memory_size_mb", lambda_log.MemorySize, "DOUBLE"),
+                    ("succeeded", int(lambda_run.IsSuccess), "BIGINT"),
+                    ("failed", int(lambda_run.IsFailure), "BIGINT"),
+                    ("status", lambda_run.Status, "VARCHAR"),
+                    ("duration_ms", lambda_run.Duration, "DOUBLE"),
+                    ("billed_duration_ms", lambda_run.BilledDuration, "DOUBLE"),
+                    ("memory_size_mb", lambda_run.MemorySize, "DOUBLE"),
                     ("GB_seconds", GB_seconds, "DOUBLE"),
-                    ("max_memory_used_mb", lambda_log.MaxMemoryUsed, "DOUBLE"),
-                    ("error_message", lambda_log.ErrorString, "VARCHAR"),
+                    ("max_memory_used_mb", lambda_run.MaxMemoryUsed, "DOUBLE"),
+                    ("error_message", lambda_run.ErrorString, "VARCHAR"),
                 ]
                 measure_values = [
                     {
@@ -71,7 +71,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
                     for metric_name, metric_value, metric_type in metric_values
                 ]
 
-                record_time = datetime_to_epoch_milliseconds(lambda_log.StartedOn)
+                record_time = datetime_to_epoch_milliseconds(lambda_run.StartedOn)
 
                 records.append(
                     {
@@ -93,7 +93,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
     ###########################################################################################
     def generate_event(
         self,
-        lambdaLogEntry: LambdaExecution,
+        lambdaExecution: LambdaExecution,
         event_bus_name: str,
         lambda_aws_account: str,  # region and account where lambda is deployed
         lambda_aws_region: str,
@@ -103,19 +103,19 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         """
 
         event = {
-            "Time": lambdaLogEntry.CompletedOn,
+            "Time": lambdaExecution.CompletedOn,
             "Source": "salmon.lambda",
             "Resources": [],
             "DetailType": "Lambda Function Execution State Change",
             "Detail": json.dumps(
                 {
-                    "lambdaName": lambdaLogEntry.LambdaName,
-                    "state": lambdaLogEntry.Status,
-                    "message": lambdaLogEntry.ErrorString,
+                    "lambdaName": lambdaExecution.LambdaName,
+                    "state": lambdaExecution.Status,
+                    "message": lambdaExecution.ErrorString,
                     "origin_account": lambda_aws_account,
                     "origin_region": lambda_aws_region,
-                    "request_id": lambdaLogEntry.RequestId,
-                    "log_stream": lambdaLogEntry.LogStream,
+                    "request_id": lambdaExecution.RequestId,
+                    "log_stream": lambdaExecution.LogStream,
                 }
             ),
             "EventBusName": event_bus_name,
@@ -136,7 +136,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
             for lambda_run in self.lambda_runs:
                 events.append(
                     self.generate_event(
-                        lambdaLogEntry=lambda_run,
+                        lambdaExecution=lambda_run,
                         event_bus_name=event_bus_name,
                         lambda_aws_account=lambda_aws_account,
                         lambda_aws_region=lambda_aws_region,
