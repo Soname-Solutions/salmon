@@ -35,6 +35,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         common_attributes = {"Dimensions": common_dimensions}
 
         records = []
+        print("LAMBDA LOGS: ", lambda_logs)
 
         for lambda_log in lambda_logs:
             if lambda_log.IsFinalState:

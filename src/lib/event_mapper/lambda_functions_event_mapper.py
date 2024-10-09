@@ -76,4 +76,6 @@ class LambdaFunctionsEventMapper(CustomAwsEventMapper):
             super().create_table_row(["Message", self.event["detail"]["message"]])
         )
 
+        print("BODY:", message_body)
+
         return message_body
