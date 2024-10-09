@@ -4,13 +4,10 @@ from lib.metrics_extractor import LambdaFunctionsMetricExtractor
 from lib.aws.lambda_manager import LambdaManager, LambdaExecution
 
 from common import (
-    boto3_client_creator,
-    get_measure_value,
     get_dimension_value,
     contains_required_items,
 )
 from unittest.mock import patch
-import pytest
 
 REGION = "us-east-1"
 ACCOUNT_ID = "1234567890"

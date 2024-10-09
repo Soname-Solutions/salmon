@@ -65,7 +65,16 @@ class LambdaExecution(BaseModel):
         if not self.Errors:
             return None
 
-        error_string = "; ".join(self.Errors)
+        cleaned_errors = []
+        for error in self.Errors:
+            # extract the error message portion from a log entry formatted as '[ERROR] <timestamp> <request_id> <error_message>'
+            pattern = r"^\[ERROR\] [^\s]+ [^\s]+ (.*)$"
+            match = re.search(pattern, error)
+            if match:
+                error = match.group(1).strip()
+            cleaned_errors.append(error)
+
+        error_string = "; ".join(cleaned_errors)
         return error_string[:100] + "..." if len(error_string) > 100 else error_string
 
 
