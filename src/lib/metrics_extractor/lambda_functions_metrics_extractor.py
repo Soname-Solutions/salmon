@@ -134,14 +134,15 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
         if self.lambda_runs:
             events = []
             for lambda_run in self.lambda_runs:
-                events.append(
-                    self.generate_event(
-                        lambdaExecution=lambda_run,
-                        event_bus_name=event_bus_name,
-                        lambda_aws_account=lambda_aws_account,
-                        lambda_aws_region=lambda_aws_region,
+                if lambda_run.IsFinalState:
+                    events.append(
+                        self.generate_event(
+                            lambdaExecution=lambda_run,
+                            event_bus_name=event_bus_name,
+                            lambda_aws_account=lambda_aws_account,
+                            lambda_aws_region=lambda_aws_region,
+                        )
                     )
-                )
 
             if events:
                 events_manager = EventsManager()

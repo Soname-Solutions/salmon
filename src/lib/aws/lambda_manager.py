@@ -68,7 +68,7 @@ class LambdaExecution(BaseModel):
         cleaned_errors = []
         for error in self.Errors:
             # extract the error message portion from a log entry formatted as '[ERROR] <timestamp> <request_id> <error_message>'
-            pattern = r"^\[ERROR\] [^\s]+ [^\s]+ (.*)$"
+            pattern = r"^\[ERROR\]\t[^\s]+\t[^\s]+\t(.*)$"
             match = re.search(pattern, error)
             if match:
                 error = match.group(1).strip()
