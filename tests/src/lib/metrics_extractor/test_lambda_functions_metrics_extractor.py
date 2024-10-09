@@ -94,8 +94,6 @@ def test_two_completed_records_integrity(boto3_client_creator):
             since_time=since_time
         )
 
-        print(f"RECORDS: {records}")
-
         required_dimensions = ["lambda_function_request_id"]
         required_metrics = [
             "execution",

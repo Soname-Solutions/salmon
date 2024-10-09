@@ -517,7 +517,7 @@ def get_lambda_function_event(
             "origin_account": account_id,
             "origin_region": region,
             "request_id": "c12129fe-97b6-fec0-a586-5624051b63eb",
-            "log_stream": "test_lig_stream",
+            "log_stream": "test-log-stream",
         },
     }
 
