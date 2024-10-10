@@ -15,5 +15,6 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.cdk-folder-name }}
-        venv/bin/cdk deploy --context stage-name=${{ inputs.stage-name }} --require-approval never
+        source venv/bin/activate
+        cdk deploy --context stage-name=${{ inputs.stage-name }} --require-approval never
         
