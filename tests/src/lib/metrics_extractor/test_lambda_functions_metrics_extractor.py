@@ -4,6 +4,7 @@ from lib.metrics_extractor import LambdaFunctionsMetricExtractor
 from lib.aws.lambda_manager import LambdaManager, LambdaExecution
 
 from common import (
+    boto3_client_creator,
     get_dimension_value,
     contains_required_items,
 )
