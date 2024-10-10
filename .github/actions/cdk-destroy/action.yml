@@ -14,6 +14,6 @@ runs:
     - name: CDK destroy
       shell: bash
       run: |
+        source venv/bin/activate      
         cd ${{ inputs.cdk-folder-name }}
-        source venv/bin/activate
         cdk destroy --context stage-name=${{ inputs.stage-name }} --force
