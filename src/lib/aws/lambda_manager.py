@@ -174,7 +174,7 @@ class LambdaManager:
             log_processor = LambdaLogProcessor(function_name)
             for log_entry_data in lambda_logs:
                 log_processor.process_log_entry(log_entry_data)
-            return log_processor.generate_results()
+            return log_processor.get_executions()
 
         except Exception as e:
             error_message = f"Error getting lambda function log data: {e}"
@@ -184,8 +184,9 @@ class LambdaManager:
 class LambdaLogProcessor:
     def __init__(self, function_name):
         self.function_name = function_name
-        self.results: Dict[tuple, LambdaExecution] = {}
-        self.active_requests: Dict[str, str] = {}
+        self.request_ids: Dict[str, str] = {}
+        self.in_progress_executions: Dict[tuple, LambdaExecution] = {}
+        self.completed_executions: List[LambdaExecution] = []
 
     def _extract_field(
         self, log_entry: List[Dict[str, str]], field_name: str
@@ -210,10 +211,10 @@ class LambdaLogProcessor:
 
         # handle some ERROR entries which not assigned with Request ID
         if not request_id and LambdaManager.MESSAGE_PART_ERROR in message:
-            request_id = self.active_requests.get(log_stream)
+            request_id = self.request_ids.get(log_stream)
 
         key = (log_stream, request_id)
-        execution_record = self.results.get(key)
+        execution_record = self.in_progress_executions.get(key)
 
         # handle START entry
         if LambdaManager.MESSAGE_PART_START in message:
@@ -224,8 +225,8 @@ class LambdaLogProcessor:
                 Status=LambdaManager.LAMBDA_RUNNING_STATE,
                 StartedOn=log_timestamp,
             )
-            self.active_requests[log_stream] = request_id
-            self.results[key] = execution_record
+            self.request_ids[log_stream] = request_id
+            self.in_progress_executions[key] = execution_record
 
         # handle ERROR entry
         elif LambdaManager.MESSAGE_PART_ERROR in message:
@@ -245,6 +246,13 @@ class LambdaLogProcessor:
             if execution_record:
                 execution_record.Report = message
 
-    def generate_results(self) -> list[LambdaExecution]:
-        """Returns a list of all Lambda executions."""
-        return list(self.results.values())
+                #  add the execution to completed executions list
+                self.completed_executions.append(execution_record)
+
+                # remove the completed execution from in_progress_executions and active request_ids
+                del self.in_progress_executions[key]
+                self.request_ids.pop(log_stream, None)
+
+    def get_executions(self) -> list[LambdaExecution]:
+        """Returns a list of completed Lambda executions."""
+        return self.completed_executions

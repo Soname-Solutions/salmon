@@ -16,48 +16,6 @@ LOG_STREAM_TWO = "Stream2"
 
 @patch("lib.aws.cloudwatch_manager.CloudWatchManager")
 @patch("boto3.client")
-def test_get_lambda_running_execution(mock_boto3, mock_cw_man):
-    lambda_logs = [
-        [
-            {"field": "@timestamp", "value": "2024-09-30 09:41:25.893"},
-            {"field": "@logStream", "value": LOG_STREAM_ONE},
-            {"field": "@message", "value": f"START RequestId: {REQUEST_ID_ONE}\n"},
-            {"field": "@requestId", "value": REQUEST_ID_ONE},
-        ]
-    ]
-    mock_cw_man.query_logs.return_value = lambda_logs
-
-    lambda_man = LambdaManager()
-    lambda_executions = lambda_man.get_lambda_runs(
-        cloudwatch_manager=mock_cw_man, function_name=LAMBDA_NAME, since_time=SINCE_TIME
-    )
-
-    expected_results = [
-        LambdaExecution(
-            LambdaName=LAMBDA_NAME,
-            LogStream=LOG_STREAM_ONE,
-            RequestId=REQUEST_ID_ONE,
-            Status=LambdaManager.LAMBDA_RUNNING_STATE,
-            Report=None,
-            Errors=[],
-            StartedOn=datetime(2024, 9, 30, 9, 41, 25, 893000, tzinfo=timezone.utc),
-            CompletedOn=None,
-        )
-    ]
-
-    assert lambda_executions == expected_results
-    assert lambda_executions[0].IsFinalState == False
-    assert lambda_executions[0].IsSuccess == False
-    assert lambda_executions[0].IsFailure == False
-    assert lambda_executions[0].Duration == 0.0
-    assert lambda_executions[0].BilledDuration == 0.0
-    assert lambda_executions[0].MemorySize == 0.0
-    assert lambda_executions[0].MaxMemoryUsed == 0.0
-    assert lambda_executions[0].ErrorString == None
-
-
-@patch("lib.aws.cloudwatch_manager.CloudWatchManager")
-@patch("boto3.client")
 def test_get_lambda_success_execution(mock_boto3, mock_cw_man):
     lambda_logs = [
         [
@@ -190,3 +148,86 @@ def test_get_lambda_failed_execution(mock_boto3, mock_cw_man):
         lambda_executions[0].ErrorString
         == "[ERROR] Exception: intentional failure - lambda dq\n; Second failure - lambda dq"
     )  # Errors concatinated as expected
+
+
+# In case of retry Lambda will log events in the same log stream and under the same request ID
+# Check that for each Lambda invocation/retry, a separate LambdaExecution record will be created
+@patch("lib.aws.cloudwatch_manager.CloudWatchManager")
+@patch("boto3.client")
+def test_get_two_lambda_executions_with_same_request_id(mock_boto3, mock_cw_man):
+    lambda_logs = [
+        [
+            {"field": "@timestamp", "value": "2024-10-01 09:41:25.893"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {"field": "@message", "value": f"START RequestId: {REQUEST_ID_ONE}\n"},
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+        [
+            {"field": "@timestamp", "value": "2024-10-01 09:41:28.660"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {"field": "@message", "value": f"END RequestId: {REQUEST_ID_ONE}\n"},
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+        [
+            {"field": "@timestamp", "value": "2024-10-01 09:41:28.660"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {
+                "field": "@message",
+                "value": f"REPORT RequestId: {REQUEST_ID_ONE}\tDuration: 2758.71 ms\tBilled Duration: 2759 ms\tMemory Size: 128 MB\tMax Memory Used: 80 MB\tInit Duration: 261.91 ms\t\n",
+            },
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+        [
+            {"field": "@timestamp", "value": "2024-10-01 10:41:25.893"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {"field": "@message", "value": f"START RequestId: {REQUEST_ID_ONE}\n"},
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+        [
+            {"field": "@timestamp", "value": "2024-10-01 10:41:28.660"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {"field": "@message", "value": f"END RequestId: {REQUEST_ID_ONE}\n"},
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+        [
+            {"field": "@timestamp", "value": "2024-10-01 10:41:28.660"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {
+                "field": "@message",
+                "value": f"REPORT RequestId: {REQUEST_ID_ONE}\tDuration: 2758.71 ms\tBilled Duration: 2759 ms\tMemory Size: 128 MB\tMax Memory Used: 80 MB\tInit Duration: 261.91 ms\t\n",
+            },
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+    ]
+    mock_cw_man.query_logs.return_value = lambda_logs
+
+    lambda_man = LambdaManager()
+    lambda_executions = lambda_man.get_lambda_runs(
+        cloudwatch_manager=mock_cw_man, function_name=LAMBDA_NAME, since_time=SINCE_TIME
+    )
+
+    expected_results = [
+        LambdaExecution(
+            LambdaName=LAMBDA_NAME,
+            LogStream=LOG_STREAM_ONE,
+            RequestId=REQUEST_ID_ONE,
+            Status=LambdaManager.LAMBDA_SUCCESS_STATE,
+            Report=f"REPORT RequestId: {REQUEST_ID_ONE}\tDuration: 2758.71 ms\tBilled Duration: 2759 ms\tMemory Size: 128 MB\tMax Memory Used: 80 MB\tInit Duration: 261.91 ms\t\n",
+            Errors=[],
+            StartedOn=datetime(2024, 10, 1, 9, 41, 25, 893000, tzinfo=timezone.utc),
+            CompletedOn=datetime(2024, 10, 1, 9, 41, 28, 660000, tzinfo=timezone.utc),
+        ),
+        LambdaExecution(
+            LambdaName=LAMBDA_NAME,
+            LogStream=LOG_STREAM_ONE,
+            RequestId=REQUEST_ID_ONE,
+            Status=LambdaManager.LAMBDA_SUCCESS_STATE,
+            Report=f"REPORT RequestId: {REQUEST_ID_ONE}\tDuration: 2758.71 ms\tBilled Duration: 2759 ms\tMemory Size: 128 MB\tMax Memory Used: 80 MB\tInit Duration: 261.91 ms\t\n",
+            Errors=[],
+            StartedOn=datetime(2024, 10, 1, 10, 41, 25, 893000, tzinfo=timezone.utc),
+            CompletedOn=datetime(2024, 10, 1, 10, 41, 28, 660000, tzinfo=timezone.utc),
+        ),
+    ]
+
+    assert len(expected_results) == 2
+    assert lambda_executions == expected_results
