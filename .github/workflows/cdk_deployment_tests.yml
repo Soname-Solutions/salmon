@@ -20,6 +20,10 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
+      - name: Setup Python Virtual Environment
+        id: setup-venv
+        uses: ./.github/actions/setup-venv
+
       - name: prepare CDK
         uses: ./.github/actions/cdk-prepare
         with:

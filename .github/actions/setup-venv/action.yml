@@ -1,0 +1,20 @@
+name: 'Setup Python Virtual Environment'
+description: 'Creates a Python virtual environment and outputs the prefix path'
+outputs:
+  prefix:
+    description: 'The prefix path to the virtual environment executables'
+runs:
+  using: 'composite'
+  steps:
+    - name: Create virtual environment
+      shell: bash
+      run: |
+        if [ ! -d "venv" ]; then
+          python -m venv venv
+        else
+          echo "Virtual environment 'venv' already exists, skipping creation."
+        fi
+
+    - name: Output prefix
+      shell: bash
+      run: echo "prefix=$(realpath venv/bin)" >> $GITHUB_OUTPUT
