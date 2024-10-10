@@ -29,12 +29,12 @@ runs:
     - name: Install Python requirements
       shell: bash
       run: |
-        pip3 install -r requirements.txt        
+        venv/bin/pip3 install -r requirements.txt        
       
     # we intentionally use devci, as they represent sufficient, yet compact configuration
     - name: Prepare replacements.json (put actual AWS account)
       shell: bash
-      run: python ${{ inputs.settings-folder-name }}/../prepare_settings.py --stage-name ${{ inputs.stage-name }} --region ${{ inputs.region }}
+      run: venv/bin/python ${{ inputs.settings-folder-name }}/../prepare_settings.py --stage-name ${{ inputs.stage-name }} --region ${{ inputs.region }}
 
     - name: Copy deployment settings to config/settings
       shell: bash

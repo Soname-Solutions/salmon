@@ -18,6 +18,10 @@ jobs:
         - name: Check out repository code
           uses: actions/checkout@v4
 
+        - name: Setup Python Virtual Environment
+          id: setup-venv
+          uses: ./.github/actions/setup-venv
+  
         - name: Assign STAGE_NAME
           id: assign_stage_name
           uses: ./.github/actions/assign-inttest-stage-name          
