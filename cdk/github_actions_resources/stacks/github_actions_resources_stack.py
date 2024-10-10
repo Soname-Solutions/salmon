@@ -68,6 +68,7 @@ class GitHubActionsResourcesStack(Stack):
                     actions=["sts:AssumeRole"],
                     resources=[
                         "arn:aws:iam::*:role/cdk-*-deploy-role-*",
+                        "arn:aws:iam::*:role/cdk-*-lookup-role-*",
                         "arn:aws:iam::*:role/cdk-*-file-publishing-role-*",
                     ],
                 )
