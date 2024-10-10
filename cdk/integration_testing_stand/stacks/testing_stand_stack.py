@@ -338,10 +338,10 @@ def handler(event, context):
             )
         )
 
-        lambda_meanings = cfg_reader.get_meanings_by_resource_type(
-            types.LAMBDA_FUNCTIONS
-        )
-        for lambda_meaning in lambda_meanings:
+        for (
+            lambda_meaning,
+            retry_attempts,
+        ) in cfg_reader.get_lambda_functions_with_retry_attempts().items():
             lmb = lambda_.Function(
                 self,
                 f"Lambda{lambda_meaning.capitalize()}",
@@ -353,6 +353,7 @@ def handler(event, context):
                 timeout=Duration.seconds(30),
                 runtime=lambda_.Runtime.PYTHON_3_11,
                 role=lambda_role,
+                retry_attempts=retry_attempts,
             )
 
     def create_glue_workflows_resources(self, cfg_reader):

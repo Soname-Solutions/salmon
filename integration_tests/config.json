@@ -68,10 +68,16 @@
         ],
         "lambda_functions": [
             {
-                "meaning": "ts-lambda-success"
+                "meaning": "ts-lambda-success",
+                "retry_attempts": 0
             },
             {
-                "meaning": "ts-lambda-fail"
+                "meaning": "ts-lambda-fail-1",
+                "retry_attempts": 0
+            },
+            {
+                "meaning": "ts-lambda-fail-2",
+                "retry_attempts": 2
             }
         ],
         "emr_serverless": [

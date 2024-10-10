@@ -106,14 +106,13 @@ class IntTests_Config_Reader:
             outp[meaning] = crawler_path
 
         return outp
-    
+
     def get_glue_crawlers_deny_create_table(self, glue_crawler_meaning):
         gluecr_config = self.config_data.get(types.GLUE_CRAWLERS, {})
         for gluecr in gluecr_config:
             meaning = gluecr.get("meaning", "")
             if meaning == glue_crawler_meaning:
-                return gluecr.get("deny_create_table",False)
-
+                return gluecr.get("deny_create_table", False)
 
     def get_step_function_child_glue_jobs_meanings(self, step_function_meaning):
         gluewf_config = self.config_data.get(types.STEP_FUNCTIONS, {})
@@ -134,5 +133,15 @@ class IntTests_Config_Reader:
             )
             script_paths = [x["path"] for x in emr_app.get("scripts", [])]
             outp[app_name] = script_paths
+
+        return outp
+
+    def get_lambda_functions_with_retry_attempts(self):
+        outp = {}
+        lambda_config = self.config_data.get(types.LAMBDA_FUNCTIONS, {})
+        for lmbd in lambda_config:
+            meaning = lmbd.get("meaning", "")
+            retry_attempts = lmbd.get("retry_attempts", "")
+            outp[meaning] = retry_attempts
 
         return outp

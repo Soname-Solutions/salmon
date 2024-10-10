@@ -34,7 +34,8 @@ END_TIME = datetime(2000, 1, 2, 0, 0, 0)
         ("scen4", types.STEP_FUNCTIONS),
         ("scen5", types.GLUE_DATA_QUALITY),
         ("scen6", types.EMR_SERVERLESS),
-        # Not yet implemented for Glue Crawlers and Data Catalogs
+        ("scen6", types.GLUE_CRAWLERS),
+        # Not yet implemented for Data Catalogs
     ],
 )
 def test_digest_extractor_get_query(scenario, resource_type):
