@@ -30,13 +30,13 @@ def aws_credentials():
 
 
 @pytest.fixture
-def s3_setup(aws_credentials):
+def s3_setup(aws_credentials, config_path_settings_tests):
     with mock_aws():
         conn = boto3.client("s3", region_name="us-east-1")
         conn.create_bucket(Bucket=MOCKED_S3_BUCKET_NAME)
 
         # Path to your test configuration
-        config_folder = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+        config_folder = os.path.join(config_path_settings_tests, "config1")
 
         # Upload files to the mocked S3 bucket
         for filename in os.listdir(config_folder):
@@ -52,8 +52,8 @@ def s3_setup(aws_credentials):
 
 
 # testing reading config from local path (with minimal checks)
-def test_read_from_path():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_read_from_path(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(config_path)
 
     tooling_account_props = settings.get_tooling_account_props()
@@ -79,9 +79,9 @@ def test_from_s3_path(s3_setup):
 
 
 # testing reading config without_replacements_file (shouldn't throw an error)
-def test_read_from_path_without_replacements_file():
+def test_read_from_path_without_replacements_file(config_path_settings_tests):
     config_path = os.path.join(
-        CURRENT_FOLDER, "test_configs/config6_no_replacements_file/"
+        config_path_settings_tests, "config6_no_replacements_file"
     )
     settings = Settings.from_file_path(config_path)
 
@@ -94,9 +94,9 @@ def test_read_from_path_without_replacements_file():
 
 
 # testing reading config missing_recipients_file (SHOULD throw an error)
-def test_read_from_path_missing_recipients_file():
+def test_read_from_path_missing_recipients_file(config_path_settings_tests):
     config_path = os.path.join(
-        CURRENT_FOLDER, "test_configs/config7_missing_recipients_file/"
+        config_path_settings_tests, "config7_missing_recipients_file"
     )
 
     with pytest.raises(FileNotFoundError):
@@ -108,8 +108,8 @@ def test_read_from_path_missing_recipients_file():
 
 
 # tests getting general settings from config
-def test_general_prop():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_general_prop(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -118,8 +118,8 @@ def test_general_prop():
     assert general_settings["tooling_environment"]["name"] == "Tooling Account [dev]"
 
 
-def test_getting_tooling_env_props_when_explicitly_defined():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_getting_tooling_env_props_when_explicitly_defined(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -163,9 +163,9 @@ def test_getting_tooling_env_props_when_explicitly_defined():
     )
 
 
-def test_getting_tooling_env_props_when_omitted():
+def test_getting_tooling_env_props_when_omitted(config_path_settings_tests):
     config_path = os.path.join(
-        CURRENT_FOLDER, "test_configs/config3_tooling_optional_props_omitted/"
+        config_path_settings_tests, "config3_tooling_optional_props_omitted"
     )
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
@@ -197,8 +197,8 @@ def test_getting_tooling_env_props_when_omitted():
 
 
 # test getting a list of AWS account IDs where monitored environment exist
-def test_monitored_account_info():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_monitored_account_info(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -221,8 +221,8 @@ def test_monitored_account_info():
     assert ("1234567890", "us-west-2") in acc_region_pairs
 
 
-def test_get_monitored_environment_props():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_get_monitored_environment_props(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -242,8 +242,8 @@ def test_get_monitored_environment_props():
     assert output is None
 
 
-def test_get_monitored_environment_name():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_get_monitored_environment_name(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -271,8 +271,8 @@ def test_get_monitored_environment_name():
 
 
 # tests working with monitoring groups
-def test_monitoring_groups():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_monitoring_groups(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -302,9 +302,9 @@ def test_monitoring_groups():
 
 
 # tests getting raw monitoring groups config
-def test_monitoring_groups_prop():
+def test_monitoring_groups_prop(config_path_settings_tests):
     config_path = os.path.join(
-        CURRENT_FOLDER, "test_configs/config2_wildcards/scen1_one_resource_type/"
+        config_path_settings_tests, "config2_wildcards/scen1_one_resource_type"
     )
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
@@ -323,8 +323,8 @@ def test_monitoring_groups_prop():
 
 
 # testing how defaults are applied to resources in monitoring groups (sla_seconds, minimum_number_of_runs)
-def test_monitoring_group_resource_properties():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_monitoring_group_resource_properties(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -376,9 +376,9 @@ def test_monitoring_group_resource_properties():
 
 
 # testing how wildcard replacements work
-def test_monitoring_group_replace_wildcards_scen1():
+def test_monitoring_group_replace_wildcards_scen1(config_path_settings_tests):
     config_path = os.path.join(
-        CURRENT_FOLDER, "test_configs/config2_wildcards/scen1_one_resource_type/"
+        config_path_settings_tests, "config2_wildcards/scen1_one_resource_type/"
     )
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
@@ -438,9 +438,9 @@ def test_monitoring_group_replace_wildcards_scen1():
 #         }
 #     ]
 # }
-def test_get_monitoring_groups_wildcards():
+def test_get_monitoring_groups_wildcards(config_path_settings_tests):
     config_path = os.path.join(
-        CURRENT_FOLDER, "test_configs/config2_wildcards/scen2_two_resource_types/"
+        config_path_settings_tests, "config2_wildcards/scen2_two_resource_types/"
     )
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
@@ -501,8 +501,8 @@ def test_get_monitoring_groups_wildcards():
 
 
 # test getting relevant groups by resource_name
-def test_get_monitoring_groups():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config4_many_groups/")
+def test_get_monitoring_groups(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config4_many_groups")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -554,8 +554,8 @@ def test_get_monitoring_groups():
 
 
 # test getting relevant groups by resource_type
-def test_get_monitoring_groups_by_resource_type():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config4_many_groups/")
+def test_get_monitoring_groups_by_resource_type(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config4_many_groups")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -602,8 +602,8 @@ def test_get_monitoring_groups_by_resource_type():
         assert_group_results(groups, expected_groups)
 
 
-def test_get_all_resource_names():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_get_all_resource_names(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -631,8 +631,8 @@ def test_get_all_resource_names():
 
 
 # should raise exception when no IAM role provided and still need to retrieve resources
-def test_get_all_resource_names_no_iam_role():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_get_all_resource_names_no_iam_role(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(config_path)
 
     with pytest.raises(SettingsException, match="IAM Role"):
@@ -644,8 +644,8 @@ def test_get_all_resource_names_no_iam_role():
 
 
 # tests getting recipients config
-def test_recipients_prop():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config1/")
+def test_recipients_prop(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config1")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -656,8 +656,8 @@ def test_recipients_prop():
     assert content is not None, f"recipients_settings content is empty"
 
 
-def test_get_recipients():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config5_many_recipients/")
+def test_get_recipients(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config5_many_recipients")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -691,8 +691,8 @@ def test_get_recipients():
     assert_recipient_results(recipients, expected_recipients)
 
 
-def test_get_recipients_and_groups_by_notification_type():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config5_many_recipients/")
+def test_get_recipients_and_groups_by_notification_type(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config5_many_recipients")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
@@ -721,8 +721,8 @@ def test_get_recipients_and_groups_by_notification_type():
             assert group in actual_groups, f"Group {group} not found"
 
 
-def test_get_delivery_method():
-    config_path = os.path.join(CURRENT_FOLDER, "test_configs/config5_many_recipients/")
+def test_get_delivery_method(config_path_settings_tests):
+    config_path = os.path.join(config_path_settings_tests, "config5_many_recipients")
     settings = Settings.from_file_path(
         config_path, iam_role_list_monitored_res="sample"
     )
