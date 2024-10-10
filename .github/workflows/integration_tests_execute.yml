@@ -13,6 +13,10 @@ jobs:
     steps:
         - name: Check out repository code
           uses: actions/checkout@v4
+
+        - name: Setup Python Virtual Environment
+          id: setup-venv
+          uses: ./.github/actions/setup-venv          
           
         - name: Assign STAGE_NAME
           id: assign_stage_name
@@ -21,7 +25,7 @@ jobs:
         - name: Install Python Test requirements
           shell: bash
           run: |
-            pip3 install -r requirements-test.txt    
+            venv/bin/pip3 install -r requirements-test.txt    
             
         - name: Set workflow start time in epoch milliseconds
           id: set_start_time
@@ -30,7 +34,7 @@ jobs:
         - name: Testing stand executions
           shell: bash
           run: |
-            python integration_tests/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+            venv/bin/python integration_tests/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
 
         # Making sure alerts have enough time to arrive
         - name: Pause for 2 minutes
@@ -39,4 +43,4 @@ jobs:
         - name: Run tests
           shell: bash
           run: |
-            pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
+            venv/bin/pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
