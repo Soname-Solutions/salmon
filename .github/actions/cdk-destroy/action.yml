@@ -15,4 +15,4 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.cdk-folder-name }}
-        cdk destroy --context stage-name=${{ inputs.stage-name }} --force
+        venv/bin/cdk destroy --context stage-name=${{ inputs.stage-name }} --force
