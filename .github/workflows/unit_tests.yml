@@ -17,15 +17,14 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      - name: Create Venv
-        run: |
-          python -m venv venv
-          source venv/bin/activate
+      - name: Setup Python Virtual Environment
+        id: setup-venv
+        uses: ./.github/actions/setup-venv
 
       - name: Install Python requirements
         run: |
-          pip3 install -r requirements.txt
-          pip3 install -r requirements-test.txt
+          venv/bin/pip3 install -r requirements.txt
+          venv/bin/pip3 install -r requirements-test.txt
 
       # Copying configuration files, so they are present. The files' content is not important for unit tests
       - name: Copy sample settings
@@ -33,5 +32,5 @@ jobs:
                   
       - name: Run unit tests
         run: |
-          pytest ${{ env.TESTS_FOLDER }}\
+          venv/bin/pytest ${{ env.TESTS_FOLDER }}\
 
