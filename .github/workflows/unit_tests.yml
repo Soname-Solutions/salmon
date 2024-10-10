@@ -31,4 +31,3 @@ jobs:
       - name: Run unit tests
         run: |
           venv/bin/pytest ${{ env.TESTS_FOLDER }}\
-		  
