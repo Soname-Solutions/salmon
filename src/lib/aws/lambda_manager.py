@@ -145,6 +145,7 @@ class LambdaManager:
                 ],
                 ...
             ]
+        Logs follow the order of START -> [ERROR] -> END -> REPORT
         """
 
         query_string = f"""
@@ -186,7 +187,7 @@ class LambdaManager:
 class LambdaLogProcessor:
     def __init__(self, function_name):
         self.function_name = function_name
-        self.request_ids: Dict[str, str] = {}
+        self.active_request_ids: Dict[str, str] = {}
         self.in_progress_executions: Dict[tuple, LambdaExecution] = {}
         self.completed_executions: List[LambdaExecution] = []
 
@@ -213,7 +214,7 @@ class LambdaLogProcessor:
 
         # handle some ERROR entries which not assigned with Request ID
         if not request_id and LambdaManager.MESSAGE_PART_ERROR in message:
-            request_id = self.request_ids.get(log_stream)
+            request_id = self.active_request_ids.get(log_stream)
 
         key = (log_stream, request_id)
         execution_record = self.in_progress_executions.get(key)
@@ -227,7 +228,7 @@ class LambdaLogProcessor:
                 Status=LambdaManager.LAMBDA_RUNNING_STATE,
                 StartedOn=log_timestamp,
             )
-            self.request_ids[log_stream] = request_id
+            self.active_request_ids[log_stream] = request_id
             self.in_progress_executions[key] = execution_record
 
         # handle ERROR entry
@@ -248,12 +249,11 @@ class LambdaLogProcessor:
             if execution_record:
                 execution_record.Report = message
 
-                #  add the execution to completed executions list
+                # mark the execution as completed
                 self.completed_executions.append(execution_record)
-
-                # remove the completed execution from in_progress_executions and active request_ids
+                # remove it from in_progress_executions and active request_ids
                 del self.in_progress_executions[key]
-                self.request_ids.pop(log_stream, None)
+                self.active_request_ids.pop(log_stream, None)
 
     def get_executions(self) -> list[LambdaExecution]:
         """Returns a list of completed Lambda executions."""
