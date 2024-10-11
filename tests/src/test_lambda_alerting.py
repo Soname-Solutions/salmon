@@ -170,6 +170,43 @@ def test_glue_job3(os_vars_init, event_dyn_props_init):
     assert not (result["messages"]), "Event shouldn't have messages"
 
 
+# resource is not present in any monitoring groups -> even though it's failed, no alerts
+def test_glue_job_resource_not_in_scope(os_vars_init, event_dyn_props_init):
+    (account_id, region, time_str, _, version_str) = event_dyn_props_init
+    job_name = "make_sure_job_not_in_mon_groups"
+
+    event = {
+        "version": version_str,
+        "id": "abcdef00-1234-5678-9abc-def012345678",
+        "detail-type": "Glue Job State Change",
+        "source": "aws.glue",
+        "account": account_id,
+        "time": time_str,
+        "region": region,
+        "resources": [],
+        "detail": {
+            "jobName": job_name,
+            "severity": "INFO",
+            "state": "FAILED",
+            "jobRunId": "jr_abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+            "message": "Job run failed",
+        },
+    }
+
+    result = lambda_handler(event, {})
+
+    assert (
+        result["event_is_alertable"] == False
+    ), "Event should not raise alert as it's not in scope"
+    assert (
+        result["event_is_monitorable"] == False
+    ), "Event should not be logged as it's not in scope"
+    assert (
+        result["resource_type"] == resource_types.GLUE_JOBS
+    ), "Resouce type is incorrect"
+    assert result["messages"] == [], "Event should not have any messages"
+
+
 ################################################################################################################################
 
 # GLUE WORKFLOW tests
