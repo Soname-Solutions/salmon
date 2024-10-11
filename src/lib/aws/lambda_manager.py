@@ -174,7 +174,9 @@ class LambdaManager:
             log_processor = LambdaLogProcessor(function_name)
             for log_entry_data in lambda_logs:
                 log_processor.process_log_entry(log_entry_data)
-            return log_processor.get_executions()
+
+            lambda_runs = log_processor.get_executions()
+            return lambda_runs
 
         except Exception as e:
             error_message = f"Error getting lambda function log data: {e}"

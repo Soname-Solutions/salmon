@@ -172,6 +172,9 @@ class TestingStandExecutor:
             runner.await_completion()
 
     def conclude(self):
+        # give some time for Lambda logs to be available in CloudWatch Logs Insights
+        time.sleep(120)
+
         LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(
             self.stack_obj_for_naming, "extract-metrics-orch"
         )
