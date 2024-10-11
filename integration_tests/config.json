@@ -77,7 +77,7 @@
             },
             {
                 "meaning": "ts-lambda-fail-2",
-                "retry_attempts": 2
+                "retry_attempts": 1
             }
         ],
         "emr_serverless": [

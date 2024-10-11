@@ -173,8 +173,8 @@ class TestingStandExecutor:
 
     def conclude(self):
         if types.LAMBDA_FUNCTIONS in self.resource_types_to_run:
-            # give some time for Lambda logs to be available in CloudWatch Logs Insights
-            time.sleep(120)
+            # give some time for Lambda logs to be available in CloudWatch Logs Insights (considering retry attempts)
+            time.sleep(180)
 
         LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(
             self.stack_obj_for_naming, "extract-metrics-orch"
