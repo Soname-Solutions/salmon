@@ -216,9 +216,9 @@ class Crawl(BaseModel):
     CrawlId: str
     State: str  # 'RUNNING'|'COMPLETED'|'FAILED'|'STOPPED'
     StartTime: datetime
-    EndTime: datetime
+    EndTime: Optional[datetime] = None
     ErrorMessage: Optional[str] = None
-    DPUHour: float
+    DPUHour: Optional[float] = None
     Summary: Optional[str] = "{}"
 
     def parse_crawl_summary(self) -> CrawlSummary:

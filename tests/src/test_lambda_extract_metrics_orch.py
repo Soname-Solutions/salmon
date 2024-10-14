@@ -48,26 +48,26 @@ def os_vars_init(aws_props_init):
     (account_id, region) = aws_props_init
     stage_name = "teststage"
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ["LAMBDA_EXTRACT_METRICS_NAME"] = (
-        f"lambda-salmon-extract-metrics-{stage_name}"
-    )
-    os.environ["TIMESTREAM_METRICS_DB_NAME"] = (
-        f"timestream-salmon-metrics-events-storage-{stage_name}"
-    )
+    os.environ[
+        "LAMBDA_EXTRACT_METRICS_NAME"
+    ] = f"lambda-salmon-extract-metrics-{stage_name}"
+    os.environ[
+        "TIMESTREAM_METRICS_DB_NAME"
+    ] = f"timestream-salmon-metrics-events-storage-{stage_name}"
 
 
 #########################################################################################
 
 
 @pytest.fixture(scope="module", autouse=True)
-def mock_settings(config_path):
+def mock_settings(config_path_main_tests):
     """
     A module-scoped fixture that automatically mocks Settings.from_s3_path
     to call Settings.from_file_path with a predetermined local path for all tests.
     """
     with patch(
         "lambda_alerting.Settings.from_s3_path",
-        side_effect=lambda x: Settings.from_file_path(config_path),
+        side_effect=lambda x: Settings.from_file_path(config_path_main_tests),
     ) as _mock:
         yield _mock
 

@@ -28,7 +28,7 @@ jobs:
 
       # Copying configuration files, so they are present. The files' content is not important for unit tests
       - name: Copy sample settings
-        run: mkdir -p config/settings && cp tests/devcdk/settings/*.json config/settings/
+        run: mkdir -p config/settings && cp tests/settings/main_tests/*.json config/settings/
                   
       - name: Run unit tests
         run: |

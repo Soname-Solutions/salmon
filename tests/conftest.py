@@ -14,17 +14,24 @@ from lib.settings import Settings
 
 
 @pytest.fixture(scope="session")
-def config_path():
+def config_path_main_tests():
     current_dir = Path(__file__).parent
-    file_path = current_dir / "test_configs/settings_main_tests/"
+    file_path = os.path.join(current_dir, "settings", "main_tests")
     return file_path
 
 
 @pytest.fixture(scope="session")
-def aws_props_init(config_path):
+def config_path_settings_tests():
+    current_dir = Path(__file__).parent
+    file_path = os.path.join(current_dir, "settings", "settings_tests")
+    return file_path
+
+
+@pytest.fixture(scope="session")
+def aws_props_init(config_path_main_tests):
     # Inits AWS acc id and region (from local settings -> tooling env)
-    print(config_path)
-    settings = Settings.from_file_path(config_path)
+    print(config_path_main_tests)
+    settings = Settings.from_file_path(config_path_main_tests)
     account_id, region = settings.get_tooling_account_props()
 
     return (account_id, region)
