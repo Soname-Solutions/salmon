@@ -25,13 +25,22 @@ def test_get_lambda_success_attempts(mock_boto3, mock_cw_man):
             {"field": "@requestId", "value": REQUEST_ID_ONE},
         ],
         [
-            {"field": "@timestamp", "value": "2024-09-30 09:41:28.660"},
+            {"field": "@timestamp", "value": "2024-09-30 09:41:28.661"},
+            {"field": "@logStream", "value": LOG_STREAM_ONE},
+            {
+                "field": "@message",
+                "value": f"[INFO] {REQUEST_ID_ONE} Successful lambda execution\n",
+            },
+            {"field": "@requestId", "value": REQUEST_ID_ONE},
+        ],
+        [
+            {"field": "@timestamp", "value": "2024-09-30 09:41:28.662"},
             {"field": "@logStream", "value": LOG_STREAM_ONE},
             {"field": "@message", "value": f"END RequestId: {REQUEST_ID_ONE}\n"},
             {"field": "@requestId", "value": REQUEST_ID_ONE},
         ],
         [
-            {"field": "@timestamp", "value": "2024-09-30 09:41:28.660"},
+            {"field": "@timestamp", "value": "2024-09-30 09:41:28.663"},
             {"field": "@logStream", "value": LOG_STREAM_ONE},
             {
                 "field": "@message",
@@ -56,7 +65,7 @@ def test_get_lambda_success_attempts(mock_boto3, mock_cw_man):
             Report=f"REPORT RequestId: {REQUEST_ID_ONE}\tDuration: 2758.71 ms\tBilled Duration: 2759 ms\tMemory Size: 128 MB\tMax Memory Used: 80 MB\tInit Duration: 261.91 ms\t\n",
             Errors=[],
             StartedOn=datetime(2024, 9, 30, 9, 41, 25, 893000, tzinfo=timezone.utc),
-            CompletedOn=datetime(2024, 9, 30, 9, 41, 28, 660000, tzinfo=timezone.utc),
+            CompletedOn=datetime(2024, 9, 30, 9, 41, 28, 662000, tzinfo=timezone.utc),
         )
     ]
 
