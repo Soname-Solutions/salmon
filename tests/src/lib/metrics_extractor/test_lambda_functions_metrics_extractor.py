@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from lib.metrics_extractor import LambdaFunctionsMetricExtractor
-from lib.aws.lambda_manager import LambdaManager, LambdaExecution
+from lib.aws.lambda_manager import LambdaManager, LambdaAttempt
 
 from common import (
     boto3_client_creator,
@@ -17,14 +17,14 @@ LOG_STREAM = "test-log-stream"
 LAMBDA_MANAGER_CLASS_NAME = (
     "lib.metrics_extractor.lambda_functions_metrics_extractor.LambdaManager"
 )
-GET_EXECUTIONS_METHOD_NAME = f"{LAMBDA_MANAGER_CLASS_NAME}.get_lambda_runs"
+GET_EXECUTIONS_METHOD_NAME = f"{LAMBDA_MANAGER_CLASS_NAME}.get_lambda_attempts"
 
 EVENTS_MANAGER_CLASS_NAME = (
     "lib.metrics_extractor.glue_workflows_metrics_extractor.EventsManager"
 )
 PUT_EVENTS_METHOD_NAME = f"{EVENTS_MANAGER_CLASS_NAME}.put_events"
 
-EXEC_SUCCESS1 = LambdaExecution(
+EXEC_SUCCESS1 = LambdaAttempt(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_SUCCESS_STATE,
@@ -35,7 +35,7 @@ EXEC_SUCCESS1 = LambdaExecution(
     Report="REPORT details",
 )
 
-EXEC_SUCCESS2 = LambdaExecution(
+EXEC_SUCCESS2 = LambdaAttempt(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_SUCCESS_STATE,
@@ -46,7 +46,7 @@ EXEC_SUCCESS2 = LambdaExecution(
     Report="REPORT details",
 )
 
-EXEC_ERROR1_WITH_REQUEST_ID = LambdaExecution(
+EXEC_ERROR1_WITH_REQUEST_ID = LambdaAttempt(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_FAILURE_STATE,
@@ -57,7 +57,7 @@ EXEC_ERROR1_WITH_REQUEST_ID = LambdaExecution(
     Report="REPORT details",
 )
 
-EXEC_ERROR1_NO_REQUEST_ID = LambdaExecution(
+EXEC_ERROR1_NO_REQUEST_ID = LambdaAttempt(
     LambdaName=LAMBDA_NAME,
     LogStream=LOG_STREAM,
     Status=LambdaManager.LAMBDA_FAILURE_STATE,
@@ -94,7 +94,7 @@ def test_two_completed_records_integrity(boto3_client_creator):
 
         required_dimensions = ["lambda_function_request_id"]
         required_metrics = [
-            "execution",
+            "attempt",
             "duration_ms",
             "max_memory_used_mb",
             "billed_duration_ms",

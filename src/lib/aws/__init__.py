@@ -15,7 +15,7 @@ from .glue_manager import (
     RulesetRun,
 )
 from .lambda_manager import (
-    LambdaExecution,
+    LambdaAttempt,
     LambdaManager,
     LambdaManagerException,
     LambdaLogProcessor,

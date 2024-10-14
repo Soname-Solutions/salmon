@@ -15,7 +15,7 @@ from lib.core.datetime_utils import (
 ###########################################################
 
 
-class LambdaExecution(BaseModel):
+class LambdaAttempt(BaseModel):
     LambdaName: str
     LogStream: str
     RequestId: Optional[str]
@@ -122,13 +122,13 @@ class LambdaManager:
             "LogGroup", f"/aws/lambda/{lambda_function_name}"
         )
 
-    def get_lambda_runs(
+    def get_lambda_attempts(
         self,
         cloudwatch_manager: CloudWatchManager,
         function_name: str,
         since_time: datetime,
-    ) -> list[LambdaExecution]:
-        """Get lambda logs from CloudWatch
+    ) -> list[LambdaAttempt]:
+        """Get lambda attempts based on the CloudWatch logs
 
         Example response from CloudWatch:
             [
@@ -176,8 +176,8 @@ class LambdaManager:
             for log_entry_data in lambda_logs:
                 log_processor.process_log_entry(log_entry_data)
 
-            lambda_runs = log_processor.get_executions()
-            return lambda_runs
+            lambda_attempts = log_processor.get_lambda_attempts()
+            return lambda_attempts
 
         except Exception as e:
             error_message = f"Error getting lambda function log data: {e}"
@@ -188,8 +188,8 @@ class LambdaLogProcessor:
     def __init__(self, function_name):
         self.function_name = function_name
         self.active_request_ids: Dict[str, str] = {}
-        self.in_progress_executions: Dict[tuple, LambdaExecution] = {}
-        self.completed_executions: List[LambdaExecution] = []
+        self.in_progress_attempts: Dict[tuple, LambdaAttempt] = {}
+        self.completed_attempts: List[LambdaAttempt] = []
 
     def _extract_field(
         self, log_entry: List[Dict[str, str]], field_name: str
@@ -217,11 +217,11 @@ class LambdaLogProcessor:
             request_id = self.active_request_ids.get(log_stream)
 
         key = (log_stream, request_id)
-        execution_record = self.in_progress_executions.get(key)
+        execution_record = self.in_progress_attempts.get(key)
 
         # handle START entry
         if LambdaManager.MESSAGE_PART_START in message:
-            execution_record = LambdaExecution(
+            execution_record = LambdaAttempt(
                 LambdaName=self.function_name,
                 LogStream=log_stream,
                 RequestId=request_id,
@@ -229,7 +229,7 @@ class LambdaLogProcessor:
                 StartedOn=log_timestamp,
             )
             self.active_request_ids[log_stream] = request_id
-            self.in_progress_executions[key] = execution_record
+            self.in_progress_attempts[key] = execution_record
 
         # handle ERROR entry
         elif LambdaManager.MESSAGE_PART_ERROR in message:
@@ -250,11 +250,11 @@ class LambdaLogProcessor:
                 execution_record.Report = message
 
                 # mark the execution as completed
-                self.completed_executions.append(execution_record)
-                # remove it from in_progress_executions and active request_ids
-                del self.in_progress_executions[key]
+                self.completed_attempts.append(execution_record)
+                # remove it from in_progress_attempts and active request_ids
+                del self.in_progress_attempts[key]
                 self.active_request_ids.pop(log_stream, None)
 
-    def get_executions(self) -> list[LambdaExecution]:
-        """Returns a list of completed Lambda executions."""
-        return self.completed_executions
+    def get_lambda_attempts(self) -> list[LambdaAttempt]:
+        """Returns a list of completed Lambda attempts."""
+        return self.completed_attempts
