@@ -159,8 +159,8 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
 
 class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
-    Class is responsible for preparing the query for extracting Lambda Functions runs.
-    In case of Lambda retries, the latest invocation will be considered.
+    Class is responsible for preparing the query for extracting Lambda Functions attempts.
+    In case of Lambda retries, the latest attempt will be considered.
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
@@ -168,7 +168,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                          , execution, failed, succeeded, execution_time_sec, error_message
                     FROM (
                             SELECT monitored_environment, resource_name, '' as job_run_id
-                                 , execution, failed, succeeded, round(duration_ms/60, 2) as execution_time_sec
+                                 , attempt as execution, failed, succeeded, round(duration_ms/60, 2) as execution_time_sec
                                  , case when failed > 0 then error_message else '' end as error_message
                                  , row_number() over (partition by lambda_function_request_id order by time desc) as rn
                             FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
