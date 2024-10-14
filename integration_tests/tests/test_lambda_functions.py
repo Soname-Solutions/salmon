@@ -17,6 +17,32 @@ class TestLambdaFunctions(TestBaseClass):
     def setup_class(cls):
         cls.resource_type = SettingConfigResourceTypes.LAMBDA_FUNCTIONS
 
+    # additional field to check - actions failed
+    @pytest.fixture
+    def execution_timestream_metrics_summary(
+        self, region, start_epochtimemsec, stack_obj_for_naming
+    ):
+        """
+        Collects summary from relevant timestream table (records only since the test started are included).
+        Result is dict: e.g. {'executions': '2', 'succeeded': '1', 'failed': '1'}
+        """
+        DB_NAME = AWSNaming.TimestreamDB(stack_obj_for_naming, "metrics-events-storage")
+        TABLE_NAME = AWSNaming.TimestreamMetricsTable(
+            stack_obj_for_naming, self.resource_type
+        )
+
+        client = boto3.client("timestream-query", region_name=region)
+        query_runner = TimeStreamQueryRunner(client)
+
+        query = f"""SELECT sum(attempt) as executions, sum(succeeded) as succeeded, sum(failed) as failed
+                    FROM "{DB_NAME}"."{TABLE_NAME}"
+                    WHERE time > from_milliseconds({start_epochtimemsec})
+        """
+        result = query_runner.execute_query(query=query)
+
+        # returning the first record (it's only 1 record in resultset by query design)
+        return result[0]
+
     # as we got not usual 1 error, but 3 (one for fail-1 Lambda, and 2 (considering retries) for fail-2 Lambda)
     def test_alerts(self, test_results_messages):
         """
