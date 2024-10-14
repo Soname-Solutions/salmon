@@ -28,6 +28,7 @@ def get_lambda_function_event(event_state=None, event_result=None, event_message
             "origin_account": "0987654321",
             "origin_region": "test-origin-region",
             "request_id": "c12129fe",
+            "log_stream": "test-log-stream",
         },
     }
 
@@ -71,7 +72,8 @@ def test_get_message_body(mock_settings):
                 "<a href='https://test-origin-region.console.aws.amazon.com/cloudwatch/home?region=test-origin-region#logsV2:log-groups/log-group/$252Faws$252Flambda$252Flambda-test/log-events/'>Link to AWS CloudWatch Log Group</a>",
             ]
         },
-        {"values": ["Message", event_message]},
+        {"values": ["Log Stream", "test-log-stream"]},
         {"values": ["Request ID", "c12129fe"]},
+        {"values": ["Message", "Lambda succeeded"]},
     ]
     assert returned_table_rows == expected_table_rows

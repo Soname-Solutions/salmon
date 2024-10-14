@@ -3,6 +3,8 @@ from lib.event_mapper.general_aws_event_mapper import (
     ExecutionInfoUrlMixin,
 )
 from lib.settings import Settings
+from lib.core.constants import EventResult
+from lib.aws.lambda_manager import LambdaManager
 
 
 # Lambda Functions are not yet supported as EventBridge Events by AWS, so leaving it like that for now
@@ -22,7 +24,12 @@ class LambdaFunctionsEventMapper(CustomAwsEventMapper):
         return self.event["detail"]["state"]
 
     def get_event_result(self):
-        return self.event["detail"]["event_result"]
+        if self.get_resource_state() in LambdaManager.LAMBDA_FAILURE_STATE:
+            return EventResult.FAILURE
+        elif self.get_resource_state() in LambdaManager.LAMBDA_SUCCESS_STATE:
+            return EventResult.SUCCESS
+        else:
+            return EventResult.INFO
 
     def get_execution_info_url(self, resource_name: str):
         return ExecutionInfoUrlMixin.get_url(
@@ -57,15 +64,16 @@ class LambdaFunctionsEventMapper(CustomAwsEventMapper):
                 ]
             )
         )
+        rows.append(
+            super().create_table_row(["Log Stream", self.event["detail"]["log_stream"]])
+        )
+        rows.append(
+            super().create_table_row(["Request ID", self.event["detail"]["request_id"]])
+        )
 
-        # Get Lambda Message
+        # Get Lambda Error Message
         rows.append(
             super().create_table_row(["Message", self.event["detail"]["message"]])
         )
-
-        # Get Lambda Request ID and include in the Alert if available
-        request_id = self.event["detail"]["request_id"]
-        if request_id:
-            rows.append(super().create_table_row(["Request ID", request_id]))
 
         return message_body
