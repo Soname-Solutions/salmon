@@ -76,6 +76,8 @@ class CloudWatchEventsPublisher:
 class CloudWatchManager:
     """This class Manages interactions with Amazon CloudWatch"""
 
+    QUERY_COMPLETED_STATUS = "Complete"
+
     def __init__(self, cloudwatch_client=None):
         self.cloudwatch_client = (
             boto3.client("logs") if cloudwatch_client is None else cloudwatch_client
@@ -115,9 +117,10 @@ class CloudWatchManager:
                     error_msg = f"Query timeout: The query {query_string} for {log_group_name} is taking too long to execute."
                     raise CloudWatchManagerException(error_msg)
 
+                time.sleep(1)
                 response = self.cloudwatch_client.get_query_results(queryId=query_id)
 
-                if response["status"] != "Running":
+                if response["status"] == CloudWatchManager.QUERY_COMPLETED_STATUS:
                     break
 
                 time.sleep(1)

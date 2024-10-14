@@ -54,3 +54,24 @@ class TestLambdaFunctions(TestBaseClass):
         assert (
             failed == "3"
         ), "There should be exactly 3 failed executions (considering retry attempts)."
+
+    def test_cloudwatch_alert_events(
+        self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming
+    ):
+        # checking events count
+        assert (
+            len(relevant_cloudwatch_events) == 4
+        ), "There should be 4 events, one for each Lambda attempt"
+
+        # checking all resources are mentioned
+        resource_names_in_events = [
+            x["resource_name"] for x in relevant_cloudwatch_events
+        ]
+
+        resource_names_in_config = config_reader.get_names_by_resource_type(
+            self.resource_type, stack_obj_for_naming
+        )
+        for resource_name in resource_names_in_config:
+            assert (
+                resource_name in resource_names_in_events
+            ), f"There should be mention of {resource_name} [{self.resource_type}] in CloudWatch alert logs"
