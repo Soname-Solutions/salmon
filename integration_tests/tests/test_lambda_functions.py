@@ -3,7 +3,6 @@ import boto3
 
 from lib.core.constants import SettingConfigResourceTypes
 from inttest_lib.message_checker import MessagesChecker
-from inttest_lib.dynamo_db_reader import IntegrationTestMessage
 from lib.aws.timestream_manager import TimeStreamQueryRunner
 from lib.aws.aws_naming import AWSNaming
 
@@ -17,7 +16,6 @@ class TestLambdaFunctions(TestBaseClass):
     def setup_class(cls):
         cls.resource_type = SettingConfigResourceTypes.LAMBDA_FUNCTIONS
 
-    # additional field to check - actions failed
     @pytest.fixture
     def execution_timestream_metrics_summary(
         self, region, start_epochtimemsec, stack_obj_for_naming
@@ -43,7 +41,7 @@ class TestLambdaFunctions(TestBaseClass):
         # returning the first record (it's only 1 record in resultset by query design)
         return result[0]
 
-    # as we got not usual 1 error, but 3 (one for fail-1 Lambda, and 2 (considering retries) for fail-2 Lambda)
+    # as we got not usual 1 error, but 4 (one for fail-1 Lambda, 2 (considering retries) for fail-2 Lambda, 1 for mix-3 Lambda)
     def test_alerts(self, test_results_messages):
         """
         Checking if correct notifications were sent
@@ -58,11 +56,11 @@ class TestLambdaFunctions(TestBaseClass):
         )
 
         assert (
-            cnt_lambda_error_messages == 3
-        ), f"There should be exactly three {self.resource_type} error messages"
+            cnt_lambda_error_messages == 4
+        ), f"There should be exactly four {self.resource_type} error messages"
         assert (
-            cnt_lambda_all_messages == 3
-        ), f"There should be exactly three {self.resource_type} messages"
+            cnt_lambda_all_messages == 4
+        ), f"There should be exactly four {self.resource_type} messages"
 
     # assert message differs
     def test_timestream_records(self, execution_timestream_metrics_summary):
@@ -74,20 +72,20 @@ class TestLambdaFunctions(TestBaseClass):
         failed = execution_timestream_metrics_summary.get("failed", 0)
 
         assert (
-            executions == "4"
-        ), "There should be exactly four executions (considering retry attempts)."
-        assert succeeded == "1", "There should be exactly 1 successful execution."
+            executions == "6"
+        ), "There should be exactly six executions (considering retry attempts)."
+        assert succeeded == "2", "There should be two successful execution."
         assert (
-            failed == "3"
-        ), "There should be exactly 3 failed executions (considering retry attempts)."
+            failed == "4"
+        ), "There should be exactly four failed executions (considering retry attempts)."
 
     def test_cloudwatch_alert_events(
         self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming
     ):
         # checking events count
         assert (
-            len(relevant_cloudwatch_events) == 4
-        ), "There should be 4 events, one for each Lambda attempt"
+            len(relevant_cloudwatch_events) == 6
+        ), "There should be 6 events, one for each Lambda attempt"
 
         # checking all resources are mentioned
         resource_names_in_events = [

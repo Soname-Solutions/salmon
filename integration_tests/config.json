@@ -78,6 +78,10 @@
             {
                 "meaning": "ts-lambda-fail-2",
                 "retry_attempts": 1
+            },
+            {
+                "meaning": "ts-lambda-mix-3",
+                "retry_attempts": 1
             }
         ],
         "emr_serverless": [
