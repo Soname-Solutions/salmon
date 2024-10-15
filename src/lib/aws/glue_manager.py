@@ -345,6 +345,8 @@ class GlueManager:
         DQ_Job_Context_Type: "jobId",
     }
 
+    GET_NAMES_PAGE_SIZE = 100  # Size of chunk used in get_all_*_names functions
+
     def __init__(self, glue_client=None):
         self.glue_client = boto3.client("glue") if glue_client is None else glue_client
 
@@ -360,43 +362,98 @@ class GlueManager:
 
     def _get_all_job_names(self):
         try:
-            response = self.glue_client.list_jobs()
-            return response.get("JobNames")
+            paginator = self.glue_client.get_paginator("list_jobs")
+            job_names = []
+
+            for page in paginator.paginate(MaxResults=self.GET_NAMES_PAGE_SIZE):
+                job_names.extend(page.get("JobNames", []))
+
+            return job_names
 
         except Exception as e:
-            raise GlueManagerException(f"Error getting list of glue jobs : {e}")
+            raise GlueManagerException(f"Error getting list of glue jobs: {e}")
 
     def _get_all_workflow_names(self):
         try:
-            response = self.glue_client.list_workflows()
-            return response.get("Workflows")
+            paginator = self.glue_client.get_paginator("list_workflows")
+            workflow_names = []
+
+            # Using hard-coded 25 instead of GET_NAMES_PAGE_SIZE, due to API limitations
+            for page in paginator.paginate(MaxResults=25):
+                workflow_names.extend(page.get("Workflows", []))
+
+            return workflow_names
 
         except Exception as e:
-            raise GlueManagerException(f"Error getting list of glue workflows : {e}")
+            raise GlueManagerException(f"Error getting list of glue workflows: {e}")
 
     def _get_all_crawler_names(self):
         try:
-            response = self.glue_client.list_crawlers()
-            return response.get("CrawlerNames")
+            crawler_names = []
+            next_token = None
+
+            while True:
+                # list_crawlers doesn't support paginator
+                if next_token:
+                    response = self.glue_client.list_crawlers(
+                        MaxResults=self.GET_NAMES_PAGE_SIZE, NextToken=next_token
+                    )
+                else:
+                    response = self.glue_client.list_crawlers(
+                        MaxResults=self.GET_NAMES_PAGE_SIZE
+                    )
+
+                crawler_names.extend(response.get("CrawlerNames", []))
+
+                next_token = response.get("NextToken")
+                if not next_token:
+                    break
+
+            return crawler_names
 
         except Exception as e:
-            raise GlueManagerException(f"Error getting list of glue crawlers : {e}")
+            raise GlueManagerException(f"Error getting list of glue crawlers: {e}")
 
     def _get_all_data_catalog_names(self):
         try:
-            response = self.glue_client.get_databases()
-            return [res["Name"] for res in response.get("DatabaseList")]
+            paginator = self.glue_client.get_paginator("get_databases")
+            catalog_names = []
+
+            for page in paginator.paginate(MaxResults=self.GET_NAMES_PAGE_SIZE):
+                catalog_names.extend(
+                    [res["Name"] for res in page.get("DatabaseList", [])]
+                )
+
+            return catalog_names
 
         except Exception as e:
-            raise GlueManagerException(
-                f"Error getting list of glue data catalogs : {e}"
-            )
+            raise GlueManagerException(f"Error getting list of glue data catalogs: {e}")
 
     def _get_all_data_quality_names(self):
         try:
-            # Note: Returns a list of rulesets only with Glue table datasource
-            response = self.glue_client.list_data_quality_rulesets()
-            return [res["Name"] for res in response.get("Rulesets")]
+            ruleset_names = []
+            next_token = None
+
+            while True:
+                # list_data_quality_rulesets doesn't support paginator
+                if next_token:
+                    response = self.glue_client.list_data_quality_rulesets(
+                        MaxResults=self.GET_NAMES_PAGE_SIZE, NextToken=next_token
+                    )
+                else:
+                    response = self.glue_client.list_data_quality_rulesets(
+                        MaxResults=self.GET_NAMES_PAGE_SIZE
+                    )
+
+                ruleset_names.extend(
+                    [res["Name"] for res in response.get("Rulesets", [])]
+                )
+
+                next_token = response.get("NextToken")
+                if not next_token:
+                    break
+
+            return ruleset_names
 
         except Exception as e:
             raise GlueManagerException(

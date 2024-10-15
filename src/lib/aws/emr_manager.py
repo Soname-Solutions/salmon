@@ -103,8 +103,16 @@ class EMRManager:
         """Get all EMR Serverless application names"""
 
         try:
-            response = self.sf_client.list_applications()
-            return [res["name"] for res in response.get("applications")]
+            paginator = self.sf_client.get_paginator("list_applications")
+            application_names = []
+
+            # Use paginator to iterate through all the pages
+            for page in paginator.paginate(maxResults=50):
+                application_names.extend(
+                    [res["name"] for res in page.get("applications", [])]
+                )
+
+            return application_names
 
         except Exception as e:
             error_message = f"Error getting a list of EMR applications: {e}"
