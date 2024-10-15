@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
+
 ################################################################
 class ExecutionData(BaseModel):
     executionArn: str
@@ -30,8 +31,11 @@ class ExecutionData(BaseModel):
 class StepFunctionExecutionsData(BaseModel):
     executions: list[ExecutionData]
     nextToken: Optional[str]
+
+
 ################################################################
-    
+
+
 class ExecutionDetails(BaseModel):
     cause: Optional[str]
     error: Optional[str]
@@ -41,9 +45,11 @@ class ExecutionDetails(BaseModel):
     startDate: datetime
     stateMachineArn: str
     status: str
-    stopDate: datetime    
+    stopDate: datetime
+
 
 ################################################################
+
 
 class StepFunctionsManagerException(Exception):
     """Exception raised for errors encountered while running Stepfunctions client methods."""
@@ -67,12 +73,20 @@ class StepFunctionsManager:
 
     def get_all_names(self, **kwargs):
         try:
-            response = self.sf_client.list_state_machines()
-            return [res["name"] for res in response.get("stateMachines")]
+            paginator = self.sf_client.get_paginator("list_state_machines")
+            state_machine_names = []
+
+            # Use paginator to iterate through all the pages
+            for page in paginator.paginate(maxResults=100):
+                state_machine_names.extend(
+                    [res["name"] for res in page.get("stateMachines", [])]
+                )
+
+            return state_machine_names
 
         except Exception as e:
-            error_message = f"Error getting list of step functions : {e}"
-            raise StepFunctionsManagerException(error_message)        
+            error_message = f"Error getting list of step functions: {e}"
+            raise StepFunctionsManagerException(error_message)
 
     def get_step_function_arn_by_name(self, step_function_name):
         """
@@ -101,9 +115,7 @@ class StepFunctionsManager:
     ) -> list[ExecutionData]:
         try:
             state_machine_arn = self.get_step_function_arn_by_name(step_function_name)
-            response = self.sf_client.list_executions(
-                stateMachineArn=state_machine_arn
-            )
+            response = self.sf_client.list_executions(stateMachineArn=state_machine_arn)
 
             step_function_executions_data = StepFunctionExecutionsData(**response)
             outp = [
@@ -117,17 +129,17 @@ class StepFunctionsManager:
         except Exception as e:
             error_message = f"Error getting step function executions: {e}"
             raise StepFunctionsManagerException(error_message)
-        
-    def get_execution_error(self, step_function_execution_arn:str) -> str:
-        """
 
-        """
-        response = self.sf_client.describe_execution(executionArn=step_function_execution_arn)
+    def get_execution_error(self, step_function_execution_arn: str) -> str:
+        """ """
+        response = self.sf_client.describe_execution(
+            executionArn=step_function_execution_arn
+        )
         model = ExecutionDetails(**response)
 
         if model.status not in StepFunctionsManager.STATES_FAILURE:
             return None
-        
+
         error_message = model.error if model.error else ""
 
         try:
@@ -139,4 +151,3 @@ class StepFunctionsManager:
 
         error_message += f" {cause}"
         return error_message
-

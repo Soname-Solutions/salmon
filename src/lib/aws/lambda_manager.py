@@ -103,11 +103,19 @@ class LambdaManager:
 
     def get_all_names(self, **kwargs):
         try:
-            response = self.lambda_client.list_functions()
-            return [res["FunctionName"] for res in response.get("Functions")]
+            paginator = self.lambda_client.get_paginator("list_functions")
+            function_names = []
+
+            # Use paginator to iterate through all the pages
+            for page in paginator.paginate(MaxItems=100):
+                function_names.extend(
+                    [res["FunctionName"] for res in page.get("Functions", [])]
+                )
+
+            return function_names
 
         except Exception as e:
-            error_message = f"Error getting list of lambda functions : {e}"
+            error_message = f"Error getting list of lambda functions: {e}"
             raise LambdaManagerException(error_message)
 
     def get_log_group(self, lambda_function_name: str) -> str:
