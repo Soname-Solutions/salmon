@@ -43,7 +43,7 @@ from lib.aws.aws_naming import AWSNaming
 from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
 from lib.core.constants import SettingConfigResourceTypes as types
 
-SRC_FOLDER_NAME = "../../integration_tests/src_testing_stand/"
+SRC_FOLDER_NAME = "../../tests/integration-tests/src_testing_stand/"
 
 
 class TestingStandStack(Stack):

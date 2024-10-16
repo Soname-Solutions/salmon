@@ -3,6 +3,7 @@ env:
     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     AWS_DEFAULT_REGION: 'eu-central-1'
+    INTTESTS_FOLDER_NAME: "tests/integration-tests"
 run-name: integration tests - execute tests
 on: 
   workflow_dispatch:
@@ -34,7 +35,7 @@ jobs:
         - name: Testing stand executions
           shell: bash
           run: |
-            venv/bin/python integration_tests/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+            venv/bin/python ${{ env.INTTESTS_FOLDER_NAME }}/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
 
         # Making sure alerts have enough time to arrive
         - name: Pause for 2 minutes
@@ -43,4 +44,4 @@ jobs:
         - name: Run tests
           shell: bash
           run: |
-            venv/bin/pytest integration_tests/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
+            venv/bin/pytest ${{ env.INTTESTS_FOLDER_NAME }}/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
