@@ -3,7 +3,7 @@ env:
     AWS_ACCESS_KEY_ID: dummy_value
     AWS_SECRET_ACCESS_KEY: dummy_value
     AWS_DEFAULT_REGION: 'eu-central-1'    
-    TESTS_FOLDER: tests
+    TESTS_FOLDER: tests/unit-tests
 run-name: unit tests
 on:
   push:
@@ -28,8 +28,8 @@ jobs:
 
       # Copying configuration files, so they are present. The files' content is not important for unit tests
       - name: Copy sample settings
-        run: mkdir -p config/settings && cp tests/settings/main_tests/*.json config/settings/
+        run: mkdir -p config/settings && cp ${{ env.TESTS_FOLDER }}/settings/main_tests/*.json config/settings/
                   
       - name: Run unit tests
         run: |
-          venv/bin/pytest ${{ env.TESTS_FOLDER }}\
+          venv/bin/pytest ${{ env.TESTS_FOLDER }}

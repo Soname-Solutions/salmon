@@ -6,7 +6,7 @@ env:
   CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
   CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
   STAGE_NAME: devcdk
-  SETTING_FOLDER_NAME: "deployment_tests/settings"
+  SETTING_FOLDER_NAME: "tests/deployment-tests/settings"
 run-name: CDK Deployment Tests - Commit ${{ github.sha }}
 on: 
   push:
