@@ -178,7 +178,7 @@ class TestingStandExecutor:
         lambda_orch_meaning = "extract-metrics-orch"
         lambda_orch_runner = LambdaFunctionRunner(
             resources_data={lambda_orch_meaning: lambda_orch_retry_attempts},
-            region=self.region,
+            region_name=self.region,
             stack_obj=self.stack_obj_for_naming,
         )
         lambda_orch_runner.initiate()
@@ -190,7 +190,7 @@ class TestingStandExecutor:
         lambda_digest_meaning = "digest"
         lambda_digest_runner = LambdaFunctionRunner(
             resources_data={lambda_digest_meaning: lambda_digest_retry_attempts},
-            region=self.region,
+            region_name=self.region,
             stack_obj=self.stack_obj_for_naming,
         )
         lambda_digest_runner.initiate()

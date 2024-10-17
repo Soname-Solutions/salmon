@@ -41,7 +41,7 @@ class TestLambdaFunctions(TestBaseClass):
         # returning the first record (it's only 1 record in resultset by query design)
         return result[0]
 
-    # as we got not usual 1 error, but 4 (one for fail-1 Lambda, 2 (considering retries) for fail-2 Lambda, 1 for mix-3 Lambda)
+    # as we got not usual 1 error, but 5 (one for fail-1 Lambda, 2 (considering retries) for fail-2 Lambda, 2 for mix-3 Lambda)
     def test_alerts(self, test_results_messages):
         """
         Checking if correct notifications were sent
@@ -56,10 +56,10 @@ class TestLambdaFunctions(TestBaseClass):
         )
 
         assert (
-            cnt_lambda_error_messages == 4
+            cnt_lambda_error_messages == 5
         ), f"There should be exactly four {self.resource_type} error messages"
         assert (
-            cnt_lambda_all_messages == 4
+            cnt_lambda_all_messages == 5
         ), f"There should be exactly four {self.resource_type} messages"
 
     # assert message differs
@@ -71,16 +71,16 @@ class TestLambdaFunctions(TestBaseClass):
         succeeded = execution_timestream_metrics_summary.get("succeeded", 0)
         failed = execution_timestream_metrics_summary.get("failed", 0)
 
-        assert executions == "6", "There should be exactly six Lambda attempts."
+        assert executions == "7", "There should be exactly seven Lambda attempts."
         assert succeeded == "2", "There should be two successful Lambda attempts."
-        assert failed == "4", "There should be exactly four failed Lambda attempts."
+        assert failed == "5", "There should be exactly five failed Lambda attempts."
 
     def test_cloudwatch_alert_events(
         self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming
     ):
         # checking events count
         assert (
-            len(relevant_cloudwatch_events) == 6
+            len(relevant_cloudwatch_events) == 7
         ), "There should be 6 events, one for each Lambda attempt"
 
         # checking all resources are mentioned

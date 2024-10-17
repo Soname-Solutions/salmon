@@ -173,20 +173,18 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                          , succeeded
                          , round(duration_ms/60, 2) as execution_time_sec
                          , case when failed > 0 then error_message else '' end as error_message
-                         , failed_retry_attempts
+                         , failed_attempts
                     FROM (
                             SELECT monitored_environment
                                  , resource_name
-                                 , min(failed) as failed
-                                 , max(succeeded) as succeeded
+                                 , min(failed) over (partition by lambda_function_request_id) as failed
+                                 , max(succeeded) over (partition by lambda_function_request_id) as succeeded
                                  , duration_ms
-                                 , error_message
+                                 , error_message                                 
+                                 , sum(failed) over  (partition by lambda_function_request_id ) as failed_attempts
                                  , row_number() over (partition by lambda_function_request_id order by time desc) as rn
-                                 , sum(failed) as failed_retry_attempts
                             FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
-                            WHERE time BETWEEN '{start_time}' AND '{end_time}'
-                            GROUP BY monitored_environment, resource_name, duration_ms
-                                   , error_message, lambda_function_request_id, time)  t
+                            WHERE time BETWEEN '{start_time}' AND '{end_time}')  t
                     WHERE rn = 1
                 """
         return query
