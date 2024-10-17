@@ -71,13 +71,9 @@ class TestLambdaFunctions(TestBaseClass):
         succeeded = execution_timestream_metrics_summary.get("succeeded", 0)
         failed = execution_timestream_metrics_summary.get("failed", 0)
 
-        assert (
-            executions == "6"
-        ), "There should be exactly six executions (considering retry attempts)."
-        assert succeeded == "2", "There should be two successful execution."
-        assert (
-            failed == "4"
-        ), "There should be exactly four failed executions (considering retry attempts)."
+        assert executions == "6", "There should be exactly six Lambda attempts."
+        assert succeeded == "2", "There should be two successful Lambda attempts."
+        assert failed == "4", "There should be exactly four failed Lambda attempts."
 
     def test_cloudwatch_alert_events(
         self, relevant_cloudwatch_events, config_reader, stack_obj_for_naming

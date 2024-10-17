@@ -81,7 +81,7 @@
             },
             {
                 "meaning": "ts-lambda-mix-3",
-                "retry_attempts": 1
+                "retry_attempts": 2
             }
         ],
         "emr_serverless": [

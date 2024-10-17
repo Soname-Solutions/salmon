@@ -12,8 +12,12 @@ def lambda_handler(event, context):
         logger.info("Started first unsuccessful lambda execution - ts-lambda-mix-3")
         failure_count += 1
         raise Exception("Intentional failure on first run - ts-lambda-mix-3")
+    elif failure_count == 1:
+        logger.info("Started second unsuccessful lambda execution - ts-lambda-mix-3")
+        failure_count += 1
+        raise Exception("Intentional failure on second run - ts-lambda-mix-3")
     else:
-        logger.info("Started second successful lambda execution - ts-lambda-mix-3")
+        logger.info("Started third successful lambda execution - ts-lambda-mix-3")
         return {
             "statusCode": 200,
             "body": "Lambda ts-lambda-mix-3 succeeded after retry!",
