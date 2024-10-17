@@ -176,7 +176,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                          , failed_retry_attempts
                     FROM (
                             SELECT monitored_environment
-                                 , resource_name,
+                                 , resource_name
                                  , min(failed) as failed
                                  , max(succeeded) as succeeded
                                  , duration_ms
