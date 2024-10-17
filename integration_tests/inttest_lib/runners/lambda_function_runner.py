@@ -5,6 +5,7 @@ import json
 from inttest_lib.runners.base_resource_runner import BaseResourceRunner
 from lib.aws.cloudwatch_manager import CloudWatchManager, CloudWatchManagerException
 from lib.aws.lambda_manager import LambdaManager
+from lib.aws.aws_naming import AWSNaming
 
 
 class LambdaFunctionRunnerException(Exception):
@@ -12,9 +13,11 @@ class LambdaFunctionRunnerException(Exception):
 
 
 class LambdaFunctionRunner(BaseResourceRunner):
-    def __init__(self, resource_names, region_name):
-        super().__init__(resource_names, region_name)
+    def __init__(self, resources_data, region_name, stack_obj):
+        super().__init__([], region_name)
         self.client = boto3.client("lambda", region_name=region_name)
+        self.resources_data = resources_data
+        self.stack_obj = stack_obj
         self.lambda_manager = LambdaManager(
             boto3.client("lambda", region_name=region_name)
         )
@@ -25,7 +28,11 @@ class LambdaFunctionRunner(BaseResourceRunner):
 
     def initiate(self):
         self.start_time = int(time.time() * 1000)
-        for lambda_function_name in self.resource_names:
+
+        for lambda_meaning, retry_attempts in self.resources_data.items():
+            lambda_function_name = AWSNaming.LambdaFunction(
+                self.stack_obj, lambda_meaning
+            )
             # Walkaround for the case when LambdaFunction is launched for the first time, CW LogGroup
             # might be created with timestamp later than first CW first records
             # it prevent "await" method to find run INIT and, potentially, END records in logs
@@ -38,10 +45,11 @@ class LambdaFunctionRunner(BaseResourceRunner):
                 self.logs_manager.create_log_group(log_group_name)
 
             request_id = self._invoke_lambda_async(lambda_function_name)
-            self.function_runs[lambda_function_name] = request_id
-            print(
-                f"Invoked {lambda_function_name} with request ID {self.function_runs[lambda_function_name]}"
-            )
+            self.function_runs[lambda_function_name] = {
+                "request_id": request_id,
+                "retry_attempts": retry_attempts,
+            }
+            print(f"Invoked {lambda_function_name} with request ID {request_id}")
 
     def _invoke_lambda_async(
         self, lambda_function_name: str, payload: dict = {}
@@ -69,8 +77,8 @@ class LambdaFunctionRunner(BaseResourceRunner):
         while True:
             time.sleep(poll_interval)
             all_completed = True
-            for lambda_function_name, request_id in self.function_runs.items():
-                if not self._is_lambda_completed(lambda_function_name, request_id):
+            for lambda_function_name, run_data in self.function_runs.items():
+                if not self._is_lambda_completed(lambda_function_name, run_data):
                     all_completed = False
                     break
             if all_completed:
@@ -78,8 +86,11 @@ class LambdaFunctionRunner(BaseResourceRunner):
                 return
             print("Waiting for Lambda functions to complete...")
 
-    def _is_lambda_completed(self, lambda_function_name, request_id):
+    def _is_lambda_completed(self, lambda_function_name, run_data):
         log_group_name = f"/aws/lambda/{lambda_function_name}"
+        request_id = run_data["request_id"]
+        retry_attempts = run_data["retry_attempts"]
+        expected_runs = retry_attempts + 1
         query_string = f"fields @timestamp, @message | filter @message like /END RequestId: {request_id}/"
 
         try:
@@ -89,9 +100,10 @@ class LambdaFunctionRunner(BaseResourceRunner):
                 start_time=self.start_time,
                 end_time=int(time.time() * 1000),
             )
-            if results:
+
+            if results and len(results) == expected_runs:
                 print(
-                    f"Lambda function {lambda_function_name} with request ID {request_id} has completed."
+                    f"Lambda function {lambda_function_name} with request ID {request_id} and {retry_attempts} retry attempt(s) has completed."
                 )
                 return True
         except CloudWatchManagerException as e:

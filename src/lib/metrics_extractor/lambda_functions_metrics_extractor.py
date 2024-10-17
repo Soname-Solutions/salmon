@@ -55,7 +55,8 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
                     ("succeeded", int(lambda_attempt.IsSuccess), "BIGINT"),
                     ("failed", int(lambda_attempt.IsFailure), "BIGINT"),
                     ("status", lambda_attempt.Status, "VARCHAR"),
-                    ("duration_ms", lambda_attempt.Duration, "DOUBLE"),
+                    ("report_duration_ms", lambda_attempt.ReportDuration, "DOUBLE"),
+                    ("duration_seconds", lambda_attempt.Duration, "DOUBLE"),
                     ("billed_duration_ms", lambda_attempt.BilledDuration, "DOUBLE"),
                     ("memory_size_mb", lambda_attempt.MemorySize, "DOUBLE"),
                     ("GB_seconds", GB_seconds, "DOUBLE"),
@@ -76,7 +77,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
                 records.append(
                     {
                         "Dimensions": dimensions,
-                        "MeasureName": self.EXECUTION_MEASURE_NAME,
+                        "MeasureName": "attempt",
                         "MeasureValueType": "MULTI",
                         "MeasureValues": measure_values,
                         "Time": record_time,
