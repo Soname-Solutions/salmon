@@ -55,6 +55,12 @@ def lambda_handler(event, context):
     settings = Settings.from_s3_path(settings_s3_path)
 
     resource_type = ResourceTypeResolver.resolve(event)
+    if not resource_type:
+        logger.info(
+            f"Events from the {event['source']} source and with the detail-type {event['detail-type']} are not handled by SALMON."
+        )
+        return None
+
     mapper = EventMapperProvider.get_event_mapper(
         resource_type=resource_type, event=event, settings=settings
     )

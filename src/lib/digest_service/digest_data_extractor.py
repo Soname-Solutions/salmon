@@ -164,12 +164,24 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        query = f"""SELECT '{self.resource_type}' as resource_type, monitored_environment, resource_name, job_run_id
-                         , execution, failed, succeeded, execution_time_sec, error_message
+        query = f"""SELECT '{self.resource_type}' as resource_type
+                         , monitored_environment
+                         , resource_name
+                         , '' as job_run_id
+                         , 1 as execution
+                         , failed
+                         , succeeded
+                         , round(duration_ms/1000, 2) as execution_time_sec
+                         , case when failed > 0 then error_message else '' end as error_message
+                         , failed_attempts
                     FROM (
-                            SELECT monitored_environment, resource_name, '' as job_run_id
-                                 , attempt as execution, failed, succeeded, round(duration_ms/60, 2) as execution_time_sec
-                                 , case when failed > 0 then error_message else '' end as error_message
+                            SELECT monitored_environment
+                                 , resource_name
+                                 , min(failed) over (partition by lambda_function_request_id) as failed
+                                 , max(succeeded) over (partition by lambda_function_request_id) as succeeded
+                                 , duration_ms
+                                 , error_message                                 
+                                 , sum(failed) over  (partition by lambda_function_request_id ) as failed_attempts
                                  , row_number() over (partition by lambda_function_request_id order by time desc) as rn
                             FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
                             WHERE time BETWEEN '{start_time}' AND '{end_time}')  t

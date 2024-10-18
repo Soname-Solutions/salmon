@@ -76,7 +76,7 @@ class LambdaFunctionsMetricExtractor(BaseMetricsExtractor):
                 records.append(
                     {
                         "Dimensions": dimensions,
-                        "MeasureName": self.EXECUTION_MEASURE_NAME,
+                        "MeasureName": "attempt",
                         "MeasureValueType": "MULTI",
                         "MeasureValues": measure_values,
                         "Time": record_time,
