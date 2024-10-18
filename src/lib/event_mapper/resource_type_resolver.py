@@ -11,7 +11,9 @@ class ResourceTypeResolver:
         },
         "aws.glue-dataquality": {"Data Quality": types.GLUE_DATA_QUALITY},
         "aws.states": {"Execution": types.STEP_FUNCTIONS},
-        "aws.emr-serverless": {"EMR Serverless": types.EMR_SERVERLESS},
+        "aws.emr-serverless": {
+            "EMR Serverless Job Run State Change": types.EMR_SERVERLESS
+        },
         "salmon.glue_workflow": {
             "Glue Workflow State Change": types.GLUE_WORKFLOWS
         },  # custom processing
