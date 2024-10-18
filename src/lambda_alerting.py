@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     resource_type = ResourceTypeResolver.resolve(event)
     if not resource_type:
         logger.info(
-            f"Event for the source {event['source']} and detail-type {event['detail-type']} is not alertable."
+            f"Events from the {event['source']} source and with the detail-type {event['detail-type']} are not handled by SALMON."
         )
         return None
 
