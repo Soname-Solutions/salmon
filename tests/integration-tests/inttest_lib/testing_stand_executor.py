@@ -121,11 +121,13 @@ class TestingStandExecutor:
 
         # Lambda Functions
         if types.LAMBDA_FUNCTIONS in self.resource_types_to_run:
-            lambda_function_names = self.cfg_reader.get_names_by_resource_type(
-                types.LAMBDA_FUNCTIONS, self.stack_obj_for_naming
+            lambda_resources_data = (
+                self.cfg_reader.get_lambda_meanings_with_retry_attempts()
             )
             lambda_runner = LambdaFunctionRunner(
-                resource_names=lambda_function_names, region_name=self.region
+                resources_data=lambda_resources_data,
+                region_name=self.region,
+                stack_obj=self.stack_obj_for_naming,
             )
             lambda_runner.initiate()
             self.runners.append(lambda_runner)
@@ -174,22 +176,24 @@ class TestingStandExecutor:
             runner.await_completion()
 
     def conclude(self):
-        if types.LAMBDA_FUNCTIONS in self.resource_types_to_run:
-            # give some time for Lambda logs to be available in CloudWatch Logs Insights (considering retry attempts)
-            time.sleep(180)
-
-        LAMBDA_METRICS_ORCH_NAME = AWSNaming.LambdaFunction(
-            self.stack_obj_for_naming, "extract-metrics-orch"
-        )
+        lambda_orch_retry_attempts = 0
+        lambda_orch_meaning = "extract-metrics-orch"
         lambda_orch_runner = LambdaFunctionRunner(
-            [LAMBDA_METRICS_ORCH_NAME], self.region
+            resources_data={lambda_orch_meaning: lambda_orch_retry_attempts},
+            region_name=self.region,
+            stack_obj=self.stack_obj_for_naming,
         )
         lambda_orch_runner.initiate()
         lambda_orch_runner.await_completion()
 
         time.sleep(30)  # give some time for extract-metrics lambdas to complete
 
-        LAMBDA_DIGEST = AWSNaming.LambdaFunction(self.stack_obj_for_naming, "digest")
-        lambda_digest_runner = LambdaFunctionRunner([LAMBDA_DIGEST], self.region)
+        lambda_digest_retry_attempts = 0
+        lambda_digest_meaning = "digest"
+        lambda_digest_runner = LambdaFunctionRunner(
+            resources_data={lambda_digest_meaning: lambda_digest_retry_attempts},
+            region_name=self.region,
+            stack_obj=self.stack_obj_for_naming,
+        )
         lambda_digest_runner.initiate()
         lambda_digest_runner.await_completion()

@@ -138,7 +138,7 @@ class IntTests_Config_Reader:
 
         return outp
 
-    def get_lambda_functions_with_retry_attempts(self):
+    def get_lambda_meanings_with_retry_attempts(self):
         outp = {}
         lambda_config = self.config_data.get(types.LAMBDA_FUNCTIONS, {})
         for lmbd in lambda_config:

@@ -49,45 +49,49 @@ from lib.event_mapper.resource_type_resolver import ResourceTypeResolver
             },
             types.STEP_FUNCTIONS,
         ),
+        (
+            "scen7",
+            {
+                "source": "aws.glue",
+                "detail-type": "Glue Data Catalog Table State Change",
+            },
+            types.GLUE_DATA_CATALOGS,
+        ),
+        (
+            "scen8",
+            {
+                "source": "aws.emr-serverless",
+                "detail-type": "EMR Serverless Job Run State Change",
+            },
+            types.EMR_SERVERLESS,
+        ),
+        (
+            "scen9",
+            {
+                "source": "aws.glue-dataquality",
+                "detail-type": "Data Quality Evaluation Results Available",
+            },
+            types.GLUE_DATA_QUALITY,
+        ),
+        (
+            "scen10",
+            {
+                "source": "aws.emr-serverless",
+                "detail-type": "EMR Serverless Job Resource Utilization Update",
+            },
+            None,
+        ),
+        (
+            "scen11",
+            {
+                "source": "aws.glue",
+                "detail-type": "Glue Job Run Status",
+            },
+            None,
+        ),
     ],
 )
 def test_resource_type_resolve(scenario, event, expected_resource_type):
     assert (
         ResourceTypeResolver.resolve(event) == expected_resource_type
     ), f"Mismatch for scenario {scenario}"
-
-
-@pytest.mark.parametrize(
-    "scenario, event",
-    [
-        (
-            "scen1",
-            {
-                "source": "invalid-source",
-                "detail-type": "invalid-detail-type",
-            },
-        ),
-        (
-            "scen2",
-            {
-                "detail-type": "invalid-detail-type",
-            },
-        ),
-        (
-            "scen3",
-            {
-                "source": "invalid-source",
-            },
-        ),
-        (
-            "scen4",
-            {
-                "source": "aws.glue",
-                "detail-type": "invalid-detail-type",
-            },
-        ),
-    ],
-)
-def test_resolve_keyerror(scenario, event):
-    with pytest.raises(KeyError):
-        ResourceTypeResolver.resolve(event), f"Mismatch for scenario {scenario}"
