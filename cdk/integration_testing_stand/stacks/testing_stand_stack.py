@@ -341,7 +341,7 @@ def handler(event, context):
         for (
             lambda_meaning,
             retry_attempts,
-        ) in cfg_reader.get_lambda_functions_with_retry_attempts().items():
+        ) in cfg_reader.get_lambda_meanings_with_retry_attempts().items():
             lmb = lambda_.Function(
                 self,
                 f"Lambda{lambda_meaning.capitalize()}",

@@ -4,14 +4,19 @@ from lib.core.constants import SettingConfigResourceTypes as types
 class ResourceTypeResolver:
     _source_detail_type_map = {
         "aws.glue": {
-            "Job": types.GLUE_JOBS,
+            "Glue Job State Change": types.GLUE_JOBS,
             # "Workflow": types.GLUE_WORKFLOWS, # AWS doesn't send EventBridge event yet
-            "Data Catalog": types.GLUE_DATA_CATALOGS,
-            "Crawler": types.GLUE_CRAWLERS,
+            "Glue Data Catalog Database State Change": types.GLUE_DATA_CATALOGS,
+            "Glue Data Catalog Table State Change": types.GLUE_DATA_CATALOGS,
+            "Glue Crawler State Change": types.GLUE_CRAWLERS,
         },
-        "aws.glue-dataquality": {"Data Quality": types.GLUE_DATA_QUALITY},
-        "aws.states": {"Execution": types.STEP_FUNCTIONS},
-        "aws.emr-serverless": {"EMR Serverless": types.EMR_SERVERLESS},
+        "aws.glue-dataquality": {
+            "Data Quality Evaluation Results Available": types.GLUE_DATA_QUALITY
+        },
+        "aws.states": {"Step Functions Execution Status Change": types.STEP_FUNCTIONS},
+        "aws.emr-serverless": {
+            "EMR Serverless Job Run State Change": types.EMR_SERVERLESS
+        },
         "salmon.glue_workflow": {
             "Glue Workflow State Change": types.GLUE_WORKFLOWS
         },  # custom processing
@@ -28,11 +33,6 @@ class ResourceTypeResolver:
         detail_keyword_resource_type_map = ResourceTypeResolver._source_detail_type_map[
             source
         ]
+        resource_type = detail_keyword_resource_type_map.get(detail_type)
 
-        for keyword, resource_type in detail_keyword_resource_type_map.items():
-            if keyword in detail_type:
-                return resource_type
-
-        raise KeyError(
-            f"No event mapper configured for event detail type: {detail_type}"
-        )
+        return resource_type
