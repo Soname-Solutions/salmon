@@ -37,10 +37,6 @@ class LambdaAttempt(BaseModel):
     def IsFailure(self) -> bool:
         return self.Status in LambdaManager.LAMBDA_FAILURE_STATE
 
-    @property
-    def Duration(self) -> float:
-        return (self.CompletedOn - self.StartedOn).total_seconds()
-
     def _extract_value(self, pattern: str) -> float:
         if self.Report:
             match = re.search(pattern, self.Report)
@@ -49,7 +45,7 @@ class LambdaAttempt(BaseModel):
         return 0.0
 
     @property
-    def ReportDuration(self) -> float:
+    def Duration(self) -> float:
         return self._extract_value(r"Duration: ([0-9.]+) ms")
 
     @property

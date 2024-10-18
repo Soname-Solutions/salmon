@@ -171,7 +171,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                          , 1 as execution
                          , failed
                          , succeeded
-                         , round(duration_ms/60, 2) as execution_time_sec
+                         , round(duration_ms/1000, 2) as execution_time_sec
                          , case when failed > 0 then error_message else '' end as error_message
                          , failed_attempts
                     FROM (
