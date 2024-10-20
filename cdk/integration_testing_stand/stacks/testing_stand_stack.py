@@ -491,6 +491,7 @@ def handler(event, context):
                         workflow_name=workflow.name,
                         type="ON_DEMAND",
                     )
+                    trigger_job_one.node.add_dependency(glue_job_tmp)
                     prev_job_name = job_name
                 else:  # second and other jobs in workflow
                     trigger_job_two = glue_old.CfnTrigger(
@@ -513,6 +514,7 @@ def handler(event, context):
                         ),
                         start_on_creation=True,
                     )
+                    trigger_job_two.node.add_dependency(glue_job_tmp)
 
     def create_glue_crawlers_resources(self, cfg_reader):
         def create_iam_role(meaning, flg_deny_create_table):
