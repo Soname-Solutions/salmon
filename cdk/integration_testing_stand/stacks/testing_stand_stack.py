@@ -83,10 +83,10 @@ class TestingStandStack(Stack):
         self.create_glue_crawlers_resources(cfg_reader)
 
         # Lambda Functions testing stand
-        lambda_function_names = self.create_lambda_functions_resources(cfg_reader)
+        lambda_functions = self.create_lambda_functions_resources(cfg_reader)
 
         # After creating Lambda functions, create the custom resource (which purges lambda logs on deletiong)
-        self.create_purge_logs_custom_resource(lambda_function_names)
+        self.create_purge_logs_custom_resource(lambda_functions)
 
         # Step Functions testing stand
         self.create_step_functions_resources(cfg_reader)
@@ -334,7 +334,7 @@ def handler(event, context):
             glue_dq_ruleset.node.add_dependency(glue_database)
             glue_dq_ruleset.node.add_dependency(glue_table)
 
-    def create_lambda_functions_resources(self, cfg_reader) -> list[str]:
+    def create_lambda_functions_resources(self, cfg_reader) -> list[_lambda.Function]:
         """
         Returns a list of created lambda function names
 
@@ -360,7 +360,6 @@ def handler(event, context):
             retry_attempts,
         ) in cfg_reader.get_lambda_meanings_with_retry_attempts().items():
             function_name = AWSNaming.LambdaFunction(self, lambda_meaning)
-            outp.append(function_name)
 
             lmb = lambda_.Function(
                 self,
@@ -375,10 +374,13 @@ def handler(event, context):
                 role=lambda_role,
                 retry_attempts=retry_attempts,
             )
+            outp.append(lmb)
 
         return outp
 
-    def create_purge_logs_custom_resource(self, lambda_function_names):
+    def create_purge_logs_custom_resource(
+        self, lambda_functions: list[_lambda.Function]
+    ):
         role = iam.Role(
             self,
             "PurgeLogsLambdaRole",
@@ -429,12 +431,16 @@ def handler(event, context):
             self, "InvokePurgeLogProvider", on_event_handler=purge_logs_function
         )
 
-        CustomResource(
+        lambda_function_names = [x.function_name for x in lambda_functions]
+        run_purge = CustomResource(
             self,
             "InvokePurgeLogResource",
             service_token=provider.service_token,
             properties={"lambda_function_names": lambda_function_names},
         )
+        # making sure, lambda functions won't get deleted before the purge call
+        for lambda_function in lambda_functions:
+            run_purge.node.add_dependency(lambda_function)
 
     def create_glue_workflows_resources(self, cfg_reader):
         gluewf_meanings = cfg_reader.get_meanings_by_resource_type(types.GLUE_WORKFLOWS)
