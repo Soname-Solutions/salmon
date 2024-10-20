@@ -383,7 +383,7 @@ def handler(event, context):
             self,
             "PurgeLogsLambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name=AWSNaming.IAMRole(self, "purge-logs-lambda"),
+            role_name=AWSNaming.IAMRole(self, "purge-cwlogs-lambda"),
         )
 
         role.add_managed_policy(
