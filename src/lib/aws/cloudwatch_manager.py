@@ -161,3 +161,31 @@ class CloudWatchManager:
         except Exception as e:
             error_message = f"Can't create log group {log_group_name} : {e}"
             raise CloudWatchManagerException(error_message)
+
+    def log_group_exists(self, log_group_name: str) -> bool:
+        try:
+            result = self.cloudwatch_client.describe_log_groups(
+                logGroupNamePrefix=log_group_name
+            )
+            log_groups = result.get("logGroups")
+            return bool(log_groups)  # if empty list - log group doesn't exist
+        except Exception as e:
+            print(f"An error occurred while checking log group existence: {e}")
+            return False
+
+    def purge_log_streams(self, log_group_name: str):
+        try:
+            paginator = self.cloudwatch_client.get_paginator("describe_log_streams")
+
+            # Loop through all log streams and delete them
+            for page in paginator.paginate(logGroupName=log_group_name):
+                log_streams = page["logStreams"]
+                for log_stream in log_streams:
+                    log_stream_name = log_stream["logStreamName"]
+                    self.cloudwatch_client.delete_log_stream(
+                        logGroupName=log_group_name, logStreamName=log_stream_name
+                    )
+
+        except Exception as e:
+            error_message = f"Can't purge log streams for {log_group_name = } : {e}"
+            raise CloudWatchManagerException(error_message)
