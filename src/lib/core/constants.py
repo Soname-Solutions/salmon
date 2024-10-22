@@ -20,6 +20,7 @@ class DeliveryMethodTypes:
     AWS_SES = "AWS_SES"
     AWS_SNS = "AWS_SNS"
     SMTP = "SMTP"
+    SLACK = "SLACK"
 
 
 class SettingConfigs:

@@ -1,6 +1,7 @@
 from .formatter import HtmlFormatter, PlainTextFormatter
 from lib.core.constants import DeliveryMethodTypes
 
+
 class FormatterProvider:
     """Formatter factory."""
 
@@ -14,7 +15,9 @@ class FormatterProvider:
         formatter = self._formatters.get(delivery_method_type)
 
         if not formatter:
-            raise ValueError(f"Delivery method {delivery_method_type} is not supported.")
+            raise ValueError(
+                f"Delivery method {delivery_method_type} is not supported."
+            )
 
         return formatter()
 
@@ -23,3 +26,4 @@ formatters = FormatterProvider()
 formatters.register_sender(DeliveryMethodTypes.AWS_SES, HtmlFormatter)
 formatters.register_sender(DeliveryMethodTypes.AWS_SNS, PlainTextFormatter)
 formatters.register_sender(DeliveryMethodTypes.SMTP, HtmlFormatter)
+formatters.register_sender(DeliveryMethodTypes.SLACK, PlainTextFormatter)

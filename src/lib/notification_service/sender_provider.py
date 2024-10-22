@@ -1,4 +1,9 @@
-from lib.notification_service.sender import AwsSesSender, AwsSnsSender, SmtpSender
+from lib.notification_service.sender import (
+    AwsSesSender,
+    AwsSnsSender,
+    SmtpSender,
+    SlackSender,
+)
 from .messages import Message
 from typing import List
 
@@ -30,3 +35,4 @@ senders = SenderProvider()
 senders.register_sender(DeliveryMethodTypes.AWS_SES, AwsSesSender)
 senders.register_sender(DeliveryMethodTypes.AWS_SNS, AwsSnsSender)
 senders.register_sender(DeliveryMethodTypes.SMTP, SmtpSender)
+senders.register_sender(DeliveryMethodTypes.SLACK, SlackSender)
