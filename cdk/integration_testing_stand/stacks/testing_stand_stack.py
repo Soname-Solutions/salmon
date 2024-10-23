@@ -1,4 +1,5 @@
 from aws_cdk import (
+    CustomResource,
     Duration,
     RemovalPolicy,
     Stack,
@@ -18,10 +19,12 @@ from aws_cdk import (
     aws_stepfunctions as sfn,
     aws_stepfunctions_tasks as tasks,
     aws_emrserverless as emrs,
+    custom_resources as cr,
 )
 from aws_cdk.aws_s3_assets import Asset
 from constructs import Construct
 import os
+import json
 import boto3
 from .lib_cdk_sample_resources import iam as iam_helper
 from .lib_cdk_sample_resources import glue as glue_helper
@@ -40,10 +43,15 @@ from inttest_lib.runners.emr_serverless_runner import (
 )
 
 from lib.aws.aws_naming import AWSNaming
-from lib.aws.aws_common_resources import SNS_TOPIC_INTERNAL_ERROR_MEANING
+from lib.aws.aws_common_resources import (
+    SNS_TOPIC_INTERNAL_ERROR_MEANING,
+    AWSCommonResources,
+)
 from lib.core.constants import SettingConfigResourceTypes as types
 
 SRC_FOLDER_NAME = "../../tests/integration-tests/src_testing_stand/"
+
+LAMBDA_FOLDER_NAME = "../../src/"
 
 
 class TestingStandStack(Stack):
@@ -75,7 +83,10 @@ class TestingStandStack(Stack):
         self.create_glue_crawlers_resources(cfg_reader)
 
         # Lambda Functions testing stand
-        self.create_lambda_functions_resources(cfg_reader)
+        lambda_functions = self.create_lambda_functions_resources(cfg_reader)
+
+        # After creating Lambda functions, create the custom resource (which purges lambda logs on deletiong)
+        self.create_purge_logs_custom_resource(lambda_functions)
 
         # Step Functions testing stand
         self.create_step_functions_resources(cfg_reader)
@@ -323,7 +334,11 @@ def handler(event, context):
             glue_dq_ruleset.node.add_dependency(glue_database)
             glue_dq_ruleset.node.add_dependency(glue_table)
 
-    def create_lambda_functions_resources(self, cfg_reader):
+    def create_lambda_functions_resources(self, cfg_reader) -> list[_lambda.Function]:
+        """
+        Returns a list of created lambda function names
+
+        """
         # IAM Role
         lambda_role = iam.Role(
             self,
@@ -338,14 +353,18 @@ def handler(event, context):
             )
         )
 
+        outp = []
+
         for (
             lambda_meaning,
             retry_attempts,
         ) in cfg_reader.get_lambda_meanings_with_retry_attempts().items():
+            function_name = AWSNaming.LambdaFunction(self, lambda_meaning)
+
             lmb = lambda_.Function(
                 self,
                 f"Lambda{lambda_meaning.capitalize()}",
-                function_name=AWSNaming.LambdaFunction(self, lambda_meaning),
+                function_name=function_name,
                 code=lambda_.Code.from_asset(
                     os.path.join(SRC_FOLDER_NAME, "lambda_functions")
                 ),
@@ -355,6 +374,73 @@ def handler(event, context):
                 role=lambda_role,
                 retry_attempts=retry_attempts,
             )
+            outp.append(lmb)
+
+        return outp
+
+    def create_purge_logs_custom_resource(
+        self, lambda_functions: list[_lambda.Function]
+    ):
+        role = iam.Role(
+            self,
+            "PurgeLogsLambdaRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            role_name=AWSNaming.IAMRole(self, "purge-cw-logs-lambda"),
+        )
+
+        role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "service-role/AWSLambdaBasicExecutionRole"
+            )
+        )
+
+        role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "logs:DescribeLogGroups",
+                    "logs:DescribeLogStreams",
+                    "logs:DeleteLogStream",
+                    "lambda:GetFunction",
+                ],
+                resources=["*"],
+            )
+        )
+
+        current_region = Stack.of(self).region
+        powertools_layer = lambda_.LayerVersion.from_layer_version_arn(
+            self,
+            id="lambda-powertools",
+            layer_version_arn=AWSCommonResources.get_lambda_powertools_layer_arn(
+                current_region
+            ),
+        )
+
+        # Create the Lambda function that will act as the custom resource handler
+        purge_logs_function = _lambda.Function(
+            self,
+            "PurgeLogsFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="lambda_inttests_purge_cloudwatch_logs.lambda_handler",
+            timeout=Duration.minutes(10),
+            role=role,
+            code=lambda_.Code.from_asset(LAMBDA_FOLDER_NAME),
+            layers=[powertools_layer],
+        )
+
+        provider = cr.Provider(
+            self, "InvokePurgeLogProvider", on_event_handler=purge_logs_function
+        )
+
+        lambda_function_names = [x.function_name for x in lambda_functions]
+        run_purge = CustomResource(
+            self,
+            "InvokePurgeLogResource",
+            service_token=provider.service_token,
+            properties={"lambda_function_names": lambda_function_names},
+        )
+        # making sure, lambda functions won't get deleted before the purge call
+        for lambda_function in lambda_functions:
+            run_purge.node.add_dependency(lambda_function)
 
     def create_glue_workflows_resources(self, cfg_reader):
         gluewf_meanings = cfg_reader.get_meanings_by_resource_type(types.GLUE_WORKFLOWS)
@@ -405,6 +491,7 @@ def handler(event, context):
                         workflow_name=workflow.name,
                         type="ON_DEMAND",
                     )
+                    trigger_job_one.node.add_dependency(glue_job_tmp)
                     prev_job_name = job_name
                 else:  # second and other jobs in workflow
                     trigger_job_two = glue_old.CfnTrigger(
@@ -427,6 +514,7 @@ def handler(event, context):
                         ),
                         start_on_creation=True,
                     )
+                    trigger_job_two.node.add_dependency(glue_job_tmp)
 
     def create_glue_crawlers_resources(self, cfg_reader):
         def create_iam_role(meaning, flg_deny_create_table):
