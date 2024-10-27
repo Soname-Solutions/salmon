@@ -1,5 +1,5 @@
 from collections import defaultdict
-from lib.core.constants import DigestSettings
+from lib.core.constants import DigestSettings, DigestWarningTypes
 from lib.event_mapper import ExecutionInfoUrlMixin
 
 
@@ -35,6 +35,16 @@ class DigestDataAggregator:
             if entry["resource_name"] == resource_name
         ]
 
+    def _append_warning_comments(self, values: dict, resource_config: dict) -> None:
+        """Appends comments to 'Comments' based on warning type."""
+        warning_messages = {
+            DigestWarningTypes.SLA_MISSED: f"Some runs haven't met SLA (={resource_config['sla_seconds']} sec)",
+            DigestWarningTypes.SUCCEEDED_WITH_RETRY: "There have been some failed attempts before succeeding",
+        }
+        warning_type = values.get("warning_type")
+        if warning_type in warning_messages:
+            values["Comments"].append(warning_messages[warning_type])
+
     def _assign_row_status(
         self, aggregated_runs: dict, resource_name: str, resource_config: dict
     ):
@@ -43,17 +53,14 @@ class DigestDataAggregator:
         values = aggregated_runs[resource_name]["values"]
         # to remove duplicated comments
         values["Comments"] = list(set(values["Comments"]))
-        warnings_count = values["Warnings"]
         errors_count = values["Errors"]
-        min_runs = resource_config["minimum_number_of_runs"]
+        min_runs = resource_config.get("minimum_number_of_runs", 0)
         executions = aggregated_runs[resource_name]["Executions"]
 
-        # Warning status if some runs haven't met SLA
-        if warnings_count > 0:
+        # Warning status
+        if values["Warnings"] > 0:
             aggregated_runs[resource_name]["Status"] = DigestSettings.STATUS_WARNING
-            values["Comments"].append(
-                f"Some runs haven't met SLA (={resource_config['sla_seconds']} sec)"
-            )
+            self._append_warning_comments(values, resource_config)
 
         # Error status if some runs have failed or there have been fewer runs than expected
         if errors_count > 0 or (min_runs > 0 and executions < min_runs):
@@ -78,35 +85,34 @@ class DigestDataAggregator:
         resource_config: dict,
         resource_values: dict,
     ) -> list:
-        if int(resource_run["failed"]) > 0:
-            job_run_url = ExecutionInfoUrlMixin.get_url(
-                resource_type=resource_type,
-                region_name=resource_config["region_name"],
-                resource_name=resource_run["resource_name"],
-                account_id=resource_config["account_id"],
-                run_id=resource_run["job_run_id"],
-                # extra arguments required for Glue DQ execution link
-                glue_table_name=resource_run.get("glue_table_name"),
-                glue_db_name=resource_run.get("glue_db_name"),
-                glue_catalog_id=resource_run.get("glue_catalog_id"),
-                glue_job_name=resource_run.get("glue_job_name"),
-                context_type=resource_run.get("context_type"),
-            )
+        job_run_url = ExecutionInfoUrlMixin.get_url(
+            resource_type=resource_type,
+            region_name=resource_config["region_name"],
+            resource_name=resource_run["resource_name"],
+            account_id=resource_config["account_id"],
+            run_id=resource_run["job_run_id"],
+            # extra arguments required for Glue DQ execution link
+            glue_table_name=resource_run.get("glue_table_name"),
+            glue_db_name=resource_run.get("glue_db_name"),
+            glue_catalog_id=resource_run.get("glue_catalog_id"),
+            glue_job_name=resource_run.get("glue_job_name"),
+            context_type=resource_run.get("context_type"),
+        )
 
-            # construct error comment based on the job run URL and error message
-            error_message = resource_run.get("error_message", "Unknown errors")
-            if job_run_url:
-                # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
-                if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
-                    error_message = (
-                        error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
-                    )
-                error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
-            else:
-                # Use error message directly if no job run URL (defaults to 'Unknown errors')
-                error_comment = f" - {error_message}"
+        # construct error comment based on the job run URL and error message
+        error_message = resource_run.get("error_message", "Unknown errors")
+        if job_run_url:
+            # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
+            if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
+                error_message = (
+                    error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
+                )
+            error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
+        else:
+            # Use error message directly if no job run URL (defaults to 'Unknown errors')
+            error_comment = f" - {error_message}"
 
-            resource_values["Comments"].append(error_comment)
+        resource_values["Comments"].append(error_comment)
 
     def _process_single_run(
         self,
@@ -123,22 +129,27 @@ class DigestDataAggregator:
         aggregated_runs[resource_name]["Executions"] += int(resource_run["execution"])
 
         # for each failed run, the error details will be added in the comment section
-        self._get_error_comments(
-            resource_run=resource_run,
-            resource_type=resource_type,
-            resource_config=resource_config,
-            resource_values=resource_values,
-        )
+        if int(resource_run["failed"]) > 0:
+            self._get_error_comments(
+                resource_run=resource_run,
+                resource_type=resource_type,
+                resource_config=resource_config,
+                resource_values=resource_values,
+            )
 
-        # add a warning if the run hasn't met SLA
-        sla_seconds = resource_config["sla_seconds"]
-        execution_time_sec = resource_run["execution_time_sec"]
+        # add Warnings
+        sla_seconds = resource_config.get("sla_seconds", 0)
+        execution_time_sec = resource_run.get("execution_time_sec", 0)
+        if sla_seconds > 0 and float(execution_time_sec) > sla_seconds:
+            resource_values["Warnings"] += 1
+            resource_values["warning_type"] = DigestWarningTypes.SLA_MISSED
+
         if (
-            execution_time_sec is not None
-            and sla_seconds != 0
-            and float(execution_time_sec) > sla_seconds
+            int(resource_run["succeeded"]) > 0
+            and int(resource_run.get("failed_attempts", 0)) > 0
         ):
             resource_values["Warnings"] += 1
+            resource_values["warning_type"] = DigestWarningTypes.SUCCEEDED_WITH_RETRY
 
     def get_aggregated_runs(
         self, extracted_runs: dict, resources_config: list, resource_type: str
