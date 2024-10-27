@@ -85,34 +85,35 @@ class DigestDataAggregator:
         resource_config: dict,
         resource_values: dict,
     ) -> list:
-        job_run_url = ExecutionInfoUrlMixin.get_url(
-            resource_type=resource_type,
-            region_name=resource_config["region_name"],
-            resource_name=resource_run["resource_name"],
-            account_id=resource_config["account_id"],
-            run_id=resource_run["job_run_id"],
-            # extra arguments required for Glue DQ execution link
-            glue_table_name=resource_run.get("glue_table_name"),
-            glue_db_name=resource_run.get("glue_db_name"),
-            glue_catalog_id=resource_run.get("glue_catalog_id"),
-            glue_job_name=resource_run.get("glue_job_name"),
-            context_type=resource_run.get("context_type"),
-        )
+        if int(resource_run["failed"]) > 0:
+            job_run_url = ExecutionInfoUrlMixin.get_url(
+                resource_type=resource_type,
+                region_name=resource_config["region_name"],
+                resource_name=resource_run["resource_name"],
+                account_id=resource_config["account_id"],
+                run_id=resource_run["job_run_id"],
+                # extra arguments required for Glue DQ execution link
+                glue_table_name=resource_run.get("glue_table_name"),
+                glue_db_name=resource_run.get("glue_db_name"),
+                glue_catalog_id=resource_run.get("glue_catalog_id"),
+                glue_job_name=resource_run.get("glue_job_name"),
+                context_type=resource_run.get("context_type"),
+            )
 
-        # construct error comment based on the job run URL and error message
-        error_message = resource_run.get("error_message", "Unknown errors")
-        if job_run_url:
-            # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
-            if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
-                error_message = (
-                    error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
-                )
-            error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
-        else:
-            # Use error message directly if no job run URL (defaults to 'Unknown errors')
-            error_comment = f" - {error_message}"
+            # construct error comment based on the job run URL and error message
+            error_message = resource_run.get("error_message", "Unknown errors")
+            if job_run_url:
+                # trim the error message if it exceeds MAX_ERROR_MESSAGE_LENGTH
+                if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
+                    error_message = (
+                        error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
+                    )
+                error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
+            else:
+                # Use error message directly if no job run URL (defaults to 'Unknown errors')
+                error_comment = f" - {error_message}"
 
-        resource_values["Comments"].append(error_comment)
+            resource_values["Comments"].append(error_comment)
 
     def _process_single_run(
         self,
@@ -129,13 +130,12 @@ class DigestDataAggregator:
         aggregated_runs[resource_name]["Executions"] += int(resource_run["execution"])
 
         # for each failed run, the error details will be added in the comment section
-        if int(resource_run["failed"]) > 0:
-            self._get_error_comments(
-                resource_run=resource_run,
-                resource_type=resource_type,
-                resource_config=resource_config,
-                resource_values=resource_values,
-            )
+        self._get_error_comments(
+            resource_run=resource_run,
+            resource_type=resource_type,
+            resource_config=resource_config,
+            resource_values=resource_values,
+        )
 
         # add Warnings
         sla_seconds = resource_config.get("sla_seconds", 0)
