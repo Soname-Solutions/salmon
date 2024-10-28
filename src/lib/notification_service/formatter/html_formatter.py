@@ -3,6 +3,22 @@ from .blocks import Text, Table, TableCell, TableRow, TableHeaderCell, TableCapt
 
 
 class HtmlFormatter(Formatter):
+    _css_style = """
+        body {}
+        table, th, td { border: 1px solid black; margin: 2px; }       
+        table { border-collapse: collapse; }
+        th { background-color: lightgray; }
+        tr:nth-child(odd) {background: #EEE}
+        tr:nth-child(even) {background: #FFF}
+        th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), 
+        td:nth-last-child(3) { text-align: left; }       
+        td {  padding-right: 10px; padding-left: 10px; }  
+        .ok { background-color: lightgreen; }
+        .error { background-color: #FFCCCB; }
+        .warning { background-color: lightblue; }          
+        .header {font-size: 19px; font-weight: bold; padding: 20px 10px;}
+        """
+
     @staticmethod
     def _get_formatted_table_row(row: list, is_header: bool = False) -> str:
         cells = row.get("values")
@@ -47,24 +63,9 @@ class HtmlFormatter(Formatter):
             else None
         )
 
-    @staticmethod
-    def get_complete_html(body_content: str) -> str:
-        _css_style = """
-            body {}
-            table, th, td { border: 1px solid black; margin: 2px; }       
-            table { border-collapse: collapse; }
-            th { background-color: lightgray; }
-            tr:nth-child(odd) {background: #EEE}
-            tr:nth-child(even) {background: #FFF}
-            th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), 
-            td:nth-last-child(3) { text-align: left; }       
-            td {  padding-right: 10px; padding-left: 10px; }  
-            .ok { background-color: lightgreen; }
-            .error { background-color: #FFCCCB; }
-            .warning { background-color: lightblue; }          
-            .header {font-size: 19px; font-weight: bold; padding: 20px 10px;}
-            """
-        return f"<html><head><style>{_css_style}</style></head><body>{body_content}</body></html>"
+    @classmethod
+    def get_complete_html(cls, body_content: str) -> str:
+        return f"<html><head><style>{cls._css_style}</style></head><body>{body_content}</body></html>"
 
     def get_formatted_message(self, message_body: list) -> str:
         """Get a final formatted message."""
@@ -72,7 +73,9 @@ class HtmlFormatter(Formatter):
 
         for message_object in message_body:
             try:
-                object_type = [key for key in message_object.keys() if key != "style"][0]
+                object_type = [key for key in message_object.keys() if key != "style"][
+                    0
+                ]
             except IndexError:
                 raise KeyError(f"Message object type is not set")
 

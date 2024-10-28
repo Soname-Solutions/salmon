@@ -6,4 +6,4 @@ cdk.out/
 .venv
 .coverage
 .scannerwork
-local_test.py
+local_test*.*
