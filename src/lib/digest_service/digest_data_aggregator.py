@@ -139,7 +139,7 @@ class DigestDataAggregator:
         if int(resource_run["succeeded"]) > 0 and failed_attempts > 0:
             resource_values["Warnings"] += 1
             resource_values["Comments"].append(
-                f"WARNING: Some successful runs required one or more retries before completion."
+                "WARNING: Some runs have succeeded after one or more retry attempts."
             )
 
     def get_aggregated_runs(
