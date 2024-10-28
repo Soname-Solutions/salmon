@@ -86,11 +86,6 @@ class DigestSettings:
     MAX_ERROR_MESSAGE_LENGTH = 100
 
 
-class DigestWarningTypes:
-    SLA_MISSED = "sla_missed"
-    SUCCEEDED_WITH_RETRY = "succeeded_with_retry"
-
-
 class CDKDeployExclusions:
     LAMBDA_ASSET_EXCLUSIONS = [".venv/", "__pycache__/"]
 

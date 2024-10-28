@@ -1,5 +1,5 @@
 from collections import defaultdict
-from lib.core.constants import DigestSettings, DigestWarningTypes
+from lib.core.constants import DigestSettings
 from lib.event_mapper import ExecutionInfoUrlMixin
 
 
@@ -35,24 +35,14 @@ class DigestDataAggregator:
             if entry["resource_name"] == resource_name
         ]
 
-    def _append_warning_comments(self, values: dict, resource_config: dict) -> None:
-        """Appends comments to 'Comments' based on warning type."""
-        warning_messages = {
-            DigestWarningTypes.SLA_MISSED: f"Some runs haven't met SLA (={resource_config['sla_seconds']} sec)",
-            DigestWarningTypes.SUCCEEDED_WITH_RETRY: "There have been some failed attempts before succeeding",
-        }
-        warning_type = values.get("warning_type")
-        if warning_type in warning_messages:
-            values["Comments"].append(warning_messages[warning_type])
-
     def _assign_row_status(
         self, aggregated_runs: dict, resource_name: str, resource_config: dict
     ):
         """Assigns row status based on warnings, errors."""
 
         values = aggregated_runs[resource_name]["values"]
-        # to remove duplicated comments
-        values["Comments"] = list(set(values["Comments"]))
+        # to remove duplicated comments and sort them alphabetically
+        values["Comments"] = sorted(set(values["Comments"]))
         errors_count = values["Errors"]
         min_runs = resource_config.get("minimum_number_of_runs", 0)
         executions = aggregated_runs[resource_name]["Executions"]
@@ -60,7 +50,6 @@ class DigestDataAggregator:
         # Warning status
         if values["Warnings"] > 0:
             aggregated_runs[resource_name]["Status"] = DigestSettings.STATUS_WARNING
-            self._append_warning_comments(values, resource_config)
 
         # Error status if some runs have failed or there have been fewer runs than expected
         if errors_count > 0 or (min_runs > 0 and executions < min_runs):
@@ -142,14 +131,16 @@ class DigestDataAggregator:
         execution_time_sec = resource_run.get("execution_time_sec", 0)
         if sla_seconds > 0 and float(execution_time_sec) > sla_seconds:
             resource_values["Warnings"] += 1
-            resource_values["warning_type"] = DigestWarningTypes.SLA_MISSED
+            resource_values["Comments"].append(
+                f"WARNING: Some runs haven't met SLA (={resource_config['sla_seconds']} sec)"
+            )
 
-        if (
-            int(resource_run["succeeded"]) > 0
-            and int(resource_run.get("failed_attempts", 0)) > 0
-        ):
+        failed_attempts = int(resource_run.get("failed_attempts", 0))
+        if int(resource_run["succeeded"]) > 0 and failed_attempts > 0:
             resource_values["Warnings"] += 1
-            resource_values["warning_type"] = DigestWarningTypes.SUCCEEDED_WITH_RETRY
+            resource_values["Comments"].append(
+                f"WARNING: Some successful runs required one or more retries before completion."
+            )
 
     def get_aggregated_runs(
         self, extracted_runs: dict, resources_config: list, resource_type: str
