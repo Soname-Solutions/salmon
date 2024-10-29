@@ -1,8 +1,8 @@
-from .formatter import Formatter
+from .base_formatter import BaseFormatter
 from .blocks import Text, Table, TableCell, TableRow, TableHeaderCell, TableCaption
 
 
-class HtmlFormatter(Formatter):
+class HtmlFormatter(BaseFormatter):
     _css_style = """
         body {}
         table, th, td { border: 1px solid black; margin: 2px; }       
@@ -89,5 +89,6 @@ class HtmlFormatter(Formatter):
 
         formatted_message_body = "".join(formatted_message_objects)
         formatted_message = self.get_complete_html(formatted_message_body)
+        # formatted_message += self.delivery_method.delivery_method_type + str(self.delivery_method.use_inline_css_styles)
 
         return formatted_message

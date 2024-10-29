@@ -1,6 +1,7 @@
 import pytest
 
 from lib.notification_service.formatter import HtmlFormatter
+from lib.settings.settings_classes import DeliveryMethod
 
 from bs4 import BeautifulSoup
 
@@ -16,11 +17,15 @@ TEST_MESSAGE_BODY = [
     },
 ]
 
+DELIVERY_METHOD_CSS_CLASSES = DeliveryMethod(
+    name="ses", delivery_method_type="AWS_SES"
+)  # Assuming by default "use_inline_css_styles"=True
+
 ######################################################################################
 
 
 def test_get_formatted_message_html_valid():
-    formatter = HtmlFormatter()
+    formatter = HtmlFormatter(DELIVERY_METHOD_CSS_CLASSES)
     formatted_message = formatter.get_formatted_message(TEST_MESSAGE_BODY)
 
     soup = BeautifulSoup(formatted_message, "html.parser")
@@ -37,6 +42,6 @@ def test_get_formatted_message_missing_key_raises_key_error():
         {"style": "header_777"}
     ]  # Missing required key, thus should raise KeyError
 
-    formatter = HtmlFormatter()
+    formatter = HtmlFormatter(DELIVERY_METHOD_CSS_CLASSES)
     with pytest.raises(KeyError):
         formatted_message = formatter.get_formatted_message(message_body)

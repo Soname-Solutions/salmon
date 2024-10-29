@@ -2,6 +2,7 @@ from lib.aws.sns_manager import SnsTopicPublisher
 from lib.notification_service.formatter_provider import formatters
 from lib.notification_service.sender_provider import senders
 from lib.notification_service.messages import Message
+from lib.settings.settings_classes import DeliveryMethod
 
 import logging
 import json
@@ -33,13 +34,11 @@ def lambda_handler(event, context):
         delivery_options_info = notification_message.get("delivery_options")
         message_info = notification_message.get("message")
 
-        delivery_method = delivery_options_info.get("delivery_method")
-        if delivery_method is None:
+        if not ("delivery_method" in delivery_options_info):
             raise KeyError("Delivery method is not set.")
 
-        delivery_method_type = delivery_method.get("delivery_method_type")
-        if delivery_method_type is None:
-            raise KeyError("Delivery method type is not set.")
+        delivery_method_json = delivery_options_info.get("delivery_method")
+        delivery_method: DeliveryMethod = DeliveryMethod(**delivery_method_json)
 
         message_subject = message_info.get("message_subject")
         message_body = message_info.get("message_body")
@@ -50,7 +49,7 @@ def lambda_handler(event, context):
         if message_body is None:
             raise KeyError("Message body is not set.")
 
-        formatter = formatters.get(delivery_method_type)
+        formatter = formatters.get(delivery_method)
         formatted_message = formatter.get_formatted_message(message_body)
 
         message = Message(formatted_message, message_subject)
