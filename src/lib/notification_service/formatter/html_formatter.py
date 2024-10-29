@@ -3,21 +3,29 @@ from .blocks import Text, Table, TableCell, TableRow, TableHeaderCell, TableCapt
 
 
 class HtmlFormatter(BaseFormatter):
-    _css_style = """
-        body {}
-        table, th, td { border: 1px solid black; margin: 2px; }       
-        table { border-collapse: collapse; }
-        th { background-color: lightgray; }
-        tr:nth-child(odd) {background: #EEE}
-        tr:nth-child(even) {background: #FFF}
-        th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), 
-        td:nth-last-child(3) { text-align: left; }       
-        td {  padding-right: 10px; padding-left: 10px; }  
-        .ok { background-color: lightgreen; }
-        .error { background-color: #FFCCCB; }
-        .warning { background-color: lightblue; }          
-        .header {font-size: 19px; font-weight: bold; padding: 20px 10px;}
-        """
+    _css_style_dict = {
+        "table, th, td": {"border": "1px solid black", "margin": "2px"},
+        "table": {"border-collapse": "collapse"},
+        "th": {"background-color": "lightgray"},
+        "tr:nth-child(odd)": {"background": "#EEE"},
+        "tr:nth-child(even)": {"background": "#FFF"},
+        "th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), td:nth-last-child(3)": {
+            "text-align": "left"
+        },
+        "td": {"padding-right": "10px", "padding-left": "10px"},
+        ".ok": {"background-color": "lightgreen"},
+        ".error": {"background-color": "#FFCCCB"},
+        ".warning": {"background-color": "lightblue"},
+        ".header": {"font-size": "19px", "font-weight": "bold", "padding": "20px 10px"},
+    }
+
+    @property
+    def _css_style(self):
+        styles = []
+        for selector, properties in self._css_style_dict.items():
+            properties_str = "; ".join(f"{k}: {v}" for k, v in properties.items())
+            styles.append(f"{selector} {{ {properties_str} }}")
+        return "\n".join(styles)
 
     @staticmethod
     def _get_formatted_table_row(row: list, is_header: bool = False) -> str:
@@ -67,6 +75,11 @@ class HtmlFormatter(BaseFormatter):
     def get_complete_html(cls, body_content: str) -> str:
         return f"<html><head><style>{cls._css_style}</style></head><body>{body_content}</body></html>"
 
+    def transform_to_inline_styles(self, formatted_message):
+        pass
+        # todo: traverse over all elements in html and apply inline styles according to 1. css class associated, 2. element tag itself
+        return formatted_message
+
     def get_formatted_message(self, message_body: list) -> str:
         """Get a final formatted message."""
         formatted_message_objects = []
@@ -89,6 +102,7 @@ class HtmlFormatter(BaseFormatter):
 
         formatted_message_body = "".join(formatted_message_objects)
         formatted_message = self.get_complete_html(formatted_message_body)
-        # formatted_message += self.delivery_method.delivery_method_type + str(self.delivery_method.use_inline_css_styles)
+        if self.delivery_method.use_inline_css_styles:
+            formatted_message = self.transform_to_inline_styles(formatted_message)
 
         return formatted_message
