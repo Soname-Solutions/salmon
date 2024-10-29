@@ -71,13 +71,13 @@ class HtmlFormatter(BaseFormatter):
             else None
         )
 
-    @classmethod
-    def get_complete_html(cls, body_content: str) -> str:
-        return f"<html><head><style>{cls._css_style}</style></head><body>{body_content}</body></html>"
+    def get_complete_html(self, body_content: str) -> str:
+        return f"<html><head><style>{self._css_style}</style></head><body>{body_content}</body></html>"
 
     def transform_to_inline_styles(self, formatted_message):
         pass
         # todo: traverse over all elements in html and apply inline styles according to 1. css class associated, 2. element tag itself
+        # use self._css_style_dict for selector's definition
         return formatted_message
 
     def get_formatted_message(self, message_body: list) -> str:
