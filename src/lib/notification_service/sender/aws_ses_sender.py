@@ -4,7 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List
 
-from .sender import Sender
+from .base_sender import BaseSender
 from ..exceptions import (
     AwsSesSenderException,
     AwsSesUserNotVerifiedException,
@@ -12,22 +12,27 @@ from ..exceptions import (
 )
 from ..messages import Message, File
 from ...aws import AwsSesManager, AwsSesRawEmailSenderException
+from lib.settings.settings_classes import DeliveryMethod
 
 
-class AwsSesSender(Sender):
+class AwsSesSender(BaseSender):
     """Class to send a message by AWS SES."""
 
     def __init__(
-        self, delivery_method: dict, message: Message, recipients: List[str]
+        self, delivery_method: DeliveryMethod, message: Message, recipients: List[str]
     ) -> None:
         """Initiate class AwsSesSender.
 
         Args:
-            delivery_method (dict): Delivery method information
+            delivery_method (DeliveryMethod): Delivery method information
             message (Message): Message to send
             sender_email (str): Email from
             recipients (List[str]): Emails to
         """
+
+        if delivery_method.sender_email is None:
+            raise AwsSesSenderException("Value for 'sender_email' is required")
+
         super().__init__(delivery_method, message, recipients)
         self._ses_manager = AwsSesManager()
         self.verified_recipients = []
@@ -50,7 +55,7 @@ class AwsSesSender(Sender):
         message_body = MIMEMultipart("alternative")
 
         message["Subject"] = self._message.subject
-        message["From"] = self._delivery_method.get("sender_email")
+        message["From"] = self._delivery_method.sender_email
         message["To"] = ",".join(self.verified_recipients)
 
         # Encode the text and HTML content and set the character encoding. This step is

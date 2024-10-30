@@ -36,3 +36,16 @@ def test_get_formatted_message_missing_key_raises_key_error():
     formatter = PlainTextFormatter(DELIVERY_METHOD_DEFAULT)
     with pytest.raises(KeyError):
         formatted_message = formatter.get_formatted_message(message_body)
+
+
+# actually it's a test covering BaseFormatter functionality
+def test_exception_unknown_element():
+    # Adding not recognized "weird_element"
+    element_name = "weird_element"
+    message_body = [{element_name: "some stuff", "style": "none"}]
+
+    formatter = PlainTextFormatter(DELIVERY_METHOD_DEFAULT)
+    with pytest.raises(
+        ValueError, match=f"Message object type {element_name} is not supported"
+    ):
+        formatted_message = formatter.get_formatted_message(message_body)

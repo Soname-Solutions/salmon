@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
 from ..messages import Message
 from typing import List
+from lib.settings.settings_classes import DeliveryMethod
 
 
-class Sender(ABC):
+class BaseSender(ABC):
     def __init__(
-        self, delivery_method: dict, message: Message, recipients: List[str]
+        self, delivery_method: DeliveryMethod, message: Message, recipients: List[str]
     ) -> None:
         """Ititiate base sender class.
 

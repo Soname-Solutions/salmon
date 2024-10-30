@@ -55,7 +55,7 @@ def lambda_handler(event, context):
         message = Message(formatted_message, message_subject)
 
         sender = senders.get(
-            delivery_method=delivery_method_json,
+            delivery_method=delivery_method,
             message=message,
             recipients=delivery_options_info.get("recipients"),
         )

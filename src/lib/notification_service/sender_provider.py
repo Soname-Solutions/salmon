@@ -19,8 +19,10 @@ class SenderProvider:
     def register_sender(self, delivery_method_type: str, sender):
         self._senders[delivery_method_type] = sender
 
-    def get(self, delivery_method: dict, message: Message, recipients: List[str]):
-        delivery_method_type = delivery_method.get("delivery_method_type")
+    def get(
+        self, delivery_method: DeliveryMethod, message: Message, recipients: List[str]
+    ):
+        delivery_method_type = delivery_method.delivery_method_type
         sender = self._senders.get(delivery_method_type)
 
         if not sender:

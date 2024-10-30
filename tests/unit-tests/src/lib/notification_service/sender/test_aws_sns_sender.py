@@ -15,7 +15,7 @@ def test1():
     recipients = [TOPIC_ARN]
 
     with patch(
-        "lib.notification_service.sender.sns.SnsTopicPublisher"
+        "lib.notification_service.sender.aws_sns_sender.SnsTopicPublisher"
     ) as MockAwsSnsManager:
         sender = AwsSnsSender(
             delivery_method=delivery_method, message=message, recipients=recipients

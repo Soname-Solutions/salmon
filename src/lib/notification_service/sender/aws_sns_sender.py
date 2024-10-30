@@ -1,8 +1,9 @@
 from typing import List
 
-from .sender import Sender
+from .base_sender import BaseSender
 from ..messages import Message, File
 from lib.aws.sns_manager import SnsTopicPublisher, SNSTopicPublisherException
+from lib.settings.settings_classes import DeliveryMethod
 
 
 class AwsSnsSenderException(Exception):
@@ -11,16 +12,16 @@ class AwsSnsSenderException(Exception):
     pass
 
 
-class AwsSnsSender(Sender):
+class AwsSnsSender(BaseSender):
     """Class to send a message by AWS SES."""
 
     def __init__(
-        self, delivery_method: dict, message: Message, recipients: List[str]
+        self, delivery_method: DeliveryMethod, message: Message, recipients: List[str]
     ) -> None:
         """Initiate class AwsSnsSender.
 
         Args:
-            delivery_method (dict): Delivery method information
+            delivery_method (DeliveryMethod): Delivery method information
             message (Message): Message to send
             recipients (List[str]): List of SNS topic Arns to publish to
         """

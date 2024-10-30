@@ -1,8 +1,8 @@
-from .ses import (
+from .aws_ses_sender import (
     AwsSesSender,
     AwsSesUserNotVerifiedException,
     AwsSesSenderException,
     AwsSesNoRelevantRecipientsException,
 )
-from .smtp import SmtpSender, SmtpSenderException
-from .sns import AwsSnsSender, AwsSnsSenderException
+from .smtp_sender import SmtpSender, SmtpSenderException
+from .aws_sns_sender import AwsSnsSender, AwsSnsSenderException
