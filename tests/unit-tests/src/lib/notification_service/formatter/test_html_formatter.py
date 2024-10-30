@@ -45,3 +45,59 @@ def test_get_formatted_message_missing_key_raises_key_error():
     formatter = HtmlFormatter(DELIVERY_METHOD_CSS_CLASSES)
     with pytest.raises(KeyError):
         formatted_message = formatter.get_formatted_message(message_body)
+
+
+@pytest.mark.parametrize(
+    "css_class_name, css_definition, delivery_method, expected_tag",
+    [
+        # should convert into 'div style=...'
+        (
+            "test_class",
+            {"color": "red"},
+            DeliveryMethod(
+                name="test_method",
+                delivery_method_type="AWS_SES",
+                use_inline_css_styles=True,
+            ),
+            'style="color: red"',
+        ),
+        # should render into 'div class=...'
+        (
+            "test_class",
+            {"color": "red"},
+            DeliveryMethod(
+                name="test_method",
+                delivery_method_type="AWS_SES",
+                use_inline_css_styles=False,
+            ),
+            'class="test_class"',
+        ),
+        # testing default (should be False)
+        # so should render into 'div class=...'
+        (
+            "test_class",
+            {"color": "red"},
+            DeliveryMethod(name="test_method", delivery_method_type="AWS_SES"),
+            'class="test_class"',
+        ),
+    ],
+)
+def test_use_inline_css_styles(
+    css_class_name, css_definition, delivery_method, expected_tag
+):
+    message_body = [{"text": "Something bad has happened", "style": css_class_name}]
+
+    formatter = HtmlFormatter(delivery_method)
+    formatter._css_style_dict[f".{css_class_name}"] = css_definition
+
+    formatted_message = formatter.get_formatted_message(message_body)
+
+    soup = BeautifulSoup(formatted_message, "html.parser")
+    div = soup.find_all("div")
+
+    assert len(div) == 1, "There should be exactly one <div> element"
+    div_content: str = str(div[0])
+
+    assert (
+        expected_tag in div_content
+    ), f"<div> should contain {expected_tag} (returned content = {div_content})"

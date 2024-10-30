@@ -110,7 +110,7 @@ class HtmlFormatter(BaseFormatter):
             # Return as inline style string
             return "; ".join(f"{k}: {v}" for k, v in inline_styles.items())
 
-        # Function to add inline styles to each tag
+        # Function to add inline styles and remove class attributes
         def add_inline_styles(match):
             tag = match.group(1)
             attributes = match.group(2)
@@ -130,7 +130,11 @@ class HtmlFormatter(BaseFormatter):
                 else:
                     attributes += f' style="{inline_style}"'
 
-            return f"<{tag}{attributes}>"
+            # Remove the class attribute if it exists
+            attributes = class_regex.sub("", attributes).strip()
+
+            # Ensure a space between the tag and the attributes
+            return f"<{tag} {attributes}>"
 
         # Apply inline styles to all tags
         transformed_html = tag_regex.sub(add_inline_styles, formatted_message)
