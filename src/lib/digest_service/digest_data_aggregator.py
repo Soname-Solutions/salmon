@@ -8,17 +8,19 @@ from lib.event_mapper import ExecutionInfoUrlMixin
 
 class AggregatedEntry(BaseModel):
     Executions: int = 0
-    Failures: int = 0
     Success: int = 0
     Errors: int = 0
     Warnings: int = 0
     Comments: List[str] = []
-    HasSLABreach: bool = False  # Indicates if any SLA breaches occurred
-    HasFailedAttempts: bool = False  # Indicates if any runs required retries
+    InsufficientRuns: bool = (
+        False  # Indicates if there have been less runs than expected
+    )
+    HasSLABreach: bool = False  # Indicates if any SLA breach occurred
+    HasFailedAttempts: bool = False  # Indicates if any successfull run required retries
 
     @property
     def Status(self) -> str:
-        if self.Errors > 0 or self.Failures > 0:
+        if self.Errors > 0 or self.InsufficientRuns:
             return DigestSettings.STATUS_ERROR
         elif self.Warnings > 0:
             return DigestSettings.STATUS_WARNING
@@ -79,7 +81,7 @@ class DigestDataAggregator:
         # check if the requirement on min number of runs was met
         min_runs = resource_config.get("minimum_number_of_runs", 0)
         if min_runs > 0 and resource_agg_entry.Executions < min_runs:
-            resource_agg_entry.Failures += 1
+            resource_agg_entry.InsufficientRuns = True
             resource_agg_entry.Comments.append(
                 f"{resource_agg_entry.Executions} runs during the monitoring period (at least {min_runs} expected)"
             )
@@ -187,7 +189,7 @@ class DigestDataAggregator:
         for entry in aggregated_runs.values():
             self.summary_entry.Executions += entry.Executions
             self.summary_entry.Success += entry.Success
-            self.summary_entry.Failures += entry.Errors + entry.Failures
+            self.summary_entry.Failures += entry.Errors + int(entry.InsufficientRuns)
             self.summary_entry.Warnings += entry.Warnings
 
         return self.summary_entry

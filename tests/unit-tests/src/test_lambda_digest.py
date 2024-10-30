@@ -9,7 +9,8 @@ from lambda_digest import (
     append_digest_data,
     distribute_digest_report,
 )
-from lib.core.constants import SettingConfigs
+from lib.core.constants import SettingConfigs, DigestSettings
+from lib.digest_service import SummaryEntry
 
 
 STAGE_NAME = "teststage"
@@ -203,13 +204,9 @@ def test_append_digest_data(mock_settings):
 
     # Mock DigestDataAggregator calls
     aggregated_runs_mock = {}
-    summary_mock = {
-        "Status": "ok",
-        "Executions": 0,
-        "Success": 0,
-        "Failures": 0,
-        "Warnings": 0,
-    }
+    summary_mock = SummaryEntry(
+        Executions=0, Success=0, Failures=0, Warnings=0, Status=DigestSettings.STATUS_OK
+    )
     mock_aggregator = MagicMock()
     mock_aggregator.get_aggregated_runs.return_value = aggregated_runs_mock
     mock_aggregator.get_summary_entry.return_value = summary_mock
@@ -229,6 +226,7 @@ def test_append_digest_data(mock_settings):
         {monitoring_groups[0]: {resource_type: {"runs": {}, "summary": summary_mock}}},
         {monitoring_groups[1]: {resource_type: {"runs": {}, "summary": summary_mock}}},
     ]
+    print("digest_data ", digest_data)
     assert digest_data == expected_result
     assert len(digest_data) == len(monitoring_groups)
 
