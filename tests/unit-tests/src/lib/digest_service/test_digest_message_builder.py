@@ -1,5 +1,5 @@
 from datetime import datetime
-from lib.digest_service import DigestMessageBuilder
+from lib.digest_service import DigestMessageBuilder, SummaryEntry, AggregatedEntry
 from lib.core.constants import (
     SettingConfigResourceTypes as types,
     DigestSettings,
@@ -13,25 +13,25 @@ DIGEST_DATA = [
         "monitoring_group_1": {
             types.LAMBDA_FUNCTIONS: {
                 "runs": {
-                    "lambda-test": {
-                        "Status": DigestSettings.STATUS_OK,
-                        "Executions": 2,
-                        "Failures": 0,
-                        "values": {
-                            "Success": 2,
-                            "Errors": 0,
-                            "Warnings": 0,
-                            "Comments": "",
-                        },
-                    }
+                    "lambda-test": AggregatedEntry(
+                        Status=DigestSettings.STATUS_OK,
+                        Executions=2,
+                        Success=2,
+                        Errors=0,
+                        Warnings=0,
+                        Comments=[],
+                        InsufficientRuns=False,
+                        HasSLABreach=False,
+                        HasFailedAttempts=False,
+                    )
                 },
-                "summary": {
-                    "Status": DigestSettings.STATUS_OK,
-                    "Executions": 2,
-                    "Success": 2,
-                    "Failures": 0,
-                    "Warnings": 0,
-                },
+                "summary": SummaryEntry(
+                    Status=DigestSettings.STATUS_OK,
+                    Executions=2,
+                    Success=2,
+                    Failures=0,
+                    Warnings=0,
+                ),
             }
         }
     },
@@ -39,25 +39,25 @@ DIGEST_DATA = [
         "monitoring_group_2": {
             types.GLUE_JOBS: {
                 "runs": {
-                    "glue-test": {
-                        "Status": DigestSettings.STATUS_ERROR,
-                        "Executions": 1,
-                        "Failures": 0,
-                        "values": {
-                            "Success": 0,
-                            "Errors": 1,
-                            "Warnings": 0,
-                            "Comments": "Test Comment",
-                        },
-                    }
+                    "glue-test": AggregatedEntry(
+                        Status=DigestSettings.STATUS_ERROR,
+                        Executions=1,
+                        Success=0,
+                        Errors=1,
+                        Warnings=0,
+                        Comments=["Test Comment"],
+                        InsufficientRuns=False,
+                        HasSLABreach=False,
+                        HasFailedAttempts=False,
+                    )
                 },
-                "summary": {
-                    "Status": DigestSettings.STATUS_ERROR,
-                    "Executions": 1,
-                    "Success": 0,
-                    "Failures": 1,
-                    "Warnings": 0,
-                },
+                "summary": SummaryEntry(
+                    Status=DigestSettings.STATUS_ERROR,
+                    Executions=1,
+                    Success=0,
+                    Failures=1,
+                    Warnings=0,
+                ),
             }
         }
     },
@@ -117,12 +117,17 @@ def test_message_builder_get_summary_table():
 
 def test_message_builder_get_resource_table():
     runs_data = {
-        "glue-test": {
-            "Status": DigestSettings.STATUS_OK,
-            "Executions": 10,
-            "Failures": 0,
-            "values": {"Success": 10, "Errors": 0, "Warnings": 0, "Comments": ""},
-        }
+        "glue-test": AggregatedEntry(
+            Status=DigestSettings.STATUS_OK,
+            Executions=10,
+            Success=10,
+            Errors=0,
+            Warnings=0,
+            Comments=[],
+            InsufficientRuns=False,
+            HasSLABreach=False,
+            HasFailedAttempts=False,
+        )
     }
     expected_resource_table = {
         "table": {

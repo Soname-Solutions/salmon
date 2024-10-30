@@ -155,7 +155,7 @@ def test_get_lambda_failed_attempts(mock_boto3, mock_cw_man):
     assert lambda_attempts[0].MaxMemoryUsed == 30
     assert (
         lambda_attempts[0].ErrorString
-        == "[ERROR] Exception: intentional failure - lambda dq\n; Second failure - lambda dq"
+        == "[ERROR] Exception: intentional failure - lambda dq\n<br/>Second failure - lambda dq"
     )  # Errors concatinated as expected
 
 

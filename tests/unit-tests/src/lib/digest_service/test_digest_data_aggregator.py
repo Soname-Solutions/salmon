@@ -1,12 +1,12 @@
 import pytest
 from lib.core.constants import SettingConfigResourceTypes as types, DigestSettings
-from lib.digest_service import DigestDataAggregator
+from lib.digest_service import DigestDataAggregator, AggregatedEntry, SummaryEntry
 
 
 @pytest.mark.parametrize(
     (
         "scenario, resource_name, resource_type, extracted_runs, resources_config, expected_status, "
-        "expected_executions, expected_failures, expected_comments"
+        "expected_executions, expected_comments, insufficient_runs_alert"
     ),
     [
         (
@@ -17,8 +17,8 @@ from lib.digest_service import DigestDataAggregator
             [{"name": "lambda-test", "minimum_number_of_runs": 0}],
             DigestSettings.STATUS_OK,
             0,
-            0,
-            "",
+            [],
+            False,
         ),
         (
             "scen2-one-run-expected",
@@ -28,8 +28,8 @@ from lib.digest_service import DigestDataAggregator
             [{"name": "glue-test", "minimum_number_of_runs": 1}],
             DigestSettings.STATUS_ERROR,
             0,
-            1,
-            "0 runs during the monitoring period (at least 1 expected)",
+            ["0 runs during the monitoring period (at least 1 expected)"],
+            True,
         ),
     ],
 )
@@ -41,25 +41,27 @@ def test_get_aggregated_runs_empty_extracted_runs(
     resources_config,
     expected_status,
     expected_executions,
-    expected_failures,
     expected_comments,
+    insufficient_runs_alert,
 ):
     digest_aggregator = DigestDataAggregator()
     result = digest_aggregator.get_aggregated_runs(
         extracted_runs, resources_config, resource_type
     )
+    resource_agg_entry = result[resource_name]
+
     assert (
-        result[resource_name]["Status"] == expected_status
+        resource_agg_entry.Status == expected_status
     ), f"Status mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["Executions"] == expected_executions
+        resource_agg_entry.Executions == expected_executions
     ), f"Executions mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["Failures"] == expected_failures
-    ), f"Failures mismatch for scenario {scenario}"
-    assert (
-        result[resource_name]["values"]["Comments"] == expected_comments
+        resource_agg_entry.Comments == expected_comments
     ), f"Comments mismatch for scenario {scenario}"
+    assert (
+        resource_agg_entry.InsufficientRuns == insufficient_runs_alert
+    ), f"Failures mismatch for scenario {scenario}"
 
 
 def test_get_aggregated_runs_empty_resources_config():
@@ -91,14 +93,14 @@ def test_get_aggregated_runs_empty_resources_config():
                         "execution": "1",
                         "failed": "0",
                         "succeeded": "1",
-                        "execution_time_sec": "",
+                        "execution_time_sec": "12",
                     },
                     {
                         "resource_name": "glue-workflow-test",
                         "execution": "1",
                         "failed": "0",
                         "succeeded": "1",
-                        "execution_time_sec": "",
+                        "execution_time_sec": "13",
                     },
                 ]
             },
@@ -131,18 +133,19 @@ def test_get_aggregated_runs_with_success_runs(
     result = digest_aggregator.get_aggregated_runs(
         extracted_runs, resources_config, resource_type
     )
+    resource_agg_entry = result[resource_name]
 
     assert (
-        result[resource_name]["Status"] == expected_status
+        resource_agg_entry.Status == expected_status
     ), f"Status mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["Executions"] == expected_executions
+        resource_agg_entry.Executions == expected_executions
     ), f"Executions mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Errors"] == expected_errors
+        resource_agg_entry.Errors == expected_errors
     ), f"Errors mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Success"] == expected_success_runs
+        resource_agg_entry.Success == expected_success_runs
     ), f"Success runs mismatch for scenario {scenario}"
 
 
@@ -163,7 +166,7 @@ def test_get_aggregated_runs_with_success_runs(
                         "execution": "1",
                         "failed": "1",
                         "succeeded": "0",
-                        "execution_time_sec": "",
+                        "execution_time_sec": "12",
                         "job_run_id": "11111",
                         "error_message": "",
                     },
@@ -172,7 +175,7 @@ def test_get_aggregated_runs_with_success_runs(
                         "execution": "1",
                         "failed": "1",
                         "succeeded": "0",
-                        "execution_time_sec": "",
+                        "execution_time_sec": "2",
                         "job_run_id": "22222",
                         "error_message": "Failed",
                     },
@@ -203,14 +206,14 @@ def test_get_aggregated_runs_with_success_runs(
                         "execution": "1",
                         "failed": "0",
                         "succeeded": "1",
-                        "execution_time_sec": "",
+                        "execution_time_sec": "3",
                     },
                     {
                         "resource_name": "glue-job-test-2",
                         "execution": "1",
                         "failed": "1",
                         "succeeded": "0",
-                        "execution_time_sec": "",
+                        "execution_time_sec": "1",
                         "job_run_id": "3333",
                         "error_message": "Failed",
                     },
@@ -247,21 +250,22 @@ def test_get_aggregated_runs_with_errors(
     result = digest_aggregator.get_aggregated_runs(
         extracted_runs, resources_config, resource_type
     )
+    resource_agg_entry = result[resource_name]
 
     assert (
-        result[resource_name]["Status"] == expected_status
+        resource_agg_entry.Status == expected_status
     ), f"Status mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["Executions"] == expected_executions
+        resource_agg_entry.Executions == expected_executions
     ), f"Executions mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Errors"] == expected_errors
+        resource_agg_entry.Errors == expected_errors
     ), f"Errors mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Success"] == expected_success_runs
+        resource_agg_entry.Success == expected_success_runs
     ), f"Success runs mismatch for scenario {scenario}"
     assert (
-        "Some runs have failed" in result[resource_name]["values"]["Comments"]
+        "Some runs have failed" in resource_agg_entry.Comments
     ), f"Comments mismatch for scenario {scenario}"
 
 
@@ -349,24 +353,25 @@ def test_get_aggregated_runs_with_warnings(
     result = digest_aggregator.get_aggregated_runs(
         extracted_runs, resources_config, resource_type
     )
+    resource_agg_entry = result[resource_name]
 
     assert (
-        result[resource_name]["Status"] == expected_status
+        resource_agg_entry.Status == expected_status
     ), f"Status mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["Executions"] == expected_executions
+        resource_agg_entry.Executions == expected_executions
     ), f"Executions mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Errors"] == expected_errors
+        resource_agg_entry.Errors == expected_errors
     ), f"Errors mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Success"] == expected_success_runs
+        resource_agg_entry.Success == expected_success_runs
     ), f"Success runs mismatch for scenario {scenario}"
     assert (
-        result[resource_name]["values"]["Warnings"] == expected_warnings
+        resource_agg_entry.Warnings == expected_warnings
     ), f"Warnings mismatch for scenario {scenario}"
     assert (
-        "Some runs haven't met SLA " in result[resource_name]["values"]["Comments"]
+        "WARNING: Some runs haven't met SLA (=10 sec)." in resource_agg_entry.Comments
     ), f"Comments mismatch for scenario {scenario}"
 
 
@@ -376,36 +381,36 @@ def test_get_aggregated_runs_with_warnings(
         (
             "scen1-no-runs",
             {},
-            {
-                "Status": DigestSettings.STATUS_OK,
-                "Executions": 0,
-                "Success": 0,
-                "Failures": 0,
-                "Warnings": 0,
-            },
+            SummaryEntry(
+                Status=DigestSettings.STATUS_OK,
+                Executions=0,
+                Success=0,
+                Failures=0,
+                Warnings=0,
+            ),
         ),
         (
             "scen2-no-runs",
             {
-                "lambda-test-2": {
-                    "Status": DigestSettings.STATUS_OK,
-                    "Executions": 0,
-                    "Failures": 0,
-                    "values": {
-                        "Success": 0,
-                        "Errors": 0,
-                        "Warnings": 0,
-                        "Comments": "",
-                    },
-                }
+                "lambda-test-2": AggregatedEntry(
+                    Status=DigestSettings.STATUS_OK,
+                    Executions=0,
+                    Success=0,
+                    Errors=0,
+                    Warnings=0,
+                    Comments=[],
+                    InsufficientRuns=False,
+                    HasSLABreach=False,
+                    HasFailedAttempts=False,
+                )
             },
-            {
-                "Status": DigestSettings.STATUS_OK,
-                "Executions": 0,
-                "Success": 0,
-                "Failures": 0,
-                "Warnings": 0,
-            },
+            SummaryEntry(
+                Status=DigestSettings.STATUS_OK,
+                Executions=0,
+                Success=0,
+                Failures=0,
+                Warnings=0,
+            ),
         ),
     ],
 )
@@ -426,25 +431,25 @@ def test_get_summary_entry_with_empty_data(
         (
             "scen1-success_runs",
             {
-                "glue-job-test": {
-                    "Status": DigestSettings.STATUS_OK,
-                    "Executions": 5,
-                    "Failures": 0,
-                    "values": {
-                        "Success": 5,
-                        "Errors": 0,
-                        "Warnings": 0,
-                        "Comments": "",
-                    },
-                }
+                "glue-job-test": AggregatedEntry(
+                    Status=DigestSettings.STATUS_OK,
+                    Executions=5,
+                    Success=5,
+                    Errors=0,
+                    Warnings=0,
+                    Comments=[],
+                    InsufficientRuns=False,
+                    HasSLABreach=False,
+                    HasFailedAttempts=False,
+                )
             },
-            {
-                "Status": DigestSettings.STATUS_OK,
-                "Executions": 5,
-                "Success": 5,
-                "Failures": 0,
-                "Warnings": 0,
-            },
+            SummaryEntry(
+                Status=DigestSettings.STATUS_OK,
+                Executions=5,
+                Success=5,
+                Failures=0,
+                Warnings=0,
+            ),
         ),
     ],
 )
@@ -465,25 +470,25 @@ def test_get_summary_entry_with_success_runs(
         (
             "scen1-errors",
             {
-                "glue-test-3": {
-                    "Status": DigestSettings.STATUS_ERROR,
-                    "Executions": 3,
-                    "Failures": 0,
-                    "values": {
-                        "Success": 1,
-                        "Errors": 2,
-                        "Warnings": 0,
-                        "Comments": "",
-                    },
-                }
+                "glue-test-3": AggregatedEntry(
+                    Status=DigestSettings.STATUS_ERROR,
+                    Executions=3,
+                    Success=1,
+                    Errors=2,
+                    Warnings=0,
+                    Comments=[],
+                    InsufficientRuns=True,
+                    HasSLABreach=False,
+                    HasFailedAttempts=False,
+                )
             },
-            {
-                "Status": DigestSettings.STATUS_ERROR,
-                "Executions": 3,
-                "Success": 1,
-                "Failures": 2,
-                "Warnings": 0,
-            },
+            SummaryEntry(
+                Status=DigestSettings.STATUS_ERROR,
+                Executions=3,
+                Success=1,
+                Failures=3,
+                Warnings=0,
+            ),
         ),
     ],
 )
@@ -504,25 +509,25 @@ def test_get_summary_entry_with_errors(
         (
             "scen1-warnings",
             {
-                "lambda-test-3": {
-                    "Status": DigestSettings.STATUS_WARNING,
-                    "Executions": 3,
-                    "Failures": 0,
-                    "values": {
-                        "Success": 3,
-                        "Errors": 0,
-                        "Warnings": 2,
-                        "Comments": "",
-                    },
-                }
+                "lambda-test-3": AggregatedEntry(
+                    Status=DigestSettings.STATUS_WARNING,
+                    Executions=3,
+                    Success=3,
+                    Errors=0,
+                    Warnings=2,
+                    Comments=[],
+                    InsufficientRuns=False,
+                    HasSLABreach=False,
+                    HasFailedAttempts=False,
+                )
             },
-            {
-                "Status": DigestSettings.STATUS_WARNING,
-                "Executions": 3,
-                "Success": 3,
-                "Failures": 0,
-                "Warnings": 2,
-            },
+            SummaryEntry(
+                Status=DigestSettings.STATUS_WARNING,
+                Executions=3,
+                Success=3,
+                Failures=0,
+                Warnings=2,
+            ),
         ),
     ],
 )

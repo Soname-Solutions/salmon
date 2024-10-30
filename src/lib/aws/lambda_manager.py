@@ -74,7 +74,7 @@ class LambdaAttempt(BaseModel):
                 error = match.group(1).strip()
             cleaned_errors.append(error)
 
-        error_string = "; ".join(cleaned_errors)
+        error_string = "<br/>".join(cleaned_errors)
         return error_string[:100] + "..." if len(error_string) > 100 else error_string
 
 
