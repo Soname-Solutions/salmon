@@ -13,8 +13,8 @@ class AggregatedEntry(BaseModel):
     Errors: int = 0
     Warnings: int = 0
     Comments: List[str] = []
-    SLABreached: bool = False
-    FailedAttempts: bool = False
+    HasSLABreach: bool = False  # Indicates if any SLA breaches occurred
+    HasFailedAttempts: bool = False  # Indicates if any runs required retries
 
     @property
     def Status(self) -> str:
@@ -63,11 +63,11 @@ class DigestDataAggregator:
         resource_agg_entry.Comments = list(set(resource_agg_entry.Comments))
 
         # add warnings
-        if resource_agg_entry.SLABreached:
+        if resource_agg_entry.HasSLABreach:
             resource_agg_entry.Comments.append(
                 f"WARNING: Some runs haven't met SLA (={resource_config.get('sla_seconds', 0)} sec)."
             )
-        if resource_agg_entry.FailedAttempts:
+        if resource_agg_entry.HasFailedAttempts:
             resource_agg_entry.Comments.append(
                 "WARNING: Some runs have succeeded after one or more retry attempts."
             )
@@ -131,6 +131,7 @@ class DigestDataAggregator:
         resource_agg_entry.Success += int(resource_run["succeeded"])
         resource_agg_entry.Executions += int(resource_run["execution"])
 
+        # for each failed run, the error details will be added in the comment section
         self._append_error_comments(
             resource_run=resource_run,
             resource_type=resource_type,
@@ -138,22 +139,24 @@ class DigestDataAggregator:
             resource_agg_entry=resource_agg_entry,
         )
 
+        # check for SLA breach
         sla_seconds = resource_config.get("sla_seconds", 0)
-        execution_time_sec = resource_run.get("execution_time_sec", 0)
-        if sla_seconds > 0 and float(execution_time_sec) > sla_seconds:
+        execution_time_sec = float(resource_run.get("execution_time_sec", 0))
+        if sla_seconds > 0 and execution_time_sec > sla_seconds:
             resource_agg_entry.Warnings += 1
-            resource_agg_entry.SLABreached = True
+            resource_agg_entry.HasSLABreach = True
 
+        # check for failed attempts before succeeding (relevant for Lambda Functions)
+        succeeded_runs = int(resource_run.get("succeeded", 0))
         failed_attempts = int(resource_run.get("failed_attempts", 0))
-        if int(resource_run["succeeded"]) > 0 and failed_attempts > 0:
+        if succeeded_runs > 0 and failed_attempts > 0:
             resource_agg_entry.Warnings += 1
-            resource_agg_entry.FailedAttempts = True
+            resource_agg_entry.HasFailedAttempts = True
 
     def get_aggregated_runs(
         self, extracted_runs: dict, resources_config: list, resource_type: str
     ) -> Dict[str, AggregatedEntry]:
         """Aggregates data for each resource specified in the configurations."""
-        # iterate over each resource name specified in the config
         for resource_config in resources_config:
             resource_name = resource_config["name"]
             resource_runs = self._get_runs_by_resource_name(
