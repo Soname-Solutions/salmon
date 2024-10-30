@@ -9,7 +9,7 @@ class FormatterProvider:
     def __init__(self):
         self._formatters = {}
 
-    def register_formatter(self, delivery_method_type: str, formatter):
+    def register_formatter(self, delivery_method_type: str, formatter: BaseFormatter):
         self._formatters[delivery_method_type] = formatter
 
     def get(self, delivery_method: DeliveryMethod) -> BaseFormatter:

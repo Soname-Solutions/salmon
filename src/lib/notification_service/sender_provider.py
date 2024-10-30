@@ -7,6 +7,7 @@ from .messages import Message
 from typing import List
 
 from lib.core.constants import DeliveryMethodTypes
+from lib.settings.settings_classes import DeliveryMethod
 
 
 class SenderProvider:
@@ -15,7 +16,7 @@ class SenderProvider:
     def __init__(self):
         self._senders = {}
 
-    def register_sender(self, delivery_method_type, sender):
+    def register_sender(self, delivery_method_type: str, sender):
         self._senders[delivery_method_type] = sender
 
     def get(self, delivery_method: dict, message: Message, recipients: List[str]):

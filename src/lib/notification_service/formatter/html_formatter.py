@@ -1,18 +1,33 @@
 from .base_formatter import BaseFormatter
 from .blocks import Text, Table, TableCell, TableRow, TableHeaderCell, TableCaption
 
+import re
+
 
 class HtmlFormatter(BaseFormatter):
     _css_style_dict = {
-        "table, th, td": {"border": "1px solid black", "margin": "2px"},
-        "table": {"border-collapse": "collapse"},
-        "th": {"background-color": "lightgray"},
+        "body": {"font-family": "Arial, sans-serif"},
+        "table": {
+            "border-collapse": "collapse",
+            "border": "1px solid black",
+            "margin": "2px",
+        },
+        "th": {
+            "background-color": "lightgray",
+            "border": "1px solid black",
+            "margin": "2px",
+        },
         "tr:nth-child(odd)": {"background": "#EEE"},
         "tr:nth-child(even)": {"background": "#FFF"},
         "th:last-child, td:last-child, th:nth-last-child(2), td:nth-last-child(2), th:nth-last-child(3), td:nth-last-child(3)": {
             "text-align": "left"
         },
-        "td": {"padding-right": "10px", "padding-left": "10px"},
+        "td": {
+            "padding-right": "10px",
+            "padding-left": "10px",
+            "border": "1px solid black",
+            "margin": "2px",
+        },
         ".ok": {"background-color": "lightgreen"},
         ".error": {"background-color": "#FFCCCB"},
         ".warning": {"background-color": "lightblue"},
@@ -75,10 +90,51 @@ class HtmlFormatter(BaseFormatter):
         return f"<html><head><style>{self._css_style}</style></head><body>{body_content}</body></html>"
 
     def transform_to_inline_styles(self, formatted_message):
-        pass
-        # todo: traverse over all elements in html and apply inline styles according to 1. css class associated, 2. element tag itself
-        # use self._css_style_dict for selector's definition
-        return formatted_message
+        # Regular expressions to find elements with class or tag names
+        tag_regex = re.compile(r"<(\w+)([^>]*)>")
+        class_regex = re.compile(r'class="([^"]+)"')
+
+        def get_inline_styles(tag, classes):
+            # Gather styles for the tag and classes
+            inline_styles = {}
+            # Tag-based styles
+            if tag in self._css_style_dict:
+                inline_styles.update(self._css_style_dict[tag])
+
+            # Class-based styles
+            for class_name in classes:
+                class_selector = f".{class_name}"
+                if class_selector in self._css_style_dict:
+                    inline_styles.update(self._css_style_dict[class_selector])
+
+            # Return as inline style string
+            return "; ".join(f"{k}: {v}" for k, v in inline_styles.items())
+
+        # Function to add inline styles to each tag
+        def add_inline_styles(match):
+            tag = match.group(1)
+            attributes = match.group(2)
+
+            # Find classes within the tag attributes
+            class_match = class_regex.search(attributes)
+            classes = class_match.group(1).split() if class_match else []
+
+            # Generate inline styles for the element
+            inline_style = get_inline_styles(tag, classes)
+            if inline_style:
+                # Check if 'style' attribute exists; if so, append to it
+                if 'style="' in attributes:
+                    attributes = re.sub(
+                        r'style="([^"]*)"', f'style="\\1; {inline_style}"', attributes
+                    )
+                else:
+                    attributes += f' style="{inline_style}"'
+
+            return f"<{tag}{attributes}>"
+
+        # Apply inline styles to all tags
+        transformed_html = tag_regex.sub(add_inline_styles, formatted_message)
+        return transformed_html
 
     def get_formatted_message(self, message_body: list) -> str:
         """Get a final formatted message."""
