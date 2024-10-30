@@ -226,7 +226,7 @@ def test_append_digest_data(mock_settings):
         {monitoring_groups[0]: {resource_type: {"runs": {}, "summary": summary_mock}}},
         {monitoring_groups[1]: {resource_type: {"runs": {}, "summary": summary_mock}}},
     ]
-    print("digest_data ", digest_data)
+
     assert digest_data == expected_result
     assert len(digest_data) == len(monitoring_groups)
 
