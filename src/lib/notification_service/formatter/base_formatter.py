@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
+from lib.settings.settings_classes import DeliveryMethod
 
 
-class Formatter(ABC):
+class BaseFormatter(ABC):
+    def __init__(self, delivery_method: DeliveryMethod) -> None:
+        super().__init__()
+        self.delivery_method = delivery_method
+
     @property
     def _available_methods(self):
         """All available methods to apply during formatting."""

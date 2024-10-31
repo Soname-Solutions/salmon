@@ -1,2 +1,2 @@
-coverage run -m pytest tests\
+coverage run -m pytest tests/unit-tests/
 coverage report --show-missing

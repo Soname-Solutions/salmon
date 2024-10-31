@@ -13,3 +13,48 @@ you will need to recreate IAM Role in your monitored environment which is done b
 4. run ```cdk deploy --context stage-name={stage_name}*```
 
 Data pipeline events which happen between step #3 and #4 in this specific monitored environment won't be recorded.
+
+**Q: Can I use Slack to receive notifications?**
+
+A: Yes, you can configure email alerts to be sent to a Slack channel by following these steps:
+
+1. In your Slack channel, set up the Email App to receive emails. This will provide you with a unique email address for the channel.
+
+![Setting Up Slack Channel](/docs/images/slack-channel.png "Setting Up Slack Channel")
+
+2. In `general.json`, add a delivery method (either AWS_SES or SMTP, depending on your setup). For this delivery method, set `use_inline_css_styles` to True to ensure compatibility with Slack's email rendering.
+
+```json
+{
+    "delivery_methods": [
+        {
+            "name": "aws_ses_for_slack",
+            "delivery_method_type": "AWS_SES",
+            "use_inline_css_styles": true,
+            "sender_email" : "no-reply@company.com"
+        }   
+    ...
+    ]
+}
+```
+
+3. In `recipients.json`, add a recipient for the respective delivery method. Set the recipient to the Slack channel's email address.
+
+```json
+{
+    "recipients": [
+        {
+            "recipient": "channel-email-address-slack-gives-you@company.slack.com",
+            "delivery_method": "aws_ses_for_slack",
+            "subscriptions": [
+                {
+                    "monitoring_group": "group1",
+                    "alerts": true,
+                    "digest": true
+                }
+            ]
+        }
+        ...
+    ]
+}                 
+```

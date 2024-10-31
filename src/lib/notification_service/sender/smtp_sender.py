@@ -3,28 +3,36 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from smtplib import SMTP, SMTP_SSL, SMTPResponseException
+from lib.settings.settings_classes import DeliveryMethod
 import ssl
 
 from typing import List
-from .sender import Sender
+from .base_sender import BaseSender
 from ..exceptions import SmtpSenderException
 from ..messages.message import Message, File
 from ...aws.secret_manager import SecretManager
 
 
-class SmtpSender(Sender):
+class SmtpSender(BaseSender):
     def __init__(
         self,
-        delivery_method: dict,
+        delivery_method: DeliveryMethod,
         message: Message,
         recipients: List[str],
     ) -> None:
         """Initiate class EmailSender."""
+
+        if delivery_method.sender_email is None:
+            raise SmtpSenderException("Value for 'sender_email' is required")
+
+        if delivery_method.credentials_secret_name is None:
+            raise SmtpSenderException("Value for 'credentials_secret_name' is required")
+
         super().__init__(delivery_method, message, recipients)
         self._secret_client = SecretManager()
-        self._sender_email = self._delivery_method.get("sender_email")
-        self._use_ssl = self._delivery_method.get("use_ssl", True)
-        self._timeout = self._delivery_method.get("timeout", 10.0)
+        self._sender_email = self._delivery_method.sender_email
+        self._use_ssl = self._delivery_method.use_ssl
+        self._timeout = self._delivery_method.timeout
 
     def _get_message(self) -> BaseEmailMessage:
         """Get message to send."""
@@ -108,7 +116,7 @@ class SmtpSender(Sender):
     def send(self) -> None:
         """Send a message via SMTP."""
         context = ssl.create_default_context()
-        smtp_secret_name = self._delivery_method.get("credentials_secret_name")
+        smtp_secret_name = self._delivery_method.credentials_secret_name
 
         if smtp_secret_name is None:
             raise KeyError("Credentials Secret Name is not set.")

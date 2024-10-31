@@ -129,10 +129,11 @@ def test_lambda_handler_no_delivery_method_type(mock_sns_publisher):
     lambda_handler(event, {})
 
     mock_sns_publisher.assert_called_once()  # check if we've got internal SNS notification
+
     missing_fields_check(
         str(mock_sns_publisher.call_args[0][1]),
-        "KeyError",
-        "Delivery method type is not set",
+        "ValidationError",
+        "Field required",
     )
 
 

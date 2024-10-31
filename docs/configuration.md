@@ -142,6 +142,8 @@ You can specify multiple monitored environments.
 Based on the delivery method type, additional parameters are required:
 * AWS_SES:
     - `sender_email` - the sender email for notifications and digests. Must be verified in AWS SES.
+    - (optional) `use_inline_css_styles` - specify whether to apply CSS styles directly within each HTML element in e-mail. If set to True, styles will be inlined, enhancing compatibility with email clients that restrict external CSS. Default value: `False`.
+
 * AWS_SNS:
     - No additional parameters needed. Target SNS topic Arn is configured in recipients section.
 * SMTP:
@@ -160,6 +162,8 @@ Based on the delivery method type, additional parameters are required:
         >  The secret in AWS Secrets Manager should have a tag with the key `salmon` and any value. This is required to limit access to only the secrets tagged with `salmon`. 
     - (optional) `use_ssl` - indicate whether to use SSL for the SMTP server connection. If set to True, the connection will use SSL. Otherwhise, STARTTLS will be used. Default value: `True`.
     - (optional) `timeout` -  the connection timeout in seconds. Default value: `10.0`.
+    - (optional) `use_inline_css_styles` - specify whether to apply CSS styles directly within each HTML element in e-mail. If set to True, styles will be inlined, enhancing compatibility with email clients that restrict external CSS. Default value: `False`.
+
 
 You can specify multiple delivery methods (even for the same delivery type, no restrictions).
 

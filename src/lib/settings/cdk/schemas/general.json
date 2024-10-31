@@ -46,6 +46,7 @@
             "delivery_method_type": {"type": "string"},
             "sender_email": {"type": "string"},
             "credentials_secret_name": {"type": "string"},
+            "use_inline_css_styles": {"type": "boolean"},
             "use_ssl": {"type": "boolean"},
             "timeout": {"type": "number"}
           },
