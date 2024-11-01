@@ -3,11 +3,15 @@ import json
 import logging
 
 from lib.core import json_utils as ju
+from lib.core.constants import SettingConfigs, EventResult
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-GRAFANA_DASHBOARD_TEMPLATE_FOLDER = os.path.join("stacks", "grafana")
+# GRAFANA_DASHBOARD_TEMPLATE_FOLDER = os.path.join("stacks", "grafana")
+GRAFANA_DASHBOARD_TEMPLATE_FOLDER = (
+    "D:/git/salmon/cdk/tooling_environment/stacks/grafana/"
+)
 
 
 def generate_cloudwatch_dashboard_model(
@@ -34,6 +38,7 @@ def generate_cloudwatch_dashboard_model(
         "<<LOG_GROUP_NAME>>": cloudwatch_log_group_name,
         "<<LOG_GROUP_ARN>>": cloudwatch_log_group_arn,
         "<<ACCOUNT_ID>>": account_id,
+        "<<RESOURCE_TYPES_STR>>": ",".join(SettingConfigs.RESOURCE_TYPES),
     }
     dashboard_data = ju.replace_values_in_json(json_data, replacements)
 
