@@ -3,15 +3,12 @@ import json
 import logging
 
 from lib.core import json_utils as ju
-from lib.core.constants import SettingConfigs, EventResult
+from lib.core.constants import SettingConfigs
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# GRAFANA_DASHBOARD_TEMPLATE_FOLDER = os.path.join("stacks", "grafana")
-GRAFANA_DASHBOARD_TEMPLATE_FOLDER = (
-    "D:/git/salmon/cdk/tooling_environment/stacks/grafana/"
-)
+GRAFANA_DASHBOARD_TEMPLATE_FOLDER = os.path.join("stacks", "grafana")
 
 
 def generate_cloudwatch_dashboard_model(
