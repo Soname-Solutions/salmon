@@ -546,44 +546,7 @@
         "label": "Resource Type",
         "multi": true,
         "name": "resource_type",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          },
-          {
-            "selected": false,
-            "text": "glue_jobs",
-            "value": "glue_jobs"
-          },
-          {
-            "selected": false,
-            "text": "glue_workflows",
-            "value": "glue_workflows"
-          },
-          {
-            "selected": false,
-            "text": "glue_crawlers",
-            "value": "glue_crawlers"
-          },
-          {
-            "selected": false,
-            "text": "glue_catalogs",
-            "value": "glue_catalogs"
-          },
-          {
-            "selected": false,
-            "text": "lambda_functions",
-            "value": "lambda_functions"
-          },
-          {
-            "selected": false,
-            "text": "step_functions",
-            "value": "step_functions"
-          }
-        ],
-        "query": "glue_jobs,glue_workflows,glue_crawlers,glue_catalogs,lambda_functions,step_functions",
+        "query": "<<RESOURCE_TYPES_STR>>",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -603,28 +566,6 @@
         "label": "Event Result",
         "multi": true,
         "name": "event_result",
-        "options": [
-          {
-            "selected": true,
-            "text": "All",
-            "value": "$__all"
-          },
-          {
-            "selected": false,
-            "text": "INFO",
-            "value": "INFO"
-          },
-          {
-            "selected": false,
-            "text": "SUCCESS",
-            "value": "SUCCESS"
-          },
-          {
-            "selected": false,
-            "text": "FAILURE",
-            "value": "FAILURE"
-          }
-        ],
         "query": "INFO,SUCCESS,FAILURE",
         "queryValue": "",
         "skipUrlSync": false,
