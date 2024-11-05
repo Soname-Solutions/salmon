@@ -1,8 +1,5 @@
 name: Unit tests
 env:
-    AWS_ACCESS_KEY_ID: dummy_value
-    AWS_SECRET_ACCESS_KEY: dummy_value
-    AWS_DEFAULT_REGION: 'eu-central-1'    
     TESTS_FOLDER: tests/unit-tests
 run-name: unit tests
 on:

@@ -1,6 +1,5 @@
 name: Integration tests - Execute Tests
 env:
-    AWS_DEFAULT_REGION: 'eu-central-1'
     INTTESTS_FOLDER_NAME: "tests/integration-tests"
 permissions:
       id-token: write   # This is required for requesting the JWT
@@ -19,7 +18,7 @@ jobs:
         - name: Assume AWS Role
           uses: ./.github/actions/assume-aws-service-role-for-tests
           with:
-            aws-region: ${{ env.AWS_DEFAULT_REGION }}
+            aws-region: ${{ secrets.AWS_REGION }}
             account-id: ${{ secrets.AWS_ACCOUNT_ID }}    
 
         - name: Setup Python Virtual Environment
@@ -42,7 +41,7 @@ jobs:
         - name: Testing stand executions
           shell: bash
           run: |
-            venv/bin/python ${{ env.INTTESTS_FOLDER_NAME }}/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}
+            venv/bin/python ${{ env.INTTESTS_FOLDER_NAME }}/testing_stand_execution.py --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ secrets.AWS_REGION }}
 
         # Making sure alerts have enough time to arrive
         - name: Pause for 2 minutes
@@ -51,4 +50,4 @@ jobs:
         - name: Run tests
           shell: bash
           run: |
-            venv/bin/pytest ${{ env.INTTESTS_FOLDER_NAME }}/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ env.AWS_DEFAULT_REGION }}            
+            venv/bin/pytest ${{ env.INTTESTS_FOLDER_NAME }}/tests --start-epochtimemsec=${{ env.start_epochtimemsec }} --stage-name=${{ steps.assign_stage_name.outputs.STAGE_NAME }} --region=${{ secrets.AWS_REGION }}            

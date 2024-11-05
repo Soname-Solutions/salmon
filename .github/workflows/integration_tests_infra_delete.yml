@@ -1,6 +1,5 @@
 name: Integration tests - Delete Infra
 env:
-    AWS_DEFAULT_REGION: 'eu-central-1'
     CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
     CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
     CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
@@ -22,7 +21,7 @@ jobs:
         - name: Assume AWS Role
           uses: ./.github/actions/assume-aws-service-role-for-tests
           with:
-            aws-region: ${{ env.AWS_DEFAULT_REGION }}
+            aws-region: ${{ secrets.AWS_REGION }}
             account-id: ${{ secrets.AWS_ACCOUNT_ID }}    
 
         - name: Setup Python Virtual Environment
@@ -39,7 +38,7 @@ jobs:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
             stage-name: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}
-            region: ${{ env.AWS_DEFAULT_REGION }}
+            region: ${{ secrets.AWS_REGION }}
 
         # 1. Destroy Monitored env
         - name: destroy monitored infra via CDK
