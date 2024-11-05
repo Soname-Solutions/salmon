@@ -10,6 +10,7 @@ from aws_cdk import (
 from constructs import Construct
 
 from lib.aws.aws_naming import AWSNaming
+from lib.git.git_helper import get_owner_and_repo_name
 
 
 class GitHubActionsResourcesStack(Stack):
@@ -90,6 +91,8 @@ class GitHubActionsResourcesStack(Stack):
         oidc_provider_url = "https://token.actions.githubusercontent.com"
         client_id = "sts.amazonaws.com"
 
+        repo_owner, repo_name = get_owner_and_repo_name()
+
         oidc_provider = iam.OpenIdConnectProvider(
             self, "GitHubOIDCProvider", url=oidc_provider_url, client_ids=[client_id]
         )
@@ -105,7 +108,7 @@ class GitHubActionsResourcesStack(Stack):
                         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
                     },
                     "StringLike": {
-                        "token.actions.githubusercontent.com:sub": "repo:Soname-Solutions/salmon:*"
+                        "token.actions.githubusercontent.com:sub": f"repo:{repo_owner}/{repo_name}:*"
                     },
                 },
             ),  # type: ignore
