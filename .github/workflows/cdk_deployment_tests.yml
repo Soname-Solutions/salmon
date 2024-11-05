@@ -1,12 +1,13 @@
 name: CDK Deployment Tests
 env:
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: 'eu-central-1'
   CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
   CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
   STAGE_NAME: devcdk
   SETTING_FOLDER_NAME: "tests/deployment-tests/settings"
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout    
 run-name: CDK Deployment Tests - Commit ${{ github.sha }}
 on: 
   push:
@@ -19,6 +20,12 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+
+      - name: Assume AWS Role
+        uses: ./.github/actions/assume-aws-service-role-for-tests
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          account-id: ${{ secrets.AWS_ACCOUNT_ID }}
 
       - name: Setup Python Virtual Environment
         id: setup-venv
