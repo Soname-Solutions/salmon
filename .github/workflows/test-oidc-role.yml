@@ -1,40 +1,24 @@
-name: test-oidc-role
-
-on:
+name: Integration tests - Create Infra
+env:
+    AWS_DEFAULT_REGION: 'eu-central-1'
+    CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
+    CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
+    CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
+    SETTING_FOLDER_NAME: "tests/integration-tests/settings"
+run-name: integration tests - create infra
+on: 
   workflow_dispatch:
-
-env: 
-  AWS_REGION : "us-east-1"    
-
-permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read    # This is required for actions/checkout  
-
+  workflow_call:
 jobs:
-  AssumeRoleAndCallIdentity:
+  integration-testing-create-infra:
     runs-on: ubuntu-latest
-    
     steps:
-        - name: Git clone the repository
-          uses: actions/checkout@v3
-       
+        - name: Check out repository code
+          uses: actions/checkout@v4
+
         - name: Assume AWS Role
           uses: ./.github/actions/assume-aws-service-role-for-tests
           with:
-            aws-region: ${{ env.AWS_REGION }}
-            account-id: ${{ secrets.AWS_ACCOUNT_ID }}
-           
-        # - name: configure aws credentials
-        #   uses: aws-actions/configure-aws-credentials@v1.7.0
-        #   with:
-        #     role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/salmon-github-tests-service-role
-        #     role-session-name: salmon-github-actions-service-role
-        #     aws-region: ${{ env.AWS_REGION }}
-  
-        - name: Sts GetCallerIdentity
-          run: |
-            aws sts get-caller-identity
-  
-        - name: S3 LS
-          run: |
-            aws s3 ls   
+            aws-region: ${{ env.AWS_DEFAULT_REGION }}
+            account-id: ${{ secrets.AWS_ACCOUNT_ID }}    
+
