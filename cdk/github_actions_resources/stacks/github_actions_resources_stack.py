@@ -23,6 +23,9 @@ class GitHubActionsResourcesStack(Stack):
         github_actions_role = self.create_github_oidc_role()
 
         # Create IAM user
+        # Note: IAM service role makes IAM user obsolete for running workflows
+        # It's decided to keep IAM user, as it's the easiest way to run tests locally
+        # with permissions identical to github workflows
         iam_user = self.create_github_service_user()
 
         # Collect all policies

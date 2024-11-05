@@ -58,9 +58,9 @@ The integration test process involves the following steps:
 
 1. **IAM Service Role for GitHub Actions**: An IAM Role is required for running tests via GitHub Actions. You can create it using the `github_actions_resources` CDK application:
 
-   - Navigate to folder `cdk/github_actions_resources`
-   - Run the command `cdk deploy` to create a CDK stack that includes IAM role, including permissions sufficient to run tests and trust relationships to allow your GitHub repo actions assume this role when executing workflows.
-   - In your github repository, go to **Settings -> Secrets and Variables -> Action**, and add a secret named `AWS_ACCOUNT_ID` so GitHub knows which account to use for running pipelines.
+   - Navigate to the folder `cdk/github_actions_resources`
+   - Run the command `cdk deploy` to create a CDK stack. This stack includes an IAM role with permissions sufficient to run tests and trust relationships established to allow your GitHub repo to assume this role when executing workflows.
+   - In your github repository, go to **Settings -> Secrets and Variables -> Action**, and add secrets named `AWS_ACCOUNT_ID` and `AWS_REGION`. These secrets allow GitHub to identify which AWS account and region to use for running pipelines.
 
 2. **SALMON configuration files**: The configuration files for the integration tests environment are stored in `integration_tests/settings` folder.  
 You can customize these files (changes need to be pushed to repository to take effect).
