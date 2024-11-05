@@ -19,8 +19,24 @@ class GitHubActionsResourcesStack(Stack):
         super().__init__(scope, id, **kwargs)
 
         # Create OpenID provider and role for GitHub actions to assume
-        self.create_github_oidc_role()
+        github_actions_role = self.create_github_oidc_role()
 
+        iam_user = self.create_github_service_user()
+
+        # Attach policies to the IAM user
+        self.attach_assume_role_policy(iam_user)
+        self.attach_ec2_role_policy(iam_user)
+        self.attach_glue_job_runner_policy(iam_user)
+        self.attach_glue_dq_runner_policy(iam_user)
+        self.attach_glue_workflow_runner_policy(iam_user)
+        self.attach_glue_crawler_runner_policy(iam_user)
+        self.attach_step_function_runner_policy(iam_user)
+        self.attach_lambda_runner_policy(iam_user)
+        self.attach_emr_serverless_runner_policy(iam_user)
+        self.attach_dynamodb_reader_policy(iam_user)
+        self.attach_timestream_query_runner_policy(iam_user)
+
+    def create_github_service_user(self) -> iam.User:
         iam_user = iam.User(
             self,
             "GithubActionsServiceUser",
@@ -47,20 +63,9 @@ class GitHubActionsResourcesStack(Stack):
             ),
         )
 
-        # Attach policies to the IAM user
-        self.attach_assume_role_policy(iam_user)
-        self.attach_ec2_role_policy(iam_user)
-        self.attach_glue_job_runner_policy(iam_user)
-        self.attach_glue_dq_runner_policy(iam_user)
-        self.attach_glue_workflow_runner_policy(iam_user)
-        self.attach_glue_crawler_runner_policy(iam_user)
-        self.attach_step_function_runner_policy(iam_user)
-        self.attach_lambda_runner_policy(iam_user)
-        self.attach_emr_serverless_runner_policy(iam_user)
-        self.attach_dynamodb_reader_policy(iam_user)
-        self.attach_timestream_query_runner_policy(iam_user)
+        return iam_user
 
-    def create_github_oidc_role(self):
+    def create_github_oidc_role(self) -> iam.Role:
         # Define the OIDC provider for GitHub
         oidc_provider_url = "https://token.actions.githubusercontent.com"
         client_id = "sts.amazonaws.com"
