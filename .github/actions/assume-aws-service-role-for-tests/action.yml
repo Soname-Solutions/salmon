@@ -27,6 +27,7 @@ runs:
 
 
     - name: Set Outputs
+      shell: bash
       run: |
         echo "access-key-id=${{ steps.configure.outputs.access-key-id }}" >> $GITHUB_ENV
         echo "secret-access-key=${{ steps.configure.outputs.secret-access-key }}" >> $GITHUB_ENV
