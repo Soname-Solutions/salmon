@@ -77,11 +77,13 @@ class GitHubActionsResourcesStack(Stack):
                 oidc_provider.open_id_connect_provider_arn,
                 conditions={
                     "StringEquals": {
-                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-                        "token.actions.githubusercontent.com:sub": "repo:Soname-Solutions/salmon:*",
-                    }
+                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                    },
+                    "StringLike": {
+                        "token.actions.githubusercontent.com:sub": "repo:Soname-Solutions/salmon:*"
+                    },
                 },
-            ),
+            ),  # type: ignore
             role_name="salmon-github-tests-service-role",
         )
 
