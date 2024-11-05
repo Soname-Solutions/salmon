@@ -2,7 +2,6 @@ name: test-oidc-role
 
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   list-s3:
