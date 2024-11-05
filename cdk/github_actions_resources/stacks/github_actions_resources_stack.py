@@ -3,6 +3,7 @@ import json
 from aws_cdk import (
     Stack,
     Tags,
+    Fn,
     aws_iam as iam,
     aws_secretsmanager as secretsmanager,
 )
@@ -16,6 +17,9 @@ class GitHubActionsResourcesStack(Stack):
         self.project_name = kwargs.pop("project_name", None)
         self.stage_name = kwargs.pop("stage_name", None)
         super().__init__(scope, id, **kwargs)
+
+        # Create OpenID provider and role for GitHub actions to assume
+        self.create_github_oidc_role()
 
         iam_user = iam.User(
             self,
@@ -55,6 +59,38 @@ class GitHubActionsResourcesStack(Stack):
         self.attach_emr_serverless_runner_policy(iam_user)
         self.attach_dynamodb_reader_policy(iam_user)
         self.attach_timestream_query_runner_policy(iam_user)
+
+    def create_github_oidc_role(self):
+        # Define the OIDC provider for GitHub
+        oidc_provider_url = "https://token.actions.githubusercontent.com"
+        client_id = "sts.amazonaws.com"
+
+        oidc_provider = iam.OpenIdConnectProvider(
+            self, "GitHubOIDCProvider", url=oidc_provider_url, client_ids=[client_id]
+        )
+
+        # Define the GitHub Actions role with limited S3 access
+        github_actions_role = iam.Role(
+            self,
+            "GitHubActionsRole",
+            assumed_by=iam.WebIdentityPrincipal(
+                oidc_provider.open_id_connect_provider_arn,
+                conditions={
+                    "StringEquals": {
+                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+                        "token.actions.githubusercontent.com:sub": "repo:Soname-Solutions/salmon:*",
+                    }
+                },
+            ),
+            role_name="salmon-github-tests-service-role",
+        )
+
+        # Attach the S3 read-only policy
+        github_actions_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3ReadOnlyAccess")
+        )
+
+        return github_actions_role
 
     def attach_assume_role_policy(self, iam_user):
         # Permissions needed to CDK deploy/destroy

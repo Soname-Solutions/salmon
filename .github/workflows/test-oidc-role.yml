@@ -1,0 +1,22 @@
+name: List S3 Buckets
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list-s3:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+      
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/salmon-github-tests-service-role
+          aws-region: us-east-1
+
+      - name: List S3 Buckets
+        run: aws s3 ls
