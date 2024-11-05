@@ -5,7 +5,7 @@ env:
     CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
     CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
     SETTING_FOLDER_NAME: "tests/integration-tests/settings"
-run-name: integration tests - create infra
+run-name: test oidc
 on: 
   workflow_dispatch:
   workflow_call:
