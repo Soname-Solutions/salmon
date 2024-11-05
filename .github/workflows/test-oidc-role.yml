@@ -1,6 +1,6 @@
-name: Integration tests - Create Infra
+name: test oidc
 env:
-    AWS_DEFAULT_REGION: 'eu-central-1'
+    AWS_REGION: 'eu-central-1'
     CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
     CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
     CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
@@ -19,6 +19,6 @@ jobs:
         - name: Assume AWS Role
           uses: ./.github/actions/assume-aws-service-role-for-tests
           with:
-            aws-region: ${{ env.AWS_DEFAULT_REGION }}
+            aws-region: ${{ env.AWS_REGION }}
             account-id: ${{ secrets.AWS_ACCOUNT_ID }}    
 
