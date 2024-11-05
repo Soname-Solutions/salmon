@@ -1,5 +1,6 @@
 name: Unit tests
 env:
+    AWS_DEFAULT_REGION: dummy
     TESTS_FOLDER: tests/unit-tests
 run-name: unit tests
 on:
