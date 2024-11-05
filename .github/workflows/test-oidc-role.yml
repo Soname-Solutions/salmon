@@ -17,26 +17,19 @@ jobs:
     steps:
         - name: Git clone the repository
           uses: actions/checkout@v3
-
-        - name: Decode and Print OIDC Token Claims
-          id: print_claims
-          env:
-            TOKEN: ${{ steps.get_token.outputs.token }}
-          run: |
-            # Decode the OIDC token and extract claims
-            header=$(echo "${TOKEN}" | cut -d '.' -f1 | base64 -d 2>/dev/null || true)
-            payload=$(echo "${TOKEN}" | cut -d '.' -f2 | base64 -d 2>/dev/null || true)
-            
-            # Print 'aud' and 'sub' values from the payload
-            echo "aud claim: $(echo "${payload}" | jq -r '.aud')"
-            echo "sub claim: $(echo "${payload}" | jq -r '.sub')"              
-          
-        - name: configure aws credentials
-          uses: aws-actions/configure-aws-credentials@v1.7.0
+       
+        - name: Assume AWS Role
+          uses: ./.github/actions/assume-aws-service-role-for-tests
           with:
-            role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/salmon-github-tests-service-role
-            role-session-name: salmon-github-actions-service-role
             aws-region: ${{ env.AWS_REGION }}
+            account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+           
+        # - name: configure aws credentials
+        #   uses: aws-actions/configure-aws-credentials@v1.7.0
+        #   with:
+        #     role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/salmon-github-tests-service-role
+        #     role-session-name: salmon-github-actions-service-role
+        #     aws-region: ${{ env.AWS_REGION }}
   
         - name: Sts GetCallerIdentity
           run: |
