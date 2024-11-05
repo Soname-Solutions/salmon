@@ -1,4 +1,4 @@
-name: List S3 Buckets
+name: test-oidc-role
 
 on:
   workflow_dispatch:
