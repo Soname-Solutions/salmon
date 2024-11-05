@@ -3,20 +3,32 @@ name: test-oidc-role
 on:
   workflow_dispatch:
 
+env: 
+  AWS_REGION : "us-east-1"    
+
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout  
+
 jobs:
-  list-s3:
+  AssumeRoleAndCallIdentity:
     runs-on: ubuntu-latest
     
-    permissions:
-      id-token: write
-      contents: read
-      
     steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/salmon-github-tests-service-role
-          aws-region: us-east-1
-
-      - name: List S3 Buckets
-        run: aws s3 ls
+        - name: Git clone the repository
+          uses: actions/checkout@v3
+          
+        - name: configure aws credentials
+          uses: aws-actions/configure-aws-credentials@v1.7.0
+          with:
+            role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/salmon-github-tests-service-role
+            role-session-name: salmon-github-actions-service-role
+            aws-region: ${{ env.AWS_REGION }}
+  
+        - name: Sts GetCallerIdentity
+          run: |
+            aws sts get-caller-identity
+  
+        - name: S3 LS
+          run: |
+            aws s3 ls   
