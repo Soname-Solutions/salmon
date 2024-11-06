@@ -15,7 +15,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 4,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -66,7 +66,7 @@
         ]
       },
       "gridPos": {
-        "h": 14,
+        "h": 13,
         "w": 3,
         "x": 0,
         "y": 0
@@ -89,7 +89,7 @@
           "valueSize": 40
         },
         "textMode": "value_and_name",
-        "wideLayout": false
+        "wideLayout": true
       },
       "pluginVersion": "10.2.2",
       "targets": [
@@ -161,7 +161,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 14,
+        "h": 19,
         "w": 21,
         "x": 3,
         "y": 0
@@ -181,16 +181,140 @@
       },
       "targets": [
         {
-          "database": "<<DATABASE_NAME>>",
+          "database":  "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT  time, ${measure:csv} FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})",
+          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
       ],
       "title": "Glue Crawlers",
       "type": "timeseries"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 0,
+        "y": 13
+      },
+      "id": 4,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database":  "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "format": 0,
+          "measure": "execution",
+          "rawQuery": "SELECT 'Tables' as \"objects\", sum(tables_added) as \"added\",  sum(tables_updated) as \"updated\", sum(tables_deleted) as \"deleted\"  FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "title": "Tables",
+      "type": "bargauge"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 3,
+        "x": 0,
+        "y": 16
+      },
+      "id": 7,
+      "options": {
+        "displayMode": "gradient",
+        "minVizHeight": 10,
+        "minVizWidth": 0,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "valueMode": "color"
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database":  "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "format": 0,
+          "measure": "execution",
+          "rawQuery": "SELECT 'Partitions' as \"objects\", sum(partitions_added) as \"added\",  sum(partitions_updated) as \"updated\", sum(partitions_deleted) as \"deleted\"  FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "title": "Partitions",
+      "type": "bargauge"
     }
   ],
   "refresh": "",
@@ -212,7 +336,7 @@
         "includeAll": true,
         "label": "Measure name",
         "multi": true,
-        "name": "measure",
+        "name": "measure",        
         "query": "execution,failed,succeeded,duration_sec,dpu_seconds,tables_added,tables_updated,tables_deleted,partitions_added,partitions_updated,partitions_deleted",
         "queryValue": "",
         "skipUrlSync": false,
@@ -277,6 +401,6 @@
   "timepicker": {},
   "timezone": "utc",
   "title": "Metrics Dashboard for Glue Crawlers",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }

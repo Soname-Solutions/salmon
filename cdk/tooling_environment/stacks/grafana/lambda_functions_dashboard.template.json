@@ -15,10 +15,111 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 7,
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "datasource": {
+        "type": "grafana-timestream-datasource",
+        "uid": "PD61F0A243C0871DB"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "no data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Billed Duration, sec"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total GB-seconds"
+            },
+            "properties": [
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "vertical",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {
+          "titleSize": 18,
+          "valueSize": 40
+        },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "execution",
+          "rawQuery": "SELECT sum(execution)as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\nSELECT 1 as execution\r\n ,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n , min(failed) over (partition by lambda_function_request_id) as failed\r\n , max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as total_duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as total_billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as total_memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  total_GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})) t\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
     {
       "datasource": "Amazon-Timestream",
       "fieldConfig": {
@@ -78,12 +179,12 @@
         ]
       },
       "gridPos": {
-        "h": 21,
+        "h": 14,
         "w": 4,
         "x": 0,
-        "y": 0
+        "y": 3
       },
-      "id": 2,
+      "id": 3,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -108,8 +209,8 @@
         {
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
-          "measure": "invocation",
-          "rawQuery": "SELECT sum(execution)as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\",sum(total_duration_ms)/1000 as \"Total Duration, sec\", sum(total_billed_duration_ms)/1000 as \"Total Billed Duration, sec\", sum(total_memory_size_mb)/1024 as \"Total Memory size, GB\", sum(total_GB_seconds) as \"Total GB-seconds\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM(\r\nSELECT 1 as execution\r\n ,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n , min(failed) over (partition by lambda_function_request_id) as failed\r\n , max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as total_duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as total_billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as total_memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  total_GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})) t\r\n",
+          "measure": "execution",
+          "rawQuery": "SELECT sum(total_GB_seconds) as \"Total GB-seconds\", sum(total_billed_duration_ms)/1000 as \"Total Billed Duration, sec\", sum(total_duration_ms)/1000 as \"Total Duration, sec\",  sum(total_memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM(\r\nSELECT 1 as execution\r\n ,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n , min(failed) over (partition by lambda_function_request_id) as failed\r\n , max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as total_duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as total_billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as total_memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  total_GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})) t\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -176,9 +277,9 @@
         "h": 14,
         "w": 20,
         "x": 4,
-        "y": 0
+        "y": 3
       },
-      "id": 1,
+      "id": 5,
       "options": {
         "legend": {
           "calcs": [],
@@ -195,8 +296,9 @@
         {
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
-          "measure": "invocation",
-          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})",
+          "format": 0,
+          "measure": "execution",
+          "rawQuery": "select time, ${measure:csv} from ( \r\nSELECT\r\n  monitored_environment\r\n, resource_name\r\n, 1 as execution\r\n,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n, min(failed) over (partition by lambda_function_request_id) as failed\r\n, max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb\r\n, max(time) over (partition by lambda_function_request_id) as time\r\n  FROM $__database.$__table )t\r\n  where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -224,8 +326,8 @@
         "includeAll": true,
         "label": "Measure name",
         "multi": true,
-        "name": "measure",
-        "query": "invocation,succeeded,failed,duration_ms,max_memory_used_mb,billed_duration_ms,memory_size_mb,GB_seconds",
+        "name": "measure",        
+        "query": "execution,succeeded,failed,retry_attempts,duration_ms,max_memory_used_mb,billed_duration_ms,memory_size_mb,GB_seconds",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
@@ -266,7 +368,7 @@
           ]
         },
         "datasource": "Amazon-Timestream",
-        "definition": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "definition":"SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
         "hide": 0,
         "includeAll": true,
         "label": "Resource Name",
@@ -289,6 +391,6 @@
   "timepicker": {},
   "timezone": "utc",
   "title": "Metrics Dashboard for Lambda Functions",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }

@@ -32,7 +32,7 @@ class TestLambdaFunctions(TestBaseClass):
         client = boto3.client("timestream-query", region_name=region)
         query_runner = TimeStreamQueryRunner(client)
 
-        query = f"""SELECT sum(invocation) as executions, sum(succeeded) as succeeded, sum(failed) as failed
+        query = f"""SELECT sum(invocation) as invocations, sum(succeeded) as succeeded, sum(failed) as failed
                     FROM "{DB_NAME}"."{TABLE_NAME}"
                     WHERE time > from_milliseconds({start_epochtimemsec})
         """
@@ -67,11 +67,11 @@ class TestLambdaFunctions(TestBaseClass):
         """
         Checking if timestream table is populated with correct data
         """
-        executions = execution_timestream_metrics_summary.get("executions", 0)
+        invocations = execution_timestream_metrics_summary.get("invocations", 0)
         succeeded = execution_timestream_metrics_summary.get("succeeded", 0)
         failed = execution_timestream_metrics_summary.get("failed", 0)
 
-        assert executions == "7", "There should be exactly seven Lambda invocations."
+        assert invocations == "7", "There should be exactly seven Lambda invocations."
         assert succeeded == "2", "There should be two successful Lambda invocations."
         assert failed == "5", "There should be exactly five failed Lambda invocations."
 
