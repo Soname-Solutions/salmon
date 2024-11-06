@@ -1,0 +1,34 @@
+# .github/actions/assume-role/action.yml
+name: "Assume AWS Service Role for Tests"
+description: "Configures AWS credentials by assuming a specified IAM role"
+inputs:
+  aws-region:
+    description: "The AWS region to configure"
+    required: true
+  account-id:
+    description: "The AWS Account ID where tests service role is"
+    required: true    
+outputs:
+  access-key-id:
+    description: "The AWS access key ID for the assumed role"
+  secret-access-key:
+    description: "The AWS secret access key for the assumed role"
+  session-token:
+    description: "The AWS session token for the assumed role"
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/salmon-github-tests-service-role
+        role-session-name: salmon-github-actions-service-role
+
+
+    - name: Set Outputs
+      shell: bash
+      run: |
+        echo "access-key-id=${{ steps.configure.outputs.access-key-id }}" >> $GITHUB_ENV
+        echo "secret-access-key=${{ steps.configure.outputs.secret-access-key }}" >> $GITHUB_ENV
+        echo "session-token=${{ steps.configure.outputs.session-token }}" >> $GITHUB_ENV

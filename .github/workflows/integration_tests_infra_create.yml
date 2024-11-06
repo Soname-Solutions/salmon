@@ -1,12 +1,12 @@
 name: Integration tests - Create Infra
 env:
-    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    AWS_DEFAULT_REGION: 'eu-central-1'
     CDK_INTEGRATION_TESTS_FOLDER: cdk/integration_testing_stand
     CDK_TOOLING_ENV_FOLDER: cdk/tooling_environment
     CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
     SETTING_FOLDER_NAME: "tests/integration-tests/settings"
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout  
 run-name: integration tests - create infra
 on: 
   workflow_dispatch:
@@ -17,6 +17,13 @@ jobs:
     steps:
         - name: Check out repository code
           uses: actions/checkout@v4
+
+        - name: Assume AWS Role
+          uses: ./.github/actions/assume-aws-service-role-for-tests
+          with:
+            aws-region: ${{ secrets.AWS_REGION }}
+            account-id: ${{ secrets.AWS_ACCOUNT_ID }}    
+
 
         - name: Setup Python Virtual Environment
           id: setup-venv
@@ -32,7 +39,7 @@ jobs:
             cdk-folder-name: ${{ env.CDK_INTEGRATION_TESTS_FOLDER }}
             settings-folder-name: ${{ env.SETTING_FOLDER_NAME }}
             stage-name: ${{ steps.assign_stage_name.outputs.STAGE_NAME }}
-            region: ${{ env.AWS_DEFAULT_REGION }}
+            region: ${{ secrets.AWS_REGION }}
 
         # 1. Deploy Tooling env
         - name: deploy tooling infra via CDK

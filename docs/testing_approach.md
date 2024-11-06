@@ -56,10 +56,11 @@ The integration test process involves the following steps:
 
 ### Configuration and prerequisistes
 
-1. **IAM Service User for GitHub Actions**: An IAM user is required for running tests via GitHub Actions. You can create this user using the `github_actions_resources` CDK application:
-- Navigate to folder `cdk/github_actions_resources`
-- Run the command `cdk deploy` to create a stack that includes IAM user, its permissions and a secret in Secrets manager containing AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the user).
-- In your github repository, go to **Settings -> Secrets and Variables -> Action**, and add two secrets named `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` with the respective values from Secrets Manager.
+1. **IAM Service Role for GitHub Actions**: An IAM Role is required for running tests via GitHub Actions. You can create it using the `github_actions_resources` CDK application:
+
+   - Navigate to the folder `cdk/github_actions_resources`
+   - Run the command `cdk deploy` to create a CDK stack. This stack includes an IAM role with permissions sufficient to run tests and trust relationships established to allow your GitHub repo to assume this role when executing workflows.
+   - In your github repository, go to **Settings -> Secrets and Variables -> Action**, and add secrets named `AWS_ACCOUNT_ID` and `AWS_REGION`. These secrets allow GitHub to identify which AWS account and region to use for running pipelines.
 
 2. **SALMON configuration files**: The configuration files for the integration tests environment are stored in `integration_tests/settings` folder.  
 You can customize these files (changes need to be pushed to repository to take effect).
@@ -69,6 +70,7 @@ You can customize these files (changes need to be pushed to repository to take e
 To run the full integration tests workflow via GitHub, no additional preparation is necessary. Simply trigger the `Integration Tests - Full Workflow` action.
 
 If you plan to execute the tests multiple times, follow these steps:
+
 1. Run workflow `Integration Tests - Create Infra` workflow to provision all required AWS resources.
 2. Once the infrastructure is set up, you can execute the tests by triggering the `Integration Tests - Execute Tests` workflow as many times as needed.
 3. When finished, run the `Integration Tests - Delete Infra` workflow to clean up and remove the resources.

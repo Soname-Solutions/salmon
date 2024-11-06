@@ -3,12 +3,14 @@ import json
 from aws_cdk import (
     Stack,
     Tags,
+    Fn,
     aws_iam as iam,
     aws_secretsmanager as secretsmanager,
 )
 from constructs import Construct
 
 from lib.aws.aws_naming import AWSNaming
+from lib.git.git_helper import get_owner_and_repo_name
 
 
 class GitHubActionsResourcesStack(Stack):
@@ -17,6 +19,48 @@ class GitHubActionsResourcesStack(Stack):
         self.stage_name = kwargs.pop("stage_name", None)
         super().__init__(scope, id, **kwargs)
 
+        # Create OpenID provider and role for GitHub actions to assume
+        github_actions_role = self.create_github_oidc_role()
+
+        # Create IAM user
+        # Note: IAM service role makes IAM user obsolete for running workflows
+        # It's decided to keep IAM user, as it's the easiest way to run tests locally
+        # with permissions identical to github workflows
+        iam_user = self.create_github_service_user()
+
+        # Collect all policies
+        policies = [
+            self.create_assume_role_policy(),
+            self.create_ec2_role_policy(),
+            self.create_glue_job_runner_policy(),
+            self.create_glue_dq_runner_policy(),
+            self.create_glue_workflow_runner_policy(),
+            self.create_glue_crawler_runner_policy(),
+            self.create_step_function_runner_policy(),
+            self.create_lambda_runner_policy(),
+            self.create_emr_serverless_runner_policy(),
+            self.create_dynamodb_reader_policy(),
+            self.create_timestream_query_runner_policy(),
+        ]
+
+        # Attach policies to both IAM user and role
+        self.assign_to_principals(
+            policies, users=[iam_user], roles=[github_actions_role]
+        )
+
+    def assign_to_principals(
+        self,
+        policies: list[iam.Policy],
+        users: list[iam.User],
+        roles: list[iam.Role],
+    ):
+        for policy in policies:
+            for user in users:
+                policy.attach_to_user(user)
+            for role in roles:
+                policy.attach_to_role(role)
+
+    def create_github_service_user(self) -> iam.User:
         iam_user = iam.User(
             self,
             "GithubActionsServiceUser",
@@ -43,20 +87,45 @@ class GitHubActionsResourcesStack(Stack):
             ),
         )
 
-        # Attach policies to the IAM user
-        self.attach_assume_role_policy(iam_user)
-        self.attach_ec2_role_policy(iam_user)
-        self.attach_glue_job_runner_policy(iam_user)
-        self.attach_glue_dq_runner_policy(iam_user)
-        self.attach_glue_workflow_runner_policy(iam_user)
-        self.attach_glue_crawler_runner_policy(iam_user)
-        self.attach_step_function_runner_policy(iam_user)
-        self.attach_lambda_runner_policy(iam_user)
-        self.attach_emr_serverless_runner_policy(iam_user)
-        self.attach_dynamodb_reader_policy(iam_user)
-        self.attach_timestream_query_runner_policy(iam_user)
+        return iam_user
 
-    def attach_assume_role_policy(self, iam_user):
+    def create_github_oidc_role(self) -> iam.Role:
+        # Define the OIDC provider for GitHub
+        oidc_provider_url = "https://token.actions.githubusercontent.com"
+        client_id = "sts.amazonaws.com"
+
+        repo_owner, repo_name = get_owner_and_repo_name()
+
+        oidc_provider = iam.OpenIdConnectProvider(
+            self, "GitHubOIDCProvider", url=oidc_provider_url, client_ids=[client_id]
+        )
+
+        # Define the GitHub Actions role with limited S3 access
+        github_actions_role = iam.Role(
+            self,
+            "GitHubActionsRole",
+            assumed_by=iam.WebIdentityPrincipal(
+                oidc_provider.open_id_connect_provider_arn,
+                conditions={
+                    "StringEquals": {
+                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                    },
+                    "StringLike": {
+                        "token.actions.githubusercontent.com:sub": f"repo:{repo_owner}/{repo_name}:*"
+                    },
+                },
+            ),  # type: ignore
+            role_name="salmon-github-tests-service-role",
+        )
+
+        # Attach the S3 read-only policy
+        github_actions_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3ReadOnlyAccess")
+        )
+
+        return github_actions_role
+
+    def create_assume_role_policy(self) -> iam.Policy:
         # Permissions needed to CDK deploy/destroy
         assume_role_policy = iam.Policy(
             self,
@@ -73,10 +142,10 @@ class GitHubActionsResourcesStack(Stack):
                     ],
                 )
             ],
-            users=[iam_user],
         )
+        return assume_role_policy
 
-    def attach_ec2_role_policy(self, iam_user):
+    def create_ec2_role_policy(self) -> iam.Policy:
         # Permissions needed to CDK deploy/destroy of Grafana stack
         ec2_role_policy = iam.Policy(
             self,
@@ -96,10 +165,10 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["*"],
                 )
             ],
-            users=[iam_user],
         )
+        return ec2_role_policy
 
-    def attach_glue_job_runner_policy(self, iam_user):
+    def create_glue_job_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (Glue Jobs)
         glue_policy = iam.ManagedPolicy(
             self,
@@ -116,12 +185,12 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["arn:aws:glue:*:*:job/*salmon*"],
                 )
             ],
-            users=[iam_user],
         )
+        return glue_policy
 
-    def attach_glue_workflow_runner_policy(self, iam_user):
+    def create_glue_workflow_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (Glue Workflows)
-        glue_workflow_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "GlueWorkflowRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "GlueWorkflowRunnerPolicy"),
@@ -136,12 +205,12 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["arn:aws:glue:*:*:workflow/*salmon*"],
                 )
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_glue_crawler_runner_policy(self, iam_user):
+    def create_glue_crawler_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (Glue Crawlers)
-        glue_crawler_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "GlueCrawlerRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "GlueCrawlerRunnerPolicy"),
@@ -160,12 +229,12 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["*"],  # the only way how GetCrawlerMetrics works
                 ),
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_step_function_runner_policy(self, iam_user):
+    def create_step_function_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (Step Functions)
-        step_function_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "StepFunctionRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "StepFunctionRunnerPolicy"),
@@ -183,12 +252,12 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["*"],
                 ),
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_emr_serverless_runner_policy(self, iam_user):
+    def create_emr_serverless_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (EMR Serverless)
-        step_function_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "EMRServerlessRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "EMRServerlessRunnerPolicy"),
@@ -215,12 +284,12 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["*"],
                 ),
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_glue_dq_runner_policy(self, iam_user):
+    def create_glue_dq_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (Glue Data Quality)
-        glue_dq_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "GlueDQRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "GlueDQRunnerPolicy"),
@@ -251,12 +320,12 @@ class GitHubActionsResourcesStack(Stack):
                     ],
                 ),
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_lambda_runner_policy(self, iam_user):
+    def create_lambda_runner_policy(self) -> iam.ManagedPolicy:
         # Policy for Integration Tests (Lambda Functions)
-        lambda_runner_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "LambdaRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "LambdaRunnerPolicy"),
@@ -283,11 +352,11 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["*"],
                 ),
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_timestream_query_runner_policy(self, iam_user):
-        timestream_query_runner_policy = iam.ManagedPolicy(
+    def create_timestream_query_runner_policy(self) -> iam.ManagedPolicy:
+        policy = iam.ManagedPolicy(
             self,
             "TimestreamQueryRunnerPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(
@@ -312,9 +381,7 @@ class GitHubActionsResourcesStack(Stack):
                     resources=["*"],
                 ),
                 iam.PolicyStatement(
-                    actions=[
-                        "kms:Decrypt",
-                    ],
+                    actions=["kms:Decrypt"],
                     resources=["*"],
                     conditions={  # Restriction is implemented on KMS key alias level
                         "ForAnyValue:StringLike": {
@@ -323,24 +390,22 @@ class GitHubActionsResourcesStack(Stack):
                     },
                 ),
             ],
-            users=[iam_user],
         )
+        return policy
 
-    def attach_dynamodb_reader_policy(self, iam_user):
+    def create_dynamodb_reader_policy(self) -> iam.ManagedPolicy:
         # Policy for reading from DynamoDB
-        dynamodb_reader_policy = iam.ManagedPolicy(
+        policy = iam.ManagedPolicy(
             self,
             "DynamoDBReaderPolicy",
             managed_policy_name=AWSNaming.IAMPolicy(self, "DynamoDBReaderPolicy"),
             statements=[
                 iam.PolicyStatement(
-                    actions=[
-                        "dynamodb:Scan",
-                    ],
+                    actions=["dynamodb:Scan"],
                     resources=[
                         "arn:aws:dynamodb:*:*:table/*salmon*",
                     ],
                 )
             ],
-            users=[iam_user],
         )
+        return policy
