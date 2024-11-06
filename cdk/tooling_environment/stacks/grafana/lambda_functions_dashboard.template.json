@@ -207,7 +207,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT sum(GB_seconds) as \"Total GB-seconds\", sum(billed_duration_ms)/1000 as \"Total Billed Duration, sec\",sum(duration_ms)/1000as \"Total Duration, sec\",  sum(memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM$__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "rawQuery": "SELECT sum(GB_seconds) as \"Total GB-seconds\", sum(billed_duration_ms)/1000 as \"Total Billed Duration, sec\",sum(duration_ms)/1000 as \"Total Duration, sec\",  sum(memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM$__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -365,7 +365,7 @@
           ]
         },
         "datasource": "Amazon-Timestream",
-        "definition":"SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "definition": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
         "hide": 0,
         "includeAll": true,
         "label": "Resource Name",

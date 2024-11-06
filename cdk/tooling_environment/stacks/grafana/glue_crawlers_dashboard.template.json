@@ -94,7 +94,7 @@
       "pluginVersion": "10.2.2",
       "targets": [
         {
-          "database":  "<<DATABASE_NAME>>",
+          "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
           "rawQuery": "SELECT sum(execution) as \"Total runs\", sum(failed) as \"Failed\", sum(succeeded) as \"Succeeded\", sum(dpu_seconds)/3600 as \"DPU-hours\", sum(duration_sec)/3600 as \"Execution time, hours\" FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
