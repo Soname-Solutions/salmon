@@ -20,10 +20,7 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "grafana-timestream-datasource",
-        "uid": "PD61F0A243C0871DB"
-      },
+      "datasource": "Amazon-Timestream",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -112,7 +109,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT sum(execution)as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\nSELECT 1 as execution\r\n ,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n , min(failed) over (partition by lambda_function_request_id) as failed\r\n , max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as total_duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as total_billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as total_memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  total_GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})) t\r\n",
+          "rawQuery": "SELECT sum(execution)as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\n  SELECT 1 as execution\r\n,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n, min(failed) over (partition by lambda_function_request_id) as failed\r\n, max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\nFROM $__database.$__table \r\n  where $__timeFilter and resource_name in (${resource_name:singlequote})\r\n     and monitored_environment in (${monitored_env:singlequote})\r\n  ) t\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -210,7 +207,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "execution",
-          "rawQuery": "SELECT sum(total_GB_seconds) as \"Total GB-seconds\", sum(total_billed_duration_ms)/1000 as \"Total Billed Duration, sec\", sum(total_duration_ms)/1000 as \"Total Duration, sec\",  sum(total_memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM(\r\nSELECT 1 as execution\r\n ,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n , min(failed) over (partition by lambda_function_request_id) as failed\r\n , max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as total_duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as total_billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as total_memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  total_GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})) t\r\n",
+          "rawQuery": "SELECT sum(GB_seconds) as \"Total GB-seconds\", sum(billed_duration_ms)/1000 as \"Total Billed Duration, sec\",sum(duration_ms)/1000as \"Total Duration, sec\",  sum(memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM$__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
