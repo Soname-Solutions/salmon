@@ -109,7 +109,7 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "measure": "invocation",
-          "rawQuery": "SELECT sum(execution) as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\n  SELECT monitored_environment, resource_name, lambda_function_request_id, 1 as execution, sum(invocation)-1 as retry_attempts, min(failed) as failed, max(succeeded) as succeeded\r\n  FROM$__database.$__table \r\n  WHERE $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n  GROUP BY monitored_environment, resource_name, lambda_function_request_id)",
+          "rawQuery": "SELECT sum(execution) as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\n  SELECT monitored_environment, resource_name, lambda_function_request_id, 1 as execution, sum(invocation)-1 as retry_attempts, min(failed) as failed, max(succeeded) as succeeded\r\n  FROM $__database.$__table \r\n  WHERE $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n  GROUP BY monitored_environment, resource_name, lambda_function_request_id)",
           "table": "<<DATABASE_TABLE>>"
         }
       ],
