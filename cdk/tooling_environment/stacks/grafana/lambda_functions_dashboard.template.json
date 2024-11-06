@@ -108,8 +108,8 @@
         {
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
-          "measure": "execution",
-          "rawQuery": "SELECT sum(execution)as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\n  SELECT 1 as execution\r\n,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n, min(failed) over (partition by lambda_function_request_id) as failed\r\n, max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n,row_number() over (partition by lambda_function_request_id order by time desc) as rn\r\nFROM $__database.$__table \r\n  where $__timeFilter and resource_name in (${resource_name:singlequote})\r\n  and monitored_environment in (${monitored_env:singlequote})\r\n  ) t\r\nWHERE rn = 1 \r\n",
+          "measure": "invocation",
+          "rawQuery": "SELECT sum(execution) as \"Total executions\", sum(succeeded) as \"Succeeded executions\", sum(failed) as \"Failed executions\", sum(retry_attempts) as \"Retry attempts\"\r\nFROM(\r\n  SELECT monitored_environment, resource_name, lambda_function_request_id, 1 as execution, sum(invocation)-1 as retry_attempts, min(failed) as failed, max(succeeded) as succeeded\r\n  FROM$__database.$__table \r\n  WHERE $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n  GROUP BY monitored_environment, resource_name, lambda_function_request_id)",
           "table": "<<DATABASE_TABLE>>"
         }
       ],
@@ -205,8 +205,8 @@
         {
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
-          "measure": "execution",
-          "rawQuery": "SELECT sum(GB_seconds) as \"Total GB-seconds\", sum(billed_duration_ms)/1000 as \"Total Billed Duration, sec\",sum(duration_ms)/1000 as \"Total Duration, sec\",  sum(memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM$__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "measure": "invocation",
+          "rawQuery": "SELECT sum(GB_seconds) as \"Total GB-seconds\", sum(billed_duration_ms)/1000 as \"Total Billed Duration, sec\", sum(duration_ms)/1000 as \"Total Duration, sec\",  sum(memory_size_mb)/1024 as \"Total Memory size, GB\", max(max_memory_used_mb) as \"Max Memory used, MB\"\r\nFROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
@@ -293,8 +293,8 @@
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
           "format": 0,
-          "measure": "execution",
-          "rawQuery": "select time, ${measure:csv} from ( \r\nSELECT\r\n  monitored_environment\r\n, resource_name\r\n, 1 as execution\r\n,(sum(invocation) over (partition by lambda_function_request_id)) -1 as retry_attempts\r\n, min(failed) over (partition by lambda_function_request_id) as failed\r\n, max(succeeded) over (partition by lambda_function_request_id) as succeeded\r\n, sum(duration_ms) over (partition by lambda_function_request_id) as duration_ms\r\n, sum(billed_duration_ms) over (partition by lambda_function_request_id) as billed_duration_ms\r\n, sum(memory_size_mb) over (partition by lambda_function_request_id) as memory_size_mb\r\n, sum(GB_seconds) over (partition by lambda_function_request_id) as  GB_seconds\r\n, max(max_memory_used_mb) over (partition by lambda_function_request_id) as max_memory_used_mb\r\n, max(time) over (partition by lambda_function_request_id) as time, row_number() over (partition by lambda_function_request_id order by time desc) as rn\r\n  FROM $__database.$__table )t\r\n  where rn = 1 and  $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n",
+          "measure": "invocation",
+          "rawQuery": "SELECT time, ${measure:csv} from ( \r\nSELECT monitored_environment, resource_name, lambda_function_request_id, 1 as execution, sum(invocation) - 1 as retry_attempts, min(failed) as failed, max(succeeded) as succeeded, sum(duration_ms) as duration_ms, sum(billed_duration_ms) as billed_duration_ms, sum(memory_size_mb) as memory_size_mb, sum(GB_seconds) as GB_seconds, max(max_memory_used_mb) as max_memory_used_mb, min(time) as time\r\n  FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n  GROUP BY monitored_environment, resource_name, lambda_function_request_id)\r\n",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
