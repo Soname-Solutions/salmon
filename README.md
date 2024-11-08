@@ -120,3 +120,4 @@ If you plan to contribute to the project, please refer to [tests overview articl
 
 * [FAQ & Troubleshooting](docs/faq.md)
 * [Version history](docs/changelog.md)
+* [Steps to Intregrate New Service](docs/service_integration.md)

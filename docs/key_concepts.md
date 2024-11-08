@@ -1,6 +1,6 @@
 # SALMON key concepts
 
-This articles describes the core components of SALMON.
+This article describes the core components of SALMON.
 
 **Tooling Environment** - is a set of centralized Salmon components deployed in a specific region of your AWS account (such as metrics history database, notification service, alerts processing components etc.).  
 
