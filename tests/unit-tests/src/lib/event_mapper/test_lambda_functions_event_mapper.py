@@ -40,7 +40,7 @@ def test_get_execution_info_url(mock_settings):
     )
     returned_url = mapper.get_execution_info_url(resource_name="TestLambda")
 
-    expected_url = "https://test-origin-region.console.aws.amazon.com/cloudwatch/home?region=test-origin-region#logsV2:log-groups/log-group/$252Faws$252Flambda$252FTestLambda/log-events/"
+    expected_url = "https://test-origin-region.console.aws.amazon.com/cloudwatch/home?region=test-origin-region#logsV2:log-groups/log-group/$252Faws$252Flambda$252FTestLambda/log-events/test-log-stream"
     assert returned_url == expected_url
 
 
@@ -69,7 +69,7 @@ def test_get_message_body(mock_settings):
         {
             "values": [
                 "Log Events",
-                "<a href='https://test-origin-region.console.aws.amazon.com/cloudwatch/home?region=test-origin-region#logsV2:log-groups/log-group/$252Faws$252Flambda$252Flambda-test/log-events/'>Link to AWS CloudWatch Log Group</a>",
+                "<a href='https://test-origin-region.console.aws.amazon.com/cloudwatch/home?region=test-origin-region#logsV2:log-groups/log-group/$252Faws$252Flambda$252Flambda-test/log-events/test-log-stream'>Link to AWS CloudWatch Log Group</a>",
             ]
         },
         {"values": ["Log Stream", "test-log-stream"]},

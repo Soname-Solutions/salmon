@@ -107,6 +107,7 @@ class DigestDataAggregator:
                 glue_catalog_id=resource_run.get("glue_catalog_id"),
                 glue_job_name=resource_run.get("glue_job_name"),
                 context_type=resource_run.get("context_type"),
+                log_stream=resource_run.get("log_stream"),
             )
 
             error_message = resource_run.get("error_message", "Unknown errors")

@@ -587,6 +587,7 @@ def test_lambda_function_failed(os_vars_init, event_dyn_props_init):
         resource_type=resource_types.LAMBDA_FUNCTIONS,
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
+        log_stream=event["detail"]["log_stream"],
     ), "URL is incorrect"
 
     assert (
@@ -614,6 +615,7 @@ def test_lambda_function_succeeded(os_vars_init, event_dyn_props_init):
         resource_type=resource_types.LAMBDA_FUNCTIONS,
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
+        log_stream=event["detail"]["log_stream"],
     ), "URL is incorrect"
     assert not (result["messages"]), "Event shouldn't have messages"
 
@@ -638,6 +640,7 @@ def test_lambda_function_completed(os_vars_init, event_dyn_props_init):
         resource_type=resource_types.LAMBDA_FUNCTIONS,
         region_name=event["detail"]["origin_region"],
         resource_name=event["detail"]["lambdaName"],
+        log_stream=event["detail"]["log_stream"],
     ), "URL is incorrect"
     assert not (result["messages"]), "Event shouldn't have messages"
 

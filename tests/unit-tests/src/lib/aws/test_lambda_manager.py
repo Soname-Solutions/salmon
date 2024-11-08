@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from lib.aws.lambda_manager import (
     LambdaManager,
-    LambdaAttempt,
+    LambdaInvocation,
 )
 
 SINCE_TIME = datetime(2024, 1, 1, 0, 0, 0)
@@ -16,7 +16,7 @@ LOG_STREAM_TWO = "Stream2"
 
 @patch("lib.aws.cloudwatch_manager.CloudWatchManager")
 @patch("boto3.client")
-def test_get_lambda_success_attempts(mock_boto3, mock_cw_man):
+def test_get_lambda_success_invocations(mock_boto3, mock_cw_man):
     lambda_logs = [
         [
             {"field": "@timestamp", "value": "2024-09-30 09:41:25.893"},
@@ -52,12 +52,12 @@ def test_get_lambda_success_attempts(mock_boto3, mock_cw_man):
     mock_cw_man.query_logs.return_value = lambda_logs
 
     lambda_man = LambdaManager()
-    lambda_attempts = lambda_man.get_lambda_attempts(
+    lambda_invocations = lambda_man.get_lambda_invocations(
         cloudwatch_manager=mock_cw_man, function_name=LAMBDA_NAME, since_time=SINCE_TIME
     )
 
     expected_results = [
-        LambdaAttempt(
+        LambdaInvocation(
             LambdaName=LAMBDA_NAME,
             LogStream=LOG_STREAM_ONE,
             RequestId=REQUEST_ID_ONE,
@@ -69,20 +69,20 @@ def test_get_lambda_success_attempts(mock_boto3, mock_cw_man):
         )
     ]
 
-    assert lambda_attempts == expected_results
-    assert lambda_attempts[0].IsFinalState == True
-    assert lambda_attempts[0].IsSuccess == True
-    assert lambda_attempts[0].IsFailure == False
-    assert lambda_attempts[0].Duration == 2758.71
-    assert lambda_attempts[0].BilledDuration == 2759
-    assert lambda_attempts[0].MemorySize == 128
-    assert lambda_attempts[0].MaxMemoryUsed == 80
-    assert lambda_attempts[0].ErrorString == None
+    assert lambda_invocations == expected_results
+    assert lambda_invocations[0].IsFinalState == True
+    assert lambda_invocations[0].IsSuccess == True
+    assert lambda_invocations[0].IsFailure == False
+    assert lambda_invocations[0].Duration == 2758.71
+    assert lambda_invocations[0].BilledDuration == 2759
+    assert lambda_invocations[0].MemorySize == 128
+    assert lambda_invocations[0].MaxMemoryUsed == 80
+    assert lambda_invocations[0].ErrorString == None
 
 
 @patch("lib.aws.cloudwatch_manager.CloudWatchManager")
 @patch("boto3.client")
-def test_get_lambda_failed_attempts(mock_boto3, mock_cw_man):
+def test_get_lambda_failed_invocations(mock_boto3, mock_cw_man):
     error_msg_1 = "[ERROR] Exception: intentional failure - lambda dq\n"
     # test Error entry as per the pattern '[ERROR] <timestamp> <request_id> <error_message>'
     error_msg_2 = f"[ERROR]\t2024-09-30T09:41:25.895Z\t{REQUEST_ID_TWO}\tSecond failure - lambda dq\n"
@@ -128,12 +128,12 @@ def test_get_lambda_failed_attempts(mock_boto3, mock_cw_man):
     mock_cw_man.query_logs.return_value = lambda_logs
 
     lambda_man = LambdaManager()
-    lambda_attempts = lambda_man.get_lambda_attempts(
+    lambda_invocations = lambda_man.get_lambda_invocations(
         cloudwatch_manager=mock_cw_man, function_name=LAMBDA_NAME, since_time=SINCE_TIME
     )
 
     expected_results = [
-        LambdaAttempt(
+        LambdaInvocation(
             LambdaName=LAMBDA_NAME,
             LogStream=LOG_STREAM_TWO,
             RequestId=REQUEST_ID_TWO,
@@ -145,25 +145,25 @@ def test_get_lambda_failed_attempts(mock_boto3, mock_cw_man):
         )
     ]
 
-    assert lambda_attempts == expected_results
-    assert lambda_attempts[0].IsFinalState == True
-    assert lambda_attempts[0].IsSuccess == False
-    assert lambda_attempts[0].IsFailure == True
-    assert lambda_attempts[0].Duration == 3758.71
-    assert lambda_attempts[0].BilledDuration == 3759
-    assert lambda_attempts[0].MemorySize == 128
-    assert lambda_attempts[0].MaxMemoryUsed == 30
+    assert lambda_invocations == expected_results
+    assert lambda_invocations[0].IsFinalState == True
+    assert lambda_invocations[0].IsSuccess == False
+    assert lambda_invocations[0].IsFailure == True
+    assert lambda_invocations[0].Duration == 3758.71
+    assert lambda_invocations[0].BilledDuration == 3759
+    assert lambda_invocations[0].MemorySize == 128
+    assert lambda_invocations[0].MaxMemoryUsed == 30
     assert (
-        lambda_attempts[0].ErrorString
+        lambda_invocations[0].ErrorString
         == "[ERROR] Exception: intentional failure - lambda dq\n<br/>Second failure - lambda dq"
     )  # Errors concatinated as expected
 
 
 # In case of retry Lambda will log events in the same log stream and under the same request ID
-# Check that for each Lambda invocation/retry, a separate LambdaAttempt record will be created
+# Check that for each Lambda invocation/retry, a separate LambdaInvocation record will be created
 @patch("lib.aws.cloudwatch_manager.CloudWatchManager")
 @patch("boto3.client")
-def test_get_two_lambda_attempts_with_same_request_id(mock_boto3, mock_cw_man):
+def test_get_two_lambda_invocations_with_same_request_id(mock_boto3, mock_cw_man):
     lambda_logs = [
         [
             {"field": "@timestamp", "value": "2024-10-01 09:41:25.893"},
@@ -211,12 +211,12 @@ def test_get_two_lambda_attempts_with_same_request_id(mock_boto3, mock_cw_man):
     mock_cw_man.query_logs.return_value = lambda_logs
 
     lambda_man = LambdaManager()
-    lambda_attempts = lambda_man.get_lambda_attempts(
+    lambda_invocations = lambda_man.get_lambda_invocations(
         cloudwatch_manager=mock_cw_man, function_name=LAMBDA_NAME, since_time=SINCE_TIME
     )
 
     expected_results = [
-        LambdaAttempt(
+        LambdaInvocation(
             LambdaName=LAMBDA_NAME,
             LogStream=LOG_STREAM_ONE,
             RequestId=REQUEST_ID_ONE,
@@ -226,7 +226,7 @@ def test_get_two_lambda_attempts_with_same_request_id(mock_boto3, mock_cw_man):
             StartedOn=datetime(2024, 10, 1, 9, 41, 25, 893000, tzinfo=timezone.utc),
             CompletedOn=datetime(2024, 10, 1, 9, 41, 28, 660000, tzinfo=timezone.utc),
         ),
-        LambdaAttempt(
+        LambdaInvocation(
             LambdaName=LAMBDA_NAME,
             LogStream=LOG_STREAM_ONE,
             RequestId=REQUEST_ID_ONE,
@@ -239,4 +239,4 @@ def test_get_two_lambda_attempts_with_same_request_id(mock_boto3, mock_cw_man):
     ]
 
     assert len(expected_results) == 2
-    assert lambda_attempts == expected_results
+    assert lambda_invocations == expected_results

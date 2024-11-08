@@ -172,6 +172,16 @@ class CustomAwsEventMapper(GeneralAwsEventMapper):
 
 class ExecutionInfoUrlMixin:
     @staticmethod
+    def _encode_url_part(fragment: str) -> str:
+        """Encodes specific URL parts."""
+        return (
+            fragment.replace("$", "$2524")
+            .replace("[", "$255B")
+            .replace("]", "$255D")
+            .replace("/", "$252F")
+        )
+
+    @staticmethod
     def get_url(
         resource_type: str,
         region_name: str,
@@ -202,7 +212,9 @@ class ExecutionInfoUrlMixin:
                 f"{url_prefix}/states/home?region={region_name}#/v2/executions/details/arn:aws:states:{region_name}:{account_id}:execution:{resource_name}:{run_id}"
             ),
             types.LAMBDA_FUNCTIONS: lambda: (
-                f"{url_prefix}/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/$252Faws$252Flambda$252F{resource_name}/log-events/"
+                f"{url_prefix}/cloudwatch/home?region={region_name}#logsV2:log-groups/log-group/"
+                f"{ExecutionInfoUrlMixin._encode_url_part(f'/aws/lambda/{resource_name}')}/log-events/"
+                f"{ExecutionInfoUrlMixin._encode_url_part(kwargs.get('log_stream', ''))}"
             ),
             types.GLUE_CRAWLERS: lambda: (
                 f"{url_prefix}/glue/home?region={region_name}#/v2/data-catalog/crawlers/view/{resource_name}"

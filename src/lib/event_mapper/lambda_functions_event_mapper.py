@@ -36,6 +36,7 @@ class LambdaFunctionsEventMapper(CustomAwsEventMapper):
             resource_type=self.resource_type,
             region_name=self.event["detail"]["origin_region"],
             resource_name=resource_name,
+            log_stream=self.event["detail"]["log_stream"],
         )
 
     def get_message_body(self):
