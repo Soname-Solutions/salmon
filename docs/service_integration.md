@@ -18,8 +18,7 @@ In the `InfraMonitoredStack` located in the `cdk/monitored_environment/` folder,
     Update the IAM Role to include the necessary read permissions for the resources associated with the new service. This ensures metrics can be extracted and the digest report can be generated accurately. 
 
 - **Create an AWS EventBridge Rule**: \
-    New EventBridge rule must be defined to route events from the new service to the centralized EventBridge bus in the Tooling Environment. 
-
+    Define a new EventBridge rule to route events from the new service to the centralized EventBridge bus in the Tooling Environment.
 
 #### Tooling Environment
 
@@ -44,4 +43,4 @@ The SALMON's testing process includes both unit and integration tests:
     Write unit tests for all new service's components. Use the existing tests in the `tests/unit-tests/src/lib/` folder for consistency.
 
 - **Integration Tests**: \
-    Develop integration tests to verify the end-to-end functionality of the new service. Add these tests to the `tests/integration-tests/` folder. Additionally, include the resources associated with the new service in the integration testing stand (located in the `cdk/integration_testing_stand/ `folder). These tests ensure the service interacts correctly with the monitored environment, tooling environment, and other dependent components.
+    Develop integration tests to verify the end-to-end functionality of the new service. Add these tests to the `tests/integration-tests/` folder. Additionally, include the resources associated with the new service in the integration testing stand (located in the `cdk/integration_testing_stand/` folder). These tests ensure the service interacts correctly with the monitored environment, tooling environment, and other dependent components.
