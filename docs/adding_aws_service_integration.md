@@ -1,4 +1,4 @@
-# SALMON New Service Integration
+# SALMON: Steps to Integrate New AWS Service
 
 This article describes the steps required to integrate a new AWS service into the existing SALMON solution. 
 

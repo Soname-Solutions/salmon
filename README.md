@@ -94,6 +94,8 @@ Note: Before submitting your Pull Request please make sure Black formatter rules
 2. Run `pre-commit install` afterwards.
 3. Make sure you have `.pre-commit-config.yaml` file (it is already a part of repository).
 
+If you're interested in contributing to our project by adding a new AWS service, please refer to our guide: [Steps to Integrate New AWS Service](docs/adding_aws_service_integration.md).
+
 #### Before You Submit a Pull Request:
 To make things easy and keep our codebase clean, we use Black for code formatting. Here are steps to set it up:
 1. Install the required packages (including pre-commit) by running:
@@ -121,4 +123,3 @@ If you plan to contribute to the project, please refer to [tests overview articl
 
 * [FAQ & Troubleshooting](docs/faq.md)
 * [Version history](docs/changelog.md)
-* [Steps to Intregrate New Service](docs/service_integration.md)
