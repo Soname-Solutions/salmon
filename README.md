@@ -65,7 +65,8 @@ For more details please refer to [Solution architecture description](docs/archit
 | AWS Glue Jobs | Immediately on Failure | Job Executions stats <br/> (Duration, State, DPU-Hours consumed, etc.) |
 | AWS Glue Data Quality | Immediately on Failure | Ruleset Executions stats <br/> (Duration, Score, Number of Rules failed/succeeded, etc.) |
 | AWS Glue Workflows | With a small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
-| AWS Glue Crawlers | Immediately on Failure | In next versions... |
+| AWS Glue Crawlers | Immediately on Failure | Crawler Executions stats <br/> (Duration, State, DPU-Hours consumed, etc.) |
+| AWS Glue Data Catalogs | Immediately on Failure | In next versions... |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |
 | AWS Lambda Functions | With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
 | Amazon EMR Serverless | Immediately on Failure | Execution stats (Duration, State, Billed vCPU, Memory, Storage, etc.) of Job submitted to the EMR application  |
@@ -92,6 +93,8 @@ Note: Before submitting your Pull Request please make sure Black formatter rules
 1. Install pre-commit (it's installed alongside with other dependencies when running `pip install -r requirements.txt`).
 2. Run `pre-commit install` afterwards.
 3. Make sure you have `.pre-commit-config.yaml` file (it is already a part of repository).
+
+If you're interested in contributing to our project by adding a new AWS service, please refer to our guide: [Steps to Integrate New AWS Service](docs/adding_aws_service_integration.md).
 
 #### Before You Submit a Pull Request:
 To make things easy and keep our codebase clean, we use Black for code formatting. Here are steps to set it up:
