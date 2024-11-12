@@ -146,6 +146,9 @@ Based on the delivery method type, additional parameters are required:
 
 * AWS_SNS:
     - No additional parameters needed. Target SNS topic Arn is configured in recipients section.
+    > **NOTE:**
+    >  The SNS topic should have a tag with the key `salmon` and any value. This is required to limit access to only the SNS topics tagged with `salmon`. 
+
 * SMTP:
     - `sender_email` - the sender email for notifications and digests.
     - `credentials_secret_name` - the name of the secret stored in AWS Secrets Manager containing the SMTP server credentials. Required key-value pairs: SMTP_SERVER, SMTP_PORT, SMTP_LOGIN, SMTP_PASSWORD. \

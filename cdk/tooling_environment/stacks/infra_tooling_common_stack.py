@@ -18,7 +18,10 @@ import os
 
 from lib.core.constants import CDKDeployExclusions
 from lib.aws.aws_naming import AWSNaming
-from lib.aws.aws_common_resources import AWSCommonResources, SNS_TOPIC_INTERNAL_ERROR_MEANING
+from lib.aws.aws_common_resources import (
+    AWSCommonResources,
+    SNS_TOPIC_INTERNAL_ERROR_MEANING,
+)
 from lib.settings.settings import Settings
 
 
@@ -172,6 +175,9 @@ class InfraToolingCommonStack(NestedStack):
         notification_lambda_role.add_to_policy(
             iam.PolicyStatement(
                 actions=["sns:Publish"],
+                conditions={
+                    "StringLike": {f"sns:ResourceTag/{self.project_name}": "*"}
+                },  # allow only for SNS topics tagged with "salmon" key
                 effect=iam.Effect.ALLOW,
                 resources=[
                     "*"
@@ -208,12 +214,14 @@ class InfraToolingCommonStack(NestedStack):
             iam.PolicyStatement(
                 actions=["secretsmanager:GetSecretValue"],
                 conditions={
-                    "StringLike": {f"aws:ResourceTag/{self.project_name}": "*"}
+                    "StringLike": {
+                        f"secretsmanager:ResourceTag/{self.project_name}": "*"
+                    }
                 },
                 effect=iam.Effect.ALLOW,
                 resources=[
                     "*"
-                ],  # to be able to retrieve Secrets tagged with "salmon" required for SMTP sender
+                ],  # to be able to retrieve Secrets tagged with "salmon" key (required for SMTP sender)
             )
         )
 
