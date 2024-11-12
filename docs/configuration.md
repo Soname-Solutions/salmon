@@ -145,9 +145,10 @@ Based on the delivery method type, additional parameters are required:
     - (optional) `use_inline_css_styles` - specify whether to apply CSS styles directly within each HTML element in e-mail. If set to True, styles will be inlined, enhancing compatibility with email clients that restrict external CSS. Default value: `False`.
 
 * AWS_SNS:
-    - No additional parameters needed. Target SNS topic Arn is configured in recipients section.
-    > **NOTE:**
-    >  The SNS topic should have a tag with the key `salmon` and any value. This is required to limit access to only the SNS topics tagged with `salmon`. 
+    - No additional parameters needed. Target SNS topic Arn is configured in recipients section. 
+
+        > **NOTE:**
+        >  The SNS topic should have a tag with the key `salmon` and any value. This is required to limit access to only the SNS topics tagged with `salmon`. 
 
 * SMTP:
     - `sender_email` - the sender email for notifications and digests.
