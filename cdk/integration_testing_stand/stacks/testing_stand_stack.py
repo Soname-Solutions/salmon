@@ -103,6 +103,8 @@ class TestingStandStack(Stack):
             self, "TargetSNSTopic", display_name=topic_name, topic_name=topic_name
         )
 
+        Tags.of(target_topic).add("salmon", "project")
+
         # Create target DynamoDB table
         target_table_name = AWSNaming.DynamoDBTable(self, TARGET_MEANING)
         messages_table = dynamodb.Table(
