@@ -2,8 +2,6 @@ name: Unit tests
 env:
     AWS_DEFAULT_REGION: dummy
     TESTS_FOLDER: tests/unit-tests
-    CDK_QUALIFIER: ${{ vars.CDK_QUALIFIER }}
-
 run-name: unit tests
 on:
   push:
@@ -14,35 +12,22 @@ jobs:
   unit-testing:
     runs-on: ubuntu-latest
     steps:
-      - name: Set CDK Qualifier
-        id: set-qualifier
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: Setup Python Virtual Environment
+        id: setup-venv
+        uses: ./.github/actions/setup-venv
+
+      - name: Install Python requirements
         run: |
-          if [[ -z "${{ env.CDK_QUALIFIER }}" ]]; then
-            echo "No CDK_QUALIFIER found. Defaulting to an empty string."
-            echo "QUALIFIER=" >> $GITHUB_ENV
-          else
-            echo "Using CDK_QUALIFIER: ${{ env.CDK_QUALIFIER }}"
-            echo "QUALIFIER=${{ env.CDK_QUALIFIER }}" >> $GITHUB_ENV
-          fi
+          venv/bin/pip3 install -r requirements.txt
+          venv/bin/pip3 install -r requirements-test.txt
 
-
-
-      # - name: Check out repository code
-      #   uses: actions/checkout@v4
-
-      # - name: Setup Python Virtual Environment
-      #   id: setup-venv
-      #   uses: ./.github/actions/setup-venv
-
-      # - name: Install Python requirements
-      #   run: |
-      #     venv/bin/pip3 install -r requirements.txt
-      #     venv/bin/pip3 install -r requirements-test.txt
-
-      # # Copying configuration files, so they are present. The files' content is not important for unit tests
-      # - name: Copy sample settings
-      #   run: mkdir -p config/settings && cp ${{ env.TESTS_FOLDER }}/settings/main_tests/*.json config/settings/
+      # Copying configuration files, so they are present. The files' content is not important for unit tests
+      - name: Copy sample settings
+        run: mkdir -p config/settings && cp ${{ env.TESTS_FOLDER }}/settings/main_tests/*.json config/settings/
                   
-      # - name: Run unit tests
-      #   run: |
-      #     venv/bin/pytest ${{ env.TESTS_FOLDER }}
+      - name: Run unit tests
+        run: |
+          venv/bin/pytest ${{ env.TESTS_FOLDER }}
