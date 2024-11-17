@@ -17,13 +17,12 @@ Resources:
               - iam:*
               - events:*
               - emr-serverless:*
+              - kms:*
+              - timestream:*
+              - ses:*
+              - secretsmanager:*
             Resource: "*"
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:PutRetentionPolicy
-              - logs:DeleteLogGroup
-            Resource: "*"
+
 
 Outputs:
   PolicyArn:
