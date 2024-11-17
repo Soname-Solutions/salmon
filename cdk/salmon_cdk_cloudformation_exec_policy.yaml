@@ -9,18 +9,19 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
-              - s3:*
-              - sns:*
-              - sqs:*
-              - lambda:*
-              - logs:*
-              - iam:*
-              - events:*
-              - emr-serverless:*
-              - kms:*
-              - timestream:*
-              - ses:*
-              - secretsmanager:*
+              - ec2:*               # ToolingGrafana
+              - emr-serverless:*    # ToolingAlerting
+              - events:*            # ToolingAlerting
+              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana
+              - kms:*               # ToolingCommon, ToolingGrafana
+              - lambda:*            # ToolingAlerting, ToolingCommon
+              - logs:*              # ToolingAlerting, ToolingCommon, ToolingGrafana
+              - s3:*                # ToolingAlerting, ToolingCommon, ToolingGrafana
+              - secretsmanager:*    # ToolingCommon, ToolingGrafana
+              - ses:*               # ToolingCommon
+              - sns:*               # ToolingAlerting, ToolingCommon
+              - sqs:*               # ToolingAlerting, ToolingCommon
+              - timestream:*        # ToolingCommon, ToolingGrafana
             Resource: "*"
 
 
