@@ -10,8 +10,13 @@ Resources:
           - Effect: Allow
             Action:
               - s3:*
+              - sns:*
+              - sqs:*
               - lambda:*
+              - logs:*
               - iam:*
+              - events:*
+              - emr-serverless:*
             Resource: "*"
           - Effect: Allow
             Action:
