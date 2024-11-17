@@ -25,10 +25,10 @@ runs:
 
         if [ -n "${{ inputs.cdk-bootstrap-qualifier }}" ]; then
           echo "Using specific bootstrap qualifier: '${{ inputs.cdk-bootstrap-qualifier }}'"
-          cdk deploy --context stage-name=${{ inputs.stage-name }} \
+          cdk destroy --context stage-name=${{ inputs.stage-name }} \
             --context "@aws-cdk/core:bootstrapQualifier=${{ inputs.cdk-bootstrap-qualifier }}" \
             --require-approval never
         else
           echo "Using default bootstrap (CDKToolkit)."
-          cdk deploy --context stage-name=${{ inputs.stage-name }} --require-approval never
+          cdk destroy --context stage-name=${{ inputs.stage-name }} --require-approval never
         fi
