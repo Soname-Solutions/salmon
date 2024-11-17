@@ -11,17 +11,17 @@ Resources:
             Action:
               - ec2:*               # ToolingGrafana
               - emr-serverless:*    # ToolingAlerting
-              - events:*            # ToolingAlerting
-              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana
-              - kms:*               # ToolingCommon, ToolingGrafana
-              - lambda:*            # ToolingAlerting, ToolingCommon
+              - events:*            # ToolingAlerting, ToolingMonitoring
+              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring
+              - kms:*               # ToolingCommon, ToolingGrafana, ToolingMonitoring
+              - lambda:*            # ToolingAlerting, ToolingCommon, ToolingMonitoring
               - logs:*              # ToolingAlerting, ToolingCommon, ToolingGrafana
-              - s3:*                # ToolingAlerting, ToolingCommon, ToolingGrafana
+              - s3:*                # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring
               - secretsmanager:*    # ToolingCommon, ToolingGrafana
               - ses:*               # ToolingCommon
-              - sns:*               # ToolingAlerting, ToolingCommon
-              - sqs:*               # ToolingAlerting, ToolingCommon
-              - timestream:*        # ToolingCommon, ToolingGrafana
+              - sns:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
+              - sqs:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
+              - timestream:*        # ToolingCommon, ToolingGrafana, ToolingMonitoring
             Resource: "*"
 
 
