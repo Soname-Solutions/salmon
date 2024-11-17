@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  CdkDeployPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: policy-salmon-cdk-cloudformation-exec-all
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:*
+              - lambda:*
+              - iam:*
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:PutRetentionPolicy
+              - logs:DeleteLogGroup
+            Resource: "*"
+
+Outputs:
+  PolicyArn:
+    Description: "The ARN of the IAM Policy policy-salmon-cdk-cloudformation-exec-all"
+    Value: !Ref CdkDeployPolicy
