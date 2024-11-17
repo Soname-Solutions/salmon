@@ -27,8 +27,8 @@ runs:
           echo "Using specific bootstrap qualifier: '${{ inputs.cdk-bootstrap-qualifier }}'"
           cdk destroy --context stage-name=${{ inputs.stage-name }} \
             --context "@aws-cdk/core:bootstrapQualifier=${{ inputs.cdk-bootstrap-qualifier }}" \
-            --require-approval never
+            --force
         else
           echo "Using default bootstrap (CDKToolkit)."
-          cdk destroy --context stage-name=${{ inputs.stage-name }} --require-approval never
+          cdk destroy --context stage-name=${{ inputs.stage-name }} --force
         fi

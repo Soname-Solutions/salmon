@@ -58,3 +58,7 @@ A: Yes, you can configure email alerts to be sent to a Slack channel by followin
     ]
 }                 
 ```
+
+**Q: My company's policy doesn't allow to creating IAM roles with AdministratorAccess privilege, which CDK bootstrap does by default. Is there a workaround?**
+
+A: Yes, you can bootstrap AWS CDK with less-privileged IAM Role. Please see [Limiting AWS CDK permissions](/docs/limit_cdk_permissions.md) for details.
