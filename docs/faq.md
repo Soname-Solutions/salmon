@@ -14,6 +14,8 @@ you will need to recreate IAM Role in your monitored environment which is done b
 
 Data pipeline events which happen between step #3 and #4 in this specific monitored environment won't be recorded.
 
+---
+
 **Q: Can I use Slack to receive notifications?**
 
 A: Yes, you can configure email alerts to be sent to a Slack channel by following these steps:
@@ -58,6 +60,8 @@ A: Yes, you can configure email alerts to be sent to a Slack channel by followin
     ]
 }                 
 ```
+
+---
 
 **Q: My company's policy prohibits creating IAM roles with AdministratorAccess privileges, which CDK bootstrap creates by default. Is there a workaround?**
 
