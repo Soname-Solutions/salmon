@@ -9,6 +9,7 @@ Resources:
         Statement:
           - Effect: Allow
             Action:
+              - cloudformation:*    # For Nested Stacks (InfraToolingMainStack)
               - ec2:*               # ToolingGrafana
               - emr-serverless:*    # ToolingAlerting, Monitored
               - events:*            # ToolingAlerting, ToolingMonitoring, Monitored
@@ -21,6 +22,7 @@ Resources:
               - secretsmanager:*    # ToolingCommon, ToolingGrafana
               - ses:*               # ToolingCommon
               - sns:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
+              - ssm:*               # Required by CDK itself (ssm:GetParameters)
               - sqs:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
               - states:*            # Monitored
               - timestream:*        # ToolingCommon, ToolingGrafana, ToolingMonitoring
