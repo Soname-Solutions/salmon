@@ -7,6 +7,12 @@ inputs:
   stage-name:  
     description: 'stage-name which is used as CDK context var'
     required: true
+  cdk-bootstrap-qualifier:
+    description: 'Optional bootstrap qualifier for CDK'
+    required: false
+    default: "" # Default value set to an empty string
+    # If cdk-bootstrap-qualifier is not set or passed as an empty_string - 
+    # runs cdk deploy command with default CDKToolkit, otherwise - using given alternative
 
 runs:
   using: "composite"
@@ -16,4 +22,11 @@ runs:
       run: |
         source venv/bin/activate      
         cd ${{ inputs.cdk-folder-name }}
-        cdk destroy --context stage-name=${{ inputs.stage-name }} --force
+
+        if [ -n "${{ inputs.cdk-bootstrap-qualifier }}" ]; then
+          cdk deploy --context stage-name=${{ inputs.stage-name }} \
+            --context "@aws-cdk/core:bootstrapQualifier=${{ inputs.cdk-bootstrap-qualifier }}" \
+            --require-approval never
+        else
+          cdk deploy --context stage-name=${{ inputs.stage-name }} --require-approval never
+        fi

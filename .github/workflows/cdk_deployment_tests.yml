@@ -4,6 +4,7 @@ env:
   CDK_MONITORED_ENV_FOLDER: cdk/monitored_environment
   STAGE_NAME: devcdk
   SETTING_FOLDER_NAME: "tests/deployment-tests/settings"
+  CDK_BOOTSTRAP_QUALIFIER: ${{ vars.CDK_BOOTSTRAP_QUALIFIER }}
 permissions:
       id-token: write   # This is required for requesting the JWT
       contents: read    # This is required for actions/checkout    
@@ -19,6 +20,20 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+
+      # checking if we have var CDK_BOOTSTRAP_QUALIFIER set in th git repo
+      # env.QUALIFIER is the result used in further cdk deploy/destroy commands
+      # set to qualifier is variable is set or an empty string otherwise
+      - name: Set CDK Bootstrap Qualifier
+        id: set-qualifier
+        run: |
+          if [[ -z "${{ env.CDK_BOOTSTRAP_QUALIFIER }}" ]]; then
+            echo "No CDK_QUALIFIER found. Defaulting to an empty string."
+            echo "QUALIFIER=" >> $GITHUB_ENV
+          else
+            echo "Using CDK_QUALIFIER: ${{ env.CDK_BOOTSTRAP_QUALIFIER }}"
+            echo "QUALIFIER=${{ env.CDK_BOOTSTRAP_QUALIFIER }}" >> $GITHUB_ENV
+          fi
 
       - name: Assume AWS Role
         uses: ./.github/actions/assume-aws-service-role-for-tests
@@ -43,21 +58,25 @@ jobs:
         with:
           cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
           stage-name: ${{ env.STAGE_NAME }}
+          cdk-bootstrap-qualifier: ${{ env.QUALIFIER }}
 
       - name: deploy monitoring env via CDK
         uses: ./.github/actions/cdk-deploy
         with:
           cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
           stage-name: ${{ env.STAGE_NAME }}
+          cdk-bootstrap-qualifier: ${{ env.QUALIFIER }}
 
       - name: destroy monitoring env via CDK
         uses: ./.github/actions/cdk-destroy
         with:
           cdk-folder-name: ${{ env.CDK_MONITORED_ENV_FOLDER }}
           stage-name: ${{ env.STAGE_NAME }}
+          cdk-bootstrap-qualifier: ${{ env.QUALIFIER }}
   
       - name: destroy tooling env via CDK
         uses: ./.github/actions/cdk-destroy
         with:
           cdk-folder-name: ${{ env.CDK_TOOLING_ENV_FOLDER }}
           stage-name: ${{ env.STAGE_NAME }}
+          cdk-bootstrap-qualifier: ${{ env.QUALIFIER }}
