@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  CdkDeployPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: policy-salmon-cdk-cloudformation-exec-all
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudformation:*    # For Nested Stacks (InfraToolingMainStack)
+              - ec2:*               # ToolingGrafana
+              - emr-serverless:*    # ToolingAlerting, Monitored
+              - events:*            # ToolingAlerting, ToolingMonitoring, Monitored
+              - glue:*              # Monitored
+              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored
+              - kms:*               # ToolingCommon, ToolingGrafana, ToolingMonitoring
+              - lambda:*            # ToolingAlerting, ToolingCommon, ToolingMonitoring, Monitored
+              - logs:*              # ToolingAlerting, ToolingCommon, ToolingGrafana, Monitored
+              - s3:*                # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring
+              - secretsmanager:*    # ToolingCommon, ToolingGrafana
+              - ses:*               # ToolingCommon
+              - sns:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
+              - ssm:*               # Required by CDK itself (ssm:GetParameters)
+              - sqs:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
+              - states:*            # Monitored
+              - timestream:*        # ToolingCommon, ToolingGrafana, ToolingMonitoring
+            Resource: "*"
+
+
+Outputs:
+  PolicyArn:
+    Description: "The ARN of the IAM Policy policy-salmon-cdk-cloudformation-exec-all"
+    Value: !Ref CdkDeployPolicy
