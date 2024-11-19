@@ -27,9 +27,24 @@ Resources:
             Resource: "*"
           - Effect: Allow
             Action:           
-              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored           
-              - secretsmanager:*    # ToolingCommon, ToolingGrafana           
-            Resource: "arn:aws:iam::*:role/*salmon*"
+              - iam:*                                               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored             
+            Resource: "arn:aws:iam::*:role/*salmon*"                # Limited to IAM roles with names containing "salmon"
+          - Effect: Allow
+            Action:           
+              - iam:CreateInstanceProfile                           # ToolingGrafana
+              - iam:DeleteInstanceProfile                           # ToolingGrafana
+              - iam:AddRoleToInstanceProfile                        # ToolingGrafana
+              - iam:RemoveRoleFromInstanceProfile                   # ToolingGrafana
+            Resource: "*"
+          - Effect: Allow
+            Action:                      
+              - secretsmanager:GetRandomPassword                    # ToolingGrafana
+            Resource: "*"
+          - Effect: Allow
+            Action:                      
+              - secretsmanager:*                                    # ToolingGrafana 
+            Resource: "arn:aws:secretsmanager:*:*:secret:*soname*"  # Limited to Secrets with names containing "salmon"
+          
 
 
 Outputs:
