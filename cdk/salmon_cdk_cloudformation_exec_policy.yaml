@@ -14,12 +14,10 @@ Resources:
               - emr-serverless:*    # ToolingAlerting, Monitored
               - events:*            # ToolingAlerting, ToolingMonitoring, Monitored
               - glue:*              # Monitored
-              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored
               - kms:*               # ToolingCommon, ToolingGrafana, ToolingMonitoring
               - lambda:*            # ToolingAlerting, ToolingCommon, ToolingMonitoring, Monitored
               - logs:*              # ToolingAlerting, ToolingCommon, ToolingGrafana, Monitored
               - s3:*                # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring
-              - secretsmanager:*    # ToolingCommon, ToolingGrafana
               - ses:*               # ToolingCommon
               - sns:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
               - ssm:*               # Required by CDK itself (ssm:GetParameters)
@@ -27,6 +25,11 @@ Resources:
               - states:*            # Monitored
               - timestream:*        # ToolingCommon, ToolingGrafana, ToolingMonitoring
             Resource: "*"
+          - Effect: Allow
+            Action:           
+              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored           
+              - secretsmanager:*    # ToolingCommon, ToolingGrafana           
+            Resource: "arn:aws:iam::*:role/*salmon*"
 
 
 Outputs:
