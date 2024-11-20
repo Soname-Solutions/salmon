@@ -56,9 +56,6 @@ Resources:
               - secretsmanager:DeleteSecret   
               - secretsmanager:TagResource                                             
             Resource: "arn:aws:secretsmanager:*:*:secret:*salmon*"                    # Limited to SALMON related Secrets
-          - Effect: Allow
-            Action: secretsmanager:GetSecretValue                               
-            Resource: "arn:aws:secretsmanager:*:*:secret:*salmon-grafana-password*"   # Limited to Grafana related Secret
           
 
 
