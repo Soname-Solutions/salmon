@@ -38,16 +38,16 @@ Resources:
               - iam:PassRole   
               - iam:PutRolePolicy     
               - iam:TagRole                                 
-            Resource: "arn:aws:iam::*:role/*salmon*"    # Limited to "salmon" related IAM roles
+            Resource: "arn:aws:iam::*:role/*salmon*"                                  # Limited to SALMON related IAM roles
           - Effect: Allow
-            Action:                                     # IAM: ToolingGrafana
+            Action:                                                                   # IAM: ToolingGrafana
               - iam:CreateInstanceProfile                                               
               - iam:DeleteInstanceProfile                                              
               - iam:AddRoleToInstanceProfile                                           
               - iam:RemoveRoleFromInstanceProfile                                       
             Resource: "*"
           - Effect: Allow
-            Action: secretsmanager:GetRandomPassword    # SecretsManager: ToolingGrafana
+            Action: secretsmanager:GetRandomPassword                                  # SecretsManager: ToolingGrafana
             Resource: "*"
           - Effect: Allow
             Action:                                                                  
@@ -55,7 +55,7 @@ Resources:
               - secretsmanager:UpdateSecret        
               - secretsmanager:DeleteSecret   
               - secretsmanager:TagResource                                             
-            Resource: "arn:aws:secretsmanager:*:*:secret:*salmon*"   # Limited to "salmon" related Secrets
+            Resource: "arn:aws:secretsmanager:*:*:secret:*salmon*"                    # Limited to SALMON related Secrets
           - Effect: Allow
             Action: secretsmanager:GetSecretValue                               
             Resource: "arn:aws:secretsmanager:*:*:secret:*salmon-grafana-password*"   # Limited to Grafana related Secret
