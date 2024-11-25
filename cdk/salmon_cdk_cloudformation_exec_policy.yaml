@@ -11,22 +11,51 @@ Resources:
             Action:
               - cloudformation:*    # For Nested Stacks (InfraToolingMainStack)
               - ec2:*               # ToolingGrafana
-              - emr-serverless:*    # ToolingAlerting, Monitored
               - events:*            # ToolingAlerting, ToolingMonitoring, Monitored
-              - glue:*              # Monitored
-              - iam:*               # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored
               - kms:*               # ToolingCommon, ToolingGrafana, ToolingMonitoring
               - lambda:*            # ToolingAlerting, ToolingCommon, ToolingMonitoring, Monitored
               - logs:*              # ToolingAlerting, ToolingCommon, ToolingGrafana, Monitored
               - s3:*                # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring
-              - secretsmanager:*    # ToolingCommon, ToolingGrafana
               - ses:*               # ToolingCommon
               - sns:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
               - ssm:*               # Required by CDK itself (ssm:GetParameters)
               - sqs:*               # ToolingAlerting, ToolingCommon, ToolingMonitoring
-              - states:*            # Monitored
               - timestream:*        # ToolingCommon, ToolingGrafana, ToolingMonitoring
             Resource: "*"
+          - Effect: Allow
+            Action:                 # ToolingAlerting, ToolingCommon, ToolingGrafana, ToolingMonitoring, Monitored 
+              - iam:GetRole 
+              - iam:CreateRole    
+              - iam:UpdateRole    
+              - iam:DeleteRole    
+              - iam:PassRole   
+              - iam:TagRole          
+              - iam:UntagRole    
+              - iam:GetRolePolicy    
+              - iam:AttachRolePolicy   
+              - iam:DeleteRolePolicy   
+              - iam:DetachRolePolicy 
+              - iam:PutRolePolicy                     
+            Resource: "arn:aws:iam::*:role/*salmon*"                                  # Limited to SALMON related IAM roles
+          - Effect: Allow
+            Action:                                                                   # IAM: ToolingGrafana
+              - iam:CreateInstanceProfile                                               
+              - iam:DeleteInstanceProfile                                              
+              - iam:AddRoleToInstanceProfile                                           
+              - iam:RemoveRoleFromInstanceProfile                                       
+            Resource: "*"
+          - Effect: Allow
+            Action: secretsmanager:GetRandomPassword                                  # SecretsManager: ToolingGrafana
+            Resource: "*"
+          - Effect: Allow
+            Action:                                                                  
+              - secretsmanager:CreateSecret  
+              - secretsmanager:UpdateSecret        
+              - secretsmanager:DeleteSecret   
+              - secretsmanager:TagResource  
+              - secretsmanager:UntagResource                                           
+            Resource: "arn:aws:secretsmanager:*:*:secret:*salmon*"                    # Limited to SALMON related Secrets
+          
 
 
 Outputs:
