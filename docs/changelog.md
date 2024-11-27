@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.3.0
+* Added Notifications to Slack (via channel's email address)
+* Improved AWS Lambda Observability (Metrics, Dashboard)
+* Added AWS Glue Crawlers Metrics, Grafana Dashboards
+* Minor improvements and bug-fixes
+
 ## 1.2.0
 * Added integration with AWS Glue Data Quality (alerts, metrics, digest, optional Grafana dashboard).
 * Added integration with Amazon EMR Serverless (alerts, metrics, digest, optional Grafana dashboard).
