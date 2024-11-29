@@ -95,6 +95,7 @@ class InfraToolingCommonStack(NestedStack):
             "salmonTimestreamKMSKey",
             alias=AWSNaming.KMSKey(self, "timestream"),
             description="Key that protects Timestream data",
+            pending_window=Duration.days(7),
             removal_policy=RemovalPolicy.DESTROY,
         )
         timestream_storage = timestream.CfnDatabase(
