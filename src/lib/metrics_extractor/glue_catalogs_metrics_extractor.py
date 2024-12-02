@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
+
 from lib.metrics_extractor.base_metrics_extractor import BaseMetricsExtractor
 from lib.aws.glue_manager import GlueManager, CatalogData
+from lib.core import datetime_utils
 
 
 class GlueCatalogsMetricExtractor(BaseMetricsExtractor):
@@ -19,9 +21,8 @@ class GlueCatalogsMetricExtractor(BaseMetricsExtractor):
         ]
 
         common_attributes = {"Dimensions": common_dimensions}
-        dimensions = [{"Name": "catalog_id", "Value": catalog_data.CatalogID}]
+        dimensions = [{"Name": "catalog_id", "Value": str(catalog_data.CatalogID)}]
 
-        records = []
         metric_values = [
             ("tables_count", int(catalog_data.TotalTableCount), "BIGINT"),
             ("partitions_count", int(catalog_data.TotalPartitionsCount), "BIGINT"),
@@ -36,7 +37,11 @@ class GlueCatalogsMetricExtractor(BaseMetricsExtractor):
             for metric_name, metric_value, metric_type in metric_values
         ]
 
-        record_time = str(catalog_data.MaxUpdateTime)
+        start_of_day_utc = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+
+        record_time = datetime_utils.datetime_to_epoch_milliseconds(start_of_day_utc)
         records = [
             {
                 "Dimensions": dimensions,

@@ -329,12 +329,6 @@ class CatalogData(BaseModel):
         return max(table.CatalogId for table in self.TableList)
 
     @property
-    def MaxUpdateTime(self) -> Optional[datetime]:
-        if not self.TableList:
-            return None
-        return max(table.UpdateTime for table in self.TableList)
-
-    @property
     def TotalTableCount(self) -> int:
         return len(self.TableList)
 
