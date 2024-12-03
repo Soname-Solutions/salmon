@@ -66,7 +66,7 @@ For more details please refer to [Solution architecture description](docs/archit
 | AWS Glue Data Quality | Immediately on Failure | Ruleset Executions stats <br/> (Duration, Score, Number of Rules failed/succeeded, etc.) |
 | AWS Glue Workflows | With a small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
 | AWS Glue Crawlers | Immediately on Failure | Crawler Executions stats <br/> (Duration, State, DPU-Hours consumed, etc.) |
-| AWS Glue Data Catalogs | Immediately on Failure | In next versions... |
+| AWS Glue Data Catalogs | Immediately on Failure | Number of Objects (Tables, Patitions, Indexes) in the Data Catalog |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |
 | AWS Lambda Functions | With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
 | Amazon EMR Serverless | Immediately on Failure | Execution stats (Duration, State, Billed vCPU, Memory, Storage, etc.) of Job submitted to the EMR application  |

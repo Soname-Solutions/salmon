@@ -1,11 +1,12 @@
 import boto3
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel
 from typing import Optional, Union
 
-from ..core.constants import SettingConfigResourceTypes
+from lib.core.constants import SettingConfigResourceTypes
+from lib.aws.sts_manager import StsManager
 
 ###########################################################
 # Job-related pydantic classes
@@ -307,7 +308,7 @@ class CrawlerData(BaseModel):
 
 class TableModel(BaseModel):
     Name: str
-    CatalogId: int
+    CatalogId: str
     CreateTime: Optional[datetime]
     UpdateTime: Optional[datetime]
     PartitionsCount: int = 0
@@ -325,8 +326,14 @@ class CatalogData(BaseModel):
     TableList: list[TableModel]
 
     @property
-    def CatalogID(self) -> int:
-        return max(table.CatalogId for table in self.TableList)
+    def CatalogID(self) -> str:
+        """
+        Return the ID of the Data Catalog where the tables reside.
+        If no tables, AWS account ID is used by default.
+        """
+        if self.TableList:
+            return self.TableList[0].CatalogId
+        return StsManager().get_account_id()
 
     @property
     def TotalTableCount(self) -> int:

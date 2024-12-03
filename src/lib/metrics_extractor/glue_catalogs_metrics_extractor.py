@@ -21,7 +21,7 @@ class GlueCatalogsMetricExtractor(BaseMetricsExtractor):
         ]
 
         common_attributes = {"Dimensions": common_dimensions}
-        dimensions = [{"Name": "catalog_id", "Value": str(catalog_data.CatalogID)}]
+        dimensions = [{"Name": "catalog_id", "Value": catalog_data.CatalogID}]
 
         metric_values = [
             ("tables_count", int(catalog_data.TotalTableCount), "BIGINT"),
