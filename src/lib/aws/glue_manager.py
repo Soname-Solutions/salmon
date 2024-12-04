@@ -674,7 +674,7 @@ class GlueManager:
 
     def get_catalog_data(self, db_name: str) -> CatalogData:
         """
-        Get's data about the specific database in Glue Data Catalog: Total Number of Tables/Indexes/Partitions.
+        Get data about the specific database in Glue Data Catalog: Total Number of Tables/Indexes/Partitions.
         """
         response = self.glue_client.get_tables(DatabaseName=db_name)
         response["DatabaseName"] = db_name

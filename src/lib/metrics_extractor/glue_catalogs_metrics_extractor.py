@@ -37,11 +37,8 @@ class GlueCatalogsMetricExtractor(BaseMetricsExtractor):
             for metric_name, metric_value, metric_type in metric_values
         ]
 
-        start_of_day_utc = datetime.now(timezone.utc).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-
-        record_time = datetime_utils.datetime_to_epoch_milliseconds(start_of_day_utc)
+        current_time = datetime.now(tz=timezone.utc)
+        record_time = datetime_utils.datetime_to_epoch_milliseconds(current_time)
         records = [
             {
                 "Dimensions": dimensions,

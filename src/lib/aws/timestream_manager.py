@@ -1,7 +1,6 @@
 import boto3
 
 from datetime import datetime, timedelta, timezone
-import time
 import dateutil
 from functools import cached_property
 
@@ -148,42 +147,6 @@ class TimestreamTableWriter:
             if "ExistingVersion" in rr:
                 print("Rejected record existing version: ", rr["ExistingVersion"])
 
-    @staticmethod
-    def _current_milli_time():
-        return int(round(time.time() * 1000))
-
-    def _handle_rejected_records(self, records, common_attributes):
-        """
-        Handles rejected records by attempting to write them again with a higher version.
-        """
-        try:
-            print(
-                f"Attempting to upsert RejectedRecords with higher version for {self.db_name}.{self.table_name}"
-            )
-
-            # To achieve upsert (last writer wins) semantic, we use current time as the version
-            version = self._current_milli_time()
-            common_attributes["Version"] = version
-
-            upserted_result = self.timestream_write_client.write_records(
-                DatabaseName=self.db_name,
-                TableName=self.table_name,
-                Records=records,
-                CommonAttributes=common_attributes,
-            )
-            print(
-                "WriteRecords Status: [%s]"
-                % upserted_result["ResponseMetadata"]["HTTPStatusCode"]
-            )
-            return upserted_result
-
-        except self.timestream_write_client.exceptions.RejectedRecordsException as err:
-            error_message = (
-                f"Failed to upsert records for {self.db_name}.{self.table_name}: {err}"
-            )
-            self.print_rejected_records_exceptions(err)
-            raise TimestreamTableWriterException(error_message)
-
     def _write_batch(self, records, common_attributes={}):
         """
         Writes a single batch (up to 100 records) to the Timestream table.
@@ -209,11 +172,12 @@ class TimestreamTableWriter:
                 % result["ResponseMetadata"]["HTTPStatusCode"]
             )
             return result
-
         except self.timestream_write_client.exceptions.RejectedRecordsException as err:
+            error_message = (
+                f"Records were rejected for {self.db_name}.{self.table_name}: {err}."
+            )
             self.print_rejected_records_exceptions(err)
-            return self._handle_rejected_records(records, common_attributes)
-
+            raise (TimestreamTableWriterException(error_message))
         except Exception as err:
             error_message = (
                 f"Error writing records into {self.db_name}.{self.table_name}: {err}."
