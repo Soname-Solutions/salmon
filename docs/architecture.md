@@ -22,7 +22,7 @@ For more information on Settings - please refer to [Configuration Guide](/docs/c
 
 **Notification Service**
 
-Notification Service is responsible for sending messages to recipients (where they are e-mails, Slack channels etc.).  
+Notification Service is responsible for sending messages to recipients (where they are e-mails, Slack/MS Teams channels etc.).  
 Components, such as Alerting Lambda and Digest lambda prepare messages and send those to SQS queue alongside with
 recipients information.  
 Notification Lambda polls SQS and for each message received converts it to either HTML or markdown (depending on recipient's delivery method) and
