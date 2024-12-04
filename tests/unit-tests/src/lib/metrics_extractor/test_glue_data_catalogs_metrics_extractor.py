@@ -69,7 +69,6 @@ def test_data_catalog_metrics_extractor(boto3_client_creator):
         ]
 
         record_in_scope = records[0]
-        print("RECORD ", record_in_scope)
 
         mocked_get_catalog.assert_called_once()  # mocked call executed as expected
         assert len(records) == 1, "There should be only one glue catalog record"
