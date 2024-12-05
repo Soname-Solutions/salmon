@@ -49,7 +49,8 @@ SALMON's core part is a centralized ("tooling") environment which collects, stor
 For each AWS account and region where your pipelines are deployed (in SALMON's terminology it's a "monitored" environment), SALMON requires small portion of resources (EventBridge rule to send alerts to centralized environment and minimal permissions IAM Role, so SALMON can collect pipeline metrics).
 
 With that setup:
-1. **Alert Handling**: Alerts, such as those for Step Function failures, are generated in the monitored account and sent through the EventBridge bus to the centralized location. There, alert information is parsed, formatted, and sent to the relevant recipients, be it individual emails, distribution lists, Slack channels, etc.
+
+1. **Alert Handling**: Alerts, such as those for Step Function failures, are generated in the monitored account and sent through the EventBridge bus to the centralized location. There, alert information is parsed, formatted, and sent to the relevant recipients, be it individual emails, distribution lists, Slack or MS Teams channels, etc.
 2. **Metrics Collection**: Metrics data (from all monitored accounts and regions) is extracted periodically (by default, once every 5 minutes) and stored in a Timestream database.
 3. **Accessing Metrics Data**: You can access this data using SALMON's [Grafana](docs/grafana.md) instance (optional) or by connecting a tool of your choice to the metrics database.  
 Additionally, you can configure a daily digest to be sent out based on this metrics data.
