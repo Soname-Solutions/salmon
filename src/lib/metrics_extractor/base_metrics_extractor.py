@@ -26,6 +26,7 @@ class BaseMetricsExtractor(ABC):
 
     RESOURCE_NAME_COLUMN_NAME = "resource_name"
     EXECUTION_MEASURE_NAME = "execution"
+    COUNT_MEASURE_NAME = "count"
     ERROR_MEASURE_NAME = "error"
 
     def __init__(
