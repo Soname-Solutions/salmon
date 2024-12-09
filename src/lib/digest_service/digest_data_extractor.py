@@ -120,11 +120,11 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
                      , monitored_environment
                      , resource_name                     
                      , tables_count
-                     , tables_count - prev_tables_count as delta_tables
+                     , tables_count - prev_tables_count as tables_added
                      , partitions_count
-                     , partitions_count - prev_partitions_count as delta_partitions
+                     , partitions_count - prev_partitions_count as partitions_added
                      , indexes_count
-                     , indexes_count - prev_indexes_count as delta_indexes
+                     , indexes_count - prev_indexes_count as indexes_added
                 FROM (SELECT 
                           monitored_environment
                         , resource_name                       

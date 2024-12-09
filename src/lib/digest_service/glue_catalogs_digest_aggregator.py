@@ -10,15 +10,21 @@ class GlueCatalogAggregatedEntry(BaseModel):
     Tables: int = 0
     Partitions: int = 0
     Indexes: int = 0
-    DeltaTables: int = 0
-    DeltaPartitions: int = 0
-    DeltaIndexes: int = 0
+    TablesAdded: int = 0
+    PartitionsAdded: int = 0
+    IndexesAdded: int = 0
 
     @property
     def Status(self) -> str:
-        if self.DeltaTables < 0 or self.DeltaPartitions < 0 or self.DeltaIndexes < 0:
+        if self.TablesAdded < 0 or self.PartitionsAdded < 0 or self.IndexesAdded < 0:
             return DigestSettings.STATUS_WARNING
-        return DigestSettings.STATUS_OK
+        return DigestSettings.NO_STATUS
+
+    @property
+    def CommentsStr(self) -> str:
+        if self.Status == DigestSettings.STATUS_WARNING:
+            return "WARNING: Some Glue Data Catalog objects deleted."
+        return ""
 
 
 class GlueCatalogSummaryEntry(BaseModel):
@@ -39,26 +45,26 @@ class GlueCatalogSummaryEntry(BaseModel):
         return sum(table.Indexes for table in self.EntryList)
 
     @property
-    def TotalDeltaTables(self) -> int:
-        return sum(table.DeltaTables for table in self.EntryList)
+    def TotalTablesAdded(self) -> int:
+        return sum(table.TablesAdded for table in self.EntryList)
 
     @property
-    def TotalDeltaPartitions(self) -> int:
-        return sum(table.DeltaPartitions for table in self.EntryList)
+    def TotalPartitionsAdded(self) -> int:
+        return sum(table.PartitionsAdded for table in self.EntryList)
 
     @property
-    def TotalDeltaIndexes(self) -> int:
-        return sum(table.DeltaIndexes for table in self.EntryList)
+    def TotalIndexesAdded(self) -> int:
+        return sum(table.IndexesAdded for table in self.EntryList)
 
     @property
     def Status(self) -> str:
         if (
-            self.TotalDeltaTables < 0
-            or self.TotalDeltaPartitions < 0
-            or self.TotalDeltaIndexes < 0
+            self.TotalTablesAdded < 0
+            or self.TotalPartitionsAdded < 0
+            or self.TotalIndexesAdded < 0
         ):
             return DigestSettings.STATUS_WARNING
-        return DigestSettings.STATUS_OK
+        return DigestSettings.NO_STATUS
 
     @property
     def ServiceName(self) -> str:
@@ -89,12 +95,12 @@ class GlueCatalogsDigestAggregator(DigestDataAggregator):
             entry = self.aggregated_runs[resource_name]
 
             for run in resource_runs:
+                entry.TablesAdded += int(run.get("tables_added", 0))
+                entry.PartitionsAdded += int(run.get("partitions_added", 0))
+                entry.IndexesAdded += int(run.get("indexes_added", 0))
                 entry.Tables += int(run.get("tables_count", 0))
                 entry.Partitions += int(run.get("partitions_count", 0))
                 entry.Indexes += int(run.get("indexes_count", 0))
-                entry.DeltaTables += int(run.get("delta_tables", 0))
-                entry.DeltaPartitions += int(run.get("delta_partitions", 0))
-                entry.DeltaIndexes += int(run.get("delta_indexes", 0))
 
         return dict(self.aggregated_runs)
 

@@ -31,21 +31,22 @@ class DigestMessageBuilder:
     GLUE_CATALOG_SUMMARY_TABLE_HEADERS = [
         "Monitoring Group",
         "Service",
+        "Tables Added",
+        "Partitions Added",
+        "Indexes Added",
         "Total Tables",
         "Total Partitions",
         "Total Indexes",
-        "Delta Tables",
-        "Delta Partitions",
-        "Delta Indexes",
     ]
     GLUE_CATALOG_BODY_TABLE_HEADERS = [
         "Resource Name",
+        "Tables Added",
+        "Partitions Added",
+        "Indexes Added",
         "Tables",
         "Partitions",
         "Indexes",
-        "Delta Tables",
-        "Delta Partitions",
-        "Delta Indexes",
+        "Comments",
     ]
 
     def __init__(self, digest_data: dict):
@@ -77,12 +78,13 @@ class DigestMessageBuilder:
             self._create_table_row(
                 values=[
                     resource_name,
+                    entry.TablesAdded,
+                    entry.PartitionsAdded,
+                    entry.IndexesAdded,
                     entry.Tables,
                     entry.Partitions,
                     entry.Indexes,
-                    entry.DeltaTables,
-                    entry.DeltaPartitions,
-                    entry.DeltaIndexes,
+                    entry.CommentsStr,
                 ],
                 style=entry.Status,
             )
@@ -122,12 +124,12 @@ class DigestMessageBuilder:
                     values=[
                         summary_entry.MonitoringGroup,
                         summary_entry.ServiceName,
+                        summary_entry.TotalTablesAdded,
+                        summary_entry.TotalPartitionsAdded,
+                        summary_entry.TotalIndexesAdded,
                         summary_entry.TotalTables,
                         summary_entry.TotalPartitions,
                         summary_entry.TotalIndexes,
-                        summary_entry.TotalDeltaTables,
-                        summary_entry.TotalDeltaPartitions,
-                        summary_entry.TotalDeltaIndexes,
                     ],
                     style=summary_entry.Status,
                 )
@@ -202,16 +204,15 @@ class DigestMessageBuilder:
         """
         glue_summary_data, generic_summary_data = self._categorize_summary_data()
 
-        if glue_summary_data:
-            self.message_body.append(
-                self._create_glue_catalog_summary_table(summary_data=glue_summary_data)
-            )
-
         if generic_summary_data:
             self.message_body.append(
                 self._create_generic_summary_table(
                     summary_data=generic_summary_data,
                 )
+            )
+        if glue_summary_data:
+            self.message_body.append(
+                self._create_glue_catalog_summary_table(summary_data=glue_summary_data)
             )
 
     def generate_message_body(
