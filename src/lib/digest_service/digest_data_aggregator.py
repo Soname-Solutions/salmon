@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Dict, List, DefaultDict
 from collections import defaultdict
 
-from lib.core.constants import DigestSettings
+from lib.core.constants import DigestSettings, SettingConfigs
 from lib.event_mapper import ExecutionInfoUrlMixin
 
 
@@ -26,28 +26,57 @@ class AggregatedEntry(BaseModel):
             return DigestSettings.STATUS_WARNING
         return DigestSettings.STATUS_OK
 
+    @property
+    def CommentsStr(self) -> str:
+        return "<br/>".join(self.Comments)
+
 
 class SummaryEntry(BaseModel):
-    Executions: int = 0
-    Success: int = 0
-    Failures: int = 0
-    Warnings: int = 0
+    ResourceType: str
+    MonitoringGroup: str
+    EntryList: list[AggregatedEntry]
+
+    @property
+    def TotalExecutions(self) -> int:
+        return sum(entry.Executions for entry in self.EntryList)
+
+    @property
+    def TotalSuccess(self) -> int:
+        return sum(entry.Success for entry in self.EntryList)
+
+    @property
+    def TotalFailures(self) -> int:
+        return sum(
+            (entry.Errors + int(entry.InsufficientRuns)) for entry in self.EntryList
+        )
+
+    @property
+    def TotalWarnings(self) -> int:
+        return sum(entry.Warnings for entry in self.EntryList)
 
     @property
     def Status(self) -> str:
-        if self.Failures > 0:
+        if self.TotalFailures > 0:
             return DigestSettings.STATUS_ERROR
-        elif self.Warnings > 0:
+        elif self.TotalWarnings > 0:
             return DigestSettings.STATUS_WARNING
         return DigestSettings.STATUS_OK
 
+    @property
+    def ServiceName(self) -> str:
+        return SettingConfigs.RESOURCE_TYPE_DECORATED_NAMES.get(self.ResourceType)
+
 
 class DigestDataAggregator:
-    def __init__(self):
+    """
+    Base Class which provides unified functionality for aggregating metrics in the digest report.
+    """
+
+    def __init__(self, resource_type: str):
+        self.resource_type = resource_type
         self.aggregated_runs: DefaultDict[str, AggregatedEntry] = defaultdict(
             AggregatedEntry
         )
-        self.summary_entry = SummaryEntry()
 
     def _get_runs_by_resource_name(self, data: dict, resource_name: str) -> list:
         """Gets runs related to specific resource name."""
@@ -89,7 +118,6 @@ class DigestDataAggregator:
     def _append_error_comments(
         self,
         resource_run: dict,
-        resource_type: str,
         resource_config: dict,
         resource_agg_entry: AggregatedEntry,
     ) -> None:
@@ -97,7 +125,7 @@ class DigestDataAggregator:
 
         if int(resource_run["failed"]) > 0:
             job_run_url = ExecutionInfoUrlMixin.get_url(
-                resource_type=resource_type,
+                resource_type=self.resource_type,
                 region_name=resource_config["region_name"],
                 resource_name=resource_run["resource_name"],
                 account_id=resource_config["account_id"],
@@ -124,7 +152,6 @@ class DigestDataAggregator:
 
     def _process_single_run(
         self,
-        resource_type: str,
         resource_agg_entry: AggregatedEntry,
         resource_run: dict,
         resource_config: dict,
@@ -137,7 +164,6 @@ class DigestDataAggregator:
         # for each failed run, the error details will be added in the comment section
         self._append_error_comments(
             resource_run=resource_run,
-            resource_type=resource_type,
             resource_config=resource_config,
             resource_agg_entry=resource_agg_entry,
         )
@@ -157,7 +183,7 @@ class DigestDataAggregator:
             resource_agg_entry.HasFailedAttempts = True
 
     def get_aggregated_runs(
-        self, extracted_runs: dict, resources_config: list, resource_type: str
+        self, extracted_runs: dict, resources_config: list
     ) -> Dict[str, AggregatedEntry]:
         """Aggregates data for each resource specified in the configurations."""
         for resource_config in resources_config:
@@ -169,12 +195,10 @@ class DigestDataAggregator:
 
             for resource_run in resource_runs:
                 self._process_single_run(
-                    resource_type=resource_type,
                     resource_agg_entry=resource_agg_entry,
                     resource_run=resource_run,
                     resource_config=resource_config,
                 )
-
             self._finalize_comments(
                 resource_agg_entry=resource_agg_entry,
                 resource_config=resource_config,
@@ -183,14 +207,12 @@ class DigestDataAggregator:
         return dict(self.aggregated_runs)
 
     def get_summary_entry(
-        self, aggregated_runs: Dict[str, AggregatedEntry]
+        self, group_name: str, aggregated_runs: Dict[str, AggregatedEntry]
     ) -> SummaryEntry:
         """Calculates and returns summary entry for aggregated_runs."""
 
-        for entry in aggregated_runs.values():
-            self.summary_entry.Executions += entry.Executions
-            self.summary_entry.Success += entry.Success
-            self.summary_entry.Failures += entry.Errors + int(entry.InsufficientRuns)
-            self.summary_entry.Warnings += entry.Warnings
-
-        return self.summary_entry
+        return SummaryEntry(
+            ResourceType=self.resource_type,
+            MonitoringGroup=group_name,
+            EntryList=list(aggregated_runs.values()),
+        )

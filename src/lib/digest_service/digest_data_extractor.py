@@ -16,8 +16,7 @@ class DigestException(Exception):
 
 class BaseDigestDataExtractor(ABC):
     """
-    Base Class which provides unified functionality for extracting runs for the digest report.
-
+    Base Class which provides unified functionality for extracting runs used in the digest report.
     """
 
     def __init__(
@@ -113,12 +112,56 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
 
 class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
     """
-    Class is responsible for preparing the query for extracting Glue Data Catalogs runs.
+    Class is responsible for preparing the query for extracting Glue Data Catalogs counts.
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        print("Calling a method which hasn't been implemented yet")
-        query = ""
+        query = f"""SELECT '{self.resource_type}' as resource_type
+                     , monitored_environment
+                     , resource_name                     
+                     , tables_count
+                     , tables_count - prev_tables_count as delta_tables
+                     , partitions_count
+                     , partitions_count - prev_partitions_count as delta_partitions
+                     , indexes_count
+                     , indexes_count - prev_indexes_count as delta_indexes
+                FROM (SELECT 
+                          monitored_environment
+                        , resource_name                       
+                        , tables_count
+                        , LAG(tables_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_tables_count
+                        , partitions_count
+                        , LAG(partitions_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_partitions_count
+                        , indexes_count
+                        , LAG(indexes_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_indexes_count
+                        , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn
+                      FROM ( 
+                          -- Fetch the latest and earliest rows per resource
+                            SELECT 
+                                  monitored_environment
+                                , resource_name
+                                , time
+                                , tables_count
+                                , partitions_count                                
+                                , indexes_count
+                            FROM (
+                                SELECT 
+                                      monitored_environment
+                                    , resource_name
+                                    , time
+                                    , partitions_count
+                                    , tables_count
+                                    , indexes_count 
+                                    , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn_desc
+                                    , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time ASC) AS rn_asc
+                                FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                                WHERE time BETWEEN '{start_time}' AND '{end_time}' 
+                                ) sub1
+                            WHERE rn_desc = 1 OR rn_asc = 1
+                        ) sub2
+                    ) sub3
+                WHERE rn =1
+                """
         return query
 
 

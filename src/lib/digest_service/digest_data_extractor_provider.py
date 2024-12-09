@@ -14,7 +14,7 @@ from lib.core.constants import SettingConfigResourceTypes as types
 
 
 class DigestDataExtractorProvider:
-    """Metrics extractor provider."""
+    """Digest extractor provider."""
 
     _digest_extractors = {}
 
@@ -23,12 +23,12 @@ class DigestDataExtractorProvider:
         resource_type: str,
         digest_extractor: BaseDigestDataExtractor,
     ):
-        """Register metrics extractor."""
+        """Register digest extractor."""
         DigestDataExtractorProvider._digest_extractors[resource_type] = digest_extractor
 
     @staticmethod
     def get_digest_provider(resource_type: str, **kwargs) -> BaseDigestDataExtractor:
-        """Get metrics extractor."""
+        """Get digest extractor."""
         extractor = DigestDataExtractorProvider._digest_extractors.get(resource_type)
 
         if not extractor:
