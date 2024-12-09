@@ -10,7 +10,7 @@ from lambda_digest import (
     distribute_digest_report,
 )
 from lib.core.constants import SettingConfigs, DigestSettings
-from lib.digest_service import SummaryEntry
+from lib.digest_service import SummaryEntry, AggregatedEntry
 
 
 STAGE_NAME = "teststage"
@@ -204,12 +204,8 @@ def test_append_digest_data(mock_settings):
 
     # Mock DigestDataAggregator calls
     aggregated_runs_mock = {}
-    summary_mock = SummaryEntry(
-        Executions=0, Success=0, Failures=0, Warnings=0, Status=DigestSettings.STATUS_OK
-    )
     mock_aggregator = MagicMock()
     mock_aggregator.get_aggregated_runs.return_value = aggregated_runs_mock
-    mock_aggregator.get_summary_entry.return_value = summary_mock
 
     with patch("lambda_digest.extend_resources_config") as mock_extend_resources_config:
         mock_extend_resources_config.return_value = {}
@@ -220,11 +216,32 @@ def test_append_digest_data(mock_settings):
             settings=mock_settings,
             extracted_runs=extracted_runs,
         )
-
     # Check that the data was appended as expected for each monitoring group
     expected_result = [
-        {monitoring_groups[0]: {resource_type: {"runs": {}, "summary": summary_mock}}},
-        {monitoring_groups[1]: {resource_type: {"runs": {}, "summary": summary_mock}}},
+        {
+            monitoring_groups[0]: {
+                resource_type: {
+                    "runs": {},
+                    "summary": SummaryEntry(
+                        ResourceType=resource_type,
+                        MonitoringGroup="group1",
+                        EntryList=[],
+                    ),
+                }
+            }
+        },
+        {
+            monitoring_groups[1]: {
+                resource_type: {
+                    "runs": {},
+                    "summary": SummaryEntry(
+                        ResourceType=resource_type,
+                        MonitoringGroup="group2",
+                        EntryList=[],
+                    ),
+                }
+            }
+        },
     ]
 
     assert digest_data == expected_result

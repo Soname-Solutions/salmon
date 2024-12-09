@@ -15,10 +15,333 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3,
+  "id": 5,
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 8,
+      "panels": [],
+      "title": "Glue Data Catalog Objects",
+      "type": "row"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#00000000",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "count",
+          "rawQuery": "select count(distinct resource_name) as \"Total Number of Databases\"\r\nfrom (\r\nSELECT t.*, row_number() over (partition by resource_name order by time desc) as rn\r\nFROM $__database.$__table t where $__timeFilter )\r\nwhere rn = 1\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 10,
+        "x": 4,
+        "y": 1
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "count",
+          "rawQuery": "select \r\n       sum(tables_count) as \"Total Number of Tables\",\r\n       sum(partitions_count) as \"Total Number of Partitions\",\r\n       sum(indexes_count) as \"Total Number of Indexes\" \r\nfrom (\r\nSELECT t.*, row_number() over (partition by resource_name order by time desc) as rn\r\nFROM $__database.$__table t where $__timeFilter\r\nand resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote}) )\r\nwhere rn = 1\r\n",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "transparent": true,
+      "type": "stat"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "options": {
+                "+ 0": {
+                  "color": "text",
+                  "index": 0
+                }
+              },
+              "type": "value"
+            },
+            {
+              "options": {
+                "pattern": "^-.*$",
+                "result": {
+                  "color": "red",
+                  "index": 1
+                }
+              },
+              "type": "regex"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tables, diff"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Indexes, diff"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Partitions, diff"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 10,
+        "x": 4,
+        "y": 4
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "lg",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "count",
+          "rawQuery": "SELECT \r\n    CASE \r\n        WHEN tables_diff > 0 THEN '+ ' || CAST(tables_diff AS VARCHAR)\r\n        WHEN tables_diff = 0 THEN '+ 0'\r\n        ELSE CAST(tables_diff AS VARCHAR)\r\n    END AS \"Tables, diff\",\r\n    CASE \r\n        WHEN partitions_diff > 0 THEN '+ ' || CAST(partitions_diff AS VARCHAR)\r\n        WHEN partitions_diff = 0 THEN '+ 0'\r\n        ELSE CAST(partitions_diff AS VARCHAR)\r\n    END AS \"Partitions, diff\",\r\n    CASE \r\n        WHEN indexes_diff > 0 THEN '+ ' || CAST(indexes_diff AS VARCHAR)\r\n        WHEN indexes_diff = 0 THEN '+ 0'\r\n        ELSE CAST(indexes_diff AS VARCHAR)\r\n    END AS \"Indexes, diff\"\r\nFROM (\r\n    -- Aggregate the differences across tables, partitions, and indexes\r\n    SELECT  \r\n        SUM(tables_count - prev_tables_count) AS tables_diff,\r\n        SUM(partitions_count - prev_partitions_count) AS partitions_diff,\r\n        SUM(indexes_count - prev_indexes_count) AS indexes_diff\r\n    FROM (\r\n        -- Calculate current and previous values for each resource\r\n        SELECT \r\n            time,\r\n            resource_name,\r\n            partitions_count,\r\n            LAG(partitions_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_partitions_count,\r\n            tables_count,\r\n            LAG(tables_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_tables_count,\r\n            indexes_count,\r\n            LAG(indexes_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_indexes_count,\r\n            ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn\r\n        FROM (\r\n            -- Fetch the latest and earliest rows per resource\r\n            SELECT \r\n                resource_name,\r\n                time,\r\n                partitions_count,\r\n                tables_count,\r\n                indexes_count\r\n            FROM (\r\n                SELECT \r\n                    t.*, \r\n                    ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn_desc,\r\n                    ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time ASC) AS rn_asc\r\n                FROM $__database.$__table t\r\n                WHERE $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})\r\n            ) sub_inner\r\n            WHERE rn_desc = 1 OR rn_asc = 1\r\n        ) sub_outer\r\n    ) sub_differences\r\n    WHERE rn = 1\r\n)",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "transparent": true,
+      "type": "table"
+    },
+    {
+      "datasource": "Amazon-Timestream",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 16,
+        "w": 4,
+        "x": 0,
+        "y": 5
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": false,
+        "sortBy": []
+      },
+      "pluginVersion": "10.2.2",
+      "targets": [
+        {
+          "database": "<<DATABASE_NAME>>",
+          "datasource": "Amazon-Timestream",
+          "measure": "count",
+          "rawQuery": "SELECT  distinct resource_name as \"Databases\" FROM $__database.$__table where $__timeFilter order by 1 LIMIT 20",
+          "refId": "A",
+          "table": "<<DATABASE_TABLE>>"
+        }
+      ],
+      "title": "DATABASES",
+      "transparent": true,
+      "type": "table"
+    },
     {
       "datasource": "Amazon-Timestream",
       "fieldConfig": {
@@ -76,12 +399,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 0
+        "h": 11,
+        "w": 19,
+        "x": 4,
+        "y": 8
       },
-      "id": 1,
+      "id": 2,
       "options": {
         "legend": {
           "calcs": [],
@@ -98,13 +421,14 @@
         {
           "database": "<<DATABASE_NAME>>",
           "datasource": "Amazon-Timestream",
-          "measure": "execution",
-          "rawQuery": "SELECT  time, ${measure:csv} FROM $__database.$__table where $__timeFilter ",
+          "format": 0,
+          "measure": "count",
+          "rawQuery": "SELECT time, ${measure:csv} FROM $__database.$__table where $__timeFilter and resource_name in (${resource_name:singlequote}) and monitored_environment in (${monitored_env:singlequote})",
           "refId": "A",
           "table": "<<DATABASE_TABLE>>"
         }
       ],
-      "title": "Glue Catalogs",
+      "transparent": true,
       "type": "timeseries"
     }
   ],
@@ -112,7 +436,66 @@
   "schemaVersion": 38,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Measure Name",
+        "multi": true,
+        "name": "measure",
+        "query": "tables_count, partitions_count, indexes_count",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Amazon-Timestream",
+        "definition": "SELECT distinct monitored_environment FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Monitored Environment",
+        "multi": true,
+        "name": "monitored_env",
+        "options": [],
+        "query": "SELECT distinct monitored_environment FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": "Amazon-Timestream",
+        "definition": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Resource Name",
+        "multi": true,
+        "name": "resource_name",
+        "options": [],
+        "query": "SELECT distinct resource_name FROM <<DATABASE_NAME>>.<<DATABASE_TABLE>>",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-24h",
@@ -121,6 +504,6 @@
   "timepicker": {},
   "timezone": "utc",
   "title": "Metrics Dashboard for Glue Catalogs",
-  "version": 3,
+  "version": 14,
   "weekStart": ""
 }

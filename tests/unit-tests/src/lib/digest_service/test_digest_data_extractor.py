@@ -21,6 +21,17 @@ EXPECTED_QUERY_COLUMNS = [
     "error_message",
 ]
 EXTRA_DQ_COLUMNS = ["context_type", "glue_table_name", "glue_db_name", "glue_job_name"]
+EXPECTED_GLUE_CATALOGS_COLUMNS = [
+    "resource_type",
+    "monitored_environment",
+    "resource_name",
+    "tables_count",
+    "tables_added",
+    "partitions_count",
+    "partitions_added",
+    "indexes_count",
+    "indexes_added",
+]
 START_TIME = datetime(2000, 1, 1, 0, 0, 0)
 END_TIME = datetime(2000, 1, 2, 0, 0, 0)
 
@@ -34,8 +45,8 @@ END_TIME = datetime(2000, 1, 2, 0, 0, 0)
         ("scen4", types.STEP_FUNCTIONS),
         ("scen5", types.GLUE_DATA_QUALITY),
         ("scen6", types.EMR_SERVERLESS),
-        ("scen6", types.GLUE_CRAWLERS),
-        # Not yet implemented for Data Catalogs
+        ("scen7", types.GLUE_CRAWLERS),
+        ("scen8", types.GLUE_DATA_CATALOGS),
     ],
 )
 def test_digest_extractor_get_query(scenario, resource_type):
@@ -51,9 +62,12 @@ def test_digest_extractor_get_query(scenario, resource_type):
     returned_query = returned_extractor.get_query(START_TIME, END_TIME)
     returned_column_names = re.findall(r"\b(\w+)\b", returned_query)
 
-    expected_columns = list(EXPECTED_QUERY_COLUMNS)
-    if resource_type == types.GLUE_DATA_QUALITY:
-        expected_columns += EXTRA_DQ_COLUMNS
+    if resource_type == types.GLUE_DATA_CATALOGS:
+        expected_columns = list(EXPECTED_GLUE_CATALOGS_COLUMNS)
+    else:
+        expected_columns = list(EXPECTED_QUERY_COLUMNS)
+        if resource_type == types.GLUE_DATA_QUALITY:
+            expected_columns += EXTRA_DQ_COLUMNS
 
     missing_columns = [
         column for column in expected_columns if column not in returned_column_names
