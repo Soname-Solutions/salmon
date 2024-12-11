@@ -801,13 +801,14 @@ def handler(event, context):
                 self, "GlueCatalogDatabase", database_name=glue_database_name
             )
             glue_table_name = AWSNaming.GlueTable(self, table_meaning)
+            glue_column = glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)
             glue_table = glue.Table(
                 self,
                 "GlueCatalogTable",
                 bucket=catalog_bucket,
                 table_name=glue_table_name,
                 database=glue_database,
-                columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
+                columns=[glue_column],
                 data_format=glue.DataFormat.JSON,
-                partition_keys=[COLUMN_NAME],  # required to be able to add partitions
+                partition_keys=[glue_column],  # required to be able to add partitions
             )
