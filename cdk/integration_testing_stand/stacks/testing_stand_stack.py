@@ -36,7 +36,7 @@ from inttest_lib.common import (
 )
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
-from inttest_lib.runners.glue_catalog_runner import COLUMN_NAME
+from inttest_lib.runners.glue_catalog_runner import COLUMN_NAME, PARTITION_KEY
 from inttest_lib.runners.emr_serverless_runner import (
     get_scripts_s3_bucket_meaning,
     EXEC_IAM_ROLE_MEANING,
@@ -801,14 +801,13 @@ def handler(event, context):
                 self, "GlueCatalogDatabase", database_name=glue_database_name
             )
             glue_table_name = AWSNaming.GlueTable(self, table_meaning)
-            glue_column = glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)
             glue_table = glue.Table(
                 self,
                 "GlueCatalogTable",
                 bucket=catalog_bucket,
                 table_name=glue_table_name,
                 database=glue_database,
-                columns=[glue_column],
+                columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
                 data_format=glue.DataFormat.JSON,
-                partition_keys=[glue_column],  # required to be able to add partitions
+                partition_keys=[PARTITION_KEY],  # required to be able to add partitions
             )

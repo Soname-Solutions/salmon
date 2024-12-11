@@ -5,7 +5,8 @@ from inttest_lib.runners.base_resource_runner import BaseResourceRunner
 from lib.aws.aws_naming import AWSNaming
 
 PARTITION_VALUE = "2024"
-COLUMN_NAME = "ID"
+PARTITION_KEY = "ID"
+COLUMN_NAME = "Name"
 INDEX_NAME = "index1"
 
 
@@ -49,7 +50,7 @@ class GlueCatalogRunner(BaseResourceRunner):
             self.client.create_partition_index(
                 DatabaseName=glue_db_name,
                 TableName=glue_table_name,
-                PartitionIndex={"Keys": [COLUMN_NAME], "IndexName": INDEX_NAME},
+                PartitionIndex={"Keys": [PARTITION_KEY], "IndexName": INDEX_NAME},
             )
 
             print(
