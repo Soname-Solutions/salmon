@@ -809,5 +809,7 @@ def handler(event, context):
                 database=glue_database,
                 columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
                 data_format=glue.DataFormat.JSON,
-                partition_keys=[PARTITION_KEY],  # required to be able to add partitions
+                partition_keys=[
+                    glue.Column(name=PARTITION_KEY, type=glue.Schema.STRING)
+                ],  # required to be able to add partitions
             )
