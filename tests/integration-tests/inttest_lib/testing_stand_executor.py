@@ -63,6 +63,20 @@ class TestingStandExecutor:
         )
 
     def run_workloads(self):
+        # Glue Data Catalogs
+        if types.GLUE_DATA_CATALOGS in self.resource_types_to_run:
+            # required to test partitions_added, indexes_added which will be created later at initiate step
+            self.run_metrics_extractor()
+
+            glue_catalog_resources_data = self.cfg_reader.get_catalog_table_meanings()
+            glue_catalog_runner = GlueCatalogRunner(
+                resources_data=glue_catalog_resources_data,
+                region_name=self.region,
+                stack_obj=self.stack_obj_for_naming,
+            )
+            glue_catalog_runner.initiate()
+            self.runners.append(glue_catalog_runner)
+
         # Glue Jobs
         if types.GLUE_JOBS in self.resource_types_to_run:
             glue_job_names = self.cfg_reader.get_names_by_resource_type(
@@ -171,20 +185,6 @@ class TestingStandExecutor:
             )
             runner.initiate()
             self.runners.append(runner)
-
-        # Glue Data Catalogs
-        if types.GLUE_DATA_CATALOGS in self.resource_types_to_run:
-            # required to test partitions_added, indexes_added which will be created later at initiate step
-            self.run_metrics_extractor()
-
-            glue_catalog_resources_data = self.cfg_reader.get_catalog_table_meanings()
-            glue_catalog_runner = GlueCatalogRunner(
-                resources_data=glue_catalog_resources_data,
-                region_name=self.region,
-                stack_obj=self.stack_obj_for_naming,
-            )
-            glue_catalog_runner.initiate()
-            self.runners.append(glue_catalog_runner)
 
     def await_workloads(self):
         for runner in self.runners:

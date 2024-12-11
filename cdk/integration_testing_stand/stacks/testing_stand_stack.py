@@ -758,6 +758,11 @@ def handler(event, context):
         s3deploy.BucketDeployment(
             self,
             "GlueCatalogBucketDeployment",
+            sources=[
+                s3deploy.Source.asset(
+                    os.path.join(SRC_FOLDER_NAME, types.GLUE_DATA_CATALOGS),
+                )
+            ],
             destination_bucket=catalog_bucket,
             exclude=[".gitignore"],
         )
