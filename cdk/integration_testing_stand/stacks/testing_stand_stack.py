@@ -95,6 +95,9 @@ class TestingStandStack(Stack):
         # EMR Serverless testing stand
         self.create_emr_serverless_resources(cfg_reader)
 
+        # Glue Data Catalogs testing stand
+        self.create_glue_catalog_resources(cfg_reader)
+
         # Commonly-used resources (catch execution results, analyze)
         self.create_test_results_resources()
 
