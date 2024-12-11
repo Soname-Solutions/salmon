@@ -65,7 +65,7 @@ class TestingStandExecutor:
     def run_workloads(self):
         # Glue Data Catalogs
         if types.GLUE_DATA_CATALOGS in self.resource_types_to_run:
-            # required to test partitions_added, indexes_added which will be created later at initiate step
+            # this step is required to test partitions_added, indexes_added which will be created later at initiate step
             self.run_metrics_extractor()
 
             glue_catalog_resources_data = self.cfg_reader.get_catalog_table_meanings()
