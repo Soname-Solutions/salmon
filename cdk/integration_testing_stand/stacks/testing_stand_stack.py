@@ -36,7 +36,12 @@ from inttest_lib.common import (
 )
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
-from inttest_lib.runners.glue_catalog_runner import COLUMN_NAME, PARTITION_KEY
+from inttest_lib.runners.glue_catalog_runner import (
+    PARTITIONED_TABLE_NAME,
+    DELETE_TABLE_NAME,
+    COLUMN_NAME,
+    PARTITION_KEY,
+)
 from inttest_lib.runners.emr_serverless_runner import (
     get_scripts_s3_bucket_meaning,
     EXEC_IAM_ROLE_MEANING,
@@ -745,6 +750,9 @@ def handler(event, context):
         Create GLue data catalog resources: Glue database and table with S3 bucket
 
         """
+        glue_catalog_meanings = cfg_reader.get_meanings_by_resource_type(
+            types.GLUE_DATA_CATALOGS
+        )
         # create S3 Bucket for Glue table
         bucket_name = AWSNaming.S3Bucket(self, f"gluecatalog-{Stack.of(self).account}")
         catalog_bucket = s3.Bucket(
@@ -792,24 +800,35 @@ def handler(event, context):
         glue_catalog_role.attach_inline_policy(glue_policy)
 
         # create Glue database and table
-        for (
-            db_meaning,
-            table_meaning,
-        ) in cfg_reader.get_catalog_table_meanings().items():
-            glue_database_name = AWSNaming.GlueDB(self, db_meaning)
+        for glue_catalog_meaning in glue_catalog_meanings:
+            glue_database_name = AWSNaming.GlueDB(self, glue_catalog_meaning)
             glue_database = glue.Database(
                 self, "GlueCatalogDatabase", database_name=glue_database_name
             )
-            glue_table_name = AWSNaming.GlueTable(self, table_meaning)
-            glue_table = glue.Table(
-                self,
-                "GlueCatalogTable",
-                bucket=catalog_bucket,
-                table_name=glue_table_name,
-                database=glue_database,
-                columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
-                data_format=glue.DataFormat.JSON,
-                partition_keys=[
-                    glue.Column(name=PARTITION_KEY, type=glue.Schema.STRING)
-                ],  # required to be able to add partitions
-            )
+
+        # create first Glue table
+        glue_table_name = AWSNaming.GlueTable(self, PARTITIONED_TABLE_NAME)
+        glue_table1 = glue.Table(
+            self,
+            "GlueCatalogTable1",
+            bucket=catalog_bucket,
+            table_name=glue_table_name,
+            database=glue_database,
+            columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
+            data_format=glue.DataFormat.JSON,
+            partition_keys=[
+                glue.Column(name=PARTITION_KEY, type=glue.Schema.STRING)
+            ],  # required to be able to add partitions
+        )
+
+        # create second Glue table which will be deleted at the initiate step
+        glue_table_name = AWSNaming.GlueTable(self, DELETE_TABLE_NAME)
+        glue_table2 = glue.Table(
+            self,
+            "GlueCatalogTable2",
+            bucket=catalog_bucket,
+            table_name=glue_table_name,
+            database=glue_database,
+            columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
+            data_format=glue.DataFormat.JSON,
+        )
