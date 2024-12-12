@@ -1,11 +1,12 @@
 import pytest
 import boto3
+import re
 
-from lib.core.constants import SettingConfigResourceTypes
 from inttest_lib.message_checker import MessagesChecker
+from inttest_lib.dynamo_db_reader import IntegrationTestMessage
 from lib.aws.timestream_manager import TimeStreamQueryRunner
 from lib.aws.aws_naming import AWSNaming
-
+from lib.core.constants import SettingConfigResourceTypes
 from test_base_class import TestBaseClass
 
 
@@ -15,6 +16,23 @@ class TestGlueCatalogs(TestBaseClass):
     @classmethod
     def setup_class(cls):
         cls.resource_type = SettingConfigResourceTypes.GLUE_DATA_CATALOGS
+
+    @staticmethod
+    def parse_glue_catalog_summary_table(message):
+        """Extracts specific parts related to Glue Data Catalogs from the Digest Summary message."""
+        result = {}
+
+        # Regex to match the summary table entry for Glue Data Catalogs
+        summary_table_glue_catalogs_pattern = re.compile(
+            r"\|\s*(it_ts_glue_catalogs)\s*\|\s*Glue Data Catalogs\s*\|\s*(-?\d+)\s*\|\s*(-?\d+)\s*\|\s*(-?\d+)\s*\|\s*(-?\d+)\s*\|\s*(-?\d+)\s*\|\s*(-?\d+)\s*\|"
+        )
+        # Extract the summary table entry
+        summary_table_match = summary_table_glue_catalogs_pattern.search(message)
+        if summary_table_match:
+            result[summary_table_match.group(1)] = list(
+                map(int, summary_table_match.groups()[1:])
+            )
+        return result
 
     @pytest.fixture
     def execution_timestream_metrics_summary(
@@ -124,7 +142,7 @@ class TestGlueCatalogs(TestBaseClass):
         indexes_added = execution_timestream_metrics_summary.get("indexes_added", 0)
 
         assert tables_count == "1", "There should be exactly one Glue table."
-        assert tables_added == "0", "There shouldn't be any table added."
+        assert tables_added == "-1", "There should be one table deleted."
         assert partitions_count == "1", "There should be exactly one Glue partition."
         assert partitions_added == "1", "There should be one partition added."
         assert indexes_count == "1", "There should be exactly one Glue partition index."
@@ -135,8 +153,8 @@ class TestGlueCatalogs(TestBaseClass):
     ):
         # checking events count
         assert (
-            len(relevant_cloudwatch_events) == 7
-        ), "There should be 6 events, one for each Lambda invocation"
+            len(relevant_cloudwatch_events) == 2
+        ), "There should be 2 events, one for CreatePartition event and the second one for DeleteTable"
 
         # checking all resources are mentioned
         resource_names_in_events = [
@@ -150,3 +168,40 @@ class TestGlueCatalogs(TestBaseClass):
             assert (
                 resource_name in resource_names_in_events
             ), f"There should be mention of {resource_name} [{self.resource_type}] in CloudWatch alert logs"
+
+    def test_digest_message(
+        self, test_results_messages, config_reader, stack_obj_for_naming
+    ):
+        """
+        Checking if digest contains expected information
+        """
+        msqchk = MessagesChecker(test_results_messages)
+
+        digest_messages: list[IntegrationTestMessage] = msqchk.subject_contains_all(
+            ["Digest Report"]
+        )
+
+        message_body = digest_messages[0].MessageBody
+
+        # parse and check glue catalog summary table
+        self.glue_catalog_summary = self.parse_glue_catalog_summary_table(message_body)
+
+        # checking if there are mentions of testing stand resource in the digest
+        resource_names = config_reader.get_names_by_resource_type(
+            self.resource_type, stack_obj_for_naming
+        )
+
+        assert (
+            len(resource_names) > 0
+        ), f"There should be {self.resource_type} in testing scope"
+
+        for resource_name in resource_names:
+            assert (
+                resource_name in message_body
+            ), f"There should be mention of {resource_name} [{self.resource_type}]"
+
+        assert "WARNING: Some Glue Data Catalog object(s) deleted." in message_body
+
+        # Tables Added, Partitions Added, Indexes Added, Total Tables, Total Partitions, Total Indexes
+        #           -1|                1|             1|            1|                1|            1|
+        assert self.glue_catalog_summary["it_ts_glue_catalogs"] == [-1, 1, 1, 1, 1, 1]

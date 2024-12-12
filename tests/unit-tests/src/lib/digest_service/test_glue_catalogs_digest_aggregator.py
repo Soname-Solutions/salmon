@@ -97,7 +97,7 @@ def test_get_aggregated_glue_catalogs_runs_with_warnings():
     assert resource_agg_entry.IndexesAdded == 0
     assert (
         resource_agg_entry.CommentsStr
-        == "WARNING: Some Glue Data Catalog objects deleted."
+        == "WARNING: Some Glue Data Catalog object(s) deleted."
     )
 
 

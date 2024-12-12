@@ -74,6 +74,7 @@ class TestingStandExecutor:
             glue_catalog_runner = GlueCatalogRunner(
                 resource_names=glue_catalog_names,
                 region_name=self.region,
+                stack_obj=self.stack_obj_for_naming,
             )
             glue_catalog_runner.initiate()
             self.runners.append(glue_catalog_runner)

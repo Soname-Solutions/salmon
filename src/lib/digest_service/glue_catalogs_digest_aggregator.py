@@ -23,7 +23,7 @@ class GlueCatalogAggregatedEntry(BaseModel):
     @property
     def CommentsStr(self) -> str:
         if self.Status == DigestSettings.STATUS_WARNING:
-            return "WARNING: Some Glue Data Catalog objects deleted."
+            return "WARNING: Some Glue Data Catalog object(s) deleted."
         return ""
 
 
