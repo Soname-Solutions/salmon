@@ -76,6 +76,15 @@
                     "minimum_number_of_runs": 0
                 }
             ]
+        },
+        {
+            "group_name": "it_ts_glue_catalogs",
+            "glue_catalogs": [
+                {
+                    "name": "gluedb-salmon-ts-*-<<stage_name>>",
+                    "monitored_environment_name": "Account1 [<<stage_name>>]"
+                }
+            ]
         }
     ]
 }
