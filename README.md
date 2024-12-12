@@ -49,8 +49,7 @@ SALMON's core part is a centralized ("tooling") environment which collects, stor
 For each AWS account and region where your pipelines are deployed (in SALMON's terminology it's a "monitored" environment), SALMON requires small portion of resources (EventBridge rule to send alerts to centralized environment and minimal permissions IAM Role, so SALMON can collect pipeline metrics).
 
 With that setup:
-
-1. **Alert Handling**: Alerts, such as those for Step Function failures, are generated in the monitored account and sent through the EventBridge bus to the centralized location. There, alert information is parsed, formatted, and sent to the relevant recipients, be it individual emails, distribution lists, Slack or MS Teams channels, etc.
+1. **Alert Handling**: Alerts, such as those for Step Function failures, are generated in the monitored account and sent through the EventBridge bus to the centralized location. There, alert information is parsed, formatted, and sent to the relevant recipients, be it individual emails, distribution lists, Slack channels, etc.
 2. **Metrics Collection**: Metrics data (from all monitored accounts and regions) is extracted periodically (by default, once every 5 minutes) and stored in a Timestream database.
 3. **Accessing Metrics Data**: You can access this data using SALMON's [Grafana](docs/grafana.md) instance (optional) or by connecting a tool of your choice to the metrics database.  
 Additionally, you can configure a daily digest to be sent out based on this metrics data.
@@ -67,7 +66,7 @@ For more details please refer to [Solution architecture description](docs/archit
 | AWS Glue Data Quality | Immediately on Failure | Ruleset Executions stats <br/> (Duration, Score, Number of Rules failed/succeeded, etc.) |
 | AWS Glue Workflows | With a small delay <br/> (as a part of metrics collection process) | Workflow Executions stats <br/> (Duration, State, etc.) |
 | AWS Glue Crawlers | Immediately on Failure | Crawler Executions stats <br/> (Duration, State, DPU-Hours consumed, etc.) |
-| AWS Glue Data Catalogs | Immediately on Failure | In next versions... |
+| AWS Glue Data Catalogs | Immediately on Failure | Number of Objects (Tables, Patitions, Indexes) in the Data Catalog |
 | AWS Step Functions | Immediately on Failure | State Machine Execution stats (Duration, State, etc.) |
 | AWS Lambda Functions | With a small delay <br/> (as a part of metrics collection process) | Execution stats <br/> (Duration, Billed duration, Memory usage, etc.) |
 | Amazon EMR Serverless | Immediately on Failure | Execution stats (Duration, State, Billed vCPU, Memory, Storage, etc.) of Job submitted to the EMR application  |
