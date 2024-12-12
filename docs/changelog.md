@@ -2,15 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.3.0
+## 1.4.0 (in progress)
+* Extended integration with AWS Glue Data Catalogs (metrics, digest, optional Grafana dashboard).
 
+## 1.3.0
 * Added Notifications to Slack (via channel's email address)
 * Improved AWS Lambda Observability (Metrics, Dashboard)
 * Added AWS Glue Crawlers Metrics, Grafana Dashboards
 * Minor improvements and bug-fixes
 
 ## 1.2.0
-
 * Added integration with AWS Glue Data Quality (alerts, metrics, digest, optional Grafana dashboard).
 * Added integration with Amazon EMR Serverless (alerts, metrics, digest, optional Grafana dashboard).
 * Implemented automated integration tests in a form github workflow. It includes testing core components and glue jobs tests implementation.
@@ -27,7 +28,6 @@ All notable changes to this project will be documented in this file.
 ## 1.0.0
 
 ### Alerting functionality
-
 * Designed to catch and publish alerting events to Cloudwatch log group. Implemented for the following resource types:
      - Glue Crawlers
      - Glue Data Catalogs

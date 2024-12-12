@@ -31,6 +31,9 @@ class HtmlFormatter(BaseFormatter):
         ".ok": {"background-color": "lightgreen"},
         ".error": {"background-color": "#FFCCCB"},
         ".warning": {"background-color": "lightblue"},
+        ".no_status": {
+            "background-color": "rgba(255,255,255,0.5)"
+        },  # a transparent background
         ".header": {"font-size": "19px", "font-weight": "bold", "padding": "20px 10px"},
     }
 

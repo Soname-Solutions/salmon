@@ -8,9 +8,9 @@ from lib.aws.aws_naming import AWSNaming
 from lib.aws.sqs_manager import SQSQueueSender
 from lib.settings.settings import Settings
 from lib.digest_service import (
-    DigestDataAggregator,
     DigestDataExtractorProvider,
     DigestMessageBuilder,
+    DigestDataAggregatorProvider,
 )
 
 logger = logging.getLogger()
@@ -99,11 +99,14 @@ def append_digest_data(
         resources_config = extend_resources_config(
             settings, monitoring_group_config[resource_type]
         )
-        digest_aggregator = DigestDataAggregator()
-        aggregated_runs = digest_aggregator.get_aggregated_runs(
-            extracted_runs, resources_config, resource_type
+
+        digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+            resource_type
         )
-        summary = digest_aggregator.get_summary_entry(aggregated_runs)
+        aggregated_runs = digest_aggregator.get_aggregated_runs(
+            extracted_runs, resources_config
+        )
+        summary = digest_aggregator.get_summary_entry(monitoring_group, aggregated_runs)
         digest_data.append(
             {
                 monitoring_group: {

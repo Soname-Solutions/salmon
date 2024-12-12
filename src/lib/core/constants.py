@@ -81,6 +81,7 @@ class DigestSettings:
     STATUS_OK = "ok"
     STATUS_WARNING = "warning"
     STATUS_ERROR = "error"
+    NO_STATUS = "no_status"
     REPORT_PERIOD_HOURS = 24
     CRON_EXPRESSION = "cron(0 8 * * ? *)"
     MAX_ERROR_MESSAGE_LENGTH = 100
