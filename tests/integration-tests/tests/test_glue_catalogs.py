@@ -40,11 +40,43 @@ class TestGlueCatalogs(TestBaseClass):
         query_runner = TimeStreamQueryRunner(client)
 
         query = f"""
-                SELECT  sum(tables_count) as tables_count, sum(tables_added) as tables_added,
-                        sum(partitions_count) as partitions_count, sum(partitions_added) as partitions_added,
-                        sum(indexes_count) as indexes_count, sum(indexes_added) as indexes_added
-                FROM "{DB_NAME}"."{TABLE_NAME}"
-                WHERE time > from_milliseconds({start_epochtimemsec})
+                WITH ranked_records AS(
+                    SELECT
+                        t.*
+                        , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn_desc
+                        , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time ASC) AS rn_asc
+                    FROM "{DB_NAME}"."{TABLE_NAME}" t
+                    WHERE time > from_milliseconds({start_epochtimemsec})
+                ),
+                -- filter to retain only the earliest and latest rows for each resource
+                min_max_record AS (
+                    SELECT *
+                    FROM ranked_records
+                    WHERE rn_desc = 1 OR rn_asc = 1
+                ),
+                -- get previous counts for tables, partitions, and indexes
+                counts AS (
+                    SELECT
+                        resource_name,
+                        tables_count,
+                        LAG(tables_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_tables_count,
+                        partitions_count,
+                        LAG(partitions_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_partitions_count,
+                        indexes_count,
+                        LAG(indexes_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_indexes_count,
+                        ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS row_num
+                    FROM min_max_record
+                )
+                --final results
+                SELECT 
+                    tables_count,
+                    COALESCE(tables_count - prev_tables_count, 0) AS tables_added,
+                    partitions_count,
+                    COALESCE(partitions_count - prev_partitions_count, 0) AS partitions_added,
+                    indexes_count,
+                    COALESCE(indexes_count - prev_indexes_count, 0) AS indexes_added
+                FROM counts
+                WHERE row_num = 1
         """
         result = query_runner.execute_query(query=query)
 

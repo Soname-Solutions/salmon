@@ -744,9 +744,6 @@ def handler(event, context):
         Create GLue data catalog resources: Glue database and table with S3 bucket
 
         """
-        glue_catalog_meanings = cfg_reader.get_meanings_by_resource_type(
-            types.GLUE_DATA_CATALOGS
-        )
         # create S3 Bucket for Glue table
         bucket_name = AWSNaming.S3Bucket(self, f"gluecatalog-{Stack.of(self).account}")
         catalog_bucket = s3.Bucket(
