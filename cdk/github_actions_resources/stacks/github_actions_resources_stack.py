@@ -35,6 +35,7 @@ class GitHubActionsResourcesStack(Stack):
             self.create_glue_job_runner_policy(),
             self.create_glue_dq_runner_policy(),
             self.create_glue_workflow_runner_policy(),
+            self.create_glue_catalog_runner_policy(),
             self.create_glue_crawler_runner_policy(),
             self.create_step_function_runner_policy(),
             self.create_lambda_runner_policy(),
@@ -206,6 +207,42 @@ class GitHubActionsResourcesStack(Stack):
                 )
             ],
         )
+        return policy
+
+    def create_glue_catalog_runner_policy(self) -> iam.ManagedPolicy:
+        # Policy for Integration Tests (Glue Data Catalogs)
+        policy = iam.ManagedPolicy(
+            self,
+            "GlueCatalogRunnerPolicy",
+            managed_policy_name=AWSNaming.IAMPolicy(self, "GlueCatalogRunnerPolicy"),
+            statements=[
+                iam.PolicyStatement(
+                    actions=[
+                        "glue:GetTable",
+                        "glue:GetTables",
+                        "glue:GetPartitions",
+                        "glue:GetPartitionIndexes",
+                    ],
+                    resources=[
+                        "arn:aws:glue:*:*:catalog",
+                        "arn:aws:glue:*:*:database/*salmon*",
+                        "arn:aws:glue:*:*:table/*/*salmon*",
+                    ],
+                )
+            ],
+        )
+        policy.add_statements(
+            iam.PolicyStatement(
+                actions=[
+                    "glue:CreatePartition",
+                    "glue:CreatePartitionIndex",
+                    "glue:DeleteTable",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=["arn:aws:glue:*:*:table/*/*salmon*"],
+            )
+        )
+
         return policy
 
     def create_glue_crawler_runner_policy(self) -> iam.ManagedPolicy:
