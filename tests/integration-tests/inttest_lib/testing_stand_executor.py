@@ -66,7 +66,7 @@ class TestingStandExecutor:
         # Glue Data Catalogs
         if types.GLUE_DATA_CATALOGS in self.resource_types_to_run:
             # this step is required to test partitions_added, indexes_added which will be created later at initiate step
-            # self.run_metrics_extractor()
+            self.run_metrics_extractor()
 
             glue_catalog_names = self.cfg_reader.get_names_by_resource_type(
                 types.GLUE_DATA_CATALOGS, self.stack_obj_for_naming
