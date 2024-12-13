@@ -800,35 +800,24 @@ def handler(event, context):
         glue_catalog_role.attach_inline_policy(glue_policy)
 
         # create Glue database and table
-        for glue_catalog_meaning in glue_catalog_meanings:
-            glue_database_name = AWSNaming.GlueDB(self, glue_catalog_meaning)
+        for (
+            db_meaning,
+            table_meaning,
+        ) in cfg_reader.get_catalog_table_meanings().items():
+            glue_database_name = AWSNaming.GlueDB(self, db_meaning)
             glue_database = glue.Database(
-                self, "GlueCatalogDatabase", database_name=glue_database_name
+                self,
+                f"GlueCatalogDB{db_meaning.capitalize()}",
+                database_name=glue_database_name,
             )
-
-        # create first Glue table
-        glue_table_name = AWSNaming.GlueTable(self, PARTITIONED_TABLE_NAME)
-        glue_table1 = glue.Table(
-            self,
-            "GlueCatalogTable1",
-            bucket=catalog_bucket,
-            table_name=glue_table_name,
-            database=glue_database,
-            columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
-            data_format=glue.DataFormat.JSON,
-            partition_keys=[
-                glue.Column(name=PARTITION_KEY, type=glue.Schema.STRING)
-            ],  # required to be able to add partitions
-        )
-
-        # create second Glue table which will be deleted at the initiate step
-        glue_table_name = AWSNaming.GlueTable(self, DELETE_TABLE_NAME)
-        glue_table2 = glue.Table(
-            self,
-            "GlueCatalogTable2",
-            bucket=catalog_bucket,
-            table_name=glue_table_name,
-            database=glue_database,
-            columns=[glue.Column(name=COLUMN_NAME, type=glue.Schema.STRING)],
-            data_format=glue.DataFormat.JSON,
-        )
+            glue_table_name = AWSNaming.GlueTable(self, table_meaning)
+            glue_table = glue.Table(
+                self,
+                f"GlueCatalogTable{table_meaning.capitalize()}",
+                bucket=catalog_bucket,
+                table_name=glue_table_name,
+                database=glue_database,
+                columns=[glue.Column(name="Name", type=glue.Schema.STRING)],
+                data_format=glue.DataFormat.JSON,
+                partition_keys=["ID"],
+            )
