@@ -122,7 +122,7 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
                       t.*
                       , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn_desc
                       , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time ASC) AS rn_asc
-                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
                     WHERE time BETWEEN '{start_time}' AND '{end_time}'
                 ),
                 -- filter to retain only the earliest and latest rows for each resource
