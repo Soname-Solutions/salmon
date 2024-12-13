@@ -1,6 +1,11 @@
 import pytest
 from lib.core.constants import SettingConfigResourceTypes as types, DigestSettings
-from lib.digest_service import DigestDataAggregator, AggregatedEntry, SummaryEntry
+from lib.digest_service import (
+    DigestDataAggregator,
+    DigestDataAggregatorProvider,
+    AggregatedEntry,
+    SummaryEntry,
+)
 
 
 @pytest.mark.parametrize(
@@ -44,10 +49,10 @@ def test_get_aggregated_runs_empty_extracted_runs(
     expected_comments,
     insufficient_runs_alert,
 ):
-    digest_aggregator = DigestDataAggregator()
-    result = digest_aggregator.get_aggregated_runs(
-        extracted_runs, resources_config, resource_type
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
     )
+    result = digest_aggregator.get_aggregated_runs(extracted_runs, resources_config)
     resource_agg_entry = result[resource_name]
 
     assert (
@@ -68,10 +73,10 @@ def test_get_aggregated_runs_empty_resources_config():
     extracted_runs = {"step_functions": [{"resource_name": "step-function-test"}]}
     resources_config = []
     resource_type = types.STEP_FUNCTIONS
-    digest_aggregator = DigestDataAggregator()
-    result = digest_aggregator.get_aggregated_runs(
-        extracted_runs, resources_config, resource_type
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
     )
+    result = digest_aggregator.get_aggregated_runs(extracted_runs, resources_config)
 
     assert result == {}, "Expected empty dictionary when resources_config is empty"
 
@@ -129,10 +134,10 @@ def test_get_aggregated_runs_with_success_runs(
     expected_errors,
     expected_success_runs,
 ):
-    digest_aggregator = DigestDataAggregator()
-    result = digest_aggregator.get_aggregated_runs(
-        extracted_runs, resources_config, resource_type
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
     )
+    result = digest_aggregator.get_aggregated_runs(extracted_runs, resources_config)
     resource_agg_entry = result[resource_name]
 
     assert (
@@ -157,12 +162,12 @@ def test_get_aggregated_runs_with_success_runs(
     [
         (
             "scen1-failure-runs",
-            "glue-catalog-test",
-            types.GLUE_DATA_CATALOGS,
+            "glue-crawler-test",
+            types.GLUE_CRAWLERS,
             {
-                types.GLUE_DATA_CATALOGS: [
+                types.GLUE_CRAWLERS: [
                     {
-                        "resource_name": "glue-catalog-test",
+                        "resource_name": "glue-crawler-test",
                         "execution": "1",
                         "failed": "1",
                         "succeeded": "0",
@@ -171,7 +176,7 @@ def test_get_aggregated_runs_with_success_runs(
                         "error_message": "",
                     },
                     {
-                        "resource_name": "glue-catalog-test",
+                        "resource_name": "glue-crawler-test",
                         "execution": "1",
                         "failed": "1",
                         "succeeded": "0",
@@ -183,7 +188,7 @@ def test_get_aggregated_runs_with_success_runs(
             },
             [
                 {
-                    "name": "glue-catalog-test",
+                    "name": "glue-crawler-test",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0,
                     "region_name": "test_region",
@@ -246,10 +251,10 @@ def test_get_aggregated_runs_with_errors(
     expected_errors,
     expected_success_runs,
 ):
-    digest_aggregator = DigestDataAggregator()
-    result = digest_aggregator.get_aggregated_runs(
-        extracted_runs, resources_config, resource_type
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
     )
+    result = digest_aggregator.get_aggregated_runs(extracted_runs, resources_config)
     resource_agg_entry = result[resource_name]
 
     assert (
@@ -277,12 +282,12 @@ def test_get_aggregated_runs_with_errors(
     [
         (
             "scen1-SLA-not-met-success",
-            "glue-data-catalog-test",
-            types.GLUE_DATA_CATALOGS,
+            "glue-data-crawler-test",
+            types.GLUE_CRAWLERS,
             {
                 "resource_type1": [
                     {
-                        "resource_name": "glue-data-catalog-test",
+                        "resource_name": "glue-data-crawler-test",
                         "execution": "1",
                         "failed": "0",
                         "succeeded": "1",
@@ -292,7 +297,7 @@ def test_get_aggregated_runs_with_errors(
             },
             [
                 {
-                    "name": "glue-data-catalog-test",
+                    "name": "glue-data-crawler-test",
                     "sla_seconds": 10,
                     "minimum_number_of_runs": 0,
                 }
@@ -305,12 +310,12 @@ def test_get_aggregated_runs_with_errors(
         ),
         (
             "scen2-SLA-not-met-error",
-            "glue-data-catalog-test-2",
-            types.GLUE_DATA_CATALOGS,
+            "glue-data-crawler-test-2",
+            types.GLUE_CRAWLERS,
             {
                 "resource_type2": [
                     {
-                        "resource_name": "glue-data-catalog-test-2",
+                        "resource_name": "glue-data-crawler-test-2",
                         "execution": "1",
                         "failed": "1",
                         "succeeded": "0",
@@ -322,7 +327,7 @@ def test_get_aggregated_runs_with_errors(
             },
             [
                 {
-                    "name": "glue-data-catalog-test-2",
+                    "name": "glue-data-crawler-test-2",
                     "sla_seconds": 10,
                     "minimum_number_of_runs": 0,
                     "region_name": "test_region",
@@ -349,10 +354,10 @@ def test_get_aggregated_runs_with_warnings(
     expected_success_runs,
     expected_warnings,
 ):
-    digest_aggregator = DigestDataAggregator()
-    result = digest_aggregator.get_aggregated_runs(
-        extracted_runs, resources_config, resource_type
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
     )
+    result = digest_aggregator.get_aggregated_runs(extracted_runs, resources_config)
     resource_agg_entry = result[resource_name]
 
     assert (
@@ -376,23 +381,14 @@ def test_get_aggregated_runs_with_warnings(
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggregated_runs, expected_summary_entry"),
+    ("scenario, resource_type, aggregated_runs"),
     [
-        (
-            "scen1-no-runs",
-            {},
-            SummaryEntry(
-                Status=DigestSettings.STATUS_OK,
-                Executions=0,
-                Success=0,
-                Failures=0,
-                Warnings=0,
-            ),
-        ),
+        ("scen1-no-runs", types.GLUE_DATA_QUALITY, {}),
         (
             "scen2-no-runs",
+            types.EMR_SERVERLESS,
             {
-                "lambda-test-2": AggregatedEntry(
+                "emr-test-2": AggregatedEntry(
                     Status=DigestSettings.STATUS_OK,
                     Executions=0,
                     Success=0,
@@ -404,34 +400,35 @@ def test_get_aggregated_runs_with_warnings(
                     HasFailedAttempts=False,
                 )
             },
-            SummaryEntry(
-                Status=DigestSettings.STATUS_OK,
-                Executions=0,
-                Success=0,
-                Failures=0,
-                Warnings=0,
-            ),
         ),
     ],
 )
-def test_get_summary_entry_with_empty_data(
-    scenario, aggregated_runs, expected_summary_entry
-):
-    digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
+def test_get_summary_entry_with_empty_data(scenario, resource_type, aggregated_runs):
+    group_name = "emr-test-group"
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
+    )
+    returned_summary_entry = digest_aggregator.get_summary_entry(
+        group_name, aggregated_runs
+    )
 
-    assert (
-        returned_summary_entry == expected_summary_entry
-    ), f"Mismatch for scenario {scenario}"
+    assert returned_summary_entry.ResourceType == resource_type
+    assert returned_summary_entry.MonitoringGroup == group_name
+    assert returned_summary_entry.Status == DigestSettings.STATUS_OK
+    assert returned_summary_entry.TotalExecutions == 0
+    assert returned_summary_entry.TotalSuccess == 0
+    assert returned_summary_entry.TotalFailures == 0
+    assert returned_summary_entry.TotalWarnings == 0
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggregated_runs, expected_summary_entry"),
+    ("scenario, resource_type, aggregated_runs"),
     [
         (
             "scen1-success_runs",
+            types.GLUE_CRAWLERS,
             {
-                "glue-job-test": AggregatedEntry(
+                "glue-crawler-test": AggregatedEntry(
                     Status=DigestSettings.STATUS_OK,
                     Executions=5,
                     Success=5,
@@ -443,34 +440,35 @@ def test_get_summary_entry_with_empty_data(
                     HasFailedAttempts=False,
                 )
             },
-            SummaryEntry(
-                Status=DigestSettings.STATUS_OK,
-                Executions=5,
-                Success=5,
-                Failures=0,
-                Warnings=0,
-            ),
         ),
     ],
 )
-def test_get_summary_entry_with_success_runs(
-    scenario, aggregated_runs, expected_summary_entry
-):
-    digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
+def test_get_summary_entry_with_success_runs(scenario, resource_type, aggregated_runs):
+    group_name = "crawler-test-group"
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
+    )
+    returned_summary_entry = digest_aggregator.get_summary_entry(
+        group_name, aggregated_runs
+    )
 
-    assert (
-        returned_summary_entry == expected_summary_entry
-    ), f"Mismatch for scenario {scenario}"
+    assert returned_summary_entry.ResourceType == resource_type
+    assert returned_summary_entry.MonitoringGroup == group_name
+    assert returned_summary_entry.Status == DigestSettings.STATUS_OK
+    assert returned_summary_entry.TotalExecutions == 5
+    assert returned_summary_entry.TotalSuccess == 5
+    assert returned_summary_entry.TotalFailures == 0
+    assert returned_summary_entry.TotalWarnings == 0
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggregated_runs, expected_summary_entry"),
+    ("scenario, resource_type, aggregated_runs"),
     [
         (
             "scen1-errors",
+            types.LAMBDA_FUNCTIONS,
             {
-                "glue-test-3": AggregatedEntry(
+                "lambda-test-3": AggregatedEntry(
                     Status=DigestSettings.STATUS_ERROR,
                     Executions=3,
                     Success=1,
@@ -482,34 +480,35 @@ def test_get_summary_entry_with_success_runs(
                     HasFailedAttempts=False,
                 )
             },
-            SummaryEntry(
-                Status=DigestSettings.STATUS_ERROR,
-                Executions=3,
-                Success=1,
-                Failures=3,
-                Warnings=0,
-            ),
         ),
     ],
 )
-def test_get_summary_entry_with_errors(
-    scenario, aggregated_runs, expected_summary_entry
-):
-    digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
+def test_get_summary_entry_with_errors(scenario, resource_type, aggregated_runs):
+    group_name = "lambda-test-group"
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
+    )
+    returned_summary_entry = digest_aggregator.get_summary_entry(
+        group_name, aggregated_runs
+    )
 
-    assert (
-        returned_summary_entry == expected_summary_entry
-    ), f"Mismatch for scenario {scenario}"
+    assert returned_summary_entry.ResourceType == resource_type
+    assert returned_summary_entry.MonitoringGroup == group_name
+    assert returned_summary_entry.Status == DigestSettings.STATUS_ERROR
+    assert returned_summary_entry.TotalExecutions == 3
+    assert returned_summary_entry.TotalSuccess == 1
+    assert returned_summary_entry.TotalFailures == 3
+    assert returned_summary_entry.TotalWarnings == 0
 
 
 @pytest.mark.parametrize(
-    ("scenario, aggregated_runs, expected_summary_entry"),
+    ("scenario, resource_type, aggregated_runs"),
     [
         (
             "scen1-warnings",
+            types.GLUE_JOBS,
             {
-                "lambda-test-3": AggregatedEntry(
+                "glue-job-test-3": AggregatedEntry(
                     Status=DigestSettings.STATUS_WARNING,
                     Executions=3,
                     Success=3,
@@ -521,22 +520,22 @@ def test_get_summary_entry_with_errors(
                     HasFailedAttempts=False,
                 )
             },
-            SummaryEntry(
-                Status=DigestSettings.STATUS_WARNING,
-                Executions=3,
-                Success=3,
-                Failures=0,
-                Warnings=2,
-            ),
         ),
     ],
 )
-def test_get_summary_entry_with_warnings(
-    scenario, aggregated_runs, expected_summary_entry
-):
-    digest_aggregator = DigestDataAggregator()
-    returned_summary_entry = digest_aggregator.get_summary_entry(aggregated_runs)
+def test_get_summary_entry_with_warnings(scenario, resource_type, aggregated_runs):
+    group_name = "glue-test-group"
+    digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
+        resource_type
+    )
+    returned_summary_entry = digest_aggregator.get_summary_entry(
+        group_name, aggregated_runs
+    )
 
-    assert (
-        returned_summary_entry == expected_summary_entry
-    ), f"Mismatch for scenario {scenario}"
+    assert returned_summary_entry.ResourceType == resource_type
+    assert returned_summary_entry.MonitoringGroup == group_name
+    assert returned_summary_entry.Status == DigestSettings.STATUS_WARNING
+    assert returned_summary_entry.TotalExecutions == 3
+    assert returned_summary_entry.TotalSuccess == 3
+    assert returned_summary_entry.TotalFailures == 0
+    assert returned_summary_entry.TotalWarnings == 2
