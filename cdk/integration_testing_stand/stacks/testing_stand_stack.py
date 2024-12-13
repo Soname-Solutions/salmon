@@ -36,12 +36,6 @@ from inttest_lib.common import (
 )
 from inttest_lib.inttests_config_reader import IntTests_Config_Reader
 from inttest_lib.runners.glue_dq_runner import DQ_MEANING
-from inttest_lib.runners.glue_catalog_runner import (
-    PARTITIONED_TABLE_NAME,
-    DELETE_TABLE_NAME,
-    COLUMN_NAME,
-    PARTITION_KEY,
-)
 from inttest_lib.runners.emr_serverless_runner import (
     get_scripts_s3_bucket_meaning,
     EXEC_IAM_ROLE_MEANING,
