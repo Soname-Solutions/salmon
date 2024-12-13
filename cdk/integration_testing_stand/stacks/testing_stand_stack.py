@@ -811,7 +811,9 @@ def handler(event, context):
                 bucket=catalog_bucket,
                 table_name=glue_table_name,
                 database=glue_database,
-                columns=[glue.Column(name="Name", type=glue.Schema.STRING)],
+                columns=[
+                    glue.Column(name="Name", type=glue.Schema.STRING),
+                    glue.Column(name="ID", type=glue.Schema.STRING),
+                ],
                 data_format=glue.DataFormat.JSON,
-                partition_keys=["ID"],
             )
