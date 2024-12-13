@@ -15,7 +15,6 @@ from inttest_lib.runners.glue_job_runner import GlueJobRunner
 from inttest_lib.runners.glue_crawler_runner import GlueCrawlerRunner
 from inttest_lib.runners.glue_dq_runner import GlueDQRunner
 from inttest_lib.runners.glue_workflow_runner import GlueWorkflowRunner
-from inttest_lib.runners.glue_catalog_runner import GlueCatalogRunner
 from inttest_lib.runners.step_function_runner import StepFunctionRunner
 from inttest_lib.runners.lambda_function_runner import LambdaFunctionRunner
 from inttest_lib.runners.emr_serverless_runner import (
@@ -63,22 +62,6 @@ class TestingStandExecutor:
         )
 
     def run_workloads(self):
-        # Glue Data Catalogs
-        if types.GLUE_DATA_CATALOGS in self.resource_types_to_run:
-            # this step is required to test partitions_added, indexes_added which will be created later at initiate step
-            self.run_metrics_extractor()
-
-            glue_catalog_names = self.cfg_reader.get_names_by_resource_type(
-                types.GLUE_DATA_CATALOGS, self.stack_obj_for_naming
-            )
-            glue_catalog_runner = GlueCatalogRunner(
-                resource_names=glue_catalog_names,
-                region_name=self.region,
-                stack_obj=self.stack_obj_for_naming,
-            )
-            glue_catalog_runner.initiate()
-            self.runners.append(glue_catalog_runner)
-
         # Glue Jobs
         if types.GLUE_JOBS in self.resource_types_to_run:
             glue_job_names = self.cfg_reader.get_names_by_resource_type(
@@ -192,7 +175,7 @@ class TestingStandExecutor:
         for runner in self.runners:
             runner.await_completion()
 
-    def run_metrics_extractor(self):
+    def conclude(self):
         lambda_orch_retry_attempts = 0
         lambda_orch_meaning = "extract-metrics-orch"
         lambda_orch_runner = LambdaFunctionRunner(
@@ -205,7 +188,6 @@ class TestingStandExecutor:
 
         time.sleep(30)  # give some time for extract-metrics lambdas to complete
 
-    def run_digest(self):
         lambda_digest_retry_attempts = 0
         lambda_digest_meaning = "digest"
         lambda_digest_runner = LambdaFunctionRunner(
@@ -215,7 +197,3 @@ class TestingStandExecutor:
         )
         lambda_digest_runner.initiate()
         lambda_digest_runner.await_completion()
-
-    def conclude(self):
-        self.run_metrics_extractor()
-        self.run_digest()

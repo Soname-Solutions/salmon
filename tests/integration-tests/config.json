@@ -110,7 +110,8 @@
         ],
         "glue_catalogs": [
             {
-                "meaning": "ts-gluecatalog"
+                "meaning": "ts-gluecatalog",
+                "containing_glue_table_meaning": "aux-gluetable"
             }
         ]
     }
