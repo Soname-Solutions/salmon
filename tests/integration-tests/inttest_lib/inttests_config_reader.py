@@ -40,6 +40,7 @@ class IntTests_Config_Reader:
             types.GLUE_CRAWLERS: AWSNaming.GlueCrawler,
             types.GLUE_JOBS: AWSNaming.GlueJob,
             types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
+            types.GLUE_DATA_CATALOGS: AWSNaming.GlueDB,
             types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
             types.STEP_FUNCTIONS: AWSNaming.StepFunction,
         }
