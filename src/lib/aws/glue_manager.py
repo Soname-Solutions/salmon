@@ -1,11 +1,12 @@
 import boto3
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 
 from pydantic import BaseModel
 from typing import Optional, Union
 
-from ..core.constants import SettingConfigResourceTypes
+from lib.core.constants import SettingConfigResourceTypes
+from lib.aws.sts_manager import StsManager
 
 ###########################################################
 # Job-related pydantic classes
@@ -299,6 +300,52 @@ class CrawlerData(BaseModel):
     @property
     def IsCompleted(self) -> bool:
         return self.State in GlueManager.Crawler_States_Final
+
+
+###########################################################
+# Glue Data Catalog-related pydantic classes
+
+
+class TableModel(BaseModel):
+    Name: str
+    CatalogId: str
+    CreateTime: Optional[datetime]
+    UpdateTime: Optional[datetime]
+    PartitionsCount: int = 0
+    IndexesCount: int = 0
+
+    def set_partition_count(self, partitions: list[dict]):
+        self.PartitionsCount = len(partitions)
+
+    def set_indexes_count(self, indexes: list[dict]):
+        self.IndexesCount = len(indexes)
+
+
+class CatalogData(BaseModel):
+    DatabaseName: str
+    TableList: list[TableModel]
+
+    @property
+    def CatalogID(self) -> str:
+        """
+        Return the ID of the Data Catalog where the tables reside.
+        If no tables, AWS account ID is used by default.
+        """
+        if self.TableList:
+            return self.TableList[0].CatalogId
+        return StsManager().get_account_id()
+
+    @property
+    def TotalTableCount(self) -> int:
+        return len(self.TableList)
+
+    @property
+    def TotalPartitionsCount(self) -> int:
+        return sum(table.PartitionsCount for table in self.TableList)
+
+    @property
+    def TotalIndexesCount(self) -> int:
+        return sum(table.IndexesCount for table in self.TableList)
 
 
 ###########################################################
@@ -624,3 +671,26 @@ class GlueManager:
             return crawls
         else:
             return []
+
+    def get_catalog_data(self, db_name: str) -> CatalogData:
+        """
+        Get data about the specific database in Glue Data Catalog: Total Number of Tables/Indexes/Partitions.
+        """
+        response = self.glue_client.get_tables(DatabaseName=db_name)
+        response["DatabaseName"] = db_name
+        catalog_data = CatalogData(**response)
+
+        for table in catalog_data.TableList:
+            partitions_response = self.glue_client.get_partitions(
+                DatabaseName=db_name, TableName=table.Name
+            )
+            table.set_partition_count(partitions_response.get("Partitions"))
+
+            indexes_response = self.glue_client.get_partition_indexes(
+                DatabaseName=db_name, TableName=table.Name
+            )
+            table.set_indexes_count(
+                indexes_response.get("PartitionIndexDescriptorList")
+            )
+
+        return catalog_data

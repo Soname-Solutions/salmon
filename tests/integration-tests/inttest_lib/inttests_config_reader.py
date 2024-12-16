@@ -40,6 +40,7 @@ class IntTests_Config_Reader:
             types.GLUE_CRAWLERS: AWSNaming.GlueCrawler,
             types.GLUE_JOBS: AWSNaming.GlueJob,
             types.GLUE_WORKFLOWS: AWSNaming.GlueWorkflow,
+            types.GLUE_DATA_CATALOGS: AWSNaming.GlueDB,
             types.LAMBDA_FUNCTIONS: AWSNaming.LambdaFunction,
             types.STEP_FUNCTIONS: AWSNaming.StepFunction,
         }
@@ -145,5 +146,15 @@ class IntTests_Config_Reader:
             meaning = lmbd.get("meaning", "")
             retry_attempts = lmbd.get("retry_attempts", "")
             outp[meaning] = retry_attempts
+
+        return outp
+
+    def get_catalog_table_meanings(self):
+        outp = {}
+        glue_catalog_config = self.config_data.get(types.GLUE_DATA_CATALOGS, {})
+        for glue_catalog in glue_catalog_config:
+            glue_db_meaning = glue_catalog.get("meaning", "")
+            glue_table_meaning = glue_catalog.get("containing_glue_table_meaning", "")
+            outp[glue_db_meaning] = glue_table_meaning
 
         return outp

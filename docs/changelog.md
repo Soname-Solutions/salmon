@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.4.0 (in progress)
+
+* Extended integration with AWS Glue Data Catalogs (metrics, digest, optional Grafana dashboard).
+
 ## 1.3.0
 
 * Added Notifications to Slack (via channel's email address)

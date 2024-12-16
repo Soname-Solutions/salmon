@@ -16,8 +16,7 @@ class DigestException(Exception):
 
 class BaseDigestDataExtractor(ABC):
     """
-    Base Class which provides unified functionality for extracting runs for the digest report.
-
+    Base Class which provides unified functionality for extracting runs used in the digest report.
     """
 
     def __init__(
@@ -113,12 +112,53 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
 
 class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
     """
-    Class is responsible for preparing the query for extracting Glue Data Catalogs runs.
+    Class is responsible for preparing the query for extracting Glue Data Catalogs counts.
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        print("Calling a method which hasn't been implemented yet")
-        query = ""
+        query = f"""
+                WITH ranked_records AS(
+                    SELECT
+                      t.*
+                      , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn_desc
+                      , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time ASC) AS rn_asc
+                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
+                    WHERE time BETWEEN '{start_time}' AND '{end_time}'
+                ),
+                -- filter to retain only the earliest and latest rows for each resource
+                min_max_record AS (
+                    SELECT *
+                    FROM ranked_records
+                    WHERE rn_desc = 1 OR rn_asc = 1
+                ),
+                -- get previous counts for tables, partitions, and indexes
+                counts AS (
+                    SELECT
+                        monitored_environment
+                      , resource_name 
+                      , tables_count
+                      , LAG(tables_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_tables_count
+                      , partitions_count
+                      , LAG(partitions_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_partitions_count
+                      , indexes_count
+                      , LAG(indexes_count) OVER (PARTITION BY resource_name ORDER BY time) AS prev_indexes_count
+                      , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS row_num
+                    FROM min_max_record
+                )
+                --final results
+                SELECT 
+                     '{self.resource_type}' as resource_type
+                     , monitored_environment
+                     , resource_name
+                     , tables_count
+                     , COALESCE(tables_count - prev_tables_count, 0) AS tables_added
+                     , partitions_count
+                     , COALESCE(partitions_count - prev_partitions_count, 0) AS partitions_added
+                     , indexes_count
+                     , COALESCE(indexes_count - prev_indexes_count, 0) AS indexes_added
+                FROM counts
+                WHERE row_num = 1
+                """
         return query
 
 

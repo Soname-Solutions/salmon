@@ -38,6 +38,11 @@
                     "monitoring_group": "it_ts_glue_crawlers",
                     "alerts": true,
                     "digest": true
+                },
+                {
+                    "monitoring_group": "it_ts_glue_catalogs",
+                    "alerts": true,
+                    "digest": true
                 }
             ]
         }
