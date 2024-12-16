@@ -94,6 +94,9 @@ class TestingStandStack(Stack):
         # EMR Serverless testing stand
         self.create_emr_serverless_resources(cfg_reader)
 
+        # Glue Data Catalogs testing stand
+        self.create_glue_catalog_resources(cfg_reader)
+
         # Commonly-used resources (catch execution results, analyze)
         self.create_test_results_resources()
 
@@ -734,4 +737,80 @@ def handler(event, context):
                     cpu="40 vCPU", memory="3000 GB", disk="20000 GB"
                 ),
                 tags=tags,
+            )
+
+    def create_glue_catalog_resources(self, cfg_reader):
+        """
+        Create GLue data catalog resources: Glue database and table with S3 bucket
+
+        """
+        # create S3 Bucket for Glue table
+        bucket_name = AWSNaming.S3Bucket(self, f"gluecatalog-{Stack.of(self).account}")
+        catalog_bucket = s3.Bucket(
+            self,
+            "GlueCatalogBucket",
+            bucket_name=bucket_name,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
+
+        s3deploy.BucketDeployment(
+            self,
+            "GlueCatalogBucketDeployment",
+            sources=[
+                s3deploy.Source.asset(
+                    os.path.join(SRC_FOLDER_NAME, types.GLUE_DATA_CATALOGS),
+                )
+            ],
+            destination_bucket=catalog_bucket,
+            exclude=[".gitignore"],
+        )
+
+        # create Glue Catalog IAM role
+        glue_catalog_role_name = AWSNaming.IAMRole(self, "gluecatalog")
+        glue_catalog_role = iam_helper.create_glue_iam_role(
+            scope=self,
+            role_id="GlueCatalogIAMRole",
+            role_name=glue_catalog_role_name,
+        )
+
+        glue_policy = iam.Policy(
+            self,
+            "GlueCatalogRolePolicy",
+            policy_name=AWSNaming.IAMPolicy(self, f"gluecatalog"),
+        )
+
+        glue_policy.add_statements(
+            iam.PolicyStatement(
+                actions=["s3:GetObject", "s3:ListObjects"],
+                effect=iam.Effect.ALLOW,
+                resources=[f"{catalog_bucket.bucket_arn}/*"],
+            )
+        )
+
+        glue_catalog_role.attach_inline_policy(glue_policy)
+
+        # create Glue database and table
+        for (
+            db_meaning,
+            table_meaning,
+        ) in cfg_reader.get_catalog_table_meanings().items():
+            glue_database_name = AWSNaming.GlueDB(self, db_meaning)
+            glue_database = glue.Database(
+                self,
+                f"GlueCatalogDB{db_meaning.capitalize()}",
+                database_name=glue_database_name,
+            )
+            glue_table_name = AWSNaming.GlueTable(self, table_meaning)
+            glue_table = glue.Table(
+                self,
+                f"GlueCatalogTable{table_meaning.capitalize()}",
+                bucket=catalog_bucket,
+                table_name=glue_table_name,
+                database=glue_database,
+                columns=[
+                    glue.Column(name="Name", type=glue.Schema.STRING),
+                    glue.Column(name="ID", type=glue.Schema.STRING),
+                ],
+                data_format=glue.DataFormat.JSON,
             )
