@@ -193,7 +193,12 @@ class DigestDataAggregator:
         agg_entry: AggregatedEntry,
     ) -> None:
         """Adds error/warning comments based on failed runs/attempts."""
-        if resource_run.failed > 0 or resource_run.failed_attempts > 0:
+        is_failed = resource_run.failed > 0
+        is_successful_with_retries = (
+            resource_run.succeeded > 0 and resource_run.failed_attempts > 0
+        )
+
+        if is_failed or is_successful_with_retries:
             job_run_url = self._generate_job_run_url(resource_run, resource_config)
 
             max_msg_length = DigestSettings.MAX_ERROR_MESSAGE_LENGTH
@@ -207,9 +212,9 @@ class DigestDataAggregator:
             )
 
             # Append error or warning comments to the appropriate list
-            if resource_run.failed > 0:
+            if is_failed:
                 agg_entry.ErrorComments.append(error_comment)
-            if resource_run.failed_attempts > 0:
+            if is_successful_with_retries:
                 agg_entry.WarningComments.append(error_comment)
 
     def _process_single_run(
