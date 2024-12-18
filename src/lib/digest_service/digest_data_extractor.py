@@ -218,6 +218,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                         , t.lambda_function_request_id AS job_run_id
                         , t.log_stream
                         , ids.error_message
+                        , 1 AS execution
                         , MIN(t.failed) AS failed
                         , MAX(t.succeeded) AS succeeded
                         , ROUND(SUM(t.duration_ms)/1000, 2) AS execution_time_sec                                
