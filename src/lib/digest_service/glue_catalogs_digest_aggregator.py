@@ -37,14 +37,17 @@ class GlueCatalogAggregatedEntry(BaseModel):
     def generate_comments(self) -> list:
         """Generates a list of comments based on conditions."""
         conditions_and_messages = [
-            (self.TablesAdded < 0, "Some Glue Data Catalog Tables have been deleted."),
+            (
+                self.TablesAdded < 0,
+                "WARNING: Some Glue Data Catalog Tables have been deleted.",
+            ),
             (
                 self.PartitionsAdded < 0,
-                "Some Glue Data Catalog Partitions have been deleted.",
+                "WARNING: Some Glue Data Catalog Partitions have been deleted.",
             ),
             (
                 self.IndexesAdded < 0,
-                "Some Glue Data Catalog Indexes have been deleted.",
+                "WARNING: Some Glue Data Catalog Indexes have been deleted.",
             ),
         ]
 

@@ -78,13 +78,13 @@ class AggregatedEntry(BaseModel):
         # Warning comment about retries
         if self.HasFailedAttempts and self.WarningComments:
             comments.append(
-                "Some runs have succeeded after one or more retry attempts:"
+                "WARNING: Some runs have succeeded after one or more retry attempts:"
             )
             comments.extend(set(self.WarningComments))
 
         # Warning comment about SLA
         if self.HasSLABreach:
-            comments.append(f"Some runs haven't met SLA (={self.SLA} sec).")
+            comments.append(f"WARNING: Some runs haven't met SLA (={self.SLA} sec).")
 
         return comments
 

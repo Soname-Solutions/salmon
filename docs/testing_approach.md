@@ -22,7 +22,7 @@ For contributors, it's recommended to run the tests before submitting a pull req
 To run the unit tests, execute the following command:
 
 ```bash
-pytest tests/
+pytest tests/unit-tests/
 ```
 
 ## Integration tests
@@ -62,7 +62,7 @@ The integration test process involves the following steps:
    - Run the command `cdk deploy` to create a CDK stack. This stack includes an IAM role with permissions sufficient to run tests and trust relationships established to allow your GitHub repo to assume this role when executing workflows.
    - In your github repository, go to **Settings -> Secrets and Variables -> Action**, and add secrets named `AWS_ACCOUNT_ID` and `AWS_REGION`. These secrets allow GitHub to identify which AWS account and region to use for running pipelines.
 
-2. **SALMON configuration files**: The configuration files for the integration tests environment are stored in `integration_tests/settings` folder.  
+2. **SALMON configuration files**: The configuration files for the integration tests environment are stored in `tests/integration-tests/settings` folder.  
 You can customize these files (changes need to be pushed to repository to take effect).
 
 ### Running integration tests via Github Workflows
@@ -84,7 +84,7 @@ Running integration tests locally offers additional flexibility, allowing you to
 
 To trigger the testing stand execution, run the following command (replace the parameter values if needed):
 ```bash
-  python integration_tests/testing_stand_execution.py --stage-name devit --region eu-central-1
+  python tests/integration-tests/testing_stand_execution.py --stage-name devit --region eu-central-1
 ```
 
 You can include the optional `--resource-types` parameter with a comma-separated list of resource types to trigger execution of only the specified resource types. If this parameter is omitted or set to "all", all resource types will be executed.
@@ -93,7 +93,7 @@ The first output line of the script provides a start time (in epoch milliseconds
 
 To analyze test results (using pytest), run the following command, replacing the start-epochtimemsec parameter with the epoch time from the previous step:
 ```bash
-  pytest integration_tests/tests --stage-name devit --region eu-central-1 --start-epochtimemsec 123456789000
+  pytest tests/integration-tests/tests --stage-name devit --region eu-central-1 --start-epochtimemsec 123456789000
 ```   
 3. Once testing is complete, run the `Integration Tests - Delete Infra` workflow to tear down all resources.
 
@@ -102,7 +102,7 @@ To analyze test results (using pytest), run the following command, replacing the
 ### Configuration and prerequisistes
 
 1. **IAM service user for GitHub Actions**: The CDK Deployment workflow uses the same IAM user as the Integration Tests. If you’ve already created the user following the instructions in the `prerequisites` section of the Integration Tests, no further action is needed.
-2. **SALMON configuration files**: The configuration files for the deployment tests environment are stored in the `tests/devcdk` folder.
+2. **SALMON configuration files**: The configuration files for the deployment tests environment are stored in the `tests/deployment-tests/settings` folder.
 You can customize these files, but any changes must be pushed to the repository to take effect.
 
 ### Running deployment tests

@@ -19,10 +19,17 @@ from lib.digest_service import (
             "lambda-test",
             types.LAMBDA_FUNCTIONS,
             {},
-            [{"name": "lambda-test", "minimum_number_of_runs": 0}],
+            [
+                {
+                    "name": "lambda-test",
+                    "region_name": "test-region",
+                    "account_id": "123456789",
+                    "minimum_number_of_runs": 0,
+                }
+            ],
             DigestSettings.STATUS_OK,
             0,
-            [],
+            "",
             False,
         ),
         (
@@ -30,10 +37,17 @@ from lib.digest_service import (
             "glue-test",
             types.GLUE_JOBS,
             {},
-            [{"name": "glue-test", "minimum_number_of_runs": 1}],
+            [
+                {
+                    "name": "glue-test",
+                    "region_name": "test-region",
+                    "account_id": "123456789",
+                    "minimum_number_of_runs": 1,
+                }
+            ],
             DigestSettings.STATUS_ERROR,
             0,
-            ["0 runs during the monitoring period (at least 1 expected)"],
+            "Insufficient runs: 0 run(s) during the monitoring period (at least 1 expected).",
             True,
         ),
     ],
@@ -62,7 +76,7 @@ def test_get_aggregated_runs_empty_extracted_runs(
         resource_agg_entry.Executions == expected_executions
     ), f"Executions mismatch for scenario {scenario}"
     assert (
-        resource_agg_entry.Comments == expected_comments
+        resource_agg_entry.CommentsStr == expected_comments
     ), f"Comments mismatch for scenario {scenario}"
     assert (
         resource_agg_entry.InsufficientRuns == insufficient_runs_alert
@@ -112,6 +126,8 @@ def test_get_aggregated_runs_empty_resources_config():
             [
                 {
                     "name": "glue-workflow-test",
+                    "region_name": "test-region",
+                    "account_id": "123456789",
                     "sla_seconds": 0,
                     "minimum_number_of_runs": 0,
                 }
@@ -270,7 +286,7 @@ def test_get_aggregated_runs_with_errors(
         resource_agg_entry.Success == expected_success_runs
     ), f"Success runs mismatch for scenario {scenario}"
     assert (
-        "Some runs have failed" in resource_agg_entry.Comments
+        "Some runs have failed" in resource_agg_entry.CommentsStr
     ), f"Comments mismatch for scenario {scenario}"
 
 
@@ -298,6 +314,8 @@ def test_get_aggregated_runs_with_errors(
             [
                 {
                     "name": "glue-data-crawler-test",
+                    "region_name": "test-region",
+                    "account_id": "123456789",
                     "sla_seconds": 10,
                     "minimum_number_of_runs": 0,
                 }
@@ -376,7 +394,8 @@ def test_get_aggregated_runs_with_warnings(
         resource_agg_entry.Warnings == expected_warnings
     ), f"Warnings mismatch for scenario {scenario}"
     assert (
-        "WARNING: Some runs haven't met SLA (=10 sec)." in resource_agg_entry.Comments
+        "WARNING: Some runs haven't met SLA (=10 sec)."
+        in resource_agg_entry.CommentsStr
     ), f"Comments mismatch for scenario {scenario}"
 
 
