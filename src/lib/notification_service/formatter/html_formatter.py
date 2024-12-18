@@ -30,7 +30,7 @@ class HtmlFormatter(BaseFormatter):
         },
         ".ok": {"background-color": "lightgreen"},
         ".error": {"background-color": "#FFCCCB"},
-        ".warning": {"background-color": "lightblue"},
+        ".warning": {"background-color": "#FFF9B2"},  # light yellow
         ".no_status": {
             "background-color": "rgba(255,255,255,0.5)"
         },  # a transparent background

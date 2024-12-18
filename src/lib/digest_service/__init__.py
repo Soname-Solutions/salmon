@@ -10,7 +10,12 @@ from .digest_data_extractor import (
     EMRServerlessDigestDataExtractor,
     DigestException,
 )
-from .digest_data_aggregator import DigestDataAggregator, AggregatedEntry, SummaryEntry
+from .digest_data_aggregator import (
+    DigestDataAggregator,
+    AggregatedEntry,
+    SummaryEntry,
+    ResourceConfig,
+)
 from .glue_catalogs_digest_aggregator import (
     GlueCatalogsDigestAggregator,
     GlueCatalogAggregatedEntry,

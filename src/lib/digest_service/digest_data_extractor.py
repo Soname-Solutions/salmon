@@ -204,29 +204,45 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        query = f"""SELECT '{self.resource_type}' as resource_type
-                         , monitored_environment
-                         , resource_name
-                         , '' as job_run_id
-                         , 1 as execution
-                         , failed
-                         , succeeded
-                         , round(duration_ms/1000, 2) as execution_time_sec
-                         , case when failed > 0 then error_message else '' end as error_message
-                         , failed_attempts
-                         , log_stream
-                    FROM (
-                            SELECT monitored_environment
-                                 , resource_name
-                                 , min(failed) over (partition by lambda_function_request_id) as failed
-                                 , max(succeeded) over (partition by lambda_function_request_id) as succeeded
-                                 , duration_ms
-                                 , error_message                                 
-                                 , sum(failed) over  (partition by lambda_function_request_id ) as failed_attempts
-                                 , log_stream
-                                 , row_number() over (partition by lambda_function_request_id order by time desc) as rn
-                            FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
-                            WHERE time BETWEEN '{start_time}' AND '{end_time}')  t
+        query = f"""
+                    -- Aggregate error messages by lambda_function_request_id
+                    WITH ids AS(
+                        SELECT lambda_function_request_id
+                             , ARRAY_JOIN(ARRAY_AGG(error_message), ', ') AS error_message
+                        FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                        WHERE time BETWEEN '{start_time}' AND '{end_time}'
+                        GROUP BY lambda_function_request_id
+                    ) 
+                    -- Rank records and calculate total failed, succeeded, failed_attempts
+                    , ranked_records AS (
+                        SELECT 
+                              monitored_environment
+                            , resource_name
+                            , t.lambda_function_request_id AS job_run_id
+                            , MIN(failed) OVER (partition by t.lambda_function_request_id) AS failed
+                            , MAX(succeeded) OVER (partition by t.lambda_function_request_id) AS succeeded
+                            , ROUND(duration_ms/1000, 2) AS execution_time_sec                                
+                            , SUM(failed) OVER  (partition by t.lambda_function_request_id ) AS failed_attempts
+                            , log_stream
+                            , ROW_NUMBER() OVER (partition by t.lambda_function_request_id order by time desc) AS rn
+                            , ids.error_message
+                        FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
+                        JOIN ids 
+                          ON t.lambda_function_request_id=ids.lambda_function_request_id
+                    )
+                    -- Final results                             
+                    SELECT '{self.resource_type}' AS resource_type
+                        , monitored_environment
+                        , resource_name
+                        , job_run_id
+                        , 1 AS execution
+                        , failed
+                        , succeeded
+                        , execution_time_sec
+                        , error_message
+                        , failed_attempts
+                        , log_stream
+                    FROM ranked_records
                     WHERE rn = 1
                 """
         return query

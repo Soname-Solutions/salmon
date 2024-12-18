@@ -3,7 +3,16 @@ from typing import Dict, DefaultDict
 from collections import defaultdict
 
 from lib.core.constants import DigestSettings, SettingConfigs
-from lib.digest_service import DigestDataAggregator
+from lib.digest_service import DigestDataAggregator, ResourceConfig
+
+
+class GlueCatalogRun(BaseModel):
+    tables_added: int = 0
+    partitions_added: int = 0
+    indexes_added: int = 0
+    tables_count: int = 0
+    partitions_count: int = 0
+    indexes_count: int = 0
 
 
 class GlueCatalogAggregatedEntry(BaseModel):
@@ -22,9 +31,24 @@ class GlueCatalogAggregatedEntry(BaseModel):
 
     @property
     def CommentsStr(self) -> str:
-        if self.Status == DigestSettings.STATUS_WARNING:
-            return "WARNING: Some Glue Data Catalog object(s) deleted."
-        return ""
+        """Returns the comments as a single string separated by newlines."""
+        return "<br/>".join(self.generate_comments())
+
+    def generate_comments(self) -> list:
+        """Generates a list of comments based on conditions."""
+        conditions_and_messages = [
+            (self.TablesAdded < 0, "Some Glue Data Catalog Tables have been deleted."),
+            (
+                self.PartitionsAdded < 0,
+                "Some Glue Data Catalog Partitions have been deleted.",
+            ),
+            (
+                self.IndexesAdded < 0,
+                "Some Glue Data Catalog Indexes have been deleted.",
+            ),
+        ]
+
+        return [message for condition, message in conditions_and_messages if condition]
 
 
 class GlueCatalogSummaryEntry(BaseModel):
@@ -82,25 +106,36 @@ class GlueCatalogsDigestAggregator(DigestDataAggregator):
             str, GlueCatalogAggregatedEntry
         ] = defaultdict(GlueCatalogAggregatedEntry)
 
+    def _get_runs_by_resource_name(
+        self, data: dict, resource_name: str
+    ) -> list[GlueCatalogRun]:
+        """Gets runs related to specific resource name."""
+        return [
+            GlueCatalogRun(**entry)
+            for entries in data.values()
+            for entry in entries
+            if entry["resource_name"] == resource_name
+        ]
+
     def get_aggregated_runs(
         self, extracted_runs: dict, resources_config: list
     ) -> Dict[str, GlueCatalogAggregatedEntry]:
         """Aggregates data for each resource specified in the configurations."""
 
-        for resource_config in resources_config:
-            resource_name = resource_config["name"]
+        configs = [ResourceConfig(**item) for item in resources_config]
+        for resource_config in configs:
             resource_runs = self._get_runs_by_resource_name(
-                data=extracted_runs, resource_name=resource_name
+                data=extracted_runs, resource_name=resource_config.name
             )
-            entry = self.aggregated_runs[resource_name]
+            agg_entry = self.aggregated_runs[resource_config.name]
 
             for run in resource_runs:
-                entry.TablesAdded += int(run.get("tables_added", 0))
-                entry.PartitionsAdded += int(run.get("partitions_added", 0))
-                entry.IndexesAdded += int(run.get("indexes_added", 0))
-                entry.Tables += int(run.get("tables_count", 0))
-                entry.Partitions += int(run.get("partitions_count", 0))
-                entry.Indexes += int(run.get("indexes_count", 0))
+                agg_entry.Tables += run.tables_count
+                agg_entry.Partitions += run.partitions_count
+                agg_entry.Indexes += run.indexes_count
+                agg_entry.TablesAdded += run.tables_added
+                agg_entry.PartitionsAdded += run.partitions_added
+                agg_entry.IndexesAdded += run.indexes_added
 
         return dict(self.aggregated_runs)
 
