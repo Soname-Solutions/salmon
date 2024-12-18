@@ -200,50 +200,37 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
 class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
     Class is responsible for preparing the query for extracting Lambda Functions invocations.
-    In case of Lambda retries, the latest invocation will be considered.
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
         query = f"""
-                    -- Aggregate error messages by lambda_function_request_id
-                    WITH ids AS(
-                        SELECT lambda_function_request_id
-                             , ARRAY_JOIN(ARRAY_AGG(error_message), ', ') AS error_message
-                        FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
-                        WHERE time BETWEEN '{start_time}' AND '{end_time}'
-                        GROUP BY lambda_function_request_id
-                    ) 
-                    -- Rank records and calculate total failed, succeeded, failed_attempts
-                    , ranked_records AS (
-                        SELECT 
-                              monitored_environment
-                            , resource_name
-                            , t.lambda_function_request_id AS job_run_id
-                            , MIN(failed) OVER (partition by t.lambda_function_request_id) AS failed
-                            , MAX(succeeded) OVER (partition by t.lambda_function_request_id) AS succeeded
-                            , ROUND(duration_ms/1000, 2) AS execution_time_sec                                
-                            , SUM(failed) OVER  (partition by t.lambda_function_request_id ) AS failed_attempts
-                            , log_stream
-                            , ROW_NUMBER() OVER (partition by t.lambda_function_request_id order by time desc) AS rn
-                            , ids.error_message
-                        FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
-                        JOIN ids 
-                          ON t.lambda_function_request_id=ids.lambda_function_request_id
-                    )
-                    -- Final results                             
-                    SELECT '{self.resource_type}' AS resource_type
-                        , monitored_environment
-                        , resource_name
-                        , job_run_id
-                        , 1 AS execution
-                        , failed
-                        , succeeded
-                        , execution_time_sec
-                        , error_message
-                        , failed_attempts
-                        , log_stream
-                    FROM ranked_records
-                    WHERE rn = 1
+                -- Aggregate error messages by lambda_function_request_id
+                WITH ids AS(
+                    SELECT lambda_function_request_id
+                         , ARRAY_JOIN(ARRAY_AGG(error_message), ', ') AS error_message
+                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                    WHERE time BETWEEN '{start_time}' AND '{end_time}'
+                    GROUP BY lambda_function_request_id
+                ) 
+                SELECT  '{self.resource_type}' AS resource_type
+                        , t.monitored_environment
+                        , t.resource_name
+                        , t.lambda_function_request_id AS job_run_id
+                        , t.log_stream
+                        , ids.error_message
+                        , MIN(t.failed) AS failed
+                        , MAX(t.succeeded) AS succeeded
+                        , ROUND(SUM(t.duration_ms)/1000, 2) AS execution_time_sec                                
+                        , SUM(t.failed) AS failed_attempts
+                FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
+                JOIN ids 
+                  ON t.lambda_function_request_id=ids.lambda_function_request_id
+                GROUP BY 
+                          t.monitored_environment
+                        , t.resource_name
+                        , t.lambda_function_request_id
+                        , t.log_stream
+                        , ids.error_message                 
                 """
         return query
 
