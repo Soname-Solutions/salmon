@@ -200,34 +200,38 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
 class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
     """
     Class is responsible for preparing the query for extracting Lambda Functions invocations.
-    In case of Lambda retries, the latest invocation will be considered.
     """
 
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
-        query = f"""SELECT '{self.resource_type}' as resource_type
-                         , monitored_environment
-                         , resource_name
-                         , '' as job_run_id
-                         , 1 as execution
-                         , failed
-                         , succeeded
-                         , round(duration_ms/1000, 2) as execution_time_sec
-                         , case when failed > 0 then error_message else '' end as error_message
-                         , failed_attempts
-                         , log_stream
-                    FROM (
-                            SELECT monitored_environment
-                                 , resource_name
-                                 , min(failed) over (partition by lambda_function_request_id) as failed
-                                 , max(succeeded) over (partition by lambda_function_request_id) as succeeded
-                                 , duration_ms
-                                 , error_message                                 
-                                 , sum(failed) over  (partition by lambda_function_request_id ) as failed_attempts
-                                 , log_stream
-                                 , row_number() over (partition by lambda_function_request_id order by time desc) as rn
-                            FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
-                            WHERE time BETWEEN '{start_time}' AND '{end_time}')  t
-                    WHERE rn = 1
+        query = f"""
+                -- Aggregate error messages by lambda_function_request_id
+                WITH ids AS(
+                    SELECT lambda_function_request_id
+                         , ARRAY_JOIN(ARRAY_AGG(error_message), ', ') AS error_message
+                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                    WHERE time BETWEEN '{start_time}' AND '{end_time}'
+                    GROUP BY lambda_function_request_id
+                ) 
+                SELECT  '{self.resource_type}' AS resource_type
+                        , t.monitored_environment
+                        , t.resource_name
+                        , t.lambda_function_request_id AS job_run_id
+                        , t.log_stream
+                        , ids.error_message
+                        , 1 AS execution
+                        , MIN(t.failed) AS failed
+                        , MAX(t.succeeded) AS succeeded
+                        , ROUND(SUM(t.duration_ms)/1000, 2) AS execution_time_sec                                
+                        , SUM(t.failed) AS failed_attempts
+                FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
+                JOIN ids 
+                  ON t.lambda_function_request_id=ids.lambda_function_request_id
+                GROUP BY 
+                          t.monitored_environment
+                        , t.resource_name
+                        , t.lambda_function_request_id
+                        , t.log_stream
+                        , ids.error_message                 
                 """
         return query
 

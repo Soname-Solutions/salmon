@@ -11,7 +11,13 @@ TEST_RESOURCE_NAME = "test-glue-db"
 
 def test_get_aggregated_runs_empty_extracted_runs():
     extracted_runs = {}
-    resources_config = [{"name": TEST_RESOURCE_NAME}]
+    resources_config = [
+        {
+            "name": TEST_RESOURCE_NAME,
+            "region_name": "test-region",
+            "account_id": "123456789",
+        }
+    ]
     digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
         RESOURCE_TYPE
     )
@@ -51,7 +57,13 @@ def test_get_aggregated_glue_catalogs_runs():
             }
         ]
     }
-    resources_config = [{"name": TEST_RESOURCE_NAME}]
+    resources_config = [
+        {
+            "name": TEST_RESOURCE_NAME,
+            "region_name": "test-region",
+            "account_id": "123456789",
+        }
+    ]
     digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
         RESOURCE_TYPE
     )
@@ -81,7 +93,13 @@ def test_get_aggregated_glue_catalogs_runs_with_warnings():
             }
         ]
     }
-    resources_config = [{"name": TEST_RESOURCE_NAME}]
+    resources_config = [
+        {
+            "name": TEST_RESOURCE_NAME,
+            "region_name": "test-region",
+            "account_id": "123456789",
+        }
+    ]
     digest_aggregator = DigestDataAggregatorProvider.get_aggregator_provider(
         RESOURCE_TYPE
     )
@@ -97,7 +115,7 @@ def test_get_aggregated_glue_catalogs_runs_with_warnings():
     assert resource_agg_entry.IndexesAdded == 0
     assert (
         resource_agg_entry.CommentsStr
-        == "WARNING: Some Glue Data Catalog object(s) deleted."
+        == "WARNING: Some Glue Data Catalog Tables have been deleted."
     )
 
 

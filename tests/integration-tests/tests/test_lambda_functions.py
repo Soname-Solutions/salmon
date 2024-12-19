@@ -57,10 +57,10 @@ class TestLambdaFunctions(TestBaseClass):
 
         assert (
             cnt_lambda_error_messages == 5
-        ), f"There should be exactly four {self.resource_type} error messages"
+        ), f"There should be exactly five {self.resource_type} error messages"
         assert (
             cnt_lambda_all_messages == 5
-        ), f"There should be exactly four {self.resource_type} messages"
+        ), f"There should be exactly five {self.resource_type} messages"
 
     # assert message differs
     def test_timestream_records(self, execution_timestream_metrics_summary):
@@ -81,7 +81,7 @@ class TestLambdaFunctions(TestBaseClass):
         # checking events count
         assert (
             len(relevant_cloudwatch_events) == 7
-        ), "There should be 6 events, one for each Lambda invocation"
+        ), "There should be seven events, one for each Lambda invocation"
 
         # checking all resources are mentioned
         resource_names_in_events = [

@@ -23,7 +23,7 @@ LAMBDA_AGG_ENTRY = AggregatedEntry(
     Success=2,
     Errors=0,
     Warnings=0,
-    Comments=[],
+    ErrorComments=[],
     InsufficientRuns=False,
     HasSLABreach=False,
     HasFailedAttempts=False,
@@ -41,7 +41,7 @@ GLUE_JOB_AGG_ENTRY = AggregatedEntry(
     Success=0,
     Errors=1,
     Warnings=0,
-    Comments=["Test Comment"],
+    ErrorComments=["Test Comment"],
     InsufficientRuns=False,
     HasSLABreach=False,
     HasFailedAttempts=False,
@@ -112,7 +112,13 @@ def test_message_builder_get_resource_table():
     )
     assert returned_resource_table["rows"] == [
         {
-            "values": [GLUE_JOB_NAME, 0, 1, 0, "Test Comment"],
+            "values": [
+                GLUE_JOB_NAME,
+                0,
+                1,
+                0,
+                "Some runs have failed:<br/>Test Comment",
+            ],
             "style": DigestSettings.STATUS_ERROR,
         }
     ]
@@ -321,7 +327,13 @@ def test_message_builder_with_glue_catalogs():
                 "header": {"values": DigestMessageBuilder.BODY_TABLE_HEADERS},
                 "rows": [
                     {
-                        "values": ["glue-job-test", 0, 1, 0, "Test Comment"],
+                        "values": [
+                            "glue-job-test",
+                            0,
+                            1,
+                            0,
+                            "Some runs have failed:<br/>Test Comment",
+                        ],
                         "style": DigestSettings.STATUS_ERROR,
                     }
                 ],

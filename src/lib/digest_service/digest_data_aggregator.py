@@ -1,9 +1,34 @@
 from pydantic import BaseModel
-from typing import Dict, List, DefaultDict
+from typing import Optional, Dict, List, DefaultDict
 from collections import defaultdict
 
 from lib.core.constants import DigestSettings, SettingConfigs
 from lib.event_mapper import ExecutionInfoUrlMixin
+
+
+class ResourceRun(BaseModel):
+    resource_name: str
+    failed: int = 0
+    succeeded: int = 0
+    execution: int = 0
+    job_run_id: Optional[str] = None
+    error_message: Optional[str] = None
+    execution_time_sec: Optional[float] = 0.0
+    failed_attempts: int = 0
+    glue_table_name: Optional[str] = None
+    glue_db_name: Optional[str] = None
+    glue_catalog_id: Optional[str] = None
+    glue_job_name: Optional[str] = None
+    context_type: Optional[str] = None
+    log_stream: Optional[str] = None
+
+
+class ResourceConfig(BaseModel):
+    name: str
+    region_name: str
+    account_id: str
+    minimum_number_of_runs: int = 0
+    sla_seconds: int = 0
 
 
 class AggregatedEntry(BaseModel):
@@ -11,7 +36,10 @@ class AggregatedEntry(BaseModel):
     Success: int = 0
     Errors: int = 0
     Warnings: int = 0
-    Comments: List[str] = []
+    ErrorComments: List[str] = []
+    WarningComments: List[str] = []
+    MinRuns: int = 0
+    SLA: int = 0
     InsufficientRuns: bool = (
         False  # Indicates if there have been less runs than expected
     )
@@ -28,7 +56,37 @@ class AggregatedEntry(BaseModel):
 
     @property
     def CommentsStr(self) -> str:
-        return "<br/>".join(self.Comments)
+        """Returns the comments as a single string separated by newlines."""
+        return "<br/>".join(self.generate_comments())
+
+    def generate_comments(self) -> list:
+        """Generates a list of comments based on errors, warnings, and SLA checks."""
+        comments = []
+
+        # Error comments first
+        if self.ErrorComments:
+            comments.append("Some runs have failed:")
+            comments.extend(set(self.ErrorComments))
+
+        # Comment on insufficient runs
+        if self.InsufficientRuns:
+            comments.append(
+                f"Insufficient runs: {self.Executions} run(s) during the monitoring period "
+                f"(at least {self.MinRuns} expected)."
+            )
+
+        # Warning comment about retries
+        if self.HasFailedAttempts and self.WarningComments:
+            comments.append(
+                "WARNING: Some runs have succeeded after one or more retry attempts:"
+            )
+            comments.extend(set(self.WarningComments))
+
+        # Warning comment about SLA
+        if self.HasSLABreach:
+            comments.append(f"WARNING: Some runs haven't met SLA (={self.SLA} sec).")
+
+        return comments
 
 
 class SummaryEntry(BaseModel):
@@ -78,131 +136,119 @@ class DigestDataAggregator:
             AggregatedEntry
         )
 
-    def _get_runs_by_resource_name(self, data: dict, resource_name: str) -> list:
+    def _get_runs_by_resource_name(
+        self, data: dict, resource_name: str
+    ) -> list[ResourceRun]:
         """Gets runs related to specific resource name."""
         return [
-            entry
+            ResourceRun(**entry)
             for entries in data.values()
             for entry in entries
             if entry["resource_name"] == resource_name
         ]
 
-    def _finalize_comments(
-        self, resource_agg_entry: AggregatedEntry, resource_config: dict
+    def _check_sla_breach(
+        self, agg_entry: AggregatedEntry, resource_run: ResourceRun
     ) -> None:
-        # remove duplicate comments
-        resource_agg_entry.Comments = list(set(resource_agg_entry.Comments))
+        """Checks if the run has breached SLA."""
+        if agg_entry.SLA > 0 and resource_run.execution_time_sec > agg_entry.SLA:
+            agg_entry.Warnings += 1
+            agg_entry.HasSLABreach = True
 
-        # add warnings
-        if resource_agg_entry.HasSLABreach:
-            resource_agg_entry.Comments.append(
-                f"WARNING: Some runs haven't met SLA (={resource_config.get('sla_seconds', 0)} sec)."
-            )
-        if resource_agg_entry.HasFailedAttempts:
-            resource_agg_entry.Comments.append(
-                "WARNING: Some runs have succeeded after one or more retry attempts."
-            )
+    def _check_succeeded_with_retry(
+        self, agg_entry: AggregatedEntry, resource_run: ResourceRun
+    ) -> None:
+        """Checks if the run succeeded after retries."""
+        if resource_run.succeeded > 0 and resource_run.failed_attempts > 0:
+            agg_entry.Warnings += 1
+            agg_entry.HasFailedAttempts = True
 
-        # add a general failure comment
-        if resource_agg_entry.Errors > 0:
-            resource_agg_entry.Comments.insert(0, "Some runs have failed")
+    def _check_insufficient_runs(self, agg_entry: AggregatedEntry) -> None:
+        """Checks if the requirement on the min number of runs is not met."""
+        if agg_entry.MinRuns > 0 and agg_entry.Executions < agg_entry.MinRuns:
+            agg_entry.InsufficientRuns = True
 
-        # check if the requirement on min number of runs was met
-        min_runs = resource_config.get("minimum_number_of_runs", 0)
-        if min_runs > 0 and resource_agg_entry.Executions < min_runs:
-            resource_agg_entry.InsufficientRuns = True
-            resource_agg_entry.Comments.append(
-                f"{resource_agg_entry.Executions} runs during the monitoring period (at least {min_runs} expected)"
-            )
+    def _generate_job_run_url(
+        self, resource_run: ResourceRun, resource_config: ResourceConfig
+    ) -> str:
+        """Generates the URL for a specific job run based on resource run details."""
+        return ExecutionInfoUrlMixin.get_url(
+            resource_type=self.resource_type,
+            region_name=resource_config.region_name,
+            resource_name=resource_run.resource_name,
+            account_id=resource_config.account_id,
+            run_id=resource_run.job_run_id,
+            glue_table_name=resource_run.glue_table_name,
+            glue_db_name=resource_run.glue_db_name,
+            glue_catalog_id=resource_run.glue_catalog_id,
+            glue_job_name=resource_run.glue_job_name,
+            context_type=resource_run.context_type,
+            log_stream=resource_run.log_stream,
+        )
 
     def _append_error_comments(
         self,
-        resource_run: dict,
-        resource_config: dict,
-        resource_agg_entry: AggregatedEntry,
+        resource_run: ResourceRun,
+        resource_config: ResourceConfig,
+        agg_entry: AggregatedEntry,
     ) -> None:
-        """Adds error comments based on failed runs."""
+        """Adds error/warning comments based on failed runs/attempts."""
+        is_failed = resource_run.failed > 0
+        is_successful_with_retries = (
+            resource_run.succeeded > 0 and resource_run.failed_attempts > 0
+        )
 
-        if int(resource_run["failed"]) > 0:
-            job_run_url = ExecutionInfoUrlMixin.get_url(
-                resource_type=self.resource_type,
-                region_name=resource_config["region_name"],
-                resource_name=resource_run["resource_name"],
-                account_id=resource_config["account_id"],
-                run_id=resource_run["job_run_id"],
-                glue_table_name=resource_run.get("glue_table_name"),
-                glue_db_name=resource_run.get("glue_db_name"),
-                glue_catalog_id=resource_run.get("glue_catalog_id"),
-                glue_job_name=resource_run.get("glue_job_name"),
-                context_type=resource_run.get("context_type"),
-                log_stream=resource_run.get("log_stream"),
+        if is_failed or is_successful_with_retries:
+            job_run_url = self._generate_job_run_url(resource_run, resource_config)
+
+            max_msg_length = DigestSettings.MAX_ERROR_MESSAGE_LENGTH
+            truncated_error_message = (
+                resource_run.error_message[:max_msg_length] + "..."
+                if len(resource_run.error_message) > max_msg_length
+                else resource_run.error_message
+            )
+            error_comment = (
+                f" - <a href='{job_run_url}'> ERROR: {truncated_error_message}</a>"
             )
 
-            error_message = resource_run.get("error_message", "Unknown errors")
-            if job_run_url:
-                if len(error_message) > DigestSettings.MAX_ERROR_MESSAGE_LENGTH:
-                    error_message = (
-                        error_message[: DigestSettings.MAX_ERROR_MESSAGE_LENGTH] + "..."
-                    )
-                error_comment = f" - <a href='{job_run_url}'>ERROR: {error_message}</a>"
-            else:
-                error_comment = f" - {error_message}"
-
-            resource_agg_entry.Comments.append(error_comment)
+            # Append error or warning comments to the appropriate list
+            if is_failed:
+                agg_entry.ErrorComments.append(error_comment)
+            if is_successful_with_retries:
+                agg_entry.WarningComments.append(error_comment)
 
     def _process_single_run(
         self,
-        resource_agg_entry: AggregatedEntry,
-        resource_run: dict,
-        resource_config: dict,
+        agg_entry: AggregatedEntry,
+        resource_run: ResourceRun,
+        resource_config: ResourceConfig,
     ) -> None:
         """Aggregates runs related to a specific resource name."""
-        resource_agg_entry.Errors += int(resource_run["failed"])
-        resource_agg_entry.Success += int(resource_run["succeeded"])
-        resource_agg_entry.Executions += int(resource_run["execution"])
+        agg_entry.Errors += resource_run.failed
+        agg_entry.Success += resource_run.succeeded
+        agg_entry.Executions += resource_run.execution
 
-        # for each failed run, the error details will be added in the comment section
-        self._append_error_comments(
-            resource_run=resource_run,
-            resource_config=resource_config,
-            resource_agg_entry=resource_agg_entry,
-        )
-
-        # check for SLA breach
-        sla_seconds = resource_config.get("sla_seconds", 0)
-        execution_time_sec = float(resource_run.get("execution_time_sec", 0))
-        if sla_seconds > 0 and execution_time_sec > sla_seconds:
-            resource_agg_entry.Warnings += 1
-            resource_agg_entry.HasSLABreach = True
-
-        # check for failed attempts before succeeding (relevant for Lambda Functions)
-        succeeded_runs = int(resource_run.get("succeeded", 0))
-        failed_attempts = int(resource_run.get("failed_attempts", 0))
-        if succeeded_runs > 0 and failed_attempts > 0:
-            resource_agg_entry.Warnings += 1
-            resource_agg_entry.HasFailedAttempts = True
+        self._append_error_comments(resource_run, resource_config, agg_entry)
+        self._check_sla_breach(agg_entry, resource_run)
+        self._check_succeeded_with_retry(agg_entry, resource_run)
 
     def get_aggregated_runs(
-        self, extracted_runs: dict, resources_config: list
+        self, extracted_runs: dict, resources_config: List[dict]
     ) -> Dict[str, AggregatedEntry]:
         """Aggregates data for each resource specified in the configurations."""
-        for resource_config in resources_config:
-            resource_name = resource_config["name"]
-            resource_runs = self._get_runs_by_resource_name(
-                data=extracted_runs, resource_name=resource_name
-            )
-            resource_agg_entry = self.aggregated_runs[resource_name]
 
-            for resource_run in resource_runs:
-                self._process_single_run(
-                    resource_agg_entry=resource_agg_entry,
-                    resource_run=resource_run,
-                    resource_config=resource_config,
-                )
-            self._finalize_comments(
-                resource_agg_entry=resource_agg_entry,
-                resource_config=resource_config,
-            )
+        # convert list of dictionaries to list of ResourceConfig instances
+        configs = [ResourceConfig(**item) for item in resources_config]
+        for resource_config in configs:
+            runs = self._get_runs_by_resource_name(extracted_runs, resource_config.name)
+            agg_entry = self.aggregated_runs[resource_config.name]
+            agg_entry.MinRuns = resource_config.minimum_number_of_runs
+            agg_entry.SLA = resource_config.sla_seconds
+
+            for run in runs:
+                self._process_single_run(agg_entry, run, resource_config)
+
+            self._check_insufficient_runs(agg_entry)
 
         return dict(self.aggregated_runs)
 
