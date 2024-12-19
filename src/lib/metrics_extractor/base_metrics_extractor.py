@@ -5,8 +5,8 @@ from datetime import datetime
 from lib.aws import Boto3ClientCreator, TimestreamTableWriter, TimeStreamQueryRunner
 
 
-class BaseMetricsExtractorError(Exception):
-    """Exception raised for errors encountered while running BaseMetricsExtractor methods."""
+class MetricsExtractorException(Exception):
+    """Exception raised for errors encountered while processing metrics extraction."""
 
     pass
 
