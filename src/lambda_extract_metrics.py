@@ -4,16 +4,13 @@ import logging
 from itertools import groupby
 from datetime import datetime
 
-from lib.aws import AWSNaming, Boto3ClientCreator, TimestreamTableWriter
+from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
+from lib.aws import AWSNaming, Boto3ClientCreator
 from lib.aws.glue_manager import GlueManager
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
 from lib.metrics_extractor import MetricsExtractorProvider, BaseMetricsExtractor
-from lib.metrics_extractor.metrics_extractor_utils import (
-    get_resource_last_update_time,
-    get_earliest_last_update_time_for_resource_set,
-)
 from lib.core.constants import SettingConfigResourceTypes as types
 
 logger = logging.getLogger()

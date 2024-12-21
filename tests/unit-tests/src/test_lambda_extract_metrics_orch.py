@@ -83,7 +83,7 @@ def mock_lambda_invoke():
 @pytest.fixture(scope="module")
 def mock_last_update_times():
     with patch(
-        "lambda_extract_metrics_orch.retrieve_last_update_time_for_all_resources",
+        "lambda_extract_metrics_orch.TimestreamMetricsStorage.retrieve_last_update_time_for_all_resources",
         return_value=LAST_UPDATE_TIMES_SAMPLE,
     ) as _mock:
         yield _mock
