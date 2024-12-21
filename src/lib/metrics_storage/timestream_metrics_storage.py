@@ -31,6 +31,7 @@ class TimestreamMetricsStorage:
         self._write_client = write_client
         self._query_client = query_client
         self._writer = None
+        self._query_runner = None
 
     @cached_property
     def write_client(self):
@@ -44,43 +45,44 @@ class TimestreamMetricsStorage:
             self._query_client = boto3.client("timestream-query")
         return self._query_client
 
-    @cached_property
-    def writer(self):
+    def writer(self, table_name):
         if self._writer is None:
             self._writer = TimestreamTableWriter(
-                self.db_name, self.table_name, self.write_client
+                self.db_name, table_name, self.write_client
             )
         return self._writer
 
+    @cached_property
+    def query_runner(self) -> TimeStreamQueryRunner:
+        if self._query_runner is None:
+            self._query_runner = TimeStreamQueryRunner(self.query_client)
+        return self._query_runner
+
     # Proxy methods for TimestreamTableWriter
-    def write_records(self, records, common_attributes={}):
-        return self.writer.write_records(records, common_attributes)
+    def write_records(self, table_name, records, common_attributes={}):
+        return self.writer(table_name).write_records(records, common_attributes)
 
-    def get_memory_store_retention_hours(self):
-        return self.writer.get_MemoryStoreRetentionPeriodInHours()
+    def _get_memory_store_retention_hours(self, table_name):
+        return self.writer(table_name).get_MemoryStoreRetentionPeriodInHours()
 
-    def get_magnetic_store_retention_days(self):
-        return self.writer.get_MagneticStoreRetentionPeriodInDays()
+    def _get_magnetic_store_retention_days(self, table_name):
+        return self.writer(table_name).get_MagneticStoreRetentionPeriodInDays()
 
-    def get_earliest_writeable_time(self):
-        return self.writer.get_earliest_writeable_time_for_table()
+    def _get_earliest_writeable_time(self, table_name):
+        return self.writer(table_name).get_earliest_writeable_time_for_table()
 
     # Proxy methods for TimeStreamQueryRunner
     def is_table_empty(self, table_name):
-        return TimeStreamQueryRunner(self.query_client).is_table_empty(
-            self.db_name, table_name
-        )
+        return self.query_runner.is_table_empty(self.db_name, table_name)
 
     def execute_scalar_query(self, query):
-        return TimeStreamQueryRunner(self.query_client).execute_scalar_query(query)
+        return self.query_runner.execute_scalar_query(query)
 
     def execute_scalar_query_date(self, query):
-        return TimeStreamQueryRunner(self.query_client).execute_scalar_query_date_field(
-            query
-        )
+        return self.query_runner.execute_scalar_query_date_field(query)
 
     def execute_query(self, query):
-        return TimeStreamQueryRunner(self.query_client).execute_query(query)
+        return self.query_runner.execute_query(query)
 
     # Added methods from metrics_extractor_utils.py
     def retrieve_last_update_time_for_all_resources(self, logger):
@@ -185,4 +187,6 @@ class TimestreamMetricsStorage:
                 ]
                 return min(update_times)
 
-        return self.get_earliest_writeable_time()
+        return self._get_earliest_writeable_time(
+            AWSNaming.TimestreamMetricsTable(None, resource_type)
+        )

@@ -3,12 +3,7 @@ from datetime import datetime
 import pytest
 
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
-from lib.metrics_extractor import (
-    retrieve_last_update_time_for_all_resources,
-    get_resource_last_update_time,
-    get_earliest_last_update_time_for_resource_set,
-    MetricsExtractorException,
-)
+from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
