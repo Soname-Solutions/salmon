@@ -491,155 +491,177 @@ class TestProcessIndividualResource:
 # #########################################################################################
 
 
-# def test_process_all_resources_by_env_and_type_glue_jobs(
-#     os_vars_values, mock_settings, mock_process_individual_resource
-# ):
-#     (
-#         settings_s3_path,
-#         iam_role_name,
-#         timestream_metrics_db_name,
-#         alerts_event_bus_name,
-#     ) = os_vars_values
+@pytest.mark.usefixtures("mock_dependencies")
+class TestProcessAllResourcesByEnvAndType:
+    GLUE_DQ_RESULT_IDS = ["result1", "result2"]
 
-#     # making sure calls for process_individual_resource are made and proper AWS client is used
-#     monitored_environment_name = "env1"
-#     resource_type = "glue_jobs"
-#     resource_names = ["glue_job1", "glue_job2"]
+    @pytest.fixture(autouse=True)
+    def mock_dependencies(self):
+        # Mock dependencies
+        self.mock_settings = MagicMock()
+        self.mock_metrics_storage = MagicMock()
+        self.mock_boto3_client_creator = MagicMock()
+        self.mock_collect_glue_data_quality_result_ids = patch(
+            "lambda_extract_metrics.collect_glue_data_quality_result_ids",
+            return_value=self.GLUE_DQ_RESULT_IDS,
+        )
+        self.mock_process_individual_resource = patch(
+            "lambda_extract_metrics.process_individual_resource"
+        )
+        self.mock_boto3_client_creator_patch = patch(
+            "lambda_extract_metrics.Boto3ClientCreator",
+            return_value=self.mock_boto3_client_creator,
+        )
 
-#     process_all_resources_by_env_and_type(
-#         monitored_environment_name=monitored_environment_name,
-#         resource_type=resource_type,
-#         resource_names=resource_names,
-#         settings=mock_settings,
-#         iam_role_name=iam_role_name,
-#         timestream_metrics_db_name=timestream_metrics_db_name,
-#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#         alerts_event_bus_name=alerts_event_bus_name,
-#     )
+        # Start patches
+        self.mock_collect_glue_data_quality_result_ids.start()
+        self.mock_process_individual_resource_mock = (
+            self.mock_process_individual_resource.start()
+        )
+        self.mock_boto3_client_creator_patch.start()
 
-#     # mock process_individual_resource
-#     expected_calls = []
-#     for resource_name in resource_names:
-#         expected_calls.append(
-#             call(
-#                 monitored_environment_name=monitored_environment_name,
-#                 resource_type=resource_type,
-#                 resource_name=resource_name,
-#                 boto3_client_creator=ANY,
-#                 aws_client_name="glue",
-#                 timestream_writer=ANY,
-#                 timestream_metrics_db_name=timestream_metrics_db_name,
-#                 timestream_metrics_table_name=ANY,
-#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#                 alerts_event_bus_name=alerts_event_bus_name,
-#                 result_ids=[],
-#             )
-#         )
+        yield
 
-#     mock_process_individual_resource.assert_has_calls(expected_calls)
+        # Stop patches
+        self.mock_collect_glue_data_quality_result_ids.stop()
+        self.mock_process_individual_resource.stop()
+        self.mock_boto3_client_creator_patch.stop()
 
+    def test_process_resources_with_glue_data_quality(self):
+        # Arrange
+        monitored_environment_name = "test_env"
+        resource_type = types.GLUE_DATA_QUALITY
+        resource_names = ["resource1", "resource2"]
+        last_update_times = LAST_UPDATE_TIMES_SAMPLE
+        alerts_event_bus_name = "test_event_bus"
 
-# def test_process_all_resources_by_env_and_type_glue_workflows(
-#     os_vars_values, mock_settings, mock_process_individual_resource
-# ):
-#     (
-#         settings_s3_path,
-#         iam_role_name,
-#         timestream_metrics_db_name,
-#         alerts_event_bus_name,
-#     ) = os_vars_values
+        self.mock_settings.get_monitored_environment_props.return_value = (
+            "account-id",
+            "region",
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.return_value = (
+            "metrics_table"
+        )
 
-#     # making sure calls for process_individual_resource are made and proper AWS client is used
-#     monitored_environment_name = "env1"
-#     resource_type = "glue_workflows"
-#     resource_names = ["glue_workflow1"]
+        # Act
+        process_all_resources_by_env_and_type(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_names=resource_names,
+            settings=self.mock_settings,
+            iam_role_name="test-role",
+            metrics_storage=self.mock_metrics_storage,
+            last_update_times=last_update_times,
+            alerts_event_bus_name=alerts_event_bus_name,
+        )
 
-#     process_all_resources_by_env_and_type(
-#         monitored_environment_name=monitored_environment_name,
-#         resource_type=resource_type,
-#         resource_names=resource_names,
-#         settings=mock_settings,
-#         iam_role_name=iam_role_name,
-#         timestream_metrics_db_name=timestream_metrics_db_name,
-#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#         alerts_event_bus_name=alerts_event_bus_name,
-#     )
+        # Assert
+        self.mock_settings.get_monitored_environment_props.assert_called_once_with(
+            monitored_environment_name
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.assert_called_once_with(
+            resource_type
+        )
+        self.mock_process_individual_resource_mock.assert_has_calls(
+            [
+                call(
+                    monitored_environment_name=monitored_environment_name,
+                    resource_type=resource_type,
+                    resource_name="resource1",
+                    boto3_client_creator=self.mock_boto3_client_creator,
+                    aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+                        resource_type
+                    ],
+                    metrics_storage=self.mock_metrics_storage,
+                    metrics_table_name="metrics_table",
+                    last_update_times=last_update_times,
+                    alerts_event_bus_name=alerts_event_bus_name,
+                    result_ids=self.GLUE_DQ_RESULT_IDS,
+                ),
+                call(
+                    monitored_environment_name=monitored_environment_name,
+                    resource_type=resource_type,
+                    resource_name="resource2",
+                    boto3_client_creator=self.mock_boto3_client_creator,
+                    aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+                        resource_type
+                    ],
+                    metrics_storage=self.mock_metrics_storage,
+                    metrics_table_name="metrics_table",
+                    last_update_times=last_update_times,
+                    alerts_event_bus_name=alerts_event_bus_name,
+                    result_ids=self.GLUE_DQ_RESULT_IDS,
+                ),
+            ]
+        )
 
-#     # mock process_individual_resource
-#     expected_calls = []
-#     for resource_name in resource_names:
-#         expected_calls.append(
-#             call(
-#                 monitored_environment_name=monitored_environment_name,
-#                 resource_type=resource_type,
-#                 resource_name=resource_name,
-#                 boto3_client_creator=ANY,
-#                 aws_client_name="glue",
-#                 timestream_writer=ANY,
-#                 timestream_metrics_db_name=timestream_metrics_db_name,
-#                 timestream_metrics_table_name=ANY,
-#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#                 alerts_event_bus_name=alerts_event_bus_name,
-#                 result_ids=[],
-#             )
-#         )
+    def test_process_resources_without_glue_data_quality(self):
+        # Arrange
+        monitored_environment_name = "test_env"
+        resource_type = "glue_jobs"
+        resource_names = ["job1", "job2"]
+        last_update_times = {}
+        alerts_event_bus_name = "test_event_bus"
 
-#     mock_process_individual_resource.assert_has_calls(expected_calls)
+        self.mock_settings.get_monitored_environment_props.return_value = (
+            "account-id",
+            "region",
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.return_value = (
+            "metrics_table"
+        )
 
+        # Act
+        process_all_resources_by_env_and_type(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_names=resource_names,
+            settings=self.mock_settings,
+            iam_role_name="test-role",
+            metrics_storage=self.mock_metrics_storage,
+            last_update_times=last_update_times,
+            alerts_event_bus_name=alerts_event_bus_name,
+        )
 
-# def test_process_all_resources_by_env_and_type_glue_data_quality(
-#     os_vars_values,
-#     mock_settings,
-#     mock_process_individual_resource,
-# ):
-#     (
-#         settings_s3_path,
-#         iam_role_name,
-#         timestream_metrics_db_name,
-#         alerts_event_bus_name,
-#     ) = os_vars_values
-
-#     # making sure calls for process_individual_resource are made and proper AWS client is used
-#     monitored_environment_name = "env1"
-#     resource_type = types.GLUE_DATA_QUALITY
-#     resource_names = ["glue_dq1", "glue_dq2"]
-
-#     expected_result_ids = ["test_result_id1", "test_result_id2"]
-#     with patch(
-#         "lambda_extract_metrics.collect_glue_data_quality_result_ids",
-#         return_value=expected_result_ids,
-#     ):
-#         process_all_resources_by_env_and_type(
-#             monitored_environment_name=monitored_environment_name,
-#             resource_type=resource_type,
-#             resource_names=resource_names,
-#             settings=mock_settings,
-#             iam_role_name=iam_role_name,
-#             timestream_metrics_db_name=timestream_metrics_db_name,
-#             last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#             alerts_event_bus_name=alerts_event_bus_name,
-#         )
-
-#     # mock process_individual_resource
-#     expected_calls = []
-#     for resource_name in resource_names:
-#         expected_calls.append(
-#             call(
-#                 monitored_environment_name=monitored_environment_name,
-#                 resource_type=resource_type,
-#                 resource_name=resource_name,
-#                 boto3_client_creator=ANY,
-#                 aws_client_name="glue",
-#                 timestream_writer=ANY,
-#                 timestream_metrics_db_name=timestream_metrics_db_name,
-#                 timestream_metrics_table_name=ANY,
-#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#                 alerts_event_bus_name=alerts_event_bus_name,
-#                 result_ids=expected_result_ids,
-#             )
-#         )
-
-#     mock_process_individual_resource.assert_has_calls(expected_calls)
+        # Assert
+        self.mock_settings.get_monitored_environment_props.assert_called_once_with(
+            monitored_environment_name
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.assert_called_once_with(
+            resource_type
+        )
+        self.mock_process_individual_resource_mock.assert_has_calls(
+            [
+                call(
+                    monitored_environment_name=monitored_environment_name,
+                    resource_type=resource_type,
+                    resource_name="job1",
+                    boto3_client_creator=self.mock_boto3_client_creator,
+                    aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+                        resource_type
+                    ],
+                    metrics_storage=self.mock_metrics_storage,
+                    metrics_table_name="metrics_table",
+                    last_update_times=last_update_times,
+                    alerts_event_bus_name=alerts_event_bus_name,
+                    result_ids=[],
+                ),
+                call(
+                    monitored_environment_name=monitored_environment_name,
+                    resource_type=resource_type,
+                    resource_name="job2",
+                    boto3_client_creator=self.mock_boto3_client_creator,
+                    aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+                        resource_type
+                    ],
+                    metrics_storage=self.mock_metrics_storage,
+                    metrics_table_name="metrics_table",
+                    last_update_times=last_update_times,
+                    alerts_event_bus_name=alerts_event_bus_name,
+                    result_ids=[],
+                ),
+            ]
+        )
 
 
 # #########################################################################################
