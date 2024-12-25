@@ -118,8 +118,6 @@ def test_two_completed_records_integrity(boto3_client_creator):
             aws_client_name="glue",
             resource_name=WORKFLOW_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
@@ -164,8 +162,6 @@ def test_skip_running_execution(boto3_client_creator):
             aws_client_name="glue",
             resource_name=WORKFLOW_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
@@ -192,8 +188,6 @@ def test_failed_job_and_error(boto3_client_creator):
             aws_client_name="glue",
             resource_name=WORKFLOW_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
@@ -218,8 +212,6 @@ def test_send_alerts(boto3_client_creator):
             aws_client_name="glue",
             resource_name=WORKFLOW_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
