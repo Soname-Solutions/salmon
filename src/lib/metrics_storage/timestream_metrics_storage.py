@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import cached_property
 import boto3
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
@@ -17,6 +18,8 @@ class TimestreamMetricsStorage:
     A proxy class for TimestreamTableWriter and TimeStreamQueryRunner to provide a unified interface for interacting
     with Timestream metrics storage. Clients and writer are lazily initialized to optimize for partial use cases.
     """
+
+    RESOURCE_NAME_COLUMN_NAME = "resource_name"
 
     def __init__(self, db_name: str, write_client=None, query_client=None):
         """
@@ -68,7 +71,14 @@ class TimestreamMetricsStorage:
     def _get_magnetic_store_retention_days(self, table_name):
         return self.writer(table_name).get_MagneticStoreRetentionPeriodInDays()
 
-    def _get_earliest_writeable_time(self, table_name):
+    # todo: in phase 2 - move to BaseMetricStorage
+    def get_metrics_table_name_for_resource_type(self, resource_type: str):
+        return AWSNaming.TimestreamMetricsTable(None, resource_type)
+
+    def get_earliest_writeable_time_for_resource_type(self, resource_type: str):
+        table_name = self.get_metrics_table_name_for_resource_type(
+            resource_type=resource_type
+        )
         return self.writer(table_name).get_earliest_writeable_time_for_table()
 
     # Proxy methods for TimeStreamQueryRunner
@@ -78,7 +88,7 @@ class TimestreamMetricsStorage:
     def execute_scalar_query(self, query):
         return self.query_runner.execute_scalar_query(query)
 
-    def execute_scalar_query_date(self, query):
+    def execute_scalar_query_date_field(self, query):
         return self.query_runner.execute_scalar_query_date_field(query)
 
     def execute_query(self, query):
@@ -135,7 +145,7 @@ class TimestreamMetricsStorage:
             logger.error(e)
             raise MetricsStorageException(f"Error getting last update time: {e}")
 
-    def get_resource_last_update_time(
+    def get_resource_last_update_time_from_json(
         self, last_update_time_json, resource_type, resource_name
     ):
         """
@@ -161,9 +171,22 @@ class TimestreamMetricsStorage:
                 return str_utc_datetime_to_datetime(resource_info["last_update_time"])
         return None
 
+    def get_last_update_time_from_metrics_table(
+        self, resource_type, resource_name
+    ) -> datetime | None:
+        metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
+
+        # check if table is empty
+        if self.is_table_empty(metrics_table_name):
+            return None
+
+        query = f'SELECT max(time) FROM "{self.db_name}"."{metrics_table_name}" WHERE {self.RESOURCE_NAME_COLUMN_NAME} = \'{resource_name}\''
+        last_date = self.execute_scalar_query_date_field(query=query)
+        return last_date
+
     def get_earliest_last_update_time_for_resource_set(
-        self, last_update_times, resource_names
-    ):
+        self, last_update_times, resource_names, resource_type
+    ) -> datetime:
         """
         Get the earliest update time for a set of resources.
 
@@ -187,6 +210,6 @@ class TimestreamMetricsStorage:
                 ]
                 return min(update_times)
 
-        return self._get_earliest_writeable_time(
-            AWSNaming.TimestreamMetricsTable(None, resource_type)
+        return self.get_earliest_writeable_time_for_resource_type(
+            resource_type=resource_type
         )
