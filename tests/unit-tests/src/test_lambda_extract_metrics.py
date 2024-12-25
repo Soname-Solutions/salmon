@@ -8,6 +8,7 @@ from lambda_extract_metrics import (
     process_all_resources_by_env_and_type,
     process_individual_resource,
     collect_glue_data_quality_result_ids,
+    get_since_time_for_individual_resource,
 )
 from unittest.mock import patch, call, MagicMock, ANY
 from lib.core.constants import SettingConfigs, SettingConfigResourceTypes as types
@@ -189,575 +190,700 @@ def mock_boto3_client_creator():
 
 
 #########################################################################################
+# TESTs for get_since_time_for_individual_resource
 
 
-# testing successful flow when we have last_update_time for the resource coming from orchestrator lambda
-# testing "glue-job1" with "last_update_time": "2024-04-16 12:05:11.275000000"
-def test_process_individual_resource_with_last_upd_time(
-    os_vars_values,
-    mock_settings,
-    mock_metrics_extractor_from_provider,
-    mock_metrics_storage_earliest_writeable_time,
-    mock_boto3_client_creator,
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-    monitored_environment_name = "env1"
+@pytest.fixture
+def mock_metrics_storage_for_get_since_time():
+    mocked_metrics_storage = MagicMock()
+    mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.return_value = (
+        EARLIEST_WRITEABLE_TIME  # 2024-04-16
+    )
+
+    with patch(
+        "lambda_extract_metrics.TimestreamMetricsStorage", mocked_metrics_storage
+    ) as mock_get_extractor:
+        yield mocked_metrics_storage
+
+
+def test_last_update_time_from_json(mock_metrics_storage_for_get_since_time):
+    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
     resource_type = "glue_jobs"
-    resource_name = (
-        "glue-job1"  # we have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
+    resource_name = "glue-job1"
+
+    # trying to write metrics later than earliest writable time (normal situation)
+    since_time = datetime(2024, 12, 31, 0, 0, 0, tzinfo=timezone.utc)
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
+        since_time
     )
 
-    boto3_client_creator = mock_boto3_client_creator
-    metrics_storage = mock_metrics_storage_earliest_writeable_time
-    timestream_metrics_table_name = "test_table_name"
-
-    result = process_individual_resource(
-        monitored_environment_name=monitored_environment_name,
-        resource_type=resource_type,
-        resource_name=resource_name,
-        boto3_client_creator=boto3_client_creator,
-        aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
-            resource_type
-        ],
-        metrics_storage=metrics_storage,
-        metrics_table_name=timestream_metrics_table_name,
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name=alerts_event_bus_name,
-        result_ids=[],
+    result = get_since_time_for_individual_resource(
+        last_update_times,
+        resource_type,
+        resource_name,
+        mock_metrics_storage_for_get_since_time,
     )
 
-    # last_update_time will be taken from LAST_UPDATE_TIMES_SAMPLE in this case
-    # not from: metrics_extractor.get_last_update_time
-    mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
-    assert result["since_time"] == str_utc_datetime_to_datetime(
-        "2024-04-16 12:05:11.275000000"
-    )
-
-    # no alerts sent (glue uses eventbridge for alerts)
-    assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
+    assert result == since_time
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
+    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_not_called()
+    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
 
 
-# testing successful flow when we DON'T have last_update_time for the resource coming from orchestrator lambda
-# but we can identify it from timestream DB
-def test_process_individual_resource_last_upd_time_from_timestream(
-    os_vars_values,
-    mock_settings,
-    mock_metrics_extractor_from_provider,
-    mock_timestream_writer,
-    mock_boto3_client_creator,
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-    monitored_environment_name = "env1"
+def test_last_update_time_fallback_to_earliest(mock_metrics_storage_for_get_since_time):
+    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
     resource_type = "glue_jobs"
-    resource_name = "glue-job-not-having-last-upd-time"  # we DON'T have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
+    resource_name = "glue-job1"
 
-    boto3_client_creator = mock_boto3_client_creator
-    timestream_writer = mock_timestream_writer
-    timestream_metrics_table_name = "test_table_name"
-
-    result = process_individual_resource(
-        monitored_environment_name=monitored_environment_name,
-        resource_type=resource_type,
-        resource_name=resource_name,
-        boto3_client_creator=boto3_client_creator,
-        aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
-            resource_type
-        ],
-        timestream_writer=timestream_writer,
-        timestream_metrics_db_name=timestream_metrics_db_name,
-        metrics_table_name=timestream_metrics_table_name,
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name=alerts_event_bus_name,
-        result_ids=[],
+    # trying to write metrics EARLIER than earliest writable time (expect earlist)
+    since_time = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
+        since_time
     )
 
-    # last_update_time will be taken from Timestream corresponding table
-    mock_metrics_extractor_from_provider.get_last_update_time.assert_called_once()
-    assert result["since_time"] == MOCKED_LAST_UPDATE_TIME
+    result = get_since_time_for_individual_resource(
+        last_update_times,
+        resource_type,
+        resource_name,
+        mock_metrics_storage_for_get_since_time,
+    )
 
-    # no alerts sent (glue uses eventbridge for alerts)
-    assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
+    assert result == EARLIEST_WRITEABLE_TIME
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
+    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_not_called()
+    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
 
 
-# testing successful flow when we DON'T have last_update_time neither from orch lambda,
-# nor from timestream DB
-# getting from last writeable time from TS table settings
-def test_process_individual_resource_no_last_upd_time(
-    os_vars_values,
-    mock_settings,
-    mock_metrics_extractor_from_provider,
-    mock_timestream_writer,
-    mock_boto3_client_creator,
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-    monitored_environment_name = "env1"
+def test_last_update_time_from_metrics_table(mock_metrics_storage_for_get_since_time):
+    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
     resource_type = "glue_jobs"
-    resource_name = "glue-job-not-having-last-upd-time"  # we DON'T have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
+    resource_name = "glue-job1"
 
-    boto3_client_creator = mock_boto3_client_creator
-    timestream_writer = mock_timestream_writer
-    timestream_metrics_table_name = "test_table_name"
+    # Simulate JSON doesn't have since_time for resource. Taking from metrics table
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
+        None
+    )
+    since_time = datetime(2024, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
+    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.return_value = (
+        since_time
+    )
 
-    with patch.object(
-        mock_metrics_extractor_from_provider, "get_last_update_time", return_value=None
-    ):
-        result = process_individual_resource(
-            monitored_environment_name=monitored_environment_name,
-            resource_type=resource_type,
-            resource_name=resource_name,
-            boto3_client_creator=boto3_client_creator,
-            aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
-                resource_type
-            ],
-            timestream_writer=timestream_writer,
-            timestream_metrics_db_name=timestream_metrics_db_name,
-            metrics_table_name=timestream_metrics_table_name,
-            last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-            alerts_event_bus_name=alerts_event_bus_name,
-            result_ids=[],
-        )
+    result = get_since_time_for_individual_resource(
+        last_update_times,
+        resource_type,
+        resource_name,
+        mock_metrics_storage_for_get_since_time,
+    )
 
-        # no last_update_time returned, the earliest writeable time should be used in this case
-        mock_metrics_extractor_from_provider.get_last_update_time.assert_called_once()
-        mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
-        assert result["since_time"] == EARLIEST_WRITEABLE_TIME
-
-        # no alerts sent (glue uses eventbridge for alerts)
-        assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
+    assert result == since_time
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
+    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_called_once_with(
+        resource_type=resource_type, resource_name=resource_name
+    )
+    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
 
 
-# testing successful flow when we last_update_time olrder the earliest writable time to Timestream
-# testing for "resource_name": "step-function1" with "last_update_time": "2024-04-15 12:05:11.275000000"
-# where the earliest writeable time is datetime(2024, 4, 16, 0, 0, 0, 000, tzinfo=timezone.utc)
-def test_process_individual_resource_last_upd_time_earlier_writeable_time(
-    os_vars_values,
-    mock_settings,
-    mock_metrics_extractor_from_provider,
-    mock_timestream_writer,
-    mock_boto3_client_creator,
+# no data nor in JSON and neither in metrics table -> get earliest
+def test_no_last_update_time_fallback_to_earliest(
+    mock_metrics_storage_for_get_since_time,
 ):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-    monitored_environment_name = "env1"
-    resource_type = types.STEP_FUNCTIONS
-    resource_name = "step-function1"  # we have upd time for this resource in LAST_UPDATE_TIMES_SAMPLE
+    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
+    resource_type = "glue_jobs"
+    resource_name = "glue-job1"
 
-    boto3_client_creator = mock_boto3_client_creator
-    timestream_writer = mock_timestream_writer
-    timestream_metrics_table_name = "test_table_name"
-
-    result = process_individual_resource(
-        monitored_environment_name=monitored_environment_name,
-        resource_type=resource_type,
-        resource_name=resource_name,
-        boto3_client_creator=boto3_client_creator,
-        aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
-            resource_type
-        ],
-        timestream_writer=timestream_writer,
-        timestream_metrics_db_name=timestream_metrics_db_name,
-        metrics_table_name=timestream_metrics_table_name,
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name=alerts_event_bus_name,
-        result_ids=[],
+    # No last_update_time in JSON or metrics table, fallback to earliest writeable time
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
+        None
+    )
+    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.return_value = (
+        None
     )
 
-    # since returned last_update_time is older then earlist writable time,
-    # the earliest writable time should be used for metrics extraction
-    mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
-    mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
-    assert result["since_time"] == EARLIEST_WRITEABLE_TIME
-
-    # no alerts sent (glue uses eventbridge for alerts)
-    assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
-
-
-# testing flow when specific resource type requires sending alerts
-def test_process_individual_resource_send_alerts(
-    os_vars_values,
-    mock_settings,
-    mock_metrics_extractor_from_provider,
-    mock_timestream_writer,
-    mock_boto3_client_creator,
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-    monitored_environment_name = "env1"
-    resource_type = (
-        "glue_workflows"  # workflow type requires sending alerts from extract lambda
-    )
-    resource_name = "glue-workflow1"
-
-    boto3_client_creator = mock_boto3_client_creator
-    timestream_writer = mock_timestream_writer
-    timestream_metrics_table_name = "test_table_name"
-
-    mock_metrics_extractor_from_provider.mock_add_spec(
-        spec=[
-            "get_last_update_time",
-            "prepare_metrics_data",
-            "write_metrics",
-            "send_alerts",
-        ]
+    result = get_since_time_for_individual_resource(
+        last_update_times,
+        resource_type,
+        resource_name,
+        mock_metrics_storage_for_get_since_time,
     )
 
-    result = process_individual_resource(
-        monitored_environment_name=monitored_environment_name,
-        resource_type=resource_type,
-        resource_name=resource_name,
-        boto3_client_creator=boto3_client_creator,
-        aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
-            resource_type
-        ],
-        timestream_writer=timestream_writer,
-        timestream_metrics_db_name=timestream_metrics_db_name,
-        metrics_table_name=timestream_metrics_table_name,
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name=alerts_event_bus_name,
-        result_ids=[],
+    assert result == EARLIEST_WRITEABLE_TIME
+    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
+    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_called_once_with(
+        resource_type=resource_type, resource_name=resource_name
     )
-
-    # no alerts sent (glue uses eventbridge for alerts)
-    assert result["alerts_sent"] == True, "Alerts should be sent in this call"
-
-
-# check that set_result_ids is called for Glue Data Quality resources
-@pytest.mark.parametrize(
-    "mock_metrics_extractor_from_provider",
-    [{"include_set_result_ids": True}],
-    indirect=True,
-)
-def test_process_individual_resource_set_result_ids(
-    mock_metrics_extractor_from_provider,
-    mock_timestream_writer,
-    mock_boto3_client_creator,
-):
-    resource_type = types.GLUE_DATA_QUALITY
-
-    result = process_individual_resource(
-        monitored_environment_name="env1",
-        resource_type=resource_type,
-        resource_name="glue-ruleset-test",
-        boto3_client_creator=mock_boto3_client_creator,
-        aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
-            resource_type
-        ],
-        timestream_writer=mock_timestream_writer,
-        timestream_metrics_db_name="test_db_name",
-        metrics_table_name="test_table_name",
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name="test_alert_bus_name",
-        result_ids=TEST_DQ_RESULT_IDS,
-    )
-    # check that result_ids set as expected
-    mock_metrics_extractor_from_provider.set_result_ids.assert_called_with(
-        result_ids=TEST_DQ_RESULT_IDS
-    )
-    # no alerts sent for Glue Data Quality
-    assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
+    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
 
 
 #########################################################################################
+# # TESTs for get_since_time_for_individual_resource
+
+# # testing successful flow when we have last_update_time for the resource coming from orchestrator lambda
+# # testing "glue-job1" with "last_update_time": "2024-04-16 12:05:11.275000000"
+# def test_process_individual_resource_with_last_upd_time(
+#     os_vars_values,
+#     mock_settings,
+#     mock_metrics_extractor_from_provider,
+#     mock_metrics_storage_earliest_writeable_time,
+#     mock_boto3_client_creator,
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+#     monitored_environment_name = "env1"
+#     resource_type = "glue_jobs"
+#     resource_name = (
+#         "glue-job1"  # we have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
+#     )
+
+#     boto3_client_creator = mock_boto3_client_creator
+#     metrics_storage = mock_metrics_storage_earliest_writeable_time
+#     timestream_metrics_table_name = "test_table_name"
+
+#     result = process_individual_resource(
+#         monitored_environment_name=monitored_environment_name,
+#         resource_type=resource_type,
+#         resource_name=resource_name,
+#         boto3_client_creator=boto3_client_creator,
+#         aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+#             resource_type
+#         ],
+#         metrics_storage=metrics_storage,
+#         metrics_table_name=timestream_metrics_table_name,
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name=alerts_event_bus_name,
+#         result_ids=[],
+#     )
+
+#     # last_update_time will be taken from LAST_UPDATE_TIMES_SAMPLE in this case
+#     # not from: metrics_extractor.get_last_update_time
+#     mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
+#     assert result["since_time"] == str_utc_datetime_to_datetime(
+#         "2024-04-16 12:05:11.275000000"
+#     )
+
+#     # no alerts sent (glue uses eventbridge for alerts)
+#     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
 
-def test_process_all_resources_by_env_and_type_glue_jobs(
-    os_vars_values, mock_settings, mock_process_individual_resource
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
+# # testing successful flow when we DON'T have last_update_time for the resource coming from orchestrator lambda
+# # but we can identify it from timestream DB
+# def test_process_individual_resource_last_upd_time_from_timestream(
+#     os_vars_values,
+#     mock_settings,
+#     mock_metrics_extractor_from_provider,
+#     mock_timestream_writer,
+#     mock_boto3_client_creator,
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+#     monitored_environment_name = "env1"
+#     resource_type = "glue_jobs"
+#     resource_name = "glue-job-not-having-last-upd-time"  # we DON'T have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
 
-    # making sure calls for process_individual_resource are made and proper AWS client is used
-    monitored_environment_name = "env1"
-    resource_type = "glue_jobs"
-    resource_names = ["glue_job1", "glue_job2"]
+#     boto3_client_creator = mock_boto3_client_creator
+#     timestream_writer = mock_timestream_writer
+#     timestream_metrics_table_name = "test_table_name"
 
-    process_all_resources_by_env_and_type(
-        monitored_environment_name=monitored_environment_name,
-        resource_type=resource_type,
-        resource_names=resource_names,
-        settings=mock_settings,
-        iam_role_name=iam_role_name,
-        timestream_metrics_db_name=timestream_metrics_db_name,
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name=alerts_event_bus_name,
-    )
+#     result = process_individual_resource(
+#         monitored_environment_name=monitored_environment_name,
+#         resource_type=resource_type,
+#         resource_name=resource_name,
+#         boto3_client_creator=boto3_client_creator,
+#         aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+#             resource_type
+#         ],
+#         timestream_writer=timestream_writer,
+#         timestream_metrics_db_name=timestream_metrics_db_name,
+#         metrics_table_name=timestream_metrics_table_name,
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name=alerts_event_bus_name,
+#         result_ids=[],
+#     )
 
-    # mock process_individual_resource
-    expected_calls = []
-    for resource_name in resource_names:
-        expected_calls.append(
-            call(
-                monitored_environment_name=monitored_environment_name,
-                resource_type=resource_type,
-                resource_name=resource_name,
-                boto3_client_creator=ANY,
-                aws_client_name="glue",
-                timestream_writer=ANY,
-                timestream_metrics_db_name=timestream_metrics_db_name,
-                timestream_metrics_table_name=ANY,
-                last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-                alerts_event_bus_name=alerts_event_bus_name,
-                result_ids=[],
-            )
-        )
+#     # last_update_time will be taken from Timestream corresponding table
+#     mock_metrics_extractor_from_provider.get_last_update_time.assert_called_once()
+#     assert result["since_time"] == MOCKED_LAST_UPDATE_TIME
 
-    mock_process_individual_resource.assert_has_calls(expected_calls)
-
-
-def test_process_all_resources_by_env_and_type_glue_workflows(
-    os_vars_values, mock_settings, mock_process_individual_resource
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-
-    # making sure calls for process_individual_resource are made and proper AWS client is used
-    monitored_environment_name = "env1"
-    resource_type = "glue_workflows"
-    resource_names = ["glue_workflow1"]
-
-    process_all_resources_by_env_and_type(
-        monitored_environment_name=monitored_environment_name,
-        resource_type=resource_type,
-        resource_names=resource_names,
-        settings=mock_settings,
-        iam_role_name=iam_role_name,
-        timestream_metrics_db_name=timestream_metrics_db_name,
-        last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-        alerts_event_bus_name=alerts_event_bus_name,
-    )
-
-    # mock process_individual_resource
-    expected_calls = []
-    for resource_name in resource_names:
-        expected_calls.append(
-            call(
-                monitored_environment_name=monitored_environment_name,
-                resource_type=resource_type,
-                resource_name=resource_name,
-                boto3_client_creator=ANY,
-                aws_client_name="glue",
-                timestream_writer=ANY,
-                timestream_metrics_db_name=timestream_metrics_db_name,
-                timestream_metrics_table_name=ANY,
-                last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-                alerts_event_bus_name=alerts_event_bus_name,
-                result_ids=[],
-            )
-        )
-
-    mock_process_individual_resource.assert_has_calls(expected_calls)
+#     # no alerts sent (glue uses eventbridge for alerts)
+#     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
 
-def test_process_all_resources_by_env_and_type_glue_data_quality(
-    os_vars_values,
-    mock_settings,
-    mock_process_individual_resource,
-):
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
+# # testing successful flow when we DON'T have last_update_time neither from orch lambda,
+# # nor from timestream DB
+# # getting from last writeable time from TS table settings
+# def test_process_individual_resource_no_last_upd_time(
+#     os_vars_values,
+#     mock_settings,
+#     mock_metrics_extractor_from_provider,
+#     mock_timestream_writer,
+#     mock_boto3_client_creator,
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+#     monitored_environment_name = "env1"
+#     resource_type = "glue_jobs"
+#     resource_name = "glue-job-not-having-last-upd-time"  # we DON'T have upd time for this glue job in LAST_UPDATE_TIMES_SAMPLE
 
-    # making sure calls for process_individual_resource are made and proper AWS client is used
-    monitored_environment_name = "env1"
-    resource_type = types.GLUE_DATA_QUALITY
-    resource_names = ["glue_dq1", "glue_dq2"]
+#     boto3_client_creator = mock_boto3_client_creator
+#     timestream_writer = mock_timestream_writer
+#     timestream_metrics_table_name = "test_table_name"
 
-    expected_result_ids = ["test_result_id1", "test_result_id2"]
-    with patch(
-        "lambda_extract_metrics.collect_glue_data_quality_result_ids",
-        return_value=expected_result_ids,
-    ):
-        process_all_resources_by_env_and_type(
-            monitored_environment_name=monitored_environment_name,
-            resource_type=resource_type,
-            resource_names=resource_names,
-            settings=mock_settings,
-            iam_role_name=iam_role_name,
-            timestream_metrics_db_name=timestream_metrics_db_name,
-            last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-            alerts_event_bus_name=alerts_event_bus_name,
-        )
+#     with patch.object(
+#         mock_metrics_extractor_from_provider, "get_last_update_time", return_value=None
+#     ):
+#         result = process_individual_resource(
+#             monitored_environment_name=monitored_environment_name,
+#             resource_type=resource_type,
+#             resource_name=resource_name,
+#             boto3_client_creator=boto3_client_creator,
+#             aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+#                 resource_type
+#             ],
+#             timestream_writer=timestream_writer,
+#             timestream_metrics_db_name=timestream_metrics_db_name,
+#             metrics_table_name=timestream_metrics_table_name,
+#             last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#             alerts_event_bus_name=alerts_event_bus_name,
+#             result_ids=[],
+#         )
 
-    # mock process_individual_resource
-    expected_calls = []
-    for resource_name in resource_names:
-        expected_calls.append(
-            call(
-                monitored_environment_name=monitored_environment_name,
-                resource_type=resource_type,
-                resource_name=resource_name,
-                boto3_client_creator=ANY,
-                aws_client_name="glue",
-                timestream_writer=ANY,
-                timestream_metrics_db_name=timestream_metrics_db_name,
-                timestream_metrics_table_name=ANY,
-                last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-                alerts_event_bus_name=alerts_event_bus_name,
-                result_ids=expected_result_ids,
-            )
-        )
+#         # no last_update_time returned, the earliest writeable time should be used in this case
+#         mock_metrics_extractor_from_provider.get_last_update_time.assert_called_once()
+#         mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
+#         assert result["since_time"] == EARLIEST_WRITEABLE_TIME
 
-    mock_process_individual_resource.assert_has_calls(expected_calls)
+#         # no alerts sent (glue uses eventbridge for alerts)
+#         assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
 
-#########################################################################################
-def test_lambda_handler_empty_group_content(
-    os_vars_init, mock_settings, mock_process_all_resources_by_env_and_type
-):
-    monitoring_group = "group1"
-    event = {
-        "monitoring_group": monitoring_group,
-        "last_update_times": LAST_UPDATE_TIMES_SAMPLE,
-    }
+# # testing successful flow when we last_update_time olrder the earliest writable time to Timestream
+# # testing for "resource_name": "step-function1" with "last_update_time": "2024-04-15 12:05:11.275000000"
+# # where the earliest writeable time is datetime(2024, 4, 16, 0, 0, 0, 000, tzinfo=timezone.utc)
+# def test_process_individual_resource_last_upd_time_earlier_writeable_time(
+#     os_vars_values,
+#     mock_settings,
+#     mock_metrics_extractor_from_provider,
+#     mock_timestream_writer,
+#     mock_boto3_client_creator,
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+#     monitored_environment_name = "env1"
+#     resource_type = types.STEP_FUNCTIONS
+#     resource_name = "step-function1"  # we have upd time for this resource in LAST_UPDATE_TIMES_SAMPLE
 
-    # checking no calls to process_all_resources_by_env_and_type made and no lambda failure
-    group_context = {}
+#     boto3_client_creator = mock_boto3_client_creator
+#     timestream_writer = mock_timestream_writer
+#     timestream_metrics_table_name = "test_table_name"
 
-    with patch(
-        "test_lambda_extract_metrics.MockedSettings.get_monitoring_group_content",
-        return_value=group_context,
-    ):
-        lambda_handler(event, None)
+#     result = process_individual_resource(
+#         monitored_environment_name=monitored_environment_name,
+#         resource_type=resource_type,
+#         resource_name=resource_name,
+#         boto3_client_creator=boto3_client_creator,
+#         aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+#             resource_type
+#         ],
+#         timestream_writer=timestream_writer,
+#         timestream_metrics_db_name=timestream_metrics_db_name,
+#         metrics_table_name=timestream_metrics_table_name,
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name=alerts_event_bus_name,
+#         result_ids=[],
+#     )
 
-    mock_process_all_resources_by_env_and_type.assert_not_called()
+#     # since returned last_update_time is older then earlist writable time,
+#     # the earliest writable time should be used for metrics extraction
+#     mock_metrics_extractor_from_provider.get_last_update_time.assert_not_called()
+#     mock_timestream_writer.get_earliest_writeable_time_for_table.assert_called_once()
+#     assert result["since_time"] == EARLIEST_WRITEABLE_TIME
 
-
-def test_lambda_handler_with_group_content(
-    os_vars_init,
-    mock_settings,
-    mock_process_all_resources_by_env_and_type,
-    os_vars_values,
-):
-    monitoring_group = "group1"
-    event = {
-        "monitoring_group": monitoring_group,
-        "last_update_times": LAST_UPDATE_TIMES_SAMPLE,
-    }
-
-    # checking calls to process_all_resources_by_env_and_type are made in a specific order
-    # and resources are grouped properly (by env and resource type)
-    group_context = {
-        "group_name": "salmonts_workflows_sparkjobs",
-        "glue_jobs": [
-            {"name": "glue_job1", "monitored_environment_name": "env1"},
-            {"name": "glue_job2", "monitored_environment_name": "env2"},
-            {"name": "glue_job3", "monitored_environment_name": "env1"},
-        ],
-        "glue_workflows": [
-            {"name": "glue_workflow1", "monitored_environment_name": "env1"}
-        ],
-    }
-
-    with patch(
-        "test_lambda_extract_metrics.MockedSettings.get_monitoring_group_content",
-        return_value=group_context,
-    ):
-        lambda_handler(event, None)
-
-    expected_calls = []
-    call_params_in_order = [
-        ("env1", "glue_jobs", ["glue_job1", "glue_job3"]),
-        ("env2", "glue_jobs", ["glue_job2"]),
-        ("env1", "glue_workflows", ["glue_workflow1"]),
-    ]
-    (
-        settings_s3_path,
-        iam_role_name,
-        timestream_metrics_db_name,
-        alerts_event_bus_name,
-    ) = os_vars_values
-    for call_param in call_params_in_order:
-        expected_calls.append(
-            call(
-                monitored_environment_name=call_param[0],
-                resource_type=call_param[1],
-                resource_names=call_param[2],
-                settings=ANY,
-                iam_role_name=iam_role_name,
-                timestream_metrics_db_name=timestream_metrics_db_name,
-                last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-                alerts_event_bus_name=alerts_event_bus_name,
-            )
-        )
-
-    mock_process_all_resources_by_env_and_type.assert_has_calls(expected_calls)
+#     # no alerts sent (glue uses eventbridge for alerts)
+#     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
 
-#########################################################################################
+# # testing flow when specific resource type requires sending alerts
+# def test_process_individual_resource_send_alerts(
+#     os_vars_values,
+#     mock_settings,
+#     mock_metrics_extractor_from_provider,
+#     mock_timestream_writer,
+#     mock_boto3_client_creator,
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+#     monitored_environment_name = "env1"
+#     resource_type = (
+#         "glue_workflows"  # workflow type requires sending alerts from extract lambda
+#     )
+#     resource_name = "glue-workflow1"
+
+#     boto3_client_creator = mock_boto3_client_creator
+#     timestream_writer = mock_timestream_writer
+#     timestream_metrics_table_name = "test_table_name"
+
+#     mock_metrics_extractor_from_provider.mock_add_spec(
+#         spec=[
+#             "get_last_update_time",
+#             "prepare_metrics_data",
+#             "write_metrics",
+#             "send_alerts",
+#         ]
+#     )
+
+#     result = process_individual_resource(
+#         monitored_environment_name=monitored_environment_name,
+#         resource_type=resource_type,
+#         resource_name=resource_name,
+#         boto3_client_creator=boto3_client_creator,
+#         aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+#             resource_type
+#         ],
+#         timestream_writer=timestream_writer,
+#         timestream_metrics_db_name=timestream_metrics_db_name,
+#         metrics_table_name=timestream_metrics_table_name,
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name=alerts_event_bus_name,
+#         result_ids=[],
+#     )
+
+#     # no alerts sent (glue uses eventbridge for alerts)
+#     assert result["alerts_sent"] == True, "Alerts should be sent in this call"
 
 
-def test_collect_glue_data_quality_result_ids(
-    mock_boto3_client_creator, mock_timestream_writer
-):
-    monitored_environment_name = "test_env"
-    resource_names = ["test-dq-ruleset-1", "test-de-ruleset-2"]
-    dq_last_update_times = [
-        {
-            "resource_name": "test-dq-ruleset-1",
-            "last_update_time": "2024-07-21 00:01:52.820000000",
-        },
-        {
-            "resource_name": "test-de-ruleset-2",
-            "last_update_time": "2024-07-22 00:01:56.042000000",
-        },
-    ]
-    aws_client_name = "glue"
-    expected_result_ids = ["result1", "result2"]
+# # check that set_result_ids is called for Glue Data Quality resources
+# @pytest.mark.parametrize(
+#     "mock_metrics_extractor_from_provider",
+#     [{"include_set_result_ids": True}],
+#     indirect=True,
+# )
+# def test_process_individual_resource_set_result_ids(
+#     mock_metrics_extractor_from_provider,
+#     mock_timestream_writer,
+#     mock_boto3_client_creator,
+# ):
+#     resource_type = types.GLUE_DATA_QUALITY
 
-    with patch(
-        "lib.aws.GlueManager.list_data_quality_results",
-        return_value=expected_result_ids,
-    ) as mock_list_data_quality_results:
-        # call the function
-        returned_result_ids = collect_glue_data_quality_result_ids(
-            monitored_environment_name=monitored_environment_name,
-            resource_names=resource_names,
-            dq_last_update_times=dq_last_update_times,
-            boto3_client_creator=mock_boto3_client_creator,
-            aws_client_name=aws_client_name,
-            timestream_writer=mock_timestream_writer,
-        )
-    mock_boto3_client_creator.get_client.assert_called_once_with(
-        aws_client_name=aws_client_name
-    )
-    mock_list_data_quality_results.assert_called_once_with(
-        started_after=str_utc_datetime_to_datetime(
-            "2024-07-21 00:01:52.820000000"
-        )  # min last_update_time
-    )
+#     result = process_individual_resource(
+#         monitored_environment_name="env1",
+#         resource_type=resource_type,
+#         resource_name="glue-ruleset-test",
+#         boto3_client_creator=mock_boto3_client_creator,
+#         aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
+#             resource_type
+#         ],
+#         timestream_writer=mock_timestream_writer,
+#         timestream_metrics_db_name="test_db_name",
+#         metrics_table_name="test_table_name",
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name="test_alert_bus_name",
+#         result_ids=TEST_DQ_RESULT_IDS,
+#     )
+#     # check that result_ids set as expected
+#     mock_metrics_extractor_from_provider.set_result_ids.assert_called_with(
+#         result_ids=TEST_DQ_RESULT_IDS
+#     )
+#     # no alerts sent for Glue Data Quality
+#     assert result["alerts_sent"] == False, "Alerts shouldn't be sent in this call"
 
-    assert returned_result_ids == expected_result_ids
+
+# #########################################################################################
+
+
+# def test_process_all_resources_by_env_and_type_glue_jobs(
+#     os_vars_values, mock_settings, mock_process_individual_resource
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+
+#     # making sure calls for process_individual_resource are made and proper AWS client is used
+#     monitored_environment_name = "env1"
+#     resource_type = "glue_jobs"
+#     resource_names = ["glue_job1", "glue_job2"]
+
+#     process_all_resources_by_env_and_type(
+#         monitored_environment_name=monitored_environment_name,
+#         resource_type=resource_type,
+#         resource_names=resource_names,
+#         settings=mock_settings,
+#         iam_role_name=iam_role_name,
+#         timestream_metrics_db_name=timestream_metrics_db_name,
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name=alerts_event_bus_name,
+#     )
+
+#     # mock process_individual_resource
+#     expected_calls = []
+#     for resource_name in resource_names:
+#         expected_calls.append(
+#             call(
+#                 monitored_environment_name=monitored_environment_name,
+#                 resource_type=resource_type,
+#                 resource_name=resource_name,
+#                 boto3_client_creator=ANY,
+#                 aws_client_name="glue",
+#                 timestream_writer=ANY,
+#                 timestream_metrics_db_name=timestream_metrics_db_name,
+#                 timestream_metrics_table_name=ANY,
+#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#                 alerts_event_bus_name=alerts_event_bus_name,
+#                 result_ids=[],
+#             )
+#         )
+
+#     mock_process_individual_resource.assert_has_calls(expected_calls)
+
+
+# def test_process_all_resources_by_env_and_type_glue_workflows(
+#     os_vars_values, mock_settings, mock_process_individual_resource
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+
+#     # making sure calls for process_individual_resource are made and proper AWS client is used
+#     monitored_environment_name = "env1"
+#     resource_type = "glue_workflows"
+#     resource_names = ["glue_workflow1"]
+
+#     process_all_resources_by_env_and_type(
+#         monitored_environment_name=monitored_environment_name,
+#         resource_type=resource_type,
+#         resource_names=resource_names,
+#         settings=mock_settings,
+#         iam_role_name=iam_role_name,
+#         timestream_metrics_db_name=timestream_metrics_db_name,
+#         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#         alerts_event_bus_name=alerts_event_bus_name,
+#     )
+
+#     # mock process_individual_resource
+#     expected_calls = []
+#     for resource_name in resource_names:
+#         expected_calls.append(
+#             call(
+#                 monitored_environment_name=monitored_environment_name,
+#                 resource_type=resource_type,
+#                 resource_name=resource_name,
+#                 boto3_client_creator=ANY,
+#                 aws_client_name="glue",
+#                 timestream_writer=ANY,
+#                 timestream_metrics_db_name=timestream_metrics_db_name,
+#                 timestream_metrics_table_name=ANY,
+#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#                 alerts_event_bus_name=alerts_event_bus_name,
+#                 result_ids=[],
+#             )
+#         )
+
+#     mock_process_individual_resource.assert_has_calls(expected_calls)
+
+
+# def test_process_all_resources_by_env_and_type_glue_data_quality(
+#     os_vars_values,
+#     mock_settings,
+#     mock_process_individual_resource,
+# ):
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+
+#     # making sure calls for process_individual_resource are made and proper AWS client is used
+#     monitored_environment_name = "env1"
+#     resource_type = types.GLUE_DATA_QUALITY
+#     resource_names = ["glue_dq1", "glue_dq2"]
+
+#     expected_result_ids = ["test_result_id1", "test_result_id2"]
+#     with patch(
+#         "lambda_extract_metrics.collect_glue_data_quality_result_ids",
+#         return_value=expected_result_ids,
+#     ):
+#         process_all_resources_by_env_and_type(
+#             monitored_environment_name=monitored_environment_name,
+#             resource_type=resource_type,
+#             resource_names=resource_names,
+#             settings=mock_settings,
+#             iam_role_name=iam_role_name,
+#             timestream_metrics_db_name=timestream_metrics_db_name,
+#             last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#             alerts_event_bus_name=alerts_event_bus_name,
+#         )
+
+#     # mock process_individual_resource
+#     expected_calls = []
+#     for resource_name in resource_names:
+#         expected_calls.append(
+#             call(
+#                 monitored_environment_name=monitored_environment_name,
+#                 resource_type=resource_type,
+#                 resource_name=resource_name,
+#                 boto3_client_creator=ANY,
+#                 aws_client_name="glue",
+#                 timestream_writer=ANY,
+#                 timestream_metrics_db_name=timestream_metrics_db_name,
+#                 timestream_metrics_table_name=ANY,
+#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#                 alerts_event_bus_name=alerts_event_bus_name,
+#                 result_ids=expected_result_ids,
+#             )
+#         )
+
+#     mock_process_individual_resource.assert_has_calls(expected_calls)
+
+
+# #########################################################################################
+# def test_lambda_handler_empty_group_content(
+#     os_vars_init, mock_settings, mock_process_all_resources_by_env_and_type
+# ):
+#     monitoring_group = "group1"
+#     event = {
+#         "monitoring_group": monitoring_group,
+#         "last_update_times": LAST_UPDATE_TIMES_SAMPLE,
+#     }
+
+#     # checking no calls to process_all_resources_by_env_and_type made and no lambda failure
+#     group_context = {}
+
+#     with patch(
+#         "test_lambda_extract_metrics.MockedSettings.get_monitoring_group_content",
+#         return_value=group_context,
+#     ):
+#         lambda_handler(event, None)
+
+#     mock_process_all_resources_by_env_and_type.assert_not_called()
+
+
+# def test_lambda_handler_with_group_content(
+#     os_vars_init,
+#     mock_settings,
+#     mock_process_all_resources_by_env_and_type,
+#     os_vars_values,
+# ):
+#     monitoring_group = "group1"
+#     event = {
+#         "monitoring_group": monitoring_group,
+#         "last_update_times": LAST_UPDATE_TIMES_SAMPLE,
+#     }
+
+#     # checking calls to process_all_resources_by_env_and_type are made in a specific order
+#     # and resources are grouped properly (by env and resource type)
+#     group_context = {
+#         "group_name": "salmonts_workflows_sparkjobs",
+#         "glue_jobs": [
+#             {"name": "glue_job1", "monitored_environment_name": "env1"},
+#             {"name": "glue_job2", "monitored_environment_name": "env2"},
+#             {"name": "glue_job3", "monitored_environment_name": "env1"},
+#         ],
+#         "glue_workflows": [
+#             {"name": "glue_workflow1", "monitored_environment_name": "env1"}
+#         ],
+#     }
+
+#     with patch(
+#         "test_lambda_extract_metrics.MockedSettings.get_monitoring_group_content",
+#         return_value=group_context,
+#     ):
+#         lambda_handler(event, None)
+
+#     expected_calls = []
+#     call_params_in_order = [
+#         ("env1", "glue_jobs", ["glue_job1", "glue_job3"]),
+#         ("env2", "glue_jobs", ["glue_job2"]),
+#         ("env1", "glue_workflows", ["glue_workflow1"]),
+#     ]
+#     (
+#         settings_s3_path,
+#         iam_role_name,
+#         timestream_metrics_db_name,
+#         alerts_event_bus_name,
+#     ) = os_vars_values
+#     for call_param in call_params_in_order:
+#         expected_calls.append(
+#             call(
+#                 monitored_environment_name=call_param[0],
+#                 resource_type=call_param[1],
+#                 resource_names=call_param[2],
+#                 settings=ANY,
+#                 iam_role_name=iam_role_name,
+#                 timestream_metrics_db_name=timestream_metrics_db_name,
+#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
+#                 alerts_event_bus_name=alerts_event_bus_name,
+#             )
+#         )
+
+#     mock_process_all_resources_by_env_and_type.assert_has_calls(expected_calls)
+
+
+# #########################################################################################
+
+
+# def test_collect_glue_data_quality_result_ids(
+#     mock_boto3_client_creator, mock_timestream_writer
+# ):
+#     monitored_environment_name = "test_env"
+#     resource_names = ["test-dq-ruleset-1", "test-de-ruleset-2"]
+#     dq_last_update_times = [
+#         {
+#             "resource_name": "test-dq-ruleset-1",
+#             "last_update_time": "2024-07-21 00:01:52.820000000",
+#         },
+#         {
+#             "resource_name": "test-de-ruleset-2",
+#             "last_update_time": "2024-07-22 00:01:56.042000000",
+#         },
+#     ]
+#     aws_client_name = "glue"
+#     expected_result_ids = ["result1", "result2"]
+
+#     with patch(
+#         "lib.aws.GlueManager.list_data_quality_results",
+#         return_value=expected_result_ids,
+#     ) as mock_list_data_quality_results:
+#         # call the function
+#         returned_result_ids = collect_glue_data_quality_result_ids(
+#             monitored_environment_name=monitored_environment_name,
+#             resource_names=resource_names,
+#             dq_last_update_times=dq_last_update_times,
+#             boto3_client_creator=mock_boto3_client_creator,
+#             aws_client_name=aws_client_name,
+#             timestream_writer=mock_timestream_writer,
+#         )
+#     mock_boto3_client_creator.get_client.assert_called_once_with(
+#         aws_client_name=aws_client_name
+#     )
+#     mock_list_data_quality_results.assert_called_once_with(
+#         started_after=str_utc_datetime_to_datetime(
+#             "2024-07-21 00:01:52.820000000"
+#         )  # min last_update_time
+#     )
+
+#     assert returned_result_ids == expected_result_ids
