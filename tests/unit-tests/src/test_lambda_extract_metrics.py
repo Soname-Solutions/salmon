@@ -314,7 +314,7 @@ class TestGetSinceTimeForIndividualResource:
 
 
 #########################################################################################
-# # TESTs for process_individual_resource
+# TESTs for process_individual_resource
 
 
 @pytest.mark.usefixtures("mock_dependencies")
@@ -488,7 +488,7 @@ class TestProcessIndividualResource:
         )
 
 
-# #########################################################################################
+#########################################################################################
 
 
 @pytest.mark.usefixtures("mock_dependencies")
@@ -664,90 +664,148 @@ class TestProcessAllResourcesByEnvAndType:
         )
 
 
-# #########################################################################################
-# def test_lambda_handler_empty_group_content(
-#     os_vars_init, mock_settings, mock_process_all_resources_by_env_and_type
-# ):
-#     monitoring_group = "group1"
-#     event = {
-#         "monitoring_group": monitoring_group,
-#         "last_update_times": LAST_UPDATE_TIMES_SAMPLE,
-#     }
-
-#     # checking no calls to process_all_resources_by_env_and_type made and no lambda failure
-#     group_context = {}
-
-#     with patch(
-#         "test_lambda_extract_metrics.MockedSettings.get_monitoring_group_content",
-#         return_value=group_context,
-#     ):
-#         lambda_handler(event, None)
-
-#     mock_process_all_resources_by_env_and_type.assert_not_called()
+#########################################################################################
 
 
-# def test_lambda_handler_with_group_content(
-#     os_vars_init,
-#     mock_settings,
-#     mock_process_all_resources_by_env_and_type,
-#     os_vars_values,
-# ):
-#     monitoring_group = "group1"
-#     event = {
-#         "monitoring_group": monitoring_group,
-#         "last_update_times": LAST_UPDATE_TIMES_SAMPLE,
-#     }
+@pytest.mark.usefixtures("mock_dependencies")
+class TestLambdaHandler:
+    @pytest.fixture(autouse=True)
+    def mock_dependencies(self):
+        # Mock environment variables
+        self.mock_env = patch.dict(
+            "os.environ",
+            {
+                "SETTINGS_S3_PATH": "s3://test-bucket/settings.json",
+                "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": "test-iam-role",
+                "TIMESTREAM_METRICS_DB_NAME": "test-db",
+                "ALERTS_EVENT_BUS_NAME": "test-event-bus",
+            },
+        )
 
-#     # checking calls to process_all_resources_by_env_and_type are made in a specific order
-#     # and resources are grouped properly (by env and resource type)
-#     group_context = {
-#         "group_name": "salmonts_workflows_sparkjobs",
-#         "glue_jobs": [
-#             {"name": "glue_job1", "monitored_environment_name": "env1"},
-#             {"name": "glue_job2", "monitored_environment_name": "env2"},
-#             {"name": "glue_job3", "monitored_environment_name": "env1"},
-#         ],
-#         "glue_workflows": [
-#             {"name": "glue_workflow1", "monitored_environment_name": "env1"}
-#         ],
-#     }
+        # Mock TimestreamMetricsStorage
+        self.mock_timestream_metrics_storage = patch(
+            "lambda_extract_metrics.TimestreamMetricsStorage"
+        )
+        # Mock Settings
+        self.mock_settings = patch("lambda_extract_metrics.Settings")
+        # Mock process_all_resources_by_env_and_type
+        self.mock_process_all_resources = patch(
+            "lambda_extract_metrics.process_all_resources_by_env_and_type"
+        )
+        # Start patches
+        self.mock_env.start()
+        self.mock_timestream_metrics_storage_mock = (
+            self.mock_timestream_metrics_storage.start()
+        )
+        self.mock_settings_mock = self.mock_settings.start()
+        self.mock_process_all_resources_mock = self.mock_process_all_resources.start()
 
-#     with patch(
-#         "test_lambda_extract_metrics.MockedSettings.get_monitoring_group_content",
-#         return_value=group_context,
-#     ):
-#         lambda_handler(event, None)
+        yield
 
-#     expected_calls = []
-#     call_params_in_order = [
-#         ("env1", "glue_jobs", ["glue_job1", "glue_job3"]),
-#         ("env2", "glue_jobs", ["glue_job2"]),
-#         ("env1", "glue_workflows", ["glue_workflow1"]),
-#     ]
-#     (
-#         settings_s3_path,
-#         iam_role_name,
-#         timestream_metrics_db_name,
-#         alerts_event_bus_name,
-#     ) = os_vars_values
-#     for call_param in call_params_in_order:
-#         expected_calls.append(
-#             call(
-#                 monitored_environment_name=call_param[0],
-#                 resource_type=call_param[1],
-#                 resource_names=call_param[2],
-#                 settings=ANY,
-#                 iam_role_name=iam_role_name,
-#                 timestream_metrics_db_name=timestream_metrics_db_name,
-#                 last_update_times=LAST_UPDATE_TIMES_SAMPLE,
-#                 alerts_event_bus_name=alerts_event_bus_name,
-#             )
-#         )
+        # Stop patches
+        self.mock_env.stop()
+        self.mock_timestream_metrics_storage.stop()
+        self.mock_settings.stop()
+        self.mock_process_all_resources.stop()
 
-#     mock_process_all_resources_by_env_and_type.assert_has_calls(expected_calls)
+    def test_lambda_handler_success(self):
+        # Arrange
+        event = {
+            "monitoring_group": "test_group",
+            "last_update_times": {"glue_jobs": {"resource1": "2024-04-15"}},
+        }
+        context = MagicMock()
+
+        # Mock Settings and its methods
+        mock_settings_instance = MagicMock()
+        group_context = {
+            "group_name": "test_group",
+            "glue_jobs": [
+                {"name": "glue_job1", "monitored_environment_name": "env1"},
+                {"name": "glue_job2", "monitored_environment_name": "env2"},
+                {"name": "glue_job3", "monitored_environment_name": "env1"},
+            ],
+            "glue_workflows": [
+                {"name": "glue_workflow1", "monitored_environment_name": "env1"}
+            ],
+        }
+        mock_settings_instance.get_monitoring_group_content.return_value = group_context
+        self.mock_settings_mock.from_s3_path.return_value = mock_settings_instance
+
+        # Act
+        lambda_handler(event, context)
+
+        # Assert
+        self.mock_settings_mock.from_s3_path.assert_called_once_with(
+            "s3://test-bucket/settings.json",
+            iam_role_list_monitored_res="test-iam-role",
+        )
+        mock_settings_instance.get_monitoring_group_content.assert_called_once_with(
+            "test_group"
+        )
+        self.mock_process_all_resources_mock.assert_has_calls(
+            [
+                call(
+                    monitored_environment_name="env1",
+                    resource_type="glue_jobs",
+                    resource_names=["glue_job1", "glue_job3"],
+                    settings=mock_settings_instance,
+                    iam_role_name="test-iam-role",
+                    metrics_storage=self.mock_timestream_metrics_storage_mock.return_value,
+                    last_update_times=event["last_update_times"],
+                    alerts_event_bus_name="test-event-bus",
+                ),
+                call(
+                    monitored_environment_name="env2",
+                    resource_type="glue_jobs",
+                    resource_names=["glue_job2"],
+                    settings=mock_settings_instance,
+                    iam_role_name="test-iam-role",
+                    metrics_storage=self.mock_timestream_metrics_storage_mock.return_value,
+                    last_update_times=event["last_update_times"],
+                    alerts_event_bus_name="test-event-bus",
+                ),
+                call(
+                    monitored_environment_name="env1",
+                    resource_type="glue_workflows",
+                    resource_names=["glue_workflow1"],
+                    settings=mock_settings_instance,
+                    iam_role_name="test-iam-role",
+                    metrics_storage=self.mock_timestream_metrics_storage_mock.return_value,
+                    last_update_times=event["last_update_times"],
+                    alerts_event_bus_name="test-event-bus",
+                ),
+            ]
+        )
+
+    def test_lambda_handler_no_resources(self):
+        # Arrange
+        event = {
+            "monitoring_group": "test_group",
+            "last_update_times": {},
+        }
+        context = MagicMock()
+
+        # Mock Settings and its methods
+        mock_settings_instance = MagicMock()
+        mock_settings_instance.get_monitoring_group_content.return_value = {}
+        self.mock_settings_mock.from_s3_path.return_value = mock_settings_instance
+
+        # Act
+        lambda_handler(event, context)
+
+        # Assert
+        self.mock_settings_mock.from_s3_path.assert_called_once_with(
+            "s3://test-bucket/settings.json",
+            iam_role_list_monitored_res="test-iam-role",
+        )
+        mock_settings_instance.get_monitoring_group_content.assert_called_once_with(
+            "test_group"
+        )
+        self.mock_process_all_resources_mock.assert_not_called()
 
 
-# #########################################################################################
+#########################################################################################
 
 
 @pytest.mark.usefixtures("mock_dependencies")
