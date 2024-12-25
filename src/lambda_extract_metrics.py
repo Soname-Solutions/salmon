@@ -51,7 +51,6 @@ def get_since_time_for_individual_resource(
     last_update_times: dict,
     resource_type: str,
     resource_name: str,
-    metrics_extractor: BaseMetricsExtractor,
     metrics_storage: TimestreamMetricsStorage,
 ) -> datetime:
     # retrieve the last update time from the provided payload
@@ -77,8 +76,6 @@ def get_since_time_for_individual_resource(
     earliest_time = metrics_storage.get_earliest_writeable_time_for_resource_type(
         resource_type=resource_type
     )
-
-    timestream_writer.get_earliest_writeable_time_for_table()
 
     # if since_time is still not defined or older than the earliest acceptable time,
     # then extract since time which Timestream is able to accept so to prevent RejectedRecords Timestream error
@@ -122,8 +119,7 @@ def process_individual_resource(
         last_update_times=last_update_times,
         resource_type=resource_type,
         resource_name=resource_name,
-        metrics_extractor=metrics_extractor,
-        timestream_writer=timestream_writer,
+        metrics_storage=metrics_storage,
     )
     logger.info(
         f"Extracting metrics since {since_time} for resource {resource_type}[{resource_name}]"
@@ -141,9 +137,16 @@ def process_individual_resource(
     logger.info(f"Extracted {metrics_record_count} records")
 
     # # 5. Write extracted data to timestream table
-    metrics_extractor.write_metrics(
-        records, common_attributes, timestream_table_writer=timestream_writer
+    metrics_table_name = metrics_storage.get_metrics_table_name_for_resource_type(
+        resource_type=resource_type
     )
+    metrics_extractor.write_metrics(
+        metrics_table_name=metrics_table_name,
+        metrics_storage=metrics_storage,
+        records=records,
+        common_attributes=common_attributes,
+    )
+
     logger.info(f"Written {metrics_record_count} records to timestream")
 
     # for resource types where alerts are processed inside Salmon (not by default EventBridge functionality)

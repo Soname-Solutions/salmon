@@ -150,17 +150,30 @@ def mock_metrics_extractor_from_provider(request):
         yield mocked_extractor
 
 
+# @pytest.fixture(scope="function")
+# def mock_timestream_writer():
+#     mocked_timestream_writer = MagicMock()
+#     mocked_timestream_writer.get_earliest_writeable_time_for_table.return_value = (
+#         EARLIEST_WRITEABLE_TIME
+#     )
+
+#     with patch(
+#         "lambda_extract_metrics.TimestreamTableWriter", mocked_timestream_writer
+#     ) as mock_get_extractor:
+#         yield mocked_timestream_writer
+
+
 @pytest.fixture(scope="function")
-def mock_timestream_writer():
-    mocked_timestream_writer = MagicMock()
-    mocked_timestream_writer.get_earliest_writeable_time_for_table.return_value = (
+def mock_metrics_storage_earliest_writeable_time():
+    mocked_metrics_storage = MagicMock()
+    mocked_metrics_storage.get_earliest_writeable_time_for_table.return_value = (
         EARLIEST_WRITEABLE_TIME
     )
 
     with patch(
-        "lambda_extract_metrics.TimestreamTableWriter", mocked_timestream_writer
+        "lambda_extract_metrics.TimestreamMetricsStorage", mocked_metrics_storage
     ) as mock_get_extractor:
-        yield mocked_timestream_writer
+        yield mocked_metrics_storage
 
 
 @pytest.fixture(scope="function")
@@ -184,7 +197,7 @@ def test_process_individual_resource_with_last_upd_time(
     os_vars_values,
     mock_settings,
     mock_metrics_extractor_from_provider,
-    mock_timestream_writer,
+    mock_metrics_storage_earliest_writeable_time,
     mock_boto3_client_creator,
 ):
     (
@@ -200,7 +213,7 @@ def test_process_individual_resource_with_last_upd_time(
     )
 
     boto3_client_creator = mock_boto3_client_creator
-    timestream_writer = mock_timestream_writer
+    metrics_storage = mock_metrics_storage_earliest_writeable_time
     timestream_metrics_table_name = "test_table_name"
 
     result = process_individual_resource(
@@ -211,8 +224,7 @@ def test_process_individual_resource_with_last_upd_time(
         aws_client_name=SettingConfigs.RESOURCE_TYPES_LINKED_AWS_SERVICES[
             resource_type
         ],
-        timestream_writer=timestream_writer,
-        timestream_metrics_db_name=timestream_metrics_db_name,
+        metrics_storage=metrics_storage,
         metrics_table_name=timestream_metrics_table_name,
         last_update_times=LAST_UPDATE_TIMES_SAMPLE,
         alerts_event_bus_name=alerts_event_bus_name,

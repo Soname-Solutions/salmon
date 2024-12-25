@@ -2,7 +2,8 @@ import boto3
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from lib.aws import Boto3ClientCreator, TimestreamTableWriter, TimeStreamQueryRunner
+from lib.aws import Boto3ClientCreator
+from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
 
 
 class MetricsExtractorException(Exception):
@@ -61,6 +62,14 @@ class BaseMetricsExtractor(ABC):
         pass
 
     def write_metrics(
-        self, records, common_attributes, timestream_table_writer: TimestreamTableWriter
+        self,
+        records,
+        common_attributes,
+        metrics_storage: TimestreamMetricsStorage,
+        metrics_table_name: str,
     ):
-        timestream_table_writer.write_records(records, common_attributes)
+        metrics_storage.write_records(
+            table_name=metrics_table_name,
+            records=records,
+            common_attributes=common_attributes,
+        )
