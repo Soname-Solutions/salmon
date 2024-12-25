@@ -20,8 +20,6 @@ def test_get_aws_service_client(boto3_client_creator):
         aws_client_name="glue",
         resource_name="glue_job1",
         monitored_environment_name="env1",
-        timestream_db_name="db_name1",
-        timestream_metrics_table_name="table_name1",
     )
 
     client = extractor.get_aws_service_client()
@@ -37,8 +35,6 @@ def test_get_last_update_time_empty(boto3_client_creator):
         aws_client_name="glue",
         resource_name="glue_job1",
         monitored_environment_name="env1",
-        timestream_db_name="db_name1",
-        timestream_metrics_table_name="table_name1",
     )
 
     with patch(
