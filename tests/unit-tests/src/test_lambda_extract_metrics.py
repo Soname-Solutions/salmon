@@ -86,8 +86,6 @@ def os_vars_values(os_vars_init):
 
 
 #########################################################################################
-
-
 class MockedSettings:
     @classmethod
     def from_s3_path(cls, base_path: str, iam_role_list_monitored_res: str = None):
@@ -191,127 +189,296 @@ def mock_boto3_client_creator():
 
 #########################################################################################
 # TESTs for get_since_time_for_individual_resource
+@pytest.mark.usefixtures("mock_metrics_storage")
+class TestGetSinceTimeForIndividualResource:
+    @pytest.fixture(autouse=True)
+    def mock_metrics_storage(self):
+        self.mocked_metrics_storage = MagicMock()
+        self.mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.return_value = (
+            EARLIEST_WRITEABLE_TIME
+        )
+
+        with patch(
+            "lambda_extract_metrics.TimestreamMetricsStorage",
+            self.mocked_metrics_storage,
+        ) as mock_get_extractor:
+            yield mock_get_extractor
+
+    def test_last_update_time_from_json(self):
+        last_update_times = {"key": "doesn't matter - extract logic not tested here"}
+        resource_type = "glue_jobs"
+        resource_name = "glue-job1"
+
+        # trying to write metrics later than earliest writable time (normal situation)
+        since_time = datetime(2024, 12, 31, 0, 0, 0, tzinfo=timezone.utc)
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.return_value = (
+            since_time
+        )
+
+        result = get_since_time_for_individual_resource(
+            last_update_times,
+            resource_type,
+            resource_name,
+            self.mocked_metrics_storage,
+        )
+
+        assert result == since_time
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.assert_called_once()
+        self.mocked_metrics_storage.get_last_update_time_from_metrics_table.assert_not_called()
+        self.mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.assert_called_once()
+
+    def test_last_update_time_fallback_to_earliest(self):
+        last_update_times = {"key": "doesn't matter - extract logic not tested here"}
+        resource_type = "glue_jobs"
+        resource_name = "glue-job1"
+
+        # trying to write metrics EARLIER than earliest writable time (expect earliest)
+        since_time = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.return_value = (
+            since_time
+        )
+
+        result = get_since_time_for_individual_resource(
+            last_update_times,
+            resource_type,
+            resource_name,
+            self.mocked_metrics_storage,
+        )
+
+        assert result == EARLIEST_WRITEABLE_TIME
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.assert_called_once()
+        self.mocked_metrics_storage.get_last_update_time_from_metrics_table.assert_not_called()
+        self.mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.assert_called_once()
+
+    def test_last_update_time_from_metrics_table(self):
+        last_update_times = {"key": "doesn't matter - extract logic not tested here"}
+        resource_type = "glue_jobs"
+        resource_name = "glue-job1"
+
+        # Simulate JSON doesn't have since_time for resource. Taking from metrics table
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.return_value = (
+            None
+        )
+        since_time = datetime(2024, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
+        self.mocked_metrics_storage.get_last_update_time_from_metrics_table.return_value = (
+            since_time
+        )
+
+        result = get_since_time_for_individual_resource(
+            last_update_times,
+            resource_type,
+            resource_name,
+            self.mocked_metrics_storage,
+        )
+
+        assert result == since_time
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.assert_called_once()
+        self.mocked_metrics_storage.get_last_update_time_from_metrics_table.assert_called_once_with(
+            resource_type=resource_type, resource_name=resource_name
+        )
+        self.mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.assert_called_once()
+
+    def test_no_last_update_time_fallback_to_earliest(self):
+        last_update_times = {"key": "doesn't matter - extract logic not tested here"}
+        resource_type = "glue_jobs"
+        resource_name = "glue-job1"
+
+        # No last_update_time in JSON or metrics table, fallback to earliest writeable time
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.return_value = (
+            None
+        )
+        self.mocked_metrics_storage.get_last_update_time_from_metrics_table.return_value = (
+            None
+        )
+
+        result = get_since_time_for_individual_resource(
+            last_update_times,
+            resource_type,
+            resource_name,
+            self.mocked_metrics_storage,
+        )
+
+        assert result == EARLIEST_WRITEABLE_TIME
+        self.mocked_metrics_storage.get_resource_last_update_time_from_json.assert_called_once()
+        self.mocked_metrics_storage.get_last_update_time_from_metrics_table.assert_called_once_with(
+            resource_type=resource_type, resource_name=resource_name
+        )
+        self.mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.assert_called_once()
 
 
-@pytest.fixture
-def mock_metrics_storage_for_get_since_time():
-    mocked_metrics_storage = MagicMock()
-    mocked_metrics_storage.get_earliest_writeable_time_for_resource_type.return_value = (
-        EARLIEST_WRITEABLE_TIME  # 2024-04-16
-    )
-
-    with patch(
-        "lambda_extract_metrics.TimestreamMetricsStorage", mocked_metrics_storage
-    ) as mock_get_extractor:
-        yield mocked_metrics_storage
+#########################################################################################
+# # TESTs for process_individual_resource
 
 
-def test_last_update_time_from_json(mock_metrics_storage_for_get_since_time):
-    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
-    resource_type = "glue_jobs"
-    resource_name = "glue-job1"
+@pytest.mark.usefixtures("mock_dependencies")
+class TestProcessIndividualResource:
+    @pytest.fixture(autouse=True)
+    def mock_dependencies(self):
+        # Mock dependencies
+        self.mock_boto3_client_creator = MagicMock()
+        self.mock_metrics_storage = MagicMock()
+        self.mock_metrics_extractor = MagicMock()
+        self.mock_metrics_extractor.mock_add_spec(
+            ["prepare_metrics_data", "write_metrics", "set_result_ids"]
+        )
+        self.mock_metrics_extractor_provider = patch(
+            "lambda_extract_metrics.MetricsExtractorProvider.get_metrics_extractor",
+            return_value=self.mock_metrics_extractor,
+        )
+        self.mock_get_since_time = patch(
+            "lambda_extract_metrics.get_since_time_for_individual_resource",
+            return_value=EARLIEST_WRITEABLE_TIME,
+        )
 
-    # trying to write metrics later than earliest writable time (normal situation)
-    since_time = datetime(2024, 12, 31, 0, 0, 0, tzinfo=timezone.utc)
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
-        since_time
-    )
+        self.mock_metrics_extractor_provider.start()
+        self.mock_get_since_time.start()
 
-    result = get_since_time_for_individual_resource(
-        last_update_times,
-        resource_type,
-        resource_name,
-        mock_metrics_storage_for_get_since_time,
-    )
+        yield
 
-    assert result == since_time
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
-    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_not_called()
-    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
+        self.mock_metrics_extractor_provider.stop()
+        self.mock_get_since_time.stop()
 
+    def test_process_metrics_successfully(self):
+        # Arrange
+        resource_type = "glue_jobs"
+        resource_name = "glue-job1"
+        monitored_environment_name = "test_env"
+        metrics_table_name = "test_metrics_table"
+        alerts_event_bus_name = "test_event_bus"
+        last_update_times = {}
+        result_ids = []
 
-def test_last_update_time_fallback_to_earliest(mock_metrics_storage_for_get_since_time):
-    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
-    resource_type = "glue_jobs"
-    resource_name = "glue-job1"
+        records = ["record1", "record2"]
+        common_attributes = ["attr1", "attr2"]
 
-    # trying to write metrics EARLIER than earliest writable time (expect earlist)
-    since_time = datetime(2023, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
-        since_time
-    )
+        self.mock_metrics_extractor.prepare_metrics_data.return_value = (
+            records,
+            common_attributes,
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.return_value = (
+            metrics_table_name
+        )
 
-    result = get_since_time_for_individual_resource(
-        last_update_times,
-        resource_type,
-        resource_name,
-        mock_metrics_storage_for_get_since_time,
-    )
+        # Act
+        result = process_individual_resource(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_name=resource_name,
+            boto3_client_creator=self.mock_boto3_client_creator,
+            aws_client_name="glue",
+            metrics_storage=self.mock_metrics_storage,
+            metrics_table_name=metrics_table_name,
+            last_update_times=last_update_times,
+            alerts_event_bus_name=alerts_event_bus_name,
+            result_ids=result_ids,
+        )
 
-    assert result == EARLIEST_WRITEABLE_TIME
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
-    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_not_called()
-    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
+        # Assert
+        assert result["metrics_records_written"] == len(records)
+        assert result["alerts_sent"] is False
+        assert result["since_time"] == EARLIEST_WRITEABLE_TIME
 
+        self.mock_metrics_extractor.prepare_metrics_data.assert_called_once_with(
+            since_time=EARLIEST_WRITEABLE_TIME
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.assert_called_once_with(
+            resource_type=resource_type
+        )
+        self.mock_metrics_extractor.write_metrics.assert_called_once_with(
+            metrics_table_name=metrics_table_name,
+            metrics_storage=self.mock_metrics_storage,
+            records=records,
+            common_attributes=common_attributes,
+        )
 
-def test_last_update_time_from_metrics_table(mock_metrics_storage_for_get_since_time):
-    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
-    resource_type = "glue_jobs"
-    resource_name = "glue-job1"
+    def test_process_with_alerts_sent(self):
+        # Arrange
+        resource_type = "glue_workflows"
+        resource_name = "workflow1"
+        monitored_environment_name = "test_env"
+        metrics_table_name = "test_metrics_table"
+        alerts_event_bus_name = "test_event_bus"
+        last_update_times = {}
+        result_ids = []
 
-    # Simulate JSON doesn't have since_time for resource. Taking from metrics table
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
-        None
-    )
-    since_time = datetime(2024, 6, 1, 0, 0, 0, tzinfo=timezone.utc)
-    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.return_value = (
-        since_time
-    )
+        records = ["record1"]
+        common_attributes = ["attr1"]
 
-    result = get_since_time_for_individual_resource(
-        last_update_times,
-        resource_type,
-        resource_name,
-        mock_metrics_storage_for_get_since_time,
-    )
+        self.mock_metrics_extractor.prepare_metrics_data.return_value = (
+            records,
+            common_attributes,
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.return_value = (
+            metrics_table_name
+        )
+        self.mock_metrics_extractor.send_alerts = MagicMock()  # enabling this method
 
-    assert result == since_time
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
-    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_called_once_with(
-        resource_type=resource_type, resource_name=resource_name
-    )
-    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
+        # Act
+        result = process_individual_resource(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_name=resource_name,
+            boto3_client_creator=self.mock_boto3_client_creator,
+            aws_client_name="stepfunctions",
+            metrics_storage=self.mock_metrics_storage,
+            metrics_table_name=metrics_table_name,
+            last_update_times=last_update_times,
+            alerts_event_bus_name=alerts_event_bus_name,
+            result_ids=result_ids,
+        )
 
+        # Assert
+        assert result["metrics_records_written"] == len(records)
+        assert result["alerts_sent"] is True
 
-# no data nor in JSON and neither in metrics table -> get earliest
-def test_no_last_update_time_fallback_to_earliest(
-    mock_metrics_storage_for_get_since_time,
-):
-    last_update_times = {"key": "doesn't matter - extract logic not tested here"}
-    resource_type = "glue_jobs"
-    resource_name = "glue-job1"
+        self.mock_metrics_extractor.send_alerts.assert_called_once_with(
+            alerts_event_bus_name,
+            self.mock_boto3_client_creator.account_id,
+            self.mock_boto3_client_creator.region,
+        )
 
-    # No last_update_time in JSON or metrics table, fallback to earliest writeable time
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.return_value = (
-        None
-    )
-    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.return_value = (
-        None
-    )
+    def test_process_glue_data_quality_with_result_ids(self):
+        # Arrange
+        resource_type = types.GLUE_DATA_QUALITY
+        resource_name = "dq-rule"
+        monitored_environment_name = "test_env"
+        metrics_table_name = "test_metrics_table"
+        alerts_event_bus_name = "test_event_bus"
+        last_update_times = {}
+        result_ids = ["result1", "result2"]
 
-    result = get_since_time_for_individual_resource(
-        last_update_times,
-        resource_type,
-        resource_name,
-        mock_metrics_storage_for_get_since_time,
-    )
+        records = []
+        common_attributes = []
 
-    assert result == EARLIEST_WRITEABLE_TIME
-    mock_metrics_storage_for_get_since_time.get_resource_last_update_time_from_json.assert_called_once()
-    mock_metrics_storage_for_get_since_time.get_last_update_time_from_metrics_table.assert_called_once_with(
-        resource_type=resource_type, resource_name=resource_name
-    )
-    mock_metrics_storage_for_get_since_time.get_earliest_writeable_time_for_resource_type.assert_called_once()
+        self.mock_metrics_extractor.prepare_metrics_data.return_value = (
+            records,
+            common_attributes,
+        )
+        self.mock_metrics_storage.get_metrics_table_name_for_resource_type.return_value = (
+            metrics_table_name
+        )
+
+        # Act
+        result = process_individual_resource(
+            monitored_environment_name=monitored_environment_name,
+            resource_type=resource_type,
+            resource_name=resource_name,
+            boto3_client_creator=self.mock_boto3_client_creator,
+            aws_client_name="glue",
+            metrics_storage=self.mock_metrics_storage,
+            metrics_table_name=metrics_table_name,
+            last_update_times=last_update_times,
+            alerts_event_bus_name=alerts_event_bus_name,
+            result_ids=result_ids,
+        )
+
+        # Assert
+        assert result["metrics_records_written"] == len(records)
+        assert result["alerts_sent"] is False
+
+        self.mock_metrics_extractor.set_result_ids.assert_called_once_with(
+            result_ids=result_ids
+        )
 
 
 #########################################################################################
