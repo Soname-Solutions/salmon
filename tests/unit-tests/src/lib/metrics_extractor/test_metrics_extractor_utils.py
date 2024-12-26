@@ -58,6 +58,7 @@ def mock_timestream_writer():
 ###############################################################################
 
 
+# done: refactoring
 def test_retrieve_last_update_time_empty():
     class MockedTimestreamQueryRunner:
         def is_table_empty(self, database_name, table_name):
@@ -72,6 +73,7 @@ def test_retrieve_last_update_time_empty():
     assert result == {}
 
 
+# done: refactoring
 def test_retrieve_last_update_time_glue():
     class MockedTimestreamQueryRunner:
         def is_table_empty(self, database_name, table_name):
@@ -126,6 +128,7 @@ def test_retrieve_last_update_time_glue():
     assert result == expected_result
 
 
+# done: refactoring
 def test_retrieve_last_update_time_db_error():
     class MockedTimestreamQueryRunner:
         def is_table_empty(self, database_name, table_name):

@@ -36,29 +36,17 @@ class TimestreamMetricsStorage:
         self._writer = None
         self._query_runner = None
 
-    @cached_property
-    def write_client(self):
-        if self._write_client is None:
-            self._write_client = boto3.client("timestream-write")
-        return self._write_client
-
-    @cached_property
-    def query_client(self):
-        if self._query_client is None:
-            self._query_client = boto3.client("timestream-query")
-        return self._query_client
-
     def writer(self, table_name):
         if self._writer is None:
             self._writer = TimestreamTableWriter(
-                self.db_name, table_name, self.write_client
+                self.db_name, table_name, self._write_client
             )
         return self._writer
 
     @cached_property
     def query_runner(self) -> TimeStreamQueryRunner:
         if self._query_runner is None:
-            self._query_runner = TimeStreamQueryRunner(self.query_client)
+            self._query_runner = TimeStreamQueryRunner(self._query_client)
         return self._query_runner
 
     # Proxy methods for TimestreamTableWriter
@@ -108,9 +96,10 @@ class TimestreamMetricsStorage:
         table_parts = []
         try:
             for resource_type in SettingConfigs.RESOURCE_TYPES:
-                timestream_table_name = AWSNaming.TimestreamMetricsTable(
-                    None, resource_type
+                timestream_table_name = self.get_metrics_table_name_for_resource_type(
+                    resource_type
                 )
+
                 if not self.is_table_empty(timestream_table_name):
                     table_parts.append(
                         f"""SELECT \'{resource_type}\' as resource_type, resource_name, max(time) as last_update_time 
@@ -174,7 +163,9 @@ class TimestreamMetricsStorage:
     def get_last_update_time_from_metrics_table(
         self, resource_type, resource_name
     ) -> datetime | None:
-        metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
+        metrics_table_name = self.get_metrics_table_name_for_resource_type(
+            resource_type
+        )
 
         # check if table is empty
         if self.is_table_empty(metrics_table_name):
