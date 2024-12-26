@@ -27,7 +27,7 @@ def collect_glue_data_quality_result_ids(
     boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
     metrics_storage: TimestreamMetricsStorage,
-    metrics_table_name: str,
+    resource_type: str,
 ) -> list[str]:
     logger.info(
         f"Collecting Glue Data Quality result IDs at env: {monitored_environment_name}"
@@ -35,7 +35,7 @@ def collect_glue_data_quality_result_ids(
     min_update_time = metrics_storage.get_earliest_last_update_time_for_resource_set(
         last_update_times=dq_last_update_times,
         resource_names=resource_names,
-        metrics_table_name=metrics_table_name,
+        resource_type=resource_type,
     )
 
     logger.info(f"Extracting Glue Data Quality result IDs since {min_update_time}")
@@ -204,7 +204,7 @@ def process_all_resources_by_env_and_type(
             boto3_client_creator=boto3_client_creator,
             aws_client_name=aws_client_name,
             metrics_storage=metrics_storage,
-            metrics_table_name=metrics_table_name,
+            resource_type=resource_type,
         )
 
     # 4. Process each resource of a specific type in a specific environment
