@@ -284,3 +284,32 @@ def test_get_earliest_last_update_time_for_resource_set(
         assert (
             returned_min_date == expected_date
         ), f"Date mismatch for scenario {scenario}"
+
+
+###############################################################################
+# tests for get_last_update_time_from_metrics_table
+
+
+# simulating table is empty -> return None
+def test_get_last_update_time_empty(metrics_storage):
+    with patch.object(TimestreamMetricsStorage, "is_table_empty", return_value=True):
+        last_update_time = metrics_storage.get_last_update_time_from_metrics_table(
+            "glue_jobs", "glue-job-1"
+        )
+        assert last_update_time is None
+
+
+# simulating table is empty -> return None
+def test_get_last_update_time_non_empty(metrics_storage):
+    db_mocked_result = datetime(2024, 5, 5, 0, 0, 0)
+    with patch.object(
+        TimestreamMetricsStorage, "is_table_empty", return_value=False
+    ), patch.object(
+        TimestreamMetricsStorage,
+        "execute_scalar_query_date_field",
+        return_value=db_mocked_result,
+    ):
+        last_update_time = metrics_storage.get_last_update_time_from_metrics_table(
+            "glue_jobs", "glue-job-1"
+        )
+        assert last_update_time == db_mocked_result
