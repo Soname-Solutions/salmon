@@ -10,6 +10,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 lambda_client = boto3.client("lambda")
+TIMESTREAM_QUERY_CLIENT = boto3.client("timestream-query")
 
 
 def lambda_handler(event, context):
@@ -23,7 +24,9 @@ def lambda_handler(event, context):
     monitoring_groups = settings.list_monitoring_groups()
 
     # Step 2: Initialize TimestreamMetricsStorage and retrieve last update times
-    timestream_storage = TimestreamMetricsStorage(db_name=timestream_metrics_db_name)
+    timestream_storage = TimestreamMetricsStorage(
+        db_name=timestream_metrics_db_name, query_client=TIMESTREAM_QUERY_CLIENT
+    )
     last_update_times = timestream_storage.retrieve_last_update_time_for_all_resources(
         logger
     )
