@@ -739,7 +739,7 @@ class TestCollectGlueDataQualityResultIds:
             boto3_client_creator=self.mock_boto3_client_creator,
             aws_client_name=aws_client_name,
             metrics_storage=self.mock_metrics_storage,
-            metrics_table_name=metrics_table_name,
+            resource_type=types.GLUE_DATA_QUALITY,
         )
 
         # Assert
@@ -747,7 +747,7 @@ class TestCollectGlueDataQualityResultIds:
         self.mock_metrics_storage.get_earliest_last_update_time_for_resource_set.assert_called_once_with(
             last_update_times=dq_last_update_times,
             resource_names=resource_names,
-            metrics_table_name=metrics_table_name,
+            resource_type=types.GLUE_DATA_QUALITY,
         )
         self.mock_boto3_client_creator.get_client.assert_called_once_with(
             aws_client_name=aws_client_name
