@@ -15,8 +15,6 @@ def test_glue_jobs_provider(boto3_client_creator):
         resource_name="glue-job-1",
         aws_client_name="glue",
         boto3_client_creator=boto3_client_creator,
-        timestream_db_name="test_db_name",
-        timestream_metrics_table_name="test_table_name",
     )
 
     assert "GlueJobsMetricExtractor" in str(type(extractor))
@@ -32,8 +30,6 @@ def test_glue_workflows_provider(boto3_client_creator):
         resource_name="glue-wf-1",
         aws_client_name="glue",
         boto3_client_creator=boto3_client_creator,
-        timestream_db_name="test_db_name",
-        timestream_metrics_table_name="test_table_name",
     )
 
     assert "GlueWorkflowsMetricExtractor" in str(type(extractor))
@@ -50,8 +46,6 @@ def test_wrong_resource_type_provider(boto3_client_creator):
             resource_name="glue-crawler-1",
             aws_client_name="glue",
             boto3_client_creator=boto3_client_creator,
-            timestream_db_name="test_db_name",
-            timestream_metrics_table_name="test_table_name",
         )
 
 
@@ -62,8 +56,6 @@ def test_lambda_functions_provider(boto3_client_creator):
         resource_name="lambda-1",
         aws_client_name="lambda",
         boto3_client_creator=boto3_client_creator,
-        timestream_db_name="test_db_name",
-        timestream_metrics_table_name="test_table_name",
     )
 
     assert "LambdaFunctionsMetricExtractor" in str(type(extractor))

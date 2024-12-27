@@ -4,23 +4,20 @@ import logging
 from itertools import groupby
 from datetime import datetime
 
-from lib.aws import AWSNaming, Boto3ClientCreator, TimestreamTableWriter
+from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
+from lib.aws import AWSNaming, Boto3ClientCreator
 from lib.aws.glue_manager import GlueManager
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
 from lib.metrics_extractor import MetricsExtractorProvider, BaseMetricsExtractor
-from lib.metrics_extractor.metrics_extractor_utils import (
-    get_resource_last_update_time,
-    get_earliest_last_update_time_for_resource_set,
-)
 from lib.core.constants import SettingConfigResourceTypes as types
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-timestream_client = boto3.client("timestream-write")
-timestream_query_client = boto3.client("timestream-query")
+TIMESTREAM_WRITE_CLIENT = boto3.client("timestream-write")
+TIMESTREAM_QUERY_CLIENT = boto3.client("timestream-query")
 
 
 def collect_glue_data_quality_result_ids(
@@ -29,15 +26,16 @@ def collect_glue_data_quality_result_ids(
     dq_last_update_times: dict,
     boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
-    timestream_writer: TimestreamTableWriter,
+    metrics_storage: TimestreamMetricsStorage,
+    resource_type: str,
 ) -> list[str]:
     logger.info(
         f"Collecting Glue Data Quality result IDs at env: {monitored_environment_name}"
     )
-    min_update_time = get_earliest_last_update_time_for_resource_set(
+    min_update_time = metrics_storage.get_earliest_last_update_time_for_resource_set(
         last_update_times=dq_last_update_times,
         resource_names=resource_names,
-        timestream_writer=timestream_writer,
+        resource_type=resource_type,
     )
 
     logger.info(f"Extracting Glue Data Quality result IDs since {min_update_time}")
@@ -53,11 +51,10 @@ def get_since_time_for_individual_resource(
     last_update_times: dict,
     resource_type: str,
     resource_name: str,
-    metrics_extractor: BaseMetricsExtractor,
-    timestream_writer: TimestreamTableWriter,
+    metrics_storage: TimestreamMetricsStorage,
 ) -> datetime:
     # retrieve the last update time from the provided payload
-    since_time = get_resource_last_update_time(
+    since_time = metrics_storage.get_resource_last_update_time_from_json(
         last_update_time_json=last_update_times,
         resource_type=resource_type,
         resource_name=resource_name,
@@ -71,12 +68,14 @@ def get_since_time_for_individual_resource(
         logger.info(
             f"No last_update_time for {resource_type}[{resource_name}] - querying directly from table"
         )
-        since_time = metrics_extractor.get_last_update_time(
-            timestream_query_client=timestream_query_client
+        since_time = metrics_storage.get_last_update_time_from_metrics_table(
+            resource_type=resource_type, resource_name=resource_name
         )
 
     # fetch the earliest time that Timestream can accept for writing
-    earliest_time = timestream_writer.get_earliest_writeable_time_for_table()
+    earliest_time = metrics_storage.get_earliest_writeable_time_for_resource_type(
+        resource_type=resource_type
+    )
 
     # if since_time is still not defined or older than the earliest acceptable time,
     # then extract since time which Timestream is able to accept so to prevent RejectedRecords Timestream error
@@ -95,9 +94,8 @@ def process_individual_resource(
     resource_name: str,
     boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
-    timestream_writer: TimestreamTableWriter,
-    timestream_metrics_db_name: str,
-    timestream_metrics_table_name: str,
+    metrics_storage: TimestreamMetricsStorage,
+    metrics_table_name: str,
     last_update_times: dict,
     alerts_event_bus_name: str,
     result_ids: list,
@@ -113,8 +111,6 @@ def process_individual_resource(
         aws_client_name=aws_client_name,
         resource_name=resource_name,
         monitored_environment_name=monitored_environment_name,
-        timestream_db_name=timestream_metrics_db_name,
-        timestream_metrics_table_name=timestream_metrics_table_name,
     )
     logger.info(f"Created metrics extractor of type {type(metrics_extractor)}")
 
@@ -123,8 +119,7 @@ def process_individual_resource(
         last_update_times=last_update_times,
         resource_type=resource_type,
         resource_name=resource_name,
-        metrics_extractor=metrics_extractor,
-        timestream_writer=timestream_writer,
+        metrics_storage=metrics_storage,
     )
     logger.info(
         f"Extracting metrics since {since_time} for resource {resource_type}[{resource_name}]"
@@ -142,9 +137,16 @@ def process_individual_resource(
     logger.info(f"Extracted {metrics_record_count} records")
 
     # # 5. Write extracted data to timestream table
-    metrics_extractor.write_metrics(
-        records, common_attributes, timestream_table_writer=timestream_writer
+    metrics_table_name = metrics_storage.get_metrics_table_name_for_resource_type(
+        resource_type=resource_type
     )
+    metrics_extractor.write_metrics(
+        metrics_table_name=metrics_table_name,
+        metrics_storage=metrics_storage,
+        records=records,
+        common_attributes=common_attributes,
+    )
+
     logger.info(f"Written {metrics_record_count} records to timestream")
 
     # for resource types where alerts are processed inside Salmon (not by default EventBridge functionality)
@@ -172,7 +174,7 @@ def process_all_resources_by_env_and_type(
     resource_names: list,
     settings: Settings,
     iam_role_name: str,
-    timestream_metrics_db_name: str,
+    metrics_storage: TimestreamMetricsStorage,
     last_update_times: dict,
     alerts_event_bus_name: str,
 ):
@@ -188,11 +190,8 @@ def process_all_resources_by_env_and_type(
     boto3_client_creator = Boto3ClientCreator(account_id, region, iam_role_name)
 
     # 2. Create a Timestream table writer for a specific service
-    metrics_table_name = AWSNaming.TimestreamMetricsTable(None, resource_type)
-    timestream_man = TimestreamTableWriter(
-        db_name=timestream_metrics_db_name,
-        table_name=metrics_table_name,
-        timestream_write_client=timestream_client,
+    metrics_table_name = metrics_storage.get_metrics_table_name_for_resource_type(
+        resource_type
     )
 
     # 3. Collect Result IDs for all Glue Data Quality resources in a specific environment at once
@@ -201,10 +200,11 @@ def process_all_resources_by_env_and_type(
         result_ids = collect_glue_data_quality_result_ids(
             monitored_environment_name=monitored_environment_name,
             resource_names=resource_names,
-            dq_last_update_times=last_update_times.get(resource_type),
+            dq_last_update_times=last_update_times.get(resource_type),  # type: ignore
             boto3_client_creator=boto3_client_creator,
             aws_client_name=aws_client_name,
-            timestream_writer=timestream_man,
+            metrics_storage=metrics_storage,
+            resource_type=resource_type,
         )
 
     # 4. Process each resource of a specific type in a specific environment
@@ -215,9 +215,8 @@ def process_all_resources_by_env_and_type(
             resource_name=name,
             boto3_client_creator=boto3_client_creator,
             aws_client_name=aws_client_name,
-            timestream_writer=timestream_man,
-            timestream_metrics_db_name=timestream_metrics_db_name,
-            timestream_metrics_table_name=metrics_table_name,
+            metrics_storage=metrics_storage,
+            metrics_table_name=metrics_table_name,
             last_update_times=last_update_times,
             alerts_event_bus_name=alerts_event_bus_name,
             result_ids=result_ids,
@@ -234,6 +233,13 @@ def lambda_handler(event, context):
     alerts_event_bus_name = os.environ["ALERTS_EVENT_BUS_NAME"]
     monitoring_group_name = event.get("monitoring_group")
     last_update_times = event.get("last_update_times")
+
+    # create storage object
+    metrics_storage = TimestreamMetricsStorage(
+        db_name=timestream_metrics_db_name,
+        write_client=TIMESTREAM_WRITE_CLIENT,
+        query_client=TIMESTREAM_QUERY_CLIENT,
+    )
 
     # getting content of the monitoring group (in pydantic class form)
     settings = Settings.from_s3_path(
@@ -263,7 +269,7 @@ def lambda_handler(event, context):
                     resource_names=resource_names,
                     settings=settings,
                     iam_role_name=iam_role_name,
-                    timestream_metrics_db_name=timestream_metrics_db_name,
+                    metrics_storage=metrics_storage,
                     last_update_times=last_update_times,
                     alerts_event_bus_name=alerts_event_bus_name,
                 )

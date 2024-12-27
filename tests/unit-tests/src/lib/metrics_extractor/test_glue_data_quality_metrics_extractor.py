@@ -159,8 +159,6 @@ def test_two_completed_records_integrity(boto3_client_creator, mock_glue_client)
             aws_client_name="glue",
             resource_name=RULESET_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
@@ -267,8 +265,6 @@ def test_failed_dq_run(
             aws_client_name="glue",
             resource_name=RULESET_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
@@ -332,8 +328,6 @@ def test_succeeded_dq_run(
             aws_client_name="glue",
             resource_name=RULESET_NAME,
             monitored_environment_name="env1",
-            timestream_db_name="db_name1",
-            timestream_metrics_table_name="table_name1",
         )
 
         since_time = datetime(2020, 1, 1, 0, 0, 0)
@@ -369,8 +363,6 @@ def test_no_dq_runs(
                 aws_client_name="glue",
                 resource_name=RULESET_NAME,
                 monitored_environment_name="env1",
-                timestream_db_name="db_name1",
-                timestream_metrics_table_name="table_name1",
             )
 
             since_time = datetime(2020, 1, 1, 0, 0, 0)
