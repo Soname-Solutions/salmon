@@ -52,7 +52,7 @@ class BaseMetricsExtractor(ABC):
         )
 
     @abstractmethod
-    def prepare_metrics_data(self, since_time: datetime) -> (list, dict):  # type: ignore
+    def prepare_metrics_data(self, since_time: datetime) -> tuple[list, dict]:
         """
         Extract metrics data from AWS and convert them to Timestream records.
         Returns:
