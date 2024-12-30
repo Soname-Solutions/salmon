@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from lib.aws import Boto3ClientCreator
-from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
+from lib.metrics_storage.base_metrics_storage import BaseMetricsStorage
 
 
 class MetricsExtractorException(Exception):
@@ -65,7 +65,7 @@ class BaseMetricsExtractor(ABC):
         self,
         records,
         common_attributes,
-        metrics_storage: TimestreamMetricsStorage,
+        metrics_storage: BaseMetricsStorage,
         metrics_table_name: str,
     ):
         metrics_storage.write_records(

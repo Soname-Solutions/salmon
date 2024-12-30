@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import cached_property
-import boto3
+
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
 from lib.settings.settings import SettingConfigs
 from lib.aws.aws_naming import AWSNaming
@@ -27,7 +27,7 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
             write_client: Optional boto3 Timestream write client. Lazily initialized if not provided.
             query_client: Optional boto3 Timestream query client. Lazily initialized if not provided.
         """
-        self.db_name = db_name
+        super().__init__(db_name=db_name)
         self._write_client = write_client
         self._query_client = query_client
         self._writer = None
@@ -47,7 +47,7 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
         return self._query_runner
 
     # Proxy methods for TimestreamTableWriter
-    def write_records(self, table_name, records, common_attributes={}):
+    def write_records(self, table_name, records, common_attributes={}) -> list:
         return self.writer(table_name).write_records(records, common_attributes)
 
     def _get_memory_store_retention_hours(self, table_name):
@@ -67,7 +67,7 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
         return self.writer(table_name).get_earliest_writeable_time_for_table()
 
     # Proxy methods for TimeStreamQueryRunner
-    def is_table_empty(self, table_name):
+    def is_table_empty(self, table_name) -> bool:
         return self.query_runner.is_table_empty(self.db_name, table_name)
 
     def execute_scalar_query(self, query):

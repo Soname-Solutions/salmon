@@ -29,7 +29,7 @@ def lambda_handler(event, context):
     settings = Settings.from_s3_path(settings_s3_path)
     monitoring_groups = settings.list_monitoring_groups()
 
-    # Step 2: Initialize TimestreamMetricsStorage and retrieve last update times
+    # Step 2: Initialize Metrics Storage and retrieve last update times
     metrics_storage: BaseMetricsStorage = MetricsStorageProvider.get_metrics_storage(
         metrics_storage_type=storage_types.AWS_TIMESTREAM,
         db_name=timestream_metrics_db_name,
