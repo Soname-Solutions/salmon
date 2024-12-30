@@ -550,7 +550,10 @@ class TestLambdaHandler:
         )
 
         # Mock BaseMetricsStorage
-        self.mock_metrics_storage = patch("lambda_extract_metrics.BaseMetricsStorage")
+        self.mock_metrics_storage = patch(
+            "lambda_extract_metrics.MetricsStorageProvider.get_metrics_storage",
+            return_value=MagicMock(),
+        )
         # Mock Settings
         self.mock_settings = patch("lambda_extract_metrics.Settings")
         # Mock process_all_resources_by_env_and_type
