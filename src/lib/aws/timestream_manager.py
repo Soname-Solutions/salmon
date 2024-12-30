@@ -271,7 +271,7 @@ class TimeStreamQueryRunner:
     def __init__(self, timestream_query_client):
         self.timestream_query_client = timestream_query_client
 
-    def is_table_empty(self, database_name, table_name):
+    def is_table_empty(self, database_name, table_name) -> bool:
         """
         Checks if the specified table is empty.
 

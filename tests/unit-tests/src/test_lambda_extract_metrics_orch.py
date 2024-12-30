@@ -5,7 +5,7 @@ import boto3
 
 from moto import mock_aws
 from lambda_extract_metrics_orch import lambda_handler
-from unittest.mock import patch, call
+from unittest.mock import MagicMock, patch, call
 
 from lib.settings.settings import Settings
 
@@ -81,16 +81,23 @@ def mock_lambda_invoke():
 
 
 @pytest.fixture(scope="module")
-def mock_last_update_times():
+def mock_metrics_storage_retrieve_last_update_times():
+    mock_metrics_storage = MagicMock()
+    mock_metrics_storage.retrieve_last_update_time_for_all_resources.return_value = (
+        LAST_UPDATE_TIMES_SAMPLE
+    )
+
     with patch(
-        "lambda_extract_metrics_orch.TimestreamMetricsStorage.retrieve_last_update_time_for_all_resources",
-        return_value=LAST_UPDATE_TIMES_SAMPLE,
+        "lambda_extract_metrics_orch.MetricsStorageProvider.get_metrics_storage",
+        return_value=mock_metrics_storage,
     ) as _mock:
         yield _mock
 
 
 #########################################################################################
-def test_lambda_handler(mock_settings, mock_lambda_invoke, mock_last_update_times):
+def test_lambda_handler(
+    mock_settings, mock_lambda_invoke, mock_metrics_storage_retrieve_last_update_times
+):
     monitoring_groups = ["test_group1", "test_group2"]
     with patch(
         "lambda_extract_metrics_orch.Settings.list_monitoring_groups",
@@ -119,7 +126,7 @@ def test_lambda_handler(mock_settings, mock_lambda_invoke, mock_last_update_time
 
 
 def test_lambda_handler_no_groups(
-    mock_settings, mock_lambda_invoke, mock_last_update_times
+    mock_settings, mock_lambda_invoke, mock_metrics_storage_retrieve_last_update_times
 ):
     monitoring_groups = []
     with patch(

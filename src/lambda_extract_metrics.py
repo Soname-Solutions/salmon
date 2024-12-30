@@ -4,13 +4,18 @@ import logging
 from itertools import groupby
 from datetime import datetime
 
-from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
 from lib.aws import AWSNaming, Boto3ClientCreator
 from lib.aws.glue_manager import GlueManager
 from lib.settings import Settings
 from lib.core.constants import SettingConfigs
 
 from lib.metrics_extractor import MetricsExtractorProvider, BaseMetricsExtractor
+from lib.metrics_storage.base_metrics_storage import BaseMetricsStorage
+from lib.metrics_storage.metrics_storage_provider import (
+    MetricsStorageProvider,
+    MetricsStorageTypes as storage_types,
+)
+
 from lib.core.constants import SettingConfigResourceTypes as types
 
 logger = logging.getLogger()
@@ -26,7 +31,7 @@ def collect_glue_data_quality_result_ids(
     dq_last_update_times: dict,
     boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
-    metrics_storage: TimestreamMetricsStorage,
+    metrics_storage: BaseMetricsStorage,
     resource_type: str,
 ) -> list[str]:
     logger.info(
@@ -51,7 +56,7 @@ def get_since_time_for_individual_resource(
     last_update_times: dict,
     resource_type: str,
     resource_name: str,
-    metrics_storage: TimestreamMetricsStorage,
+    metrics_storage: BaseMetricsStorage,
 ) -> datetime:
     # retrieve the last update time from the provided payload
     since_time = metrics_storage.get_resource_last_update_time_from_json(
@@ -94,7 +99,7 @@ def process_individual_resource(
     resource_name: str,
     boto3_client_creator: Boto3ClientCreator,
     aws_client_name: str,
-    metrics_storage: TimestreamMetricsStorage,
+    metrics_storage: BaseMetricsStorage,
     metrics_table_name: str,
     last_update_times: dict,
     alerts_event_bus_name: str,
@@ -174,7 +179,7 @@ def process_all_resources_by_env_and_type(
     resource_names: list,
     settings: Settings,
     iam_role_name: str,
-    metrics_storage: TimestreamMetricsStorage,
+    metrics_storage: BaseMetricsStorage,
     last_update_times: dict,
     alerts_event_bus_name: str,
 ):
@@ -235,7 +240,8 @@ def lambda_handler(event, context):
     last_update_times = event.get("last_update_times")
 
     # create storage object
-    metrics_storage = TimestreamMetricsStorage(
+    metrics_storage: BaseMetricsStorage = MetricsStorageProvider.get_metrics_storage(
+        metrics_storage_type=storage_types.AWS_TIMESTREAM,
         db_name=timestream_metrics_db_name,
         write_client=TIMESTREAM_WRITE_CLIENT,
         query_client=TIMESTREAM_QUERY_CLIENT,

@@ -1,25 +1,22 @@
 from datetime import datetime
 from functools import cached_property
-import boto3
+
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
 from lib.settings.settings import SettingConfigs
 from lib.aws.aws_naming import AWSNaming
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
+from lib.metrics_storage.base_metrics_storage import (
+    BaseMetricsStorage,
+    MetricsStorageException,
+)
 
-class MetricsStorageException(Exception):
-    """Exception raised for errors encountered while working metrics storage."""
 
-    pass
-
-
-class TimestreamMetricsStorage:
+class TimestreamMetricsStorage(BaseMetricsStorage):
     """
     A proxy class for TimestreamTableWriter and TimeStreamQueryRunner to provide a unified interface for interacting
     with Timestream metrics storage. Clients and writer are lazily initialized to optimize for partial use cases.
     """
-
-    RESOURCE_NAME_COLUMN_NAME = "resource_name"
 
     def __init__(self, db_name: str, write_client=None, query_client=None):
         """
@@ -30,7 +27,7 @@ class TimestreamMetricsStorage:
             write_client: Optional boto3 Timestream write client. Lazily initialized if not provided.
             query_client: Optional boto3 Timestream query client. Lazily initialized if not provided.
         """
-        self.db_name = db_name
+        super().__init__(db_name=db_name)
         self._write_client = write_client
         self._query_client = query_client
         self._writer = None
@@ -50,7 +47,7 @@ class TimestreamMetricsStorage:
         return self._query_runner
 
     # Proxy methods for TimestreamTableWriter
-    def write_records(self, table_name, records, common_attributes={}):
+    def write_records(self, table_name, records, common_attributes={}) -> list:
         return self.writer(table_name).write_records(records, common_attributes)
 
     def _get_memory_store_retention_hours(self, table_name):
@@ -70,7 +67,7 @@ class TimestreamMetricsStorage:
         return self.writer(table_name).get_earliest_writeable_time_for_table()
 
     # Proxy methods for TimeStreamQueryRunner
-    def is_table_empty(self, table_name):
+    def is_table_empty(self, table_name) -> bool:
         return self.query_runner.is_table_empty(self.db_name, table_name)
 
     def execute_scalar_query(self, query):
