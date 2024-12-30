@@ -6,20 +6,17 @@ from lib.settings.settings import SettingConfigs
 from lib.aws.aws_naming import AWSNaming
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
+from lib.metrics_storage.base_metrics_storage import (
+    BaseMetricsStorage,
+    MetricsStorageException,
+)
 
-class MetricsStorageException(Exception):
-    """Exception raised for errors encountered while working metrics storage."""
 
-    pass
-
-
-class TimestreamMetricsStorage:
+class TimestreamMetricsStorage(BaseMetricsStorage):
     """
     A proxy class for TimestreamTableWriter and TimeStreamQueryRunner to provide a unified interface for interacting
     with Timestream metrics storage. Clients and writer are lazily initialized to optimize for partial use cases.
     """
-
-    RESOURCE_NAME_COLUMN_NAME = "resource_name"
 
     def __init__(self, db_name: str, write_client=None, query_client=None):
         """

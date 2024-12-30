@@ -1,3 +1,5 @@
+from typing import Type
+
 from lib.metrics_extractor import (
     BaseMetricsExtractor,
     GlueJobsMetricExtractor,
@@ -16,11 +18,11 @@ from lib.core.constants import SettingConfigResourceTypes as types
 class MetricsExtractorProvider:
     """Metrics extractor provider."""
 
-    _metrics_extractors = {}
+    _metrics_extractors: dict[str, Type[BaseMetricsExtractor]] = {}
 
     @staticmethod
     def register_metrics_extractor(
-        resource_type: str, metrics_extractor: BaseMetricsExtractor
+        resource_type: str, metrics_extractor: Type[BaseMetricsExtractor]
     ):
         """Register metrics extractor."""
         MetricsExtractorProvider._metrics_extractors[resource_type] = metrics_extractor
