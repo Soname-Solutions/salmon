@@ -4,7 +4,11 @@ import logging
 
 import boto3
 from lib.settings import Settings
-from lib.metrics_storage.timestream_metrics_storage import TimestreamMetricsStorage
+from lib.metrics_storage.base_metrics_storage import BaseMetricsStorage
+from lib.metrics_storage.metrics_storage_provider import (
+    MetricsStorageProvider,
+    MetricsStorageTypes as storage_types,
+)
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -17,6 +21,8 @@ def lambda_handler(event, context):
     # Load environment variables
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     lambda_extract_metrics_name = os.environ["LAMBDA_EXTRACT_METRICS_NAME"]
+
+    # todo: replace with METRICS_STORAGE_DB_NAME
     timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
 
     # Step 1: Retrieve settings and list monitoring groups
@@ -24,10 +30,13 @@ def lambda_handler(event, context):
     monitoring_groups = settings.list_monitoring_groups()
 
     # Step 2: Initialize TimestreamMetricsStorage and retrieve last update times
-    timestream_storage = TimestreamMetricsStorage(
-        db_name=timestream_metrics_db_name, query_client=TIMESTREAM_QUERY_CLIENT
+    metrics_storage: BaseMetricsStorage = MetricsStorageProvider.get_metrics_storage(
+        metrics_storage_type=storage_types.AWS_TIMESTREAM,
+        db_name=timestream_metrics_db_name,
+        query_client=TIMESTREAM_QUERY_CLIENT,
     )
-    last_update_times = timestream_storage.retrieve_last_update_time_for_all_resources(
+
+    last_update_times = metrics_storage.retrieve_last_update_time_for_all_resources(
         logger
     )
     logger.info(f"Last Update Times: {last_update_times}")
