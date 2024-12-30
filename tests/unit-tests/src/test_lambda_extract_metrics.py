@@ -66,7 +66,7 @@ class TestGetSinceTimeForIndividualResource:
         )
 
         with patch(
-            "lambda_extract_metrics.TimestreamMetricsStorage",
+            "lambda_extract_metrics.BaseMetricsStorage",
             self.mocked_metrics_storage,
         ) as mock_get_extractor:
             yield mock_get_extractor
@@ -549,10 +549,8 @@ class TestLambdaHandler:
             },
         )
 
-        # Mock TimestreamMetricsStorage
-        self.mock_timestream_metrics_storage = patch(
-            "lambda_extract_metrics.TimestreamMetricsStorage"
-        )
+        # Mock BaseMetricsStorage
+        self.mock_metrics_storage = patch("lambda_extract_metrics.BaseMetricsStorage")
         # Mock Settings
         self.mock_settings = patch("lambda_extract_metrics.Settings")
         # Mock process_all_resources_by_env_and_type
@@ -561,9 +559,7 @@ class TestLambdaHandler:
         )
         # Start patches
         self.mock_env.start()
-        self.mock_timestream_metrics_storage_mock = (
-            self.mock_timestream_metrics_storage.start()
-        )
+        self.mock_metrics_storage_mock = self.mock_metrics_storage.start()
         self.mock_settings_mock = self.mock_settings.start()
         self.mock_process_all_resources_mock = self.mock_process_all_resources.start()
 
@@ -571,7 +567,7 @@ class TestLambdaHandler:
 
         # Stop patches
         self.mock_env.stop()
-        self.mock_timestream_metrics_storage.stop()
+        self.mock_metrics_storage.stop()
         self.mock_settings.stop()
         self.mock_process_all_resources.stop()
 
@@ -618,7 +614,7 @@ class TestLambdaHandler:
                     resource_names=["glue_job1", "glue_job3"],
                     settings=mock_settings_instance,
                     iam_role_name="test-iam-role",
-                    metrics_storage=self.mock_timestream_metrics_storage_mock.return_value,
+                    metrics_storage=self.mock_metrics_storage_mock.return_value,
                     last_update_times=event["last_update_times"],
                     alerts_event_bus_name="test-event-bus",
                 ),
@@ -628,7 +624,7 @@ class TestLambdaHandler:
                     resource_names=["glue_job2"],
                     settings=mock_settings_instance,
                     iam_role_name="test-iam-role",
-                    metrics_storage=self.mock_timestream_metrics_storage_mock.return_value,
+                    metrics_storage=self.mock_metrics_storage_mock.return_value,
                     last_update_times=event["last_update_times"],
                     alerts_event_bus_name="test-event-bus",
                 ),
@@ -638,7 +634,7 @@ class TestLambdaHandler:
                     resource_names=["glue_workflow1"],
                     settings=mock_settings_instance,
                     iam_role_name="test-iam-role",
-                    metrics_storage=self.mock_timestream_metrics_storage_mock.return_value,
+                    metrics_storage=self.mock_metrics_storage_mock.return_value,
                     last_update_times=event["last_update_times"],
                     alerts_event_bus_name="test-event-bus",
                 ),
