@@ -5,6 +5,7 @@ from datetime import datetime
 
 from lib.aws.timestream_manager import TimeStreamQueryRunner
 from lib.aws.glue_manager import GlueManager
+from lib.metrics_storage import BaseMetricsStorage
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -19,12 +20,16 @@ class BaseDigestDataExtractor(ABC):
     Base Class which provides unified functionality for extracting runs used in the digest report.
     """
 
-    def __init__(
-        self, resource_type: str, timestream_db_name: str, timestream_table_name: str
-    ):
+    def __init__(self, metrics_storage: BaseMetricsStorage, resource_type: str):
+        self.metrics_storage = metrics_storage
         self.resource_type = resource_type
-        self.timestream_db_name = timestream_db_name
-        self.timestream_table_name = timestream_table_name
+        self.timestream_db_name = metrics_storage.db_name
+        # todo in next steps: change to ms.get_VIEW_name_for_res_type
+        self.timestream_table_name = (
+            metrics_storage.get_metrics_table_name_for_resource_type(
+                resource_type=resource_type
+            )
+        )
 
     @abstractmethod
     def get_query(self, start_time: datetime, end_time: datetime) -> str:
@@ -35,19 +40,11 @@ class BaseDigestDataExtractor(ABC):
         if not (query):
             return {}
 
-        timestream_query_client = boto3.client("timestream-query")
-        query_runner = TimeStreamQueryRunner(
-            timestream_query_client=timestream_query_client
-        )
         output_dict = {}
 
         try:
-            if not (
-                query_runner.is_table_empty(
-                    self.timestream_db_name, self.timestream_table_name
-                )
-            ):
-                result = query_runner.execute_query(query)
+            if not (self.metrics_storage.is_table_empty(self.timestream_table_name)):
+                result = self.metrics_storage.execute_query(query)
                 output_dict[self.resource_type] = result
             else:
                 logger.info(

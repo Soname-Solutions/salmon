@@ -13,6 +13,7 @@ from lib.digest_service import (
     DigestDataExtractorProvider,
 )
 
+from lib.metrics_storage import MetricsStorageTypes
 
 STAGE_NAME = "teststage"
 
@@ -51,13 +52,12 @@ def test_unregistered_resource_type():
     ],
 )
 def test_get_digest_provider(scenario, resource_type, expected_extractor):
+    metric_storage_type = MetricsStorageTypes.AWS_TIMESTREAM
     timestream_db_name = f"timestream-salmon-metrics-events-storage-{STAGE_NAME}"
-    timestream_table_name = f"tstable-{resource_type}-metrics"
 
     returned_extractor = DigestDataExtractorProvider.get_digest_provider(
         resource_type=resource_type,
         timestream_db_name=timestream_db_name,
-        timestream_table_name=timestream_table_name,
     )
     assert isinstance(returned_extractor, expected_extractor)
     assert str(expected_extractor) in str(type(returned_extractor))

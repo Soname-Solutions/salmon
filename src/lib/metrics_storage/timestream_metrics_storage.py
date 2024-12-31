@@ -3,7 +3,6 @@ from functools import cached_property
 
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
 from lib.settings.settings import SettingConfigs
-from lib.aws.aws_naming import AWSNaming
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
 from lib.metrics_storage.base_metrics_storage import (
@@ -55,10 +54,6 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
 
     def _get_magnetic_store_retention_days(self, table_name):
         return self.writer(table_name).get_MagneticStoreRetentionPeriodInDays()
-
-    # todo: in phase 2 - move to BaseMetricStorage
-    def get_metrics_table_name_for_resource_type(self, resource_type: str):
-        return AWSNaming.TimestreamMetricsTable(None, resource_type)
 
     def get_earliest_writeable_time_for_resource_type(self, resource_type: str):
         table_name = self.get_metrics_table_name_for_resource_type(
