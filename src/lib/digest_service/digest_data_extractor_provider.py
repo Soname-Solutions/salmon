@@ -1,3 +1,5 @@
+from typing import Type
+
 from lib.digest_service import (
     BaseDigestDataExtractor,
     GlueJobsDigestDataExtractor,
@@ -21,7 +23,7 @@ class DigestDataExtractorProvider:
     @staticmethod
     def register_digest_provider(
         resource_type: str,
-        digest_extractor: BaseDigestDataExtractor,
+        digest_extractor: Type[BaseDigestDataExtractor],
     ):
         """Register digest extractor."""
         DigestDataExtractorProvider._digest_extractors[resource_type] = digest_extractor

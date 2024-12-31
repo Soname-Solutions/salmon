@@ -27,7 +27,7 @@ class BaseDigestDataExtractor(ABC):
         self.timestream_table_name = timestream_table_name
 
     @abstractmethod
-    def get_query(self, start_time: datetime, end_time: datetime):
+    def get_query(self, start_time: datetime, end_time: datetime) -> str:
         pass
 
     def extract_runs(self, query: str) -> dict:
