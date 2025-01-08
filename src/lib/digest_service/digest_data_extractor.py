@@ -20,15 +20,13 @@ class BaseDigestDataExtractor(ABC):
     Base Class which provides unified functionality for extracting runs used in the digest report.
     """
 
-    def __init__(self, metrics_storage: BaseMetricsStorage, resource_type: str):
+    def __init__(self, resource_type: str, metrics_storage: BaseMetricsStorage):
         self.metrics_storage = metrics_storage
         self.resource_type = resource_type
-        self.timestream_db_name = metrics_storage.db_name
+        self.db_name = metrics_storage.db_name
         # todo in next steps: change to ms.get_VIEW_name_for_res_type
-        self.timestream_table_name = (
-            metrics_storage.get_metrics_table_name_for_resource_type(
-                resource_type=resource_type
-            )
+        self.table_name = metrics_storage.get_metrics_table_name_for_resource_type(
+            resource_type=resource_type
         )
 
     @abstractmethod
@@ -43,13 +41,11 @@ class BaseDigestDataExtractor(ABC):
         output_dict = {}
 
         try:
-            if not (self.metrics_storage.is_table_empty(self.timestream_table_name)):
+            if not (self.metrics_storage.is_table_empty(self.table_name)):
                 result = self.metrics_storage.execute_query(query)
                 output_dict[self.resource_type] = result
             else:
-                logger.info(
-                    f"No data in table {self.timestream_table_name}, skipping.."
-                )
+                logger.info(f"No data in table {self.table_name}, skipping..")
 
             return output_dict
 
@@ -69,7 +65,7 @@ class GlueJobsDigestDataExtractor(BaseDigestDataExtractor):
                      , case when failed > 0 then job_run_id else '' end as job_run_id, execution
                      , failed, succeeded, execution_time_sec
                      , case when failed > 0 then error_message else '' end as error_message
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                FROM "{self.db_name}"."{self.table_name}"
                 WHERE time BETWEEN '{start_time}' AND '{end_time}'
             """
         return query
@@ -85,7 +81,7 @@ class GlueWorkflowsDigestDataExtractor(BaseDigestDataExtractor):
                      , case when failed > 0 then workflow_run_id else '' end as job_run_id, execution
                      , failed, succeeded, execution_time_sec
                      , case when failed > 0 then error_message else '' end as error_message 
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}" 
+                FROM "{self.db_name}"."{self.table_name}" 
                 WHERE time BETWEEN '{start_time}' AND '{end_time}'
             """
         return query
@@ -101,7 +97,7 @@ class GlueCrawlersDigestDataExtractor(BaseDigestDataExtractor):
                          , CASE WHEN failed > 0 THEN crawl_id ELSE '' END as job_run_id
                          , execution, failed, succeeded, duration_sec as execution_time_sec
                          , CASE WHEN failed > 0 THEN error_message ELSE '' END as error_message 
-                      FROM "{self.timestream_db_name}"."{self.timestream_table_name}" 
+                      FROM "{self.db_name}"."{self.table_name}" 
                      WHERE time BETWEEN '{start_time}' AND '{end_time}' 
             """
         return query
@@ -119,7 +115,7 @@ class GlueDataCatalogsDigestDataExtractor(BaseDigestDataExtractor):
                       t.*
                       , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time DESC) AS rn_desc
                       , ROW_NUMBER() OVER (PARTITION BY resource_name ORDER BY time ASC) AS rn_asc
-                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
+                    FROM "{self.db_name}"."{self.table_name}" t
                     WHERE time BETWEEN '{start_time}' AND '{end_time}'
                 ),
                 -- filter to retain only the earliest and latest rows for each resource
@@ -172,7 +168,7 @@ class GlueDataQualityDigestDataExtractor(BaseDigestDataExtractor):
                      , execution, failed, succeeded, execution_time_sec
                      , case when failed > 0 then error_message else '' end as error_message
                      , context_type, glue_table_name, glue_db_name, glue_job_name  
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}" 
+                FROM "{self.db_name}"."{self.table_name}" 
                 WHERE time BETWEEN '{start_time}' AND '{end_time}' 
             """
         return query
@@ -188,7 +184,7 @@ class StepFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                      , case when failed > 0 then step_function_run_id else '' end as job_run_id
                      , execution, failed, succeeded, duration_sec as execution_time_sec
                      , case when failed > 0 then error_message else '' end as error_message  
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                FROM "{self.db_name}"."{self.table_name}"
                 WHERE time BETWEEN '{start_time}' AND '{end_time}' 
             """
         return query
@@ -205,7 +201,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                 WITH ids AS(
                     SELECT lambda_function_request_id
                          , ARRAY_JOIN(ARRAY_AGG(error_message), ', ') AS error_message
-                    FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                    FROM "{self.db_name}"."{self.table_name}"
                     WHERE time BETWEEN '{start_time}' AND '{end_time}'
                     GROUP BY lambda_function_request_id
                 ) 
@@ -220,7 +216,7 @@ class LambdaFunctionsDigestDataExtractor(BaseDigestDataExtractor):
                         , MAX(t.succeeded) AS succeeded
                         , ROUND(SUM(t.duration_ms)/1000, 2) AS execution_time_sec                                
                         , SUM(t.failed) AS failed_attempts
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}" t
+                FROM "{self.db_name}"."{self.table_name}" t
                 JOIN ids 
                   ON t.lambda_function_request_id=ids.lambda_function_request_id
                 GROUP BY 
@@ -243,7 +239,7 @@ class EMRServerlessDigestDataExtractor(BaseDigestDataExtractor):
                      , case when failed > 0 then job_run_id else '' end as job_run_id
                      , execution, failed, succeeded, execution_time_sec
                      , case when failed > 0 then error_message else '' end as error_message  
-                FROM "{self.timestream_db_name}"."{self.timestream_table_name}"
+                FROM "{self.db_name}"."{self.table_name}"
                 WHERE time BETWEEN '{start_time}' AND '{end_time}' 
             """
         return query

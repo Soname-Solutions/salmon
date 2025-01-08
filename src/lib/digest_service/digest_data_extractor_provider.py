@@ -28,7 +28,7 @@ class DigestDataExtractorProvider:
         """Register digest extractor."""
         DigestDataExtractorProvider._digest_extractors[resource_type] = digest_extractor
 
-    # todo: start using typed kwargs
+    # todo: start using typed kwargs (TypedDict, req python 3.12)
     @staticmethod
     def get_digest_provider(resource_type: str, **kwargs) -> BaseDigestDataExtractor:
         """Get digest extractor."""
