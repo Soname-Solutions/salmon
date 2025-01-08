@@ -180,7 +180,7 @@ def lambda_handler(event, context):
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
     notification_queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
     metrics_storage_type = MetricsStorageTypes.AWS_TIMESTREAM
-    metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    metrics_db_name = os.environ["METRICS_DB_NAME"]
     report_period_hours = int(os.environ["DIGEST_REPORT_PERIOD_HOURS"])
     settings = Settings.from_s3_path(
         base_path=settings_s3_path, iam_role_list_monitored_res=iam_role_name

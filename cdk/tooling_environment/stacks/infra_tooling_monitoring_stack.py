@@ -291,7 +291,7 @@ class InfraToolingMonitoringStack(NestedStack):
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
-                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
+                "METRICS_DB_NAME": timestream_database_name,
                 "ALERTS_EVENT_BUS_NAME": alerting_bus.event_bus_name,
             },
             role=extract_metrics_lambda_role,
@@ -326,7 +326,7 @@ class InfraToolingMonitoringStack(NestedStack):
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
                 "LAMBDA_EXTRACT_METRICS_NAME": extract_metrics_lambda.function_name,
-                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
+                "METRICS_DB_NAME": timestream_database_name,
             },
             role=extract_metrics_lambda_role,
             layers=[powertools_layer],
@@ -457,7 +457,7 @@ class InfraToolingMonitoringStack(NestedStack):
                     self, CDKResourceNames.IAMROLE_MONITORED_ACC_EXTRACT_METRICS
                 ),
                 "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
-                "TIMESTREAM_METRICS_DB_NAME": timestream_database_name,
+                "METRICS_DB_NAME": timestream_database_name,
                 "DIGEST_REPORT_PERIOD_HOURS": str(digest_report_period_hours),
             },
             role=digest_lambda_role,

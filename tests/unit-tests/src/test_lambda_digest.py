@@ -20,16 +20,16 @@ STAGE_NAME = "teststage"
 def os_vars_init(aws_props_init):
     # Sets up necessary lambda OS vars
     (account_id, region) = aws_props_init
-    os.environ[
-        "NOTIFICATION_QUEUE_URL"
-    ] = f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{STAGE_NAME}.fifo"
+    os.environ["NOTIFICATION_QUEUE_URL"] = (
+        f"https://sqs.{region}.amazonaws.com/{account_id}/queue-salmon-notification-{STAGE_NAME}.fifo"
+    )
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{STAGE_NAME}/settings/"
-    os.environ[
-        "IAMROLE_MONITORED_ACC_EXTRACT_METRICS"
-    ] = f"role-salmon-monitored-acc-extract-metrics-{STAGE_NAME}"
-    os.environ[
-        "TIMESTREAM_METRICS_DB_NAME"
-    ] = f"timestream-salmon-metrics-events-storage-{STAGE_NAME}"
+    os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"] = (
+        f"role-salmon-monitored-acc-extract-metrics-{STAGE_NAME}"
+    )
+    os.environ["METRICS_DB_NAME"] = (
+        f"timestream-salmon-metrics-events-storage-{STAGE_NAME}"
+    )
     os.environ["DIGEST_REPORT_PERIOD_HOURS"] = "24"
 
 
