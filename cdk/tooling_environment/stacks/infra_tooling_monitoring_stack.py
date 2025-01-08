@@ -287,7 +287,7 @@ class InfraToolingMonitoringStack(NestedStack):
             ),
             handler="lambda_extract_metrics.lambda_handler",
             timeout=Duration.seconds(900),
-            runtime=lambda_.Runtime.PYTHON_3_11,
+            runtime=lambda_.Runtime.PYTHON_3_13,
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
@@ -321,7 +321,7 @@ class InfraToolingMonitoringStack(NestedStack):
             ),
             handler="lambda_extract_metrics_orch.lambda_handler",
             timeout=Duration.seconds(900),
-            runtime=lambda_.Runtime.PYTHON_3_11,
+            runtime=lambda_.Runtime.PYTHON_3_13,
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": extr_metr_role_name,
@@ -450,7 +450,7 @@ class InfraToolingMonitoringStack(NestedStack):
             ),
             handler="lambda_digest.lambda_handler",
             timeout=Duration.seconds(900),
-            runtime=lambda_.Runtime.PYTHON_3_11,
+            runtime=lambda_.Runtime.PYTHON_3_13,
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": AWSNaming.IAMRole(

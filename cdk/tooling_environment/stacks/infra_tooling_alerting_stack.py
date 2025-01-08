@@ -242,7 +242,7 @@ class InfraToolingAlertingStack(NestedStack):
             ),
             handler="lambda_alerting.lambda_handler",
             timeout=Duration.seconds(120),
-            runtime=lambda_.Runtime.PYTHON_3_11,
+            runtime=lambda_.Runtime.PYTHON_3_13,
             environment={
                 "SETTINGS_S3_PATH": f"s3://{settings_bucket.bucket_name}/settings/",
                 "NOTIFICATION_QUEUE_URL": notification_queue.queue_url,
