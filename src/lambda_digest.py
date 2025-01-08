@@ -200,8 +200,8 @@ def lambda_handler(event, context):
     for resource_type in SettingConfigs.RESOURCE_TYPES:
         # ceate an digest extractor for a specific resource type
         digest_extractor = DigestDataExtractorProvider.get_digest_provider(
-            metrics_storage=metrics_storage,
             resource_type=resource_type,
+            metrics_storage=metrics_storage,
         )
         logger.info(f"Created digest extractor of type {type(digest_extractor)}")
         query = digest_extractor.get_query(digest_start_time, digest_end_time)
