@@ -97,23 +97,30 @@ def mock_digest_extractor():
 
 
 def test_digest_lambda_handler(os_vars_init, mock_settings, mock_digest_extractor):
-    lambda_handler({}, {})
-    mock_instance, mock_extractor = mock_digest_extractor
-    resource_types = SettingConfigs.RESOURCE_TYPES
-    expected_calls = []
-    for resource_type in resource_types:
-        expected_calls.append(
-            call(
-                resource_type=resource_type,
-                timestream_db_name=f"timestream-salmon-metrics-events-storage-{STAGE_NAME}",
-                timestream_table_name=f"tstable-{resource_type}-metrics",
-            )
-        )
+    mocked_metrics_storage = MagicMock()
 
-    # DigestDataExtractor called for each Resource Type
-    mock_instance.assert_has_calls(expected_calls)
-    assert mock_instance.call_count == len(resource_types)
-    assert mock_extractor.extract_runs.call_count == len(resource_types)
+    with patch(
+        "lambda_digest.MetricsStorageProvider.get_metrics_storage",
+        return_value=mocked_metrics_storage,
+    ):
+        lambda_handler({}, {})
+
+        mock_instance, mock_extractor = mock_digest_extractor
+        resource_types = SettingConfigs.RESOURCE_TYPES
+        expected_calls = []
+
+        for resource_type in resource_types:
+            expected_calls.append(
+                call(
+                    resource_type=resource_type,
+                    metrics_storage=mocked_metrics_storage,
+                )
+            )
+
+        # DigestDataExtractor called for each Resource Type
+        mock_instance.assert_has_calls(expected_calls)
+        assert mock_instance.call_count == len(resource_types)
+        assert mock_extractor.extract_runs.call_count == len(resource_types)
 
 
 @pytest.mark.parametrize(
