@@ -5,6 +5,7 @@ from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRun
 from lib.settings.settings import SettingConfigs
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
+import boto3
 from lib.metrics_storage.base_metrics_storage import (
     BaseMetricsStorage,
     MetricsStorageException,
@@ -34,6 +35,9 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
 
     def writer(self, table_name):
         if self._writer is None:
+            if self._write_client is None:
+                self._write_client = boto3.client("timestream-write")
+
             self._writer = TimestreamTableWriter(
                 self.db_name, table_name, self._write_client
             )
@@ -42,6 +46,8 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
     @cached_property
     def query_runner(self) -> TimeStreamQueryRunner:
         if self._query_runner is None:
+            if self._query_client is None:
+                self._query_client = boto3.client("timestream-query")
             self._query_runner = TimeStreamQueryRunner(self._query_client)
         return self._query_runner
 
