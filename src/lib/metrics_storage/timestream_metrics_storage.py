@@ -34,13 +34,15 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
         self._query_runner = None
 
     def writer(self, table_name):
-        if self._writer is None:
-            if self._write_client is None:
-                self._write_client = boto3.client("timestream-write")
+        if self._write_client is None:
+            self._write_client = boto3.client("timestream-write")
 
-            self._writer = TimestreamTableWriter(
-                self.db_name, table_name, self._write_client
-            )
+        # TimestreamTableWriter is created on each write instead of caching what is created once as table_name might differ
+        # for example - the same metrics_storage is created in lambda_extract_metrics and 2 different resource types are
+        # processed in one run
+        self._writer = TimestreamTableWriter(
+            self.db_name, table_name, self._write_client
+        )
         return self._writer
 
     @cached_property
