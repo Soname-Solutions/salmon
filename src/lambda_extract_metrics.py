@@ -234,7 +234,7 @@ def lambda_handler(event, context):
     # get vars from either ENV or Event
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
-    timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    metrics_db_name = os.environ["METRICS_DB_NAME"]
     alerts_event_bus_name = os.environ["ALERTS_EVENT_BUS_NAME"]
     monitoring_group_name = event.get("monitoring_group")
     last_update_times = event.get("last_update_times")
@@ -242,7 +242,7 @@ def lambda_handler(event, context):
     # create storage object
     metrics_storage: BaseMetricsStorage = MetricsStorageProvider.get_metrics_storage(
         metrics_storage_type=storage_types.AWS_TIMESTREAM,
-        db_name=timestream_metrics_db_name,
+        db_name=metrics_db_name,
         write_client=TIMESTREAM_WRITE_CLIENT,
         query_client=TIMESTREAM_QUERY_CLIENT,
     )

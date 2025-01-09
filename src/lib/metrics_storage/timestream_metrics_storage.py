@@ -3,9 +3,9 @@ from functools import cached_property
 
 from lib.aws.timestream_manager import TimestreamTableWriter, TimeStreamQueryRunner
 from lib.settings.settings import SettingConfigs
-from lib.aws.aws_naming import AWSNaming
 from lib.core.datetime_utils import str_utc_datetime_to_datetime
 
+import boto3
 from lib.metrics_storage.base_metrics_storage import (
     BaseMetricsStorage,
     MetricsStorageException,
@@ -34,15 +34,22 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
         self._query_runner = None
 
     def writer(self, table_name):
-        if self._writer is None:
-            self._writer = TimestreamTableWriter(
-                self.db_name, table_name, self._write_client
-            )
+        if self._write_client is None:
+            self._write_client = boto3.client("timestream-write")
+
+        # TimestreamTableWriter is created on each write instead of caching what is created once as table_name might differ
+        # for example - the same metrics_storage is created in lambda_extract_metrics and 2 different resource types are
+        # processed in one run
+        self._writer = TimestreamTableWriter(
+            self.db_name, table_name, self._write_client
+        )
         return self._writer
 
     @cached_property
     def query_runner(self) -> TimeStreamQueryRunner:
         if self._query_runner is None:
+            if self._query_client is None:
+                self._query_client = boto3.client("timestream-query")
             self._query_runner = TimeStreamQueryRunner(self._query_client)
         return self._query_runner
 
@@ -55,10 +62,6 @@ class TimestreamMetricsStorage(BaseMetricsStorage):
 
     def _get_magnetic_store_retention_days(self, table_name):
         return self.writer(table_name).get_MagneticStoreRetentionPeriodInDays()
-
-    # todo: in phase 2 - move to BaseMetricStorage
-    def get_metrics_table_name_for_resource_type(self, resource_type: str):
-        return AWSNaming.TimestreamMetricsTable(None, resource_type)
 
     def get_earliest_writeable_time_for_resource_type(self, resource_type: str):
         table_name = self.get_metrics_table_name_for_resource_type(

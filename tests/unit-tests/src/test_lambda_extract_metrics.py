@@ -544,7 +544,7 @@ class TestLambdaHandler:
             {
                 "SETTINGS_S3_PATH": "s3://test-bucket/settings.json",
                 "IAMROLE_MONITORED_ACC_EXTRACT_METRICS": "test-iam-role",
-                "TIMESTREAM_METRICS_DB_NAME": "test-db",
+                "METRICS_DB_NAME": "test-db",
                 "ALERTS_EVENT_BUS_NAME": "test-event-bus",
             },
         )

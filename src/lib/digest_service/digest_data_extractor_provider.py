@@ -1,3 +1,5 @@
+from typing import Type, TypedDict, Unpack
+
 from lib.digest_service import (
     BaseDigestDataExtractor,
     GlueJobsDigestDataExtractor,
@@ -11,6 +13,12 @@ from lib.digest_service import (
 )
 
 from lib.core.constants import SettingConfigResourceTypes as types
+from lib.metrics_storage.base_metrics_storage import BaseMetricsStorage
+
+
+# params required to initialize DigestExtractor apart from resource_type
+class DigestExtractorKwargs(TypedDict):
+    metrics_storage: BaseMetricsStorage
 
 
 class DigestDataExtractorProvider:
@@ -21,13 +29,16 @@ class DigestDataExtractorProvider:
     @staticmethod
     def register_digest_provider(
         resource_type: str,
-        digest_extractor: BaseDigestDataExtractor,
+        digest_extractor: Type[BaseDigestDataExtractor],
     ):
         """Register digest extractor."""
         DigestDataExtractorProvider._digest_extractors[resource_type] = digest_extractor
 
+    # todo: start using typed kwargs (TypedDict, req python 3.12)
     @staticmethod
-    def get_digest_provider(resource_type: str, **kwargs) -> BaseDigestDataExtractor:
+    def get_digest_provider(
+        resource_type: str, **kwargs: Unpack[DigestExtractorKwargs]
+    ) -> BaseDigestDataExtractor:
         """Get digest extractor."""
         extractor = DigestDataExtractorProvider._digest_extractors.get(resource_type)
 

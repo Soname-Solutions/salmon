@@ -13,6 +13,12 @@ from lib.digest_service import (
     DigestDataAggregatorProvider,
 )
 
+from lib.metrics_storage import (
+    MetricsStorageProvider,
+    MetricsStorageTypes,
+    BaseMetricsStorage,
+)
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -173,7 +179,8 @@ def lambda_handler(event, context):
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     iam_role_name = os.environ["IAMROLE_MONITORED_ACC_EXTRACT_METRICS"]
     notification_queue_url = os.environ["NOTIFICATION_QUEUE_URL"]
-    timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    metrics_storage_type = MetricsStorageTypes.AWS_TIMESTREAM
+    metrics_db_name = os.environ["METRICS_DB_NAME"]
     report_period_hours = int(os.environ["DIGEST_REPORT_PERIOD_HOURS"])
     settings = Settings.from_s3_path(
         base_path=settings_s3_path, iam_role_list_monitored_res=iam_role_name
@@ -184,16 +191,17 @@ def lambda_handler(event, context):
 
     # prepare digest data
     digest_data = []
-    metric_table_names = {
-        x: AWSNaming.TimestreamMetricsTable(None, x)
-        for x in SettingConfigs.RESOURCE_TYPES
-    }
+
+    metrics_storage: BaseMetricsStorage = MetricsStorageProvider.get_metrics_storage(
+        metrics_storage_type=metrics_storage_type,
+        db_name=metrics_db_name,
+    )
+
     for resource_type in SettingConfigs.RESOURCE_TYPES:
         # ceate an digest extractor for a specific resource type
         digest_extractor = DigestDataExtractorProvider.get_digest_provider(
             resource_type=resource_type,
-            timestream_db_name=timestream_metrics_db_name,
-            timestream_table_name=metric_table_names[resource_type],
+            metrics_storage=metrics_storage,
         )
         logger.info(f"Created digest extractor of type {type(digest_extractor)}")
         query = digest_extractor.get_query(digest_start_time, digest_end_time)

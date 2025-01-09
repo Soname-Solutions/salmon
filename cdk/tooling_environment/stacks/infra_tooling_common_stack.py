@@ -251,7 +251,7 @@ class InfraToolingCommonStack(NestedStack):
             },
             layers=[powertools_layer],
             timeout=Duration.seconds(60),
-            runtime=lambda_.Runtime.PYTHON_3_11,
+            runtime=lambda_.Runtime.PYTHON_3_13,
             role=notification_lambda_role,
             retry_attempts=2,
             # no destinations configuration because destinations do not support SQS lambda event source

@@ -128,7 +128,7 @@ class TestingStandStack(Stack):
         lambda_function = _lambda.Function(
             self,
             "LambdaForwardToSQS",
-            runtime=_lambda.Runtime.PYTHON_3_11,
+            runtime=_lambda.Runtime.PYTHON_3_13,
             function_name=AWSNaming.LambdaFunction(self, "inttest-to-dynamo"),
             handler="index.handler",
             code=_lambda.Code.from_inline(
@@ -375,7 +375,7 @@ def handler(event, context):
                 ),
                 handler=f"{lambda_meaning}.lambda_handler",
                 timeout=Duration.seconds(30),
-                runtime=lambda_.Runtime.PYTHON_3_11,
+                runtime=lambda_.Runtime.PYTHON_3_13,
                 role=lambda_role,
                 retry_attempts=retry_attempts,
             )
@@ -424,7 +424,7 @@ def handler(event, context):
         purge_logs_function = _lambda.Function(
             self,
             "PurgeLogsFunction",
-            runtime=_lambda.Runtime.PYTHON_3_11,
+            runtime=_lambda.Runtime.PYTHON_3_13,
             handler="lambda_inttests_purge_cloudwatch_logs.lambda_handler",
             timeout=Duration.minutes(10),
             role=role,

@@ -21,9 +21,7 @@ def lambda_handler(event, context):
     # Load environment variables
     settings_s3_path = os.environ["SETTINGS_S3_PATH"]
     lambda_extract_metrics_name = os.environ["LAMBDA_EXTRACT_METRICS_NAME"]
-
-    # todo: replace with METRICS_STORAGE_DB_NAME
-    timestream_metrics_db_name = os.environ["TIMESTREAM_METRICS_DB_NAME"]
+    metrics_db_name = os.environ["METRICS_DB_NAME"]
 
     # Step 1: Retrieve settings and list monitoring groups
     settings = Settings.from_s3_path(settings_s3_path)
@@ -32,7 +30,7 @@ def lambda_handler(event, context):
     # Step 2: Initialize Metrics Storage and retrieve last update times
     metrics_storage: BaseMetricsStorage = MetricsStorageProvider.get_metrics_storage(
         metrics_storage_type=storage_types.AWS_TIMESTREAM,
-        db_name=timestream_metrics_db_name,
+        db_name=metrics_db_name,
         query_client=TIMESTREAM_QUERY_CLIENT,
     )
 

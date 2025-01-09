@@ -48,12 +48,12 @@ def os_vars_init(aws_props_init):
     (account_id, region) = aws_props_init
     stage_name = "teststage"
     os.environ["SETTINGS_S3_PATH"] = f"s3://s3-salmon-settings-{stage_name}/settings/"
-    os.environ[
-        "LAMBDA_EXTRACT_METRICS_NAME"
-    ] = f"lambda-salmon-extract-metrics-{stage_name}"
-    os.environ[
-        "TIMESTREAM_METRICS_DB_NAME"
-    ] = f"timestream-salmon-metrics-events-storage-{stage_name}"
+    os.environ["LAMBDA_EXTRACT_METRICS_NAME"] = (
+        f"lambda-salmon-extract-metrics-{stage_name}"
+    )
+    os.environ["METRICS_DB_NAME"] = (
+        f"timestream-salmon-metrics-events-storage-{stage_name}"
+    )
 
 
 #########################################################################################

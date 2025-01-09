@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from lib.aws.aws_naming import AWSNaming
+
 
 class MetricsStorageException(Exception):
     """Exception raised for errors encountered while working metrics storage."""
@@ -32,9 +34,22 @@ class BaseMetricsStorage:
         """
         pass
 
+    def get_metrics_table_name_for_resource_type(self, resource_type: str):
+        return AWSNaming.TimestreamMetricsTable(None, resource_type)
+
+    ####################################################################################################
+    # Read operations
+
     @abstractmethod
     def is_table_empty(self, table_name) -> bool:
         pass
+
+    @abstractmethod
+    def execute_query(self, query) -> list:
+        pass
+
+    ####################################################################################################
+    # Write operations
 
     @abstractmethod
     def write_records(self, table_name, records, common_attributes={}) -> list:

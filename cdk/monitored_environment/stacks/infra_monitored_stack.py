@@ -47,6 +47,15 @@ class InfraMonitoredStack(Stack):
             assumed_by=iam.ServicePrincipal("events.amazonaws.com"),
         )
 
+        # Add the AccountPrincipal permission to the assume role policy
+        cross_account_bus_role.assume_role_policy.add_statements(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["sts:AssumeRole"],
+                principals=[iam.AccountPrincipal(self.tooling_account_id)],
+            )
+        )
+
         cross_account_event_bus_name = AWSNaming.EventBus(
             self, CDKResourceNames.EVENTBUS_ALERTING
         )
@@ -58,9 +67,6 @@ class InfraMonitoredStack(Stack):
                 effect=iam.Effect.ALLOW,
                 resources=[cross_account_event_bus_arn],
             )
-        )
-        cross_account_bus_role.grant_assume_role(
-            iam.AccountPrincipal(self.tooling_account_id)
         )
 
         return cross_account_bus_role, cross_account_event_bus_arn
